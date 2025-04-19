@@ -288,7 +288,7 @@ order: 0;
 flex-grow: 1;
 
 
-/* InfoButton */
+/* ShowButton */
 
 width: 24px;
 height: 24px;
@@ -300,13 +300,13 @@ order: 1;
 flex-grow: 0;
 
 
-/* InfoIcon */
+/* ShowIcon */
 
 position: absolute;
-left: 12.5%;
-right: 12.5%;
-top: 12.5%;
-bottom: 12.5%;
+left: 11.05%;
+right: 11.05%;
+top: 25%;
+bottom: 25%;
 
 border: 2px solid #77677E;
 
@@ -417,7 +417,7 @@ order: 0;
 flex-grow: 1;
 
 
-/* InfoButton */
+/* ShowButton */
 
 width: 24px;
 height: 24px;
@@ -429,13 +429,13 @@ order: 1;
 flex-grow: 0;
 
 
-/* InfoIcon */
+/* ShowIcon */
 
 position: absolute;
-left: 12.5%;
-right: 12.5%;
-top: 12.5%;
-bottom: 12.5%;
+left: 11.05%;
+right: 11.05%;
+top: 25%;
+bottom: 25%;
 
 border: 2px solid #77677E;
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/auth_service.dart'; // Import AuthService
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -11,11 +12,30 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _emailController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  
+  final AuthService _authService = AuthService(); // Initialize AuthService
+  bool _isLoading = false; // Add loading state
+  
+  String? _token;
+  String? _agentId;
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Retrieve token and agentId from route arguments
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null) {
+      _token = args['token'];
+      _agentId = args['agentId'];
+    }
+  }
   
   @override
   void dispose() {
-    _emailController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -56,8 +76,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Email Field
-                      _buildEmailField(),
+                      // New Password Field
+                      _buildPasswordField(
+                        title: 'Parola nouă',
+                        hintText: 'Introdu parola nouă',
+                        controller: _newPasswordController,
+                        showInfoButton: true,
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Confirm Password Field
+                      _buildPasswordField(
+                        title: 'Confirmă parola',
+                        hintText: 'Repetă parola nouă',
+                        controller: _confirmPasswordController,
+                      ),
                     ],
                   ),
                 ),
@@ -69,7 +103,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text.rich(
                     TextSpan(
-                      text: 'Ti-ai amintit parola? Inapoi la ',
+                      text: 'Ți-ai amintit parola? Înapoi la ',
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -124,7 +158,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
-                    'Ai uitat parola?',
+                    'Resetează parola',
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -136,7 +170,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
-                    'Iti vom trimite un email pentru resetare',
+                    'Alege o parolă nouă, puternică',
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -172,7 +206,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildPasswordField({
+    required String title,
+    required String hintText,
+    required TextEditingController controller,
+    bool showInfoButton = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -180,7 +219,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
-            'Email',
+            title,
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -205,10 +244,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
+                    controller: controller,
+                    obscureText: true, // Always obscure password
                     decoration: InputDecoration(
-                      hintText: 'Introdu adresa de email',
+                      hintText: hintText,
                       hintStyle: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
@@ -228,6 +267,33 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                 ),
               ),
+              if (showInfoButton)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: IconButton(
+                    icon: SvgPicture.asset(
+                      'assets/InfoButton.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF77677E),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    onPressed: () {
+                      // Show password requirements
+                      _showInfoDialog(
+                        title: 'Cerințe parolă',
+                        message: 'Parola trebuie să conțină minim 8 caractere, o literă mare, o literă mică și un număr.',
+                      );
+                    },
+                    padding: EdgeInsets.zero, // Remove padding from IconButton
+                    constraints: const BoxConstraints(
+                      minWidth: 24,
+                      minHeight: 24
+                    ), // Set minimum size
+                  ),
+                ),
             ],
           ),
         ),
@@ -237,10 +303,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   Widget _buildResetButton() {
     return InkWell(
-      onTap: () {
-        // Handle reset password
-        _resetPassword();
-      },
+      onTap: _isLoading ? null : _resetPassword, // Disable button when loading
       child: Container(
         width: 384,
         height: 48,
@@ -249,38 +312,126 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           color: const Color(0xFFC3B6C9),
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Text(
-          'Trimite email de resetare',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            height: 1.28, // line-height: 23px / font-size: 18px = 1.28
-            color: const Color(0xFF77677E),
-          ),
-        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
+              )
+            : Text(
+                'Resetează parola',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                  color: const Color(0xFF77677E),
+                ),
+              ),
       ),
     );
   }
 
-  void _resetPassword() {
-    // Validate email
-    if (_emailController.text.isEmpty) {
-      _showErrorDialog('Completati adresa de email.');
+  void _resetPassword() async {
+    // Check if token was provided
+    if (_token == null) {
+      _showErrorDialog('Token-ul lipsește. Încearcă din nou.');
+      Navigator.pushReplacementNamed(context, '/token');
       return;
     }
-
-    // Basic email validation
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(_emailController.text)) {
-      _showErrorDialog('Introduceti o adresa de email valida.');
-      return;
-    }
-
-    // TODO: Implement password reset logic
-    print('Resetare parola pentru email: ${_emailController.text}');
     
-    // Show success message
-    _showSuccessDialog();
+    // Validate fields
+    if (_newPasswordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
+      _showErrorDialog('Completați toate câmpurile.');
+      return;
+    }
+
+    // Password validation (minimum 8 characters, at least one uppercase, one lowercase, one number)
+    final password = _newPasswordController.text;
+    if (password.length < 8 ||
+        !password.contains(RegExp(r'[A-Z]')) ||
+        !password.contains(RegExp(r'[a-z]')) ||
+        !password.contains(RegExp(r'[0-9]'))) {
+      _showErrorDialog(
+          'Parola trebuie să conțină minim 8 caractere, o literă mare, o literă mică și un număr.');
+      return;
+    }
+
+    // Validate password match
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      _showErrorDialog('Parolele nu coincid.');
+      return;
+    }
+
+    // Show loading indicator
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Reset password with Firebase
+      final result = await _authService.resetPasswordWithToken(
+        token: _token!,
+        newPassword: _newPasswordController.text,
+        confirmPassword: _confirmPasswordController.text,
+      );
+
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result['success']) {
+        // Show success message with new token if available
+        if (result.containsKey('newToken')) {
+          _showSuccessDialogWithToken(result['newToken']);
+        } else {
+          _showSuccessDialog();
+        }
+      } else {
+        _showErrorDialog(result['message']);
+      }
+    } catch (e) {
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Eroare la resetarea parolei: $e');
+    }
+  }
+
+  void _showInfoDialog({required String title, required String message}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          title,
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF77677E),
+          ),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF866C93),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Am înțeles',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showErrorDialog(String message) {
@@ -323,6 +474,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   void _showSuccessDialog() {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text(
           'Succes',
@@ -333,7 +485,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
         ),
         content: Text(
-          'Un email cu instructiuni de resetare a fost trimis la adresa introdusa.',
+          'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
           style: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -347,7 +499,88 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               Navigator.pushReplacementNamed(context, '/login');
             },
             child: Text(
-              'Ok',
+              'Înapoi la conectare',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialogWithToken(String token) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Succes',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF77677E),
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF866C93),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Noul tău token de securitate:',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCEC7D1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                token,
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF77677E),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Păstrează acest token într-un loc sigur. Îl vei folosi dacă vei uita din nou parola.',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF866C93),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            child: Text(
+              'Înapoi la conectare',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

@@ -225,7 +225,7 @@ flex-grow: 0;
 /* Cum te numesti? */
 
 width: 352px;
-height: 16px;
+height: 24px;
 
 font-family: 'Outfit';
 font-style: normal;
@@ -312,10 +312,9 @@ flex-grow: 0;
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
 align-items: center;
 padding: 0px 8px;
-gap: 10px;
+gap: 8px;
 
 width: 368px;
 height: 24px;
@@ -330,14 +329,15 @@ flex-grow: 0;
 
 /* Creaza parola */
 
-width: 352px;
-height: 16px;
+width: 116px;
+height: 23px;
 
 font-family: 'Outfit';
 font-style: normal;
 font-weight: 600;
 font-size: 18px;
 line-height: 23px;
+/* identical to box height */
 display: flex;
 align-items: center;
 
@@ -347,7 +347,30 @@ color: #866C93;
 /* Inside auto layout */
 flex: none;
 order: 0;
-flex-grow: 1;
+flex-grow: 0;
+
+
+/* InfoButton */
+
+width: 16px;
+height: 16px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* InfoIcon */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 2px solid #77677E;
 
 
 /* Input */
@@ -394,7 +417,7 @@ order: 0;
 flex-grow: 1;
 
 
-/* InfoButton */
+/* ShowButton */
 
 width: 24px;
 height: 24px;
@@ -406,13 +429,13 @@ order: 1;
 flex-grow: 0;
 
 
-/* InfoIcon */
+/* Vector */
 
 position: absolute;
-left: 12.5%;
-right: 12.5%;
-top: 12.5%;
-bottom: 12.5%;
+left: 11.05%;
+right: 11.05%;
+top: 25%;
+bottom: 25%;
 
 border: 2px solid #77677E;
 
@@ -441,10 +464,9 @@ flex-grow: 0;
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
 align-items: center;
 padding: 0px 8px;
-gap: 10px;
+gap: 8px;
 
 width: 368px;
 height: 24px;
@@ -459,14 +481,15 @@ flex-grow: 0;
 
 /* Repeta parola */
 
-width: 352px;
-height: 16px;
+width: 116px;
+height: 23px;
 
 font-family: 'Outfit';
 font-style: normal;
 font-weight: 600;
 font-size: 18px;
 line-height: 23px;
+/* identical to box height */
 display: flex;
 align-items: center;
 
@@ -476,7 +499,30 @@ color: #866C93;
 /* Inside auto layout */
 flex: none;
 order: 0;
-flex-grow: 1;
+flex-grow: 0;
+
+
+/* InfoButton */
+
+width: 16px;
+height: 16px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* InfoIcon */
+
+position: absolute;
+left: 12.5%;
+right: 12.5%;
+top: 12.5%;
+bottom: 12.5%;
+
+border: 2px solid #77677E;
 
 
 /* Input */
@@ -523,7 +569,7 @@ order: 0;
 flex-grow: 1;
 
 
-/* InfoButton */
+/* Edit / Show */
 
 width: 24px;
 height: 24px;
@@ -535,13 +581,13 @@ order: 1;
 flex-grow: 0;
 
 
-/* InfoIcon */
+/* Vector */
 
 position: absolute;
-left: 12.5%;
-right: 12.5%;
-top: 12.5%;
-bottom: 12.5%;
+left: 11.05%;
+right: 11.05%;
+top: 25%;
+bottom: 25%;
 
 border: 2px solid #77677E;
 
@@ -589,7 +635,7 @@ flex-grow: 0;
 /* Alege echipa */
 
 width: 352px;
-height: 16px;
+height: 24px;
 
 font-family: 'Outfit';
 font-style: normal;

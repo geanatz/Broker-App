@@ -225,7 +225,7 @@ flex-grow: 0;
 /* Agent */
 
 width: 352px;
-height: 16px;
+height: 24px;
 
 font-family: 'Outfit';
 font-style: normal;
@@ -354,7 +354,7 @@ flex-grow: 0;
 /* Parola */
 
 width: 352px;
-height: 16px;
+height: 24px;
 
 font-family: 'Outfit';
 font-style: normal;

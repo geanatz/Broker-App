@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/auth_service.dart'; // Import AuthService
 
 class TokenScreen extends StatefulWidget {
   const TokenScreen({super.key});
@@ -12,6 +13,8 @@ class TokenScreen extends StatefulWidget {
 
 class _TokenScreenState extends State<TokenScreen> {
   final _tokenController = TextEditingController();
+  final AuthService _authService = AuthService(); // Initialize AuthService
+  bool _isLoading = false; // Add loading state
   
   @override
   void dispose() {
@@ -235,10 +238,7 @@ class _TokenScreenState extends State<TokenScreen> {
 
   Widget _buildVerifyButton() {
     return InkWell(
-      onTap: () {
-        // Handle token verification
-        _verifyToken();
-      },
+      onTap: _isLoading ? null : _verifyToken, // Disable button when loading
       child: Container(
         width: 384,
         height: 48,
@@ -247,34 +247,63 @@ class _TokenScreenState extends State<TokenScreen> {
           color: const Color(0xFFC3B6C9),
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Text(
-          'Verifica token',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            height: 1.28, // line-height: 23px / font-size: 18px = 1.28
-            color: const Color(0xFF77677E),
-          ),
-        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
+              )
+            : Text(
+                'Verifică token',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                  color: const Color(0xFF77677E),
+                ),
+              ),
       ),
     );
   }
 
-  void _verifyToken() {
-    // Validate token
+  void _verifyToken() async {
+    // Validate token input
     if (_tokenController.text.isEmpty) {
-      _showErrorDialog('Introduceti tokenul.');
+      _showErrorDialog('Introduceți tokenul.');
       return;
     }
 
-    // TODO: Implement token verification logic against stored token
-    print('Verificare token: ${_tokenController.text}');
-    
-    // If token is verified, navigate to reset password
-    if (_tokenController.text.length >= 6) {
-      Navigator.pushReplacementNamed(context, '/reset_password');
-    } else {
-      _showErrorDialog('Token invalid.');
+    // Show loading indicator
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Verify token with Firebase
+      final result = await _authService.verifyToken(_tokenController.text.trim());
+
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result['success']) {
+        // Navigate to reset password screen with token and agent ID
+        Navigator.pushReplacementNamed(
+          context, 
+          '/reset_password',
+          arguments: {
+            'token': _tokenController.text.trim(),
+            'agentId': result['agentId'],
+          }
+        );
+      } else {
+        _showErrorDialog(result['message']);
+      }
+    } catch (e) {
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Eroare la verificarea tokenului: $e');
     }
   }
 

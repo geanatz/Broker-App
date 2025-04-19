@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/auth_service.dart'; // Import AuthService
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,10 +14,33 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   
+  final AuthService _authService = AuthService(); // Initialize AuthService
+  bool _isLoading = false; // Add loading state
+  
   String? _selectedAgent;
-  final List<String> _agents = ['Agent 1', 'Agent 2', 'Agent 3'];
+  List<String> _agents = []; // Will be filled from Firestore
   
   bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAgents(); // Load agents from Firestore
+  }
+
+  // Load agents from Firestore
+  Future<void> _loadAgents() async {
+    try {
+      final agents = await _authService.getAgentNames();
+      
+      setState(() {
+        _agents = agents;
+      });
+    } catch (e) {
+      print('Error loading agents: $e');
+      // Show error if needed
+    }
+  }
 
   @override
   void dispose() {
@@ -88,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       children: [
                         TextSpan(
-                          text: 'Creaza unul!',
+                          text: 'Creează unul!',
                           style: GoogleFonts.outfit(
                             fontSize: 16,
                             fontWeight: FontWeight.w600, // Changed to 600 for emphasis
@@ -213,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: DropdownButton<String>(
               isExpanded: true,
               hint: Text(
-                'Selecteaza agent',
+                'Selectează agent',
                 style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -348,10 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginButton() {
     return InkWell(
-      onTap: () {
-        // Handle login
-        _login();
-      },
+      onTap: _isLoading ? null : _login, // Disable button when loading
       child: Container(
         width: 384,
         height: 48,
@@ -360,31 +381,60 @@ class _LoginScreenState extends State<LoginScreen> {
           color: const Color(0xFFC3B6C9),
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Text(
-          'Conectare',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            height: 1.28, // line-height: 23px / font-size: 18px = 1.28
-            color: const Color(0xFF77677E),
-          ),
-        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
+              )
+            : Text(
+                'Conectare',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                  color: const Color(0xFF77677E),
+                ),
+              ),
       ),
     );
   }
 
-  void _login() {
+  void _login() async {
     // Validate fields
     if (_selectedAgent == null || _passwordController.text.isEmpty) {
       _showErrorDialog('Completați toate câmpurile.');
       return;
     }
 
-    // TODO: Implement login logic
-    print('Login: $_selectedAgent');
-    
-    // Navigate to dashboard
-    Navigator.pushReplacementNamed(context, '/dashboard');
+    // Show loading indicator
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Login with Firebase Authentication
+      final result = await _authService.loginAgent(
+        agentName: _selectedAgent!,
+        password: _passwordController.text,
+      );
+
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result['success']) {
+        // Navigate to dashboard
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        _showErrorDialog(result['message']);
+      }
+    } catch (e) {
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Eroare la autentificare: $e');
+    }
   }
 
   void _showErrorDialog(String message) {

@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
+import '../../services/auth_service.dart'; // Import AuthService
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,6 +16,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  
+  final AuthService _authService = AuthService(); // Initialize AuthService
+  bool _isLoading = false; // Add loading state
   
   String? _selectedTeam;
   final List<String> _teams = ['Echipa Andreea', 'Echipa Cristina', 'Echipa Scarlat'];
@@ -388,10 +392,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildRegisterButton() {
     return InkWell(
-      onTap: () {
-        // Handle registration
-        _register();
-      },
+      onTap: _isLoading ? null : _register, // Disable button when loading
       child: Container(
         width: 384,
         height: 48,
@@ -400,54 +401,76 @@ class _RegisterScreenState extends State<RegisterScreen> {
           color: const Color(0xFFC3B6C9),
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Text(
-          'Creaza cont',
-          style: GoogleFonts.outfit(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-            height: 1.28, // line-height: 23px / font-size: 18px = 1.28
-            color: const Color(0xFF77677E),
-          ),
-        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
+              )
+            : Text(
+                'Creează cont',
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  height: 1.28,
+                  color: const Color(0xFF77677E),
+                ),
+              ),
       ),
     );
   }
 
-  void _register() {
+  void _register() async {
     // Validate fields
     if (_nameController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty ||
         _selectedTeam == null) {
-      _showErrorDialog('Completati toate campurile.');
+      _showErrorDialog('Completați toate câmpurile.');
       return;
     }
 
-    // Validate password match
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showErrorDialog('Parolele nu coincid.');
+    // Password validation (minimum 8 characters, at least one uppercase, one lowercase, one number)
+    final password = _passwordController.text;
+    if (password.length < 8 ||
+        !password.contains(RegExp(r'[A-Z]')) ||
+        !password.contains(RegExp(r'[a-z]')) ||
+        !password.contains(RegExp(r'[0-9]'))) {
+      _showErrorDialog(
+          'Parola trebuie să conțină minim 8 caractere, o literă mare, o literă mică și un număr.');
       return;
     }
 
-    // TODO: Implement registration logic
-    print('inregistrare: ${_nameController.text}, ${_selectedTeam}');
-    
-    // Generate a token for password reset
-    final token = _generateToken();
-    
-    // TODO: Save token in a secure storage in a real app
-    print('Token generat: $token');
-    
-    // Show token to user
-    _showTokenDialog(token);
-  }
+    // Show loading indicator
+    setState(() {
+      _isLoading = true;
+    });
 
-  String _generateToken() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final random = Random();
-    return String.fromCharCodes(
-      Iterable.generate(8, (_) => chars.codeUnitAt(random.nextInt(chars.length)))
-    );
+    try {
+      // Register agent with Firebase Authentication
+      final result = await _authService.registerAgent(
+        agentName: _nameController.text.trim(),
+        password: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
+        team: _selectedTeam!,
+      );
+
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result['success']) {
+        // Show token to user
+        _showTokenDialog(result['token']);
+      } else {
+        _showErrorDialog(result['message']);
+      }
+    } catch (e) {
+      // Hide loading indicator
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Eroare la înregistrare: $e');
+    }
   }
 
   void _showTokenDialog(String token) {

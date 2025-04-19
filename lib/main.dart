@@ -3,28 +3,35 @@ import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/register.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/reset_password.dart';
-import 'screens/auth/token.dart';
+import 'screens/auth/token.dart'; // Poți păstra acest ecran pentru moment, dar nu va fi folosit în fluxul standard de resetare parolă Firebase
+import 'package:firebase_core/firebase_core.dart'; // Import Firebase Core
+// Importă opțiunile default generate de FlutterFire CLI
+import 'firebase_options.dart'; // Acest fișier este generat de comanda `flutterfire configure`
 
 // For DevTools inspection
 class DebugOptions {
   static bool showMaterialGrid = false;
   static bool showSemanticsDebugger = false;
   static bool showWidgetInspector = false;
-  
+
   static void toggleMaterialGrid() {
     showMaterialGrid = !showMaterialGrid;
   }
-  
+
   static void toggleSemanticsDebugger() {
     showSemanticsDebugger = !showSemanticsDebugger;
   }
-  
+
   static void toggleWidgetInspector() {
     showWidgetInspector = !showWidgetInspector;
   }
 }
 
-void main() {
+void main() async { // Make main async
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter binding is initialized
+  await Firebase.initializeApp( // Initialize Firebase
+    options: DefaultFirebaseOptions.currentPlatform, // Use default options
+  );
   runApp(const MyApp());
 }
 
@@ -42,7 +49,7 @@ class _MyAppState extends State<MyApp> {
 
   void _handleTap() {
     final now = DateTime.now();
-    if (_lastTapTime != null && 
+    if (_lastTapTime != null &&
         now.difference(_lastTapTime!).inMilliseconds < 500) {
       _tapCount++;
       if (_tapCount == 5) { // 5 quick taps to toggle inspector
@@ -100,13 +107,13 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         ),
-        initialRoute: '/login',
+        initialRoute: '/login', // Or check auth state here
         routes: {
           '/register': (context) => const RegisterScreen(),
           '/login': (context) => const LoginScreen(),
-          '/token': (context) => const TokenScreen(),
+          '/token': (context) => const TokenScreen(), // Keeping for now, but explain its role
           '/reset_password': (context) => const ResetPasswordScreen(),
-          '/dashboard': (context) => const Placeholder(),
+          '/dashboard': (context) => const Placeholder(), // Replace with your dashboard screen
         },
       ),
     );
