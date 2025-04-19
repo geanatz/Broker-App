@@ -318,14 +318,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: IconButton(
-                  icon: SvgPicture.asset(
-                    'assets/ShowButton.svg',
-                    width: 24,
-                    height: 24,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF77677E),
-                      BlendMode.srcIn,
-                    ),
+                  icon: Icon(
+                    // Change icon based on password visibility (Corrected logic)
+                    (isNewPassword ? _obscureNewPassword : _obscureConfirmPassword)
+                        ? Icons.visibility // Show visibility icon when obscured
+                        : Icons.visibility_off, // Show visibility_off icon when visible
+                    color: const Color(0xFF77677E), // Use the same color as Figma design
+                    size: 24, // Match the size from Figma
                   ),
                   onPressed: () {
                     setState(() {
