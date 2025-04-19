@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 
 class RegisterScreen extends StatefulWidget {
@@ -15,7 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   
   String? _selectedTeam;
-  final List<String> _teams = ['Echipa 1', 'Echipa 2', 'Echipa 3'];
+  final List<String> _teams = ['Echipa Andreea', 'Echipa Cristina', 'Echipa Scarlat'];
   
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -37,9 +39,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            end: Alignment.bottomLeft,
             colors: [Color(0xFFA4B8C2), Color(0xFFC2A4A4)],
-            transform: GradientRotation(107.56 * 3.14159 / 180),
           ),
         ),
         child: Center(
@@ -81,12 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hintText: 'Introdu parola',
                         controller: _passwordController,
                         isPassword: true,
-                        obscureText: _obscurePassword,
-                        onToggleVisibility: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                        showInfoButton: true,
                       ),
                       
                       const SizedBox(height: 8),
@@ -97,12 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hintText: 'Introdu parola iar',
                         controller: _confirmPasswordController,
                         isPassword: true,
-                        obscureText: _obscureConfirmPassword,
-                        onToggleVisibility: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
+                        showInfoButton: true,
                       ),
                       
                       const SizedBox(height: 8),
@@ -121,17 +112,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Text.rich(
                     TextSpan(
                       text: 'Ai deja un cont de consultant? ',
-                      style: TextStyle(
-                        fontFamily: 'Outfit',
+                      style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF866C93),
+                        height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                        color: const Color(0xFF866C93),
                       ),
                       children: [
                         TextSpan(
                           text: 'Conecteaza-te!',
-                          style: TextStyle(
-                            decoration: TextDecoration.underline,
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600, // Changed to 600 to match Figma spec
+                            height: 1.25,
+                            color: const Color(0xFF77677E), // Darker color for emphasis
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
@@ -172,11 +166,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
                     'Bun venit in echipa!',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF77677E),
+                      height: 1.25, // line-height: 25px / font-size: 20px = 1.25
+                      color: const Color(0xFF77677E),
                     ),
                   ),
                 ),
@@ -184,11 +178,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
                     'Hai sa oficializam intrarea ta in sistem.',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF866C93),
+                      height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                      color: const Color(0xFF866C93),
                     ),
                   ),
                 ),
@@ -204,13 +198,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Text(
-              'M',
-              style: TextStyle(
-                fontFamily: 'Urbanist',
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF866C93),
+            child: SvgPicture.asset(
+              'assets/Logo.svg',
+              width: 48,
+              height: 48,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF866C93),
+                BlendMode.srcIn,
               ),
             ),
           ),
@@ -224,8 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required String hintText,
     required TextEditingController controller,
     bool isPassword = false,
-    bool obscureText = false,
-    VoidCallback? onToggleVisibility,
+    bool showInfoButton = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,11 +228,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             title,
-            style: TextStyle(
-              fontFamily: 'Outfit',
+            style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF866C93),
+              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              color: const Color(0xFF866C93),
             ),
           ),
         ),
@@ -256,35 +249,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: controller,
-                  obscureText: isPassword ? obscureText : false,
-                  decoration: InputDecoration(
-                    hintText: hintText,
-                    hintStyle: TextStyle(
-                      fontFamily: 'Outfit',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: controller,
+                    obscureText: isPassword ? true : false, // Always obscure password fields
+                    decoration: InputDecoration(
+                      hintText: hintText,
+                      hintStyle: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                        color: const Color(0xFF77677E),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero, // Remove padding from TextField itself
+                      isDense: true, // Makes the field more compact
+                    ),
+                    style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF77677E),
+                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      color: const Color(0xFF77677E),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  style: TextStyle(
-                    fontFamily: 'Outfit',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF77677E),
                   ),
                 ),
               ),
-              if (isPassword)
-                IconButton(
-                  icon: Icon(
-                    obscureText ? Icons.visibility_off : Icons.visibility,
-                    color: Color(0xFF77677E),
+              if (showInfoButton)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: IconButton(
+                    icon: SvgPicture.asset(
+                      'assets/InfoButton.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF77677E),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    onPressed: () {
+                      // Show password info dialog
+                      _showInfoDialog(
+                        title: 'Cerinte parola',
+                        message: 'Parola trebuie sa contina minim 8 caractere, o litera mare, o litera mica si un numar.',
+                      );
+                    },
+                    padding: EdgeInsets.zero, // Remove padding from IconButton
+                    constraints: const BoxConstraints(
+                      minWidth: 24,
+                      minHeight: 24
+                    ), // Set minimum size
                   ),
-                  onPressed: onToggleVisibility,
                 ),
             ],
           ),
@@ -302,11 +318,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'Alege echipa',
-            style: TextStyle(
-              fontFamily: 'Outfit',
+            style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF866C93),
+              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              color: const Color(0xFF866C93),
             ),
           ),
         ),
@@ -326,28 +342,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
               isExpanded: true,
               hint: Text(
                 'Selecteaza echipa',
-                style: TextStyle(
-                  fontFamily: 'Outfit',
+                style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF77677E),
+                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                  color: const Color(0xFF77677E),
                 ),
               ),
               value: _selectedTeam,
-              icon: Icon(
-                Icons.keyboard_arrow_down,
-                color: Color(0xFF695C70),
+              icon: SvgPicture.asset(
+                'assets/DropdownButton.svg',
+                width: 24,
+                height: 24,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF695C70),
+                  BlendMode.srcIn,
+                ),
               ),
               items: _teams.map((String team) {
                 return DropdownMenuItem<String>(
                   value: team,
                   child: Text(
                     team,
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF77677E),
+                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      color: const Color(0xFF77677E),
                     ),
                   ),
                 );
@@ -357,7 +378,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   _selectedTeam = newValue;
                 });
               },
-              dropdownColor: Color(0xFFC3B6C9),
+              dropdownColor: const Color(0xFFC3B6C9),
             ),
           ),
         ),
@@ -381,11 +402,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         child: Text(
           'Creaza cont',
-          style: TextStyle(
-            fontFamily: 'Outfit',
+          style: GoogleFonts.outfit(
             fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF77677E),
+            height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+            color: const Color(0xFF77677E),
           ),
         ),
       ),
@@ -398,7 +419,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty ||
         _selectedTeam == null) {
-      _showErrorDialog('Completați toate câmpurile.');
+      _showErrorDialog('Completati toate campurile.');
       return;
     }
 
@@ -409,7 +430,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     // TODO: Implement registration logic
-    print('Înregistrare: ${_nameController.text}, ${_selectedTeam}');
+    print('inregistrare: ${_nameController.text}, ${_selectedTeam}');
     
     // Generate a token for password reset
     final token = _generateToken();
@@ -434,27 +455,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('Token de securitate'),
+        title: Text(
+          'Token de securitate',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF77677E),
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Acest token este cheia de securitate a contului tău. Păstrează-l într-un loc sigur, vei avea nevoie de el pentru a-ți reseta parola în caz că o uiți.',
-              style: TextStyle(fontSize: 16),
+              'Acest token este cheia de securitate a contului tau. Pastreaza-l intr-un loc sigur, vei avea nevoie de el pentru a-ti reseta parola in caz ca o uiti.',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF866C93),
+              ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Color(0xFFCEC7D1),
+                color: const Color(0xFFCEC7D1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 token,
-                style: TextStyle(
+                style: GoogleFonts.outfit(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF77677E),
+                  color: const Color(0xFF77677E),
                 ),
               ),
             ),
@@ -466,7 +498,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Navigator.pop(context);
               Navigator.pushReplacementNamed(context, '/login');
             },
-            child: Text('Am înțeles, continuă'),
+            child: Text(
+              'Am inteles, continua',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showInfoDialog({required String title, required String message}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          title,
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF77677E),
+          ),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF866C93),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Am inteles',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
           ),
         ],
       ),
@@ -477,12 +553,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Eroare'),
-        content: Text(message),
+        title: Text(
+          'Eroare',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF77677E),
+          ),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF866C93),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Ok'),
+            child: Text(
+              'Ok',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
           ),
         ],
       ),

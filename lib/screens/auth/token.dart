@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TokenScreen extends StatefulWidget {
   const TokenScreen({super.key});
@@ -26,9 +28,8 @@ class _TokenScreenState extends State<TokenScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            end: Alignment.bottomLeft,
             colors: [Color(0xFFA4B8C2), Color(0xFFC2A4A4)],
-            transform: GradientRotation(107.56 * 3.14159 / 180),
           ),
         ),
         child: Center(
@@ -64,37 +65,34 @@ class _TokenScreenState extends State<TokenScreen> {
                 const SizedBox(height: 8),
                 
                 // Go back to login link
-                InkWell(
-                  onTap: () {
-                    // Navigate to login screen
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text.rich(
-                      TextSpan(
-                        text: 'Nu ai token? Înapoi la ',
-                        style: TextStyle(
-                          fontFamily: 'Outfit',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF866C93),
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'conectare',
-                            style: TextStyle(
-                              decoration: TextDecoration.underline,
-                            ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                Navigator.pushReplacementNamed(context, '/login');
-                              },
-                          ),
-                        ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'Ti-a revenit memoria? ',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                        color: const Color(0xFF866C93),
                       ),
-                      textAlign: TextAlign.center,
+                      children: [
+                        TextSpan(
+                          text: 'Conecteaza-te!',
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            height: 1.25,
+                            color: const Color(0xFF77677E), // Darker color for emphasis
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.pushReplacementNamed(context, '/login');
+                            },
+                        ),
+                      ],
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
                 
@@ -125,24 +123,24 @@ class _TokenScreenState extends State<TokenScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
-                    'Înainte, dovedește că ești tu!',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    'Inainte, dovedeste ca esti tu!',
+                    style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF77677E),
+                      height: 1.25, // line-height: 25px / font-size: 20px = 1.25
+                      color: const Color(0xFF77677E),
                     ),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
-                    'Caută-ți tokenul secret.',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    'Cauta-ti tokenul secret.',
+                    style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF866C93),
+                      height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                      color: const Color(0xFF866C93),
                     ),
                   ),
                 ),
@@ -158,13 +156,13 @@ class _TokenScreenState extends State<TokenScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Text(
-              'M',
-              style: TextStyle(
-                fontFamily: 'Urbanist',
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF866C93),
+            child: SvgPicture.asset(
+              'assets/Logo.svg',
+              width: 48,
+              height: 48,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF866C93),
+                BlendMode.srcIn,
               ),
             ),
           ),
@@ -182,11 +180,11 @@ class _TokenScreenState extends State<TokenScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'Token secret',
-            style: TextStyle(
-              fontFamily: 'Outfit',
+            style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF866C93),
+              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              color: const Color(0xFF866C93),
             ),
           ),
         ),
@@ -203,24 +201,28 @@ class _TokenScreenState extends State<TokenScreen> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _tokenController,
-                  decoration: InputDecoration(
-                    hintText: 'Introdu tokenul tău',
-                    hintStyle: TextStyle(
-                      fontFamily: 'Outfit',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: _tokenController,
+                    decoration: InputDecoration(
+                      hintText: 'Introdu tokenul tau',
+                      hintStyle: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                        color: const Color(0xFF77677E),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero, // Remove padding from TextField
+                      isDense: true, // Makes the field more compact
+                    ),
+                    style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF77677E),
+                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      color: const Color(0xFF77677E),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  style: TextStyle(
-                    fontFamily: 'Outfit',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF77677E),
                   ),
                 ),
               ),
@@ -246,12 +248,12 @@ class _TokenScreenState extends State<TokenScreen> {
           borderRadius: BorderRadius.circular(24),
         ),
         child: Text(
-          'Verifică token',
-          style: TextStyle(
-            fontFamily: 'Outfit',
+          'Verifica token',
+          style: GoogleFonts.outfit(
             fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF77677E),
+            height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+            color: const Color(0xFF77677E),
           ),
         ),
       ),
@@ -261,7 +263,7 @@ class _TokenScreenState extends State<TokenScreen> {
   void _verifyToken() {
     // Validate token
     if (_tokenController.text.isEmpty) {
-      _showErrorDialog('Introduceți tokenul.');
+      _showErrorDialog('Introduceti tokenul.');
       return;
     }
 
@@ -280,12 +282,33 @@ class _TokenScreenState extends State<TokenScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Eroare'),
-        content: Text(message),
+        title: Text(
+          'Eroare',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF77677E),
+          ),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF866C93),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Ok'),
+            child: Text(
+              'Ok',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
           ),
         ],
       ),

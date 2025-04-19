@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,9 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            end: Alignment.bottomLeft,
             colors: [Color(0xFFA4B8C2), Color(0xFFC2A4A4)],
-            transform: GradientRotation(107.56 * 3.14159 / 180),
           ),
         ),
         child: Center(
@@ -79,17 +80,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text.rich(
                     TextSpan(
                       text: 'Nu ai un cont de consultant? ',
-                      style: TextStyle(
-                        fontFamily: 'Outfit',
+                      style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF866C93),
+                        height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                        color: const Color(0xFF866C93),
                       ),
                       children: [
                         TextSpan(
                           text: 'Creaza unul!',
-                          style: TextStyle(
-                            decoration: TextDecoration.underline,
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600, // Changed to 600 for emphasis
+                            height: 1.25,
+                            color: const Color(0xFF77677E), // Darker color for emphasis
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
@@ -129,12 +133,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
-                    'E timpul să facem cifre!',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    'E timpul sa facem cifre!',
+                    style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF77677E),
+                      height: 1.25, // line-height: 25px / font-size: 20px = 1.25
+                      color: const Color(0xFF77677E),
                     ),
                   ),
                 ),
@@ -142,11 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
                     'Sper ca ai dormit bine, clientii asteapta!',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF866C93),
+                      height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                      color: const Color(0xFF866C93),
                     ),
                   ),
                 ),
@@ -162,13 +166,13 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Text(
-              'M',
-              style: TextStyle(
-                fontFamily: 'Urbanist',
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF866C93),
+            child: SvgPicture.asset(
+              'assets/Logo.svg',
+              width: 48,
+              height: 48,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF866C93),
+                BlendMode.srcIn,
               ),
             ),
           ),
@@ -186,11 +190,11 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'Agent',
-            style: TextStyle(
-              fontFamily: 'Outfit',
+            style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF866C93),
+              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              color: const Color(0xFF866C93),
             ),
           ),
         ),
@@ -210,28 +214,33 @@ class _LoginScreenState extends State<LoginScreen> {
               isExpanded: true,
               hint: Text(
                 'Selecteaza agent',
-                style: TextStyle(
-                  fontFamily: 'Outfit',
+                style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF77677E),
+                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                  color: const Color(0xFF77677E),
                 ),
               ),
               value: _selectedAgent,
-              icon: Icon(
-                Icons.keyboard_arrow_down,
-                color: Color(0xFF695C70),
+              icon: SvgPicture.asset(
+                'assets/DropdownButton.svg',
+                width: 24,
+                height: 24,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF695C70),
+                  BlendMode.srcIn,
+                ),
               ),
               items: _agents.map((String agent) {
                 return DropdownMenuItem<String>(
                   value: agent,
                   child: Text(
                     agent,
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF77677E),
+                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      color: const Color(0xFF77677E),
                     ),
                   ),
                 );
@@ -241,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   _selectedAgent = newValue;
                 });
               },
-              dropdownColor: Color(0xFFC3B6C9),
+              dropdownColor: const Color(0xFFC3B6C9),
             ),
           ),
         ),
@@ -258,11 +267,11 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'Parola',
-            style: TextStyle(
-              fontFamily: 'Outfit',
+            style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF866C93),
+              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              color: const Color(0xFF866C93),
             ),
           ),
         ),
@@ -279,39 +288,56 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    hintText: 'Introdu parola',
-                    hintStyle: TextStyle(
-                      fontFamily: 'Outfit',
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: TextField(
+                    controller: _passwordController,
+                    obscureText: true, // Always obscure password
+                    decoration: InputDecoration(
+                      hintText: 'Introdu parola',
+                      hintStyle: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                        color: const Color(0xFF77677E),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero, // Remove padding from TextField
+                      isDense: true, // Makes the field more compact
+                    ),
+                    style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF77677E),
+                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      color: const Color(0xFF77677E),
                     ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  style: TextStyle(
-                    fontFamily: 'Outfit',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF77677E),
                   ),
                 ),
               ),
               // Reset Password Button
-              IconButton(
-                icon: Icon(
-                  Icons.help_outline,
-                  color: Color(0xFF77677E),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: IconButton(
+                  icon: SvgPicture.asset(
+                    'assets/HelpButton.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: const ColorFilter.mode(
+                      Color(0xFF77677E),
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  onPressed: () {
+                    // Navigate to token screen for password reset
+                    Navigator.pushNamed(context, '/token');
+                  },
+                  tooltip: 'Am uitat parola',
+                  padding: EdgeInsets.zero, // Remove padding from IconButton
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24
+                  ), // Set minimum size
                 ),
-                onPressed: () {
-                  // Navigate to token screen for password reset
-                  Navigator.pushNamed(context, '/token');
-                },
-                tooltip: 'Am uitat parola',
               ),
             ],
           ),
@@ -336,11 +362,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Text(
           'Conectare',
-          style: TextStyle(
-            fontFamily: 'Outfit',
+          style: GoogleFonts.outfit(
             fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF77677E),
+            height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+            color: const Color(0xFF77677E),
           ),
         ),
       ),
@@ -365,12 +391,33 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Eroare'),
-        content: Text(message),
+        title: Text(
+          'Eroare',
+          style: GoogleFonts.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF77677E),
+          ),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF866C93),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Ok'),
+            child: Text(
+              'Ok',
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF866C93),
+              ),
+            ),
           ),
         ],
       ),

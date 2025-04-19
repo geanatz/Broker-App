@@ -1,54 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/register.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/reset_password.dart';
 import 'screens/auth/token.dart';
 
+// For DevTools inspection
+class DebugOptions {
+  static bool showMaterialGrid = false;
+  static bool showSemanticsDebugger = false;
+  static bool showWidgetInspector = false;
+  
+  static void toggleMaterialGrid() {
+    showMaterialGrid = !showMaterialGrid;
+  }
+  
+  static void toggleSemanticsDebugger() {
+    showSemanticsDebugger = !showSemanticsDebugger;
+  }
+  
+  static void toggleWidgetInspector() {
+    showWidgetInspector = !showWidgetInspector;
+  }
+}
+
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  // Listen for quick taps to show inspector
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+
+  void _handleTap() {
+    final now = DateTime.now();
+    if (_lastTapTime != null && 
+        now.difference(_lastTapTime!).inMilliseconds < 500) {
+      _tapCount++;
+      if (_tapCount == 5) { // 5 quick taps to toggle inspector
+        setState(() {
+          DebugOptions.toggleWidgetInspector();
+          // Enable DevTools features when widget inspector is enabled
+          if (DebugOptions.showWidgetInspector) {
+            DebugOptions.showMaterialGrid = true;
+          } else {
+            DebugOptions.showMaterialGrid = false;
+          }
+        });
+        _tapCount = 0;
+      }
+    } else {
+      _tapCount = 1;
+    }
+    _lastTapTime = now;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Broker App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        // mil sugu?
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF866C93),
-          primary: const Color(0xFF77677E),
-          secondary: const Color(0xFF866C93),
-          background: const Color(0xFFF2F2F2),
+    return GestureDetector(
+      onTap: _handleTap,
+      behavior: HitTestBehavior.translucent,
+      child: MaterialApp(
+        title: 'Broker App',
+        debugShowCheckedModeBanner: DebugOptions.showWidgetInspector, // Use this flag for inspection
+        debugShowMaterialGrid: DebugOptions.showMaterialGrid,
+        showSemanticsDebugger: DebugOptions.showSemanticsDebugger,
+        showPerformanceOverlay: false,
+        checkerboardRasterCacheImages: false,
+        checkerboardOffscreenLayers: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF866C93),
+            primary: const Color(0xFF77677E),
+            secondary: const Color(0xFF866C93),
+            background: const Color(0xFFF2F2F2),
+          ),
+          useMaterial3: true,
+          textTheme: GoogleFonts.outfitTextTheme(),
+          scaffoldBackgroundColor: Colors.white,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            centerTitle: true,
+            titleTextStyle: TextStyle(
+              color: Color(0xFF77677E),
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            iconTheme: IconThemeData(
+              color: Color(0xFF866C93),
+            ),
+          ),
         ),
-        fontFamily: 'Outfit',
+        initialRoute: '/login',
+        routes: {
+          '/register': (context) => const RegisterScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/token': (context) => const TokenScreen(),
+          '/reset_password': (context) => const ResetPasswordScreen(),
+          '/dashboard': (context) => const Placeholder(),
+        },
       ),
-      initialRoute: '/register',
-      routes: {
-        '/register': (context) => const RegisterScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/token': (context) => const TokenScreen(),
-        '/reset_password': (context) => const ResetPasswordScreen(),
-        '/dashboard': (context) => const Placeholder(),
-      },
     );
   }
 }
