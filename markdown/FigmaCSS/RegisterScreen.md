@@ -55,7 +55,7 @@ display: flex;
 flex-direction: column;
 justify-content: center;
 align-items: center;
-padding: 8px 0px 0px 8px;
+padding: 8px;
 gap: 4px;
 
 width: 296px;
@@ -71,8 +71,8 @@ flex-grow: 1;
 
 /* Bun venit in echipa! */
 
-width: 288px;
-height: 24px;
+width: 280px;
+height: 22px;
 
 font-family: 'Outfit';
 font-style: normal;
@@ -89,13 +89,13 @@ color: #77677E;
 flex: none;
 order: 0;
 align-self: stretch;
-flex-grow: 0;
+flex-grow: 1;
 
 
 /* Hai sa oficializam intrarea ta in sistem. */
 
-width: 288px;
-height: 24px;
+width: 280px;
+height: 22px;
 
 font-family: 'Outfit';
 font-style: normal;
@@ -112,7 +112,7 @@ color: #866C93;
 flex: none;
 order: 1;
 align-self: stretch;
-flex-grow: 0;
+flex-grow: 1;
 
 
 /* Logo */
@@ -136,10 +136,25 @@ order: 1;
 flex-grow: 0;
 
 
+/* Logo */
+
+width: 48px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
 /* M */
 
-width: 64px;
-height: 64px;
+position: absolute;
+width: 48px;
+height: 48px;
+left: calc(50% - 48px/2);
+top: calc(50% - 48px/2);
 
 font-family: 'Urbanist';
 font-style: normal;
@@ -152,11 +167,6 @@ text-align: center;
 
 color: #866C93;
 
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
 
 
 /* RegisterForm */

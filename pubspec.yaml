@@ -70,6 +70,8 @@ flutter:
     - assets/HelpButton.svg
     - assets/DropdownButton.svg
     - assets/InfoButton.svg
+    - assets/ShowButton.svg
+    - assets/HideButton.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

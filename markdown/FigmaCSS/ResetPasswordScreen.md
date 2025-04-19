@@ -136,10 +136,25 @@ order: 1;
 flex-grow: 0;
 
 
+/* Logo */
+
+width: 48px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
 /* M */
 
-width: 64px;
-height: 64px;
+position: absolute;
+width: 48px;
+height: 48px;
+left: calc(50% - 48px/2);
+top: calc(50% - 48px/2);
 
 font-family: 'Urbanist';
 font-style: normal;
@@ -152,11 +167,6 @@ text-align: center;
 
 color: #866C93;
 
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
 
 
 /* ResetPasswordForm */

@@ -4,6 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 import '../../services/auth_service.dart'; // Import AuthService
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -43,8 +45,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
-            end: Alignment.bottomLeft,
+            end: Alignment.bottomRight,
             colors: [Color(0xFFA4B8C2), Color(0xFFC2A4A4)],
+            stops: [0.0, 1.0],
           ),
         ),
         child: Center(
@@ -52,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             width: 400,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0x80F2F2F2),
+              color: const Color(0x80F2F2F2), // 50% opacity
               borderRadius: BorderRadius.circular(32),
             ),
             child: Column(
@@ -60,6 +63,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 // Header
                 _buildHeader(),
+                
+                const SizedBox(height: 8),
                 
                 // Form
                 Container(
@@ -73,8 +78,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       // Name Field
                       _buildTextField(
-                        title: 'Cum te numesti?',
-                        hintText: 'Introdu numele tau',
+                        title: 'Cum te numești?',
+                        hintText: 'Introdu numele tău',
                         controller: _nameController,
                       ),
                       
@@ -82,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       
                       // Password Field
                       _buildTextField(
-                        title: 'Creaza parola',
+                        title: 'Creează parolă',
                         hintText: 'Introdu parola',
                         controller: _passwordController,
                         isPassword: true,
@@ -93,11 +98,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       
                       // Confirm Password Field
                       _buildTextField(
-                        title: 'Repeta parola',
+                        title: 'Repetă parola',
                         hintText: 'Introdu parola iar',
                         controller: _confirmPasswordController,
                         isPassword: true,
-                        showInfoButton: true,
                       ),
                       
                       const SizedBox(height: 8),
@@ -112,33 +116,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 
                 // Login Link
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Ai deja un cont de consultant? ',
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        height: 1.25, // line-height: 20px / font-size: 16px = 1.25
-                        color: const Color(0xFF866C93),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Ai deja un cont de consultant? ',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          height: 1.25,
+                          color: const Color(0xFF866C93),
+                        ),
                       ),
-                      children: [
-                        TextSpan(
-                          text: 'Conecteaza-te!',
+                      TextButton(
+                        onPressed: () {
+                          Future.delayed(Duration.zero, () {
+                            Navigator.of(context).pushReplacementNamed('/login');
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Conectează-te!',
                           style: GoogleFonts.outfit(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600, // Changed to 600 to match Figma spec
+                            fontWeight: FontWeight.w600,
                             height: 1.25,
-                            color: const Color(0xFF77677E), // Darker color for emphasis
+                            color: const Color(0xFF77677E),
                           ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              Navigator.pushReplacementNamed(context, '/login');
-                            },
                         ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
                 
@@ -155,13 +167,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Title and Description
-          Expanded(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Title and Description
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,23 +181,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
-                    'Bun venit in echipa!',
+                    'Bun venit în echipă!',
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      height: 1.25, // line-height: 25px / font-size: 20px = 1.25
+                      height: 1.25,
                       color: const Color(0xFF77677E),
                     ),
                   ),
                 ),
+                const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
-                    'Hai sa oficializam intrarea ta in sistem.',
+                    'Hai să oficializăm intrarea ta în sistem.',
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                      height: 1.25,
                       color: const Color(0xFF866C93),
                     ),
                   ),
@@ -193,27 +206,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
           ),
-          
-          // Logo
-          Container(
-            width: 64,
-            height: 64,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: SvgPicture.asset(
-              'assets/Logo.svg',
-              width: 48,
-              height: 48,
-              colorFilter: const ColorFilter.mode(
-                Color(0xFF866C93),
-                BlendMode.srcIn,
-              ),
+        ),
+        
+        // Logo
+        Container(
+          width: 64,
+          height: 64,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: SvgPicture.asset(
+            'assets/Logo.svg',
+            width: 48,
+            height: 48,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF866C93),
+              BlendMode.srcIn,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -227,17 +240,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Field Title
+        // Field Title with Info Button (if needed)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            title,
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
-              color: const Color(0xFF866C93),
-            ),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  height: 1.28,
+                  color: const Color(0xFF866C93),
+                ),
+              ),
+              if (showInfoButton)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: IconButton(
+                    icon: SvgPicture.asset(
+                      'assets/InfoButton.svg',
+                      width: 16,
+                      height: 16,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF77677E),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    onPressed: () {
+                      // Show password info dialog
+                      _showInfoDialog(
+                        title: 'Cerințe parolă',
+                        message: 'Parola trebuie să conțină minim 8 caractere, o literă mare, o literă mică și un număr.',
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         
@@ -257,34 +301,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
                     controller: controller,
-                    obscureText: isPassword ? true : false, // Always obscure password fields
+                    obscureText: isPassword ? (controller == _passwordController ? _obscurePassword : _obscureConfirmPassword) : false,
                     decoration: InputDecoration(
                       hintText: hintText,
                       hintStyle: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
-                        height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                        height: 1.28,
                         color: const Color(0xFF77677E),
                       ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero, // Remove padding from TextField itself
-                      isDense: true, // Makes the field more compact
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
                     ),
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      height: 1.28,
                       color: const Color(0xFF77677E),
                     ),
                   ),
                 ),
               ),
-              if (showInfoButton)
+              if (isPassword)
                 Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: IconButton(
                     icon: SvgPicture.asset(
-                      'assets/InfoButton.svg',
+                      'assets/ShowButton.svg',
                       width: 24,
                       height: 24,
                       colorFilter: const ColorFilter.mode(
@@ -293,17 +337,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     onPressed: () {
-                      // Show password info dialog
-                      _showInfoDialog(
-                        title: 'Cerinte parola',
-                        message: 'Parola trebuie sa contina minim 8 caractere, o litera mare, o litera mica si un numar.',
-                      );
+                      setState(() {
+                        if (controller == _passwordController) {
+                          _obscurePassword = !_obscurePassword;
+                        } else if (controller == _confirmPasswordController) {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        }
+                      });
                     },
-                    padding: EdgeInsets.zero, // Remove padding from IconButton
+                    padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
                       minWidth: 24,
                       minHeight: 24
-                    ), // Set minimum size
+                    ),
                   ),
                 ),
             ],
@@ -325,7 +371,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              height: 1.28,
               color: const Color(0xFF866C93),
             ),
           ),
@@ -345,11 +391,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: DropdownButton<String>(
               isExpanded: true,
               hint: Text(
-                'Selecteaza echipa',
+                'Selectează echipa',
                 style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                  height: 1.28,
                   color: const Color(0xFF77677E),
                 ),
               ),
@@ -371,7 +417,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      height: 1.28,
                       color: const Color(0xFF77677E),
                     ),
                   ),
@@ -391,29 +437,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildRegisterButton() {
-    return InkWell(
-      onTap: _isLoading ? null : _register, // Disable button when loading
-      child: Container(
-        width: 384,
-        height: 48,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFFC3B6C9),
+    return Container(
+      width: 384,
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading ? null : _register,
           borderRadius: BorderRadius.circular(24),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: const Color(0xFFC3B6C9),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Center(
+              child: _isLoading
+                ? const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
+                  )
+                : Text(
+                    'Creează cont',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      height: 1.28,
+                      color: const Color(0xFF77677E),
+                    ),
+                  ),
+            ),
+          ),
         ),
-        child: _isLoading
-            ? const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
-              )
-            : Text(
-                'Creează cont',
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  height: 1.28,
-                  color: const Color(0xFF77677E),
-                ),
-              ),
       ),
     );
   }
@@ -490,7 +543,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Acest token este cheia de securitate a contului tau. Pastreaza-l intr-un loc sigur, vei avea nevoie de el pentru a-ti reseta parola in caz ca o uiti.',
+              'Acest token este cheia de securitate a contului tău. Păstrează-l într-un loc sigur, vei avea nevoie de el pentru a-ți reseta parola în caz că o uiți.',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -498,20 +551,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFCEC7D1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                token,
-                style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF77677E),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCEC7D1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      token,
+                      style: GoogleFonts.outfit(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF77677E),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.copy,
+                    color: Color(0xFF77677E),
+                  ),
+                  onPressed: () {
+                    // Copy token to clipboard
+                    Clipboard.setData(ClipboardData(text: token));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Token copiat în clipboard!',
+                          style: GoogleFonts.outfit(),
+                        ),
+                        backgroundColor: const Color(0xFF77677E),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -522,7 +600,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Navigator.pushReplacementNamed(context, '/login');
             },
             child: Text(
-              'Am inteles, continua',
+              'Am înțeles, continuă',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -559,7 +637,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Am inteles',
+              'Am înțeles',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

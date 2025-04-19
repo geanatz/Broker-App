@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/auth_service.dart'; // Import AuthService
@@ -57,8 +58,9 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
-            end: Alignment.bottomLeft,
+            end: Alignment.bottomRight,
             colors: [Color(0xFFA4B8C2), Color(0xFFC2A4A4)],
+            stops: [0.0, 1.0],
           ),
         ),
         child: Center(
@@ -66,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
             width: 400,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0x80F2F2F2),
+              color: const Color(0x80F2F2F2), // 50% opacity
               borderRadius: BorderRadius.circular(32),
             ),
             child: Column(
@@ -74,6 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 // Header
                 _buildHeader(),
+                
+                const SizedBox(height: 8),
                 
                 // Form
                 Container(
@@ -101,32 +105,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Register Link
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Nu ai un cont de consultant? ',
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        height: 1.25, // line-height: 20px / font-size: 16px = 1.25
-                        color: const Color(0xFF866C93),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Nu ai un cont de consultant? ',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          height: 1.25,
+                          color: const Color(0xFF866C93),
+                        ),
                       ),
-                      children: [
-                        TextSpan(
-                          text: 'Creează unul!',
+                      TextButton(
+                        onPressed: () {
+                          Future.delayed(Duration.zero, () {
+                            Navigator.of(context).pushReplacementNamed('/register');
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Creează unul!',
                           style: GoogleFonts.outfit(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600, // Changed to 600 for emphasis
+                            fontWeight: FontWeight.w600,
                             height: 1.25,
-                            color: const Color(0xFF77677E), // Darker color for emphasis
+                            color: const Color(0xFF77677E),
                           ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              Navigator.pushReplacementNamed(context, '/register');
-                            },
                         ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
                 
@@ -143,13 +155,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Title and Description
-          Expanded(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Title and Description
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,11 +173,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      height: 1.25, // line-height: 25px / font-size: 20px = 1.25
+                      height: 1.25,
                       color: const Color(0xFF77677E),
                     ),
                   ),
                 ),
+                const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
@@ -173,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      height: 1.25, // line-height: 20px / font-size: 16px = 1.25
+                      height: 1.25,
                       color: const Color(0xFF866C93),
                     ),
                   ),
@@ -181,27 +194,27 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
-          
-          // Logo
-          Container(
-            width: 64,
-            height: 64,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: SvgPicture.asset(
-              'assets/Logo.svg',
-              width: 48,
-              height: 48,
-              colorFilter: const ColorFilter.mode(
-                Color(0xFF866C93),
-                BlendMode.srcIn,
-              ),
+        ),
+        
+        // Logo
+        Container(
+          width: 64,
+          height: 64,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: SvgPicture.asset(
+            'assets/Logo.svg',
+            width: 48,
+            height: 48,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF866C93),
+              BlendMode.srcIn,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -217,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              height: 1.28,
               color: const Color(0xFF866C93),
             ),
           ),
@@ -241,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                  height: 1.28,
                   color: const Color(0xFF77677E),
                 ),
               ),
@@ -263,7 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      height: 1.28,
                       color: const Color(0xFF77677E),
                     ),
                   ),
@@ -294,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+              height: 1.28,
               color: const Color(0xFF866C93),
             ),
           ),
@@ -316,23 +329,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.only(left: 16),
                   child: TextField(
                     controller: _passwordController,
-                    obscureText: true, // Always obscure password
+                    obscureText: true, // Always obscured
                     decoration: InputDecoration(
                       hintText: 'Introdu parola',
                       hintStyle: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
-                        height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                        height: 1.28,
                         color: const Color(0xFF77677E),
                       ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero, // Remove padding from TextField
-                      isDense: true, // Makes the field more compact
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
                     ),
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
-                      height: 1.28, // line-height: 23px / font-size: 18px = 1.28
+                      height: 1.28,
                       color: const Color(0xFF77677E),
                     ),
                   ),
@@ -352,15 +365,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   onPressed: () {
-                    // Navigate to token screen for password reset
-                    Navigator.pushNamed(context, '/token');
+                    Future.delayed(Duration.zero, () {
+                      Navigator.of(context).pushNamed('/token');
+                    });
                   },
                   tooltip: 'Am uitat parola',
-                  padding: EdgeInsets.zero, // Remove padding from IconButton
+                  padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
                     minWidth: 24,
                     minHeight: 24
-                  ), // Set minimum size
+                  ),
                 ),
               ),
             ],
@@ -371,29 +385,36 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginButton() {
-    return InkWell(
-      onTap: _isLoading ? null : _login, // Disable button when loading
-      child: Container(
-        width: 384,
-        height: 48,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFFC3B6C9),
+    return Container(
+      width: 384,
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading ? null : _login,
           borderRadius: BorderRadius.circular(24),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: const Color(0xFFC3B6C9),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Center(
+              child: _isLoading
+                ? const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
+                  )
+                : Text(
+                    'Conectare',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      height: 1.28,
+                      color: const Color(0xFF77677E),
+                    ),
+                  ),
+            ),
+          ),
         ),
-        child: _isLoading
-            ? const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
-              )
-            : Text(
-                'Conectare',
-                style: GoogleFonts.outfit(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  height: 1.28, // line-height: 23px / font-size: 18px = 1.28
-                  color: const Color(0xFF77677E),
-                ),
-              ),
       ),
     );
   }
@@ -423,8 +444,10 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (result['success']) {
-        // Navigate to dashboard
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        // Navigate to dashboard using a more robust method
+        Future.delayed(Duration.zero, () {
+          Navigator.of(context).pushReplacementNamed('/dashboard');
+        });
       } else {
         _showErrorDialog(result['message']);
       }

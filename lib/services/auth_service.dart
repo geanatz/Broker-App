@@ -289,8 +289,21 @@ class AuthService {
         };
       }
 
-      // Generăm un token nou pentru resetări viitoare
-      final newToken = _uuid.v4();
+      // Folosim același token în loc să generăm unul nou
+      // Obține token-ul din baza de date
+      final tokenDoc = await _firestore
+          .collection(_tokensCollection)
+          .doc(agentId)
+          .get();
+      
+      if (!tokenDoc.exists) {
+        return {
+          'success': false,
+          'message': 'Token-ul nu a fost găsit',
+        };
+      }
+      
+      final existingToken = tokenDoc.data()?['token'] as String;
       
       // Încercăm să ștergem contul vechi, dar doar dacă știm parola veche
       // Deoarece nu avem parola veche, nu putem șterge contul vechi direct
@@ -319,9 +332,9 @@ class AuthService {
           'email': newEmail, // Stocăm explicit email-ul pentru referință ulterioară
         });
         
-        // Actualizăm token-ul
+        // Folosim același token pentru noul cont
         await _firestore.collection(_tokensCollection).doc(newUserId).set({
-          'token': newToken,
+          'token': existingToken, // Folosim token-ul existent
           'agentId': newUserId,
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -338,9 +351,8 @@ class AuthService {
         return {
           'success': true,
           'message': 'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
-          'newToken': newToken,
+          'token': existingToken, // Returnăm token-ul existent
           'username': agentName,
-          'newEmail': newEmail, // Includem și email-ul nou pentru debugging
         };
       } catch (authError) {
         if (authError is FirebaseAuthException && authError.code == 'email-already-in-use') {
@@ -365,9 +377,9 @@ class AuthService {
               'email': newEmailRetry,
             });
             
-            // Actualizăm token-ul
+            // Folosim același token pentru noul cont
             await _firestore.collection(_tokensCollection).doc(newUserId).set({
-              'token': newToken,
+              'token': existingToken, // Folosim token-ul existent
               'agentId': newUserId,
               'createdAt': FieldValue.serverTimestamp(),
             });
@@ -384,9 +396,8 @@ class AuthService {
             return {
               'success': true,
               'message': 'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
-              'newToken': newToken,
+              'token': existingToken, // Returnăm token-ul existent
               'username': agentName,
-              'newEmail': newEmailRetry,
             };
           } catch (e) {
             return {
