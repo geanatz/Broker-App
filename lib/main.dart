@@ -4,6 +4,7 @@ import 'screens/auth/register.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/reset_password.dart';
 import 'screens/auth/token.dart'; // Poți păstra acest ecran pentru moment, dar nu va fi folosit în fluxul standard de resetare parolă Firebase
+import 'screens/calendar_screen.dart'; // Import the CalendarScreen
 import 'package:firebase_core/firebase_core.dart'; // Import Firebase Core
 // Importă opțiunile default generate de FlutterFire CLI
 import 'firebase_options.dart'; // Acest fișier este generat de comanda `flutterfire configure`
@@ -107,13 +108,14 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         ),
-        initialRoute: '/login', // Or check auth state here
+        initialRoute: '/login', // Go directly to calendar for testing
         routes: {
           '/register': (context) => const RegisterScreen(),
           '/login': (context) => const LoginScreen(),
           '/token': (context) => const TokenScreen(), // Keeping for now, but explain its role
           '/reset_password': (context) => const ResetPasswordScreen(),
           '/dashboard': (context) => const Placeholder(), // Replace with your dashboard screen
+          '/calendar': (context) => const CalendarScreen(), // Add CalendarScreen route
         },
       ),
     );

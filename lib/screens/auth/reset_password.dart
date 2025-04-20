@@ -251,7 +251,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   padding: const EdgeInsets.only(left: 8),
                   child: IconButton(
                     icon: SvgPicture.asset(
-                      'assets/InfoButton.svg',
+                      'assets/InfoIcon.svg',
                       width: 16,
                       height: 16,
                       colorFilter: const ColorFilter.mode(

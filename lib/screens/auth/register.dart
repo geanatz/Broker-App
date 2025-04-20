@@ -259,7 +259,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   padding: const EdgeInsets.only(left: 8),
                   child: IconButton(
                     icon: SvgPicture.asset(
-                      'assets/InfoButton.svg',
+                      'assets/InfoIcon.svg',
                       width: 16,
                       height: 16,
                       colorFilter: const ColorFilter.mode(
@@ -400,7 +400,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               value: _selectedTeam,
               icon: SvgPicture.asset(
-                'assets/DropdownButton.svg',
+                'assets/DropdownIcon.svg',
                 width: 24,
                 height: 24,
                 colorFilter: const ColorFilter.mode(

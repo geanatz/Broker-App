@@ -260,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               value: _selectedAgent,
               icon: SvgPicture.asset(
-                'assets/DropdownButton.svg',
+                'assets/DropdownIcon.svg',
                 width: 24,
                 height: 24,
                 colorFilter: const ColorFilter.mode(
@@ -356,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.only(right: 16),
                 child: IconButton(
                   icon: SvgPicture.asset(
-                    'assets/HelpButton.svg',
+                    'assets/HelpIcon.svg',
                     width: 24,
                     height: 24,
                     colorFilter: const ColorFilter.mode(
@@ -420,6 +420,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() async {
+    // For testing purposes - directly navigate to calendar
+    Navigator.of(context).pushReplacementNamed('/calendar');
+    return;
+
     // Validate fields
     if (_selectedAgent == null || _passwordController.text.isEmpty) {
       _showErrorDialog('Completați toate câmpurile.');
@@ -444,10 +448,8 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (result['success']) {
-        // Navigate to dashboard using a more robust method
-        Future.delayed(Duration.zero, () {
-          Navigator.of(context).pushReplacementNamed('/dashboard');
-        });
+        // Navigate to calendar screen instead of dashboard
+        Navigator.of(context).pushReplacementNamed('/calendar');
       } else {
         _showErrorDialog(result['message']);
       }
