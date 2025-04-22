@@ -15,31 +15,43 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   
-  final AuthService _authService = AuthService(); // Initialize AuthService
-  bool _isLoading = false; // Add loading state
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
   
-  String? _selectedAgent;
-  List<String> _agents = []; // Will be filled from Firestore
+  String? _selectedConsultant;
+  List<String> _consultants = []; // Will be filled from Firestore
   
   bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
-    _loadAgents(); // Load agents from Firestore
+    _loadConsultants(); // Load consultants from Firestore
   }
 
-  // Load agents from Firestore
-  Future<void> _loadAgents() async {
+  // Load consultants from Firestore
+  Future<void> _loadConsultants() async {
+    setState(() { _isLoading = true; }); // Indicate loading
     try {
-      final agents = await _authService.getAgentNames();
+      final consultants = await _authService.getConsultantNames();
       
-      setState(() {
-        _agents = agents;
-      });
+      if (mounted) { // Check if widget is still in the tree
+        setState(() {
+          _consultants = consultants;
+          _isLoading = false;
+          // Optionally select the first consultant if list is not empty
+          // if (_consultants.isNotEmpty) { 
+          //   _selectedConsultant = _consultants.first;
+          // }
+        });
+      }
     } catch (e) {
-      print('Error loading agents: $e');
-      // Show error if needed
+      print('Error loading consultants: $e');
+      if (mounted) {
+         setState(() { _isLoading = false; });
+         // Show error if needed
+         _showErrorDialog('Eroare la încărcarea consultanților: $e');
+      }
     }
   }
 
@@ -89,8 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Agent Selection
-                      _buildAgentDropdown(),
+                      // Consultant Selection
+                      _buildConsultantDropdown(),
                       
                       const SizedBox(height: 8),
                       
@@ -119,9 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          Future.delayed(Duration.zero, () {
-                            Navigator.of(context).pushReplacementNamed('/register');
-                          });
+                          Navigator.of(context).pushReplacementNamed('/register');
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
@@ -218,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildAgentDropdown() {
+  Widget _buildConsultantDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -226,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
-            'Agent',
+            'Consultant',
             style: GoogleFonts.outfit(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -250,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: DropdownButton<String>(
               isExpanded: true,
               hint: Text(
-                'Selectează agent',
+                'Selectează consultant',
                 style: GoogleFonts.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -258,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: const Color(0xFF77677E),
                 ),
               ),
-              value: _selectedAgent,
+              value: _selectedConsultant,
               icon: SvgPicture.asset(
                 'assets/DropdownIcon.svg',
                 width: 24,
@@ -268,11 +278,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   BlendMode.srcIn,
                 ),
               ),
-              items: _agents.map((String agent) {
+              items: _consultants.map((String consultant) {
                 return DropdownMenuItem<String>(
-                  value: agent,
+                  value: consultant,
                   child: Text(
-                    agent,
+                    consultant,
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
@@ -284,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
-                  _selectedAgent = newValue;
+                  _selectedConsultant = newValue;
                 });
               },
               dropdownColor: const Color(0xFFC3B6C9),
@@ -365,9 +375,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   onPressed: () {
-                    Future.delayed(Duration.zero, () {
-                      Navigator.of(context).pushNamed('/token');
-                    });
+                    Navigator.of(context).pushNamed('/token');
                   },
                   tooltip: 'Am uitat parola',
                   padding: EdgeInsets.zero,
@@ -420,13 +428,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() async {
-    // For testing purposes - directly navigate to calendar
-    Navigator.of(context).pushReplacementNamed('/calendar');
-    return;
+    // For testing purposes - REMOVE THESE LINES
+    // Navigator.of(context).pushReplacementNamed('/calendar');
+    // return;
 
     // Validate fields
-    if (_selectedAgent == null || _passwordController.text.isEmpty) {
-      _showErrorDialog('Completați toate câmpurile.');
+    if (_selectedConsultant == null || _passwordController.text.isEmpty) {
+      _showErrorDialog('Selectați consultantul și introduceți parola.');
       return;
     }
 
@@ -437,8 +445,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       // Login with Firebase Authentication
-      final result = await _authService.loginAgent(
-        agentName: _selectedAgent!,
+      final result = await _authService.loginConsultant(
+        consultantName: _selectedConsultant!,
         password: _passwordController.text,
       );
 
@@ -449,7 +457,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (result['success']) {
         // Navigate to calendar screen instead of dashboard
-        Navigator.of(context).pushReplacementNamed('/calendar');
+        // Navigation is now handled by AuthWrapper in main.dart
+        // Navigator.of(context).pushReplacementNamed('/calendar');
+        print("Login successful, AuthWrapper should handle navigation."); // Add log
       } else {
         _showErrorDialog(result['message']);
       }

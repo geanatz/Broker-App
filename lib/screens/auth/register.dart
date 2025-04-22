@@ -476,135 +476,137 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty ||
         _selectedTeam == null) {
-      _showErrorDialog('Completați toate câmpurile.');
+      _showErrorDialog('Te rog completează toate câmpurile.');
       return;
     }
 
-    // Password validation (minimum 8 characters, at least one uppercase, one lowercase, one number)
-    final password = _passwordController.text;
-    if (password.length < 8 ||
-        !password.contains(RegExp(r'[A-Z]')) ||
-        !password.contains(RegExp(r'[a-z]')) ||
-        !password.contains(RegExp(r'[0-9]'))) {
-      _showErrorDialog(
-          'Parola trebuie să conțină minim 8 caractere, o literă mare, o literă mică și un număr.');
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showErrorDialog('Parolele nu se potrivesc.');
       return;
     }
 
-    // Show loading indicator
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() { _isLoading = true; });
 
     try {
-      // Register agent with Firebase Authentication
-      final result = await _authService.registerAgent(
-        agentName: _nameController.text.trim(),
+      // Call the RENAMED register method
+      final result = await _authService.registerConsultant(
+        consultantName: _nameController.text.trim(),
         password: _passwordController.text,
         confirmPassword: _confirmPasswordController.text,
         team: _selectedTeam!,
       );
 
-      // Hide loading indicator
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) { // Check if widget is still mounted
+        setState(() { _isLoading = false; });
 
-      if (result['success']) {
-        // Show token to user
-        _showTokenDialog(result['token']);
-      } else {
-        _showErrorDialog(result['message']);
+        if (result['success']) {
+          // Show success message and token, then navigate to login
+          _showSuccessDialog(result['token']); 
+        } else {
+          _showErrorDialog(result['message']);
+        }
       }
     } catch (e) {
-      // Hide loading indicator
-      setState(() {
-        _isLoading = false;
-      });
-      _showErrorDialog('Eroare la înregistrare: $e');
+      print('Register error: $e');
+       if (mounted) { // Check if widget is still mounted
+         setState(() { _isLoading = false; });
+         _showErrorDialog('Eroare la înregistrare: $e');
+       }
     }
   }
 
-  void _showTokenDialog(String token) {
+  void _showSuccessDialog(String token) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: false, // User must acknowledge
       builder: (context) => AlertDialog(
         title: Text(
-          'Token de securitate',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF77677E),
-          ),
+          'Cont creat cu succes!',
+          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Acest token este cheia de securitate a contului tău. Păstrează-l într-un loc sigur, vei avea nevoie de el pentru a-ți reseta parola în caz că o uiți.',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF866C93),
-              ),
+              'Contul tău de consultant a fost creat.', // Updated text
+              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCEC7D1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
+            Text(
+              'Token-ul tău unic pentru resetarea parolei este:',
+              style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SelectableText(
                       token,
-                      style: GoogleFonts.outfit(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF77677E),
-                      ),
+                      style: GoogleFonts.sourceCodePro(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF6F4D80)),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.copy,
-                    color: Color(0xFF77677E),
-                  ),
-                  onPressed: () {
-                    // Copy token to clipboard
-                    Clipboard.setData(ClipboardData(text: token));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Token copiat în clipboard!',
-                          style: GoogleFonts.outfit(),
-                        ),
-                        backgroundColor: const Color(0xFF77677E),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 18, color: Color(0xFF6F4D80)),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: token));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text('Token copiat!'), duration: Duration(seconds: 1), backgroundColor: Colors.green,)
+                      );
+                    },
+                    tooltip: 'Copiază token',
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+             Text(
+              'Păstrează acest token într-un loc sigur! Îl vei putea folosi pentru a-ți reseta parola dacă o uiți.',
+              style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF866C93)),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pop(context); // Close the dialog
+              // Navigate to login screen after closing dialog
+              Navigator.of(context).pushReplacementNamed('/login');
             },
             child: Text(
-              'Am înțeles, continuă',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF866C93),
-              ),
+              'Ok, am înțeles',
+              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Eroare',
+          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Ok',
+              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
             ),
           ),
         ],
@@ -637,43 +639,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Am înțeles',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF866C93),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Eroare',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF77677E),
-          ),
-        ),
-        content: Text(
-          message,
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF866C93),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Ok',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

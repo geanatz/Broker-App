@@ -253,7 +253,7 @@ class _TokenScreenState extends State<TokenScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _isLoading ? null : _verifyToken,
+          onTap: _isLoading ? null : _verifyTokenAndNavigate,
           borderRadius: BorderRadius.circular(24),
           child: Ink(
             decoration: BoxDecoration(
@@ -281,47 +281,41 @@ class _TokenScreenState extends State<TokenScreen> {
     );
   }
 
-  void _verifyToken() async {
-    // Validate token input
-    if (_tokenController.text.isEmpty) {
+  void _verifyTokenAndNavigate() async {
+    final token = _tokenController.text.trim();
+    if (token.isEmpty) {
       _showErrorDialog('Introduceți tokenul.');
       return;
     }
-
-    // Show loading indicator
-    setState(() {
-      _isLoading = true;
-    });
-
+    
+    setState(() { _isLoading = true; });
+    
     try {
-      // Verify token with Firebase
-      final result = await _authService.verifyToken(_tokenController.text.trim());
-
-      // Hide loading indicator
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (result['success']) {
-        // Navigate to reset password screen with token and agent ID using a safer method
-        Future.delayed(Duration.zero, () {
-          Navigator.of(context).pushReplacementNamed(
+      final result = await _authService.verifyToken(token);
+      
+      if (mounted) { // Check if widget is still mounted
+        setState(() { _isLoading = false; });
+        
+        if (result['success']) {
+          // Navigate to ResetPasswordScreen with token and consultantId
+          Navigator.pushReplacementNamed(
+            context,
             '/reset_password',
             arguments: {
-              'token': _tokenController.text.trim(),
-              'agentId': result['agentId'],
-            }
+              'token': token,
+              'consultantId': result['consultantId'], // Pass consultantId
+            },
           );
-        });
-      } else {
-        _showErrorDialog(result['message']);
+        } else {
+          _showErrorDialog(result['message']);
+        }
       }
     } catch (e) {
-      // Hide loading indicator
-      setState(() {
-        _isLoading = false;
-      });
-      _showErrorDialog('Eroare la verificarea tokenului: $e');
+       print("Token Verification Error: $e");
+        if (mounted) { // Check if widget is still mounted
+          setState(() { _isLoading = false; });
+          _showErrorDialog('Eroare la verificarea tokenului: $e');
+        }
     }
   }
 
@@ -331,30 +325,18 @@ class _TokenScreenState extends State<TokenScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           'Eroare',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF77677E),
-          ),
+          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
         ),
         content: Text(
           message,
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF866C93),
-          ),
+          style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Ok',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF866C93),
-              ),
+              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
             ),
           ),
         ],

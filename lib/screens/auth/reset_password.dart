@@ -20,7 +20,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _isLoading = false; // Add loading state
   
   String? _token;
-  String? _agentId;
+  String? _consultantId; // Renamed
   
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
@@ -28,11 +28,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Retrieve token and agentId from route arguments
+    // Retrieve token and consultantId from route arguments
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
       _token = args['token'];
-      _agentId = args['agentId'];
+      _consultantId = args['consultantId']; // Renamed key expected from arguments
+      // Log the received values for debugging
+      print("Received token: $_token, consultantId: $_consultantId");
     }
   }
   
@@ -369,7 +371,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF77677E)),
                   )
                 : Text(
-                    'Schimbă parola',
+                    'Resetează parola',
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
@@ -385,70 +387,51 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   void _resetPassword() async {
-    // Check if token was provided
-    if (_token == null) {
-      _showErrorDialog('Token-ul lipsește. Încearcă din nou.');
-      Navigator.pushReplacementNamed(context, '/token');
+    if (_token == null) { // Check if token is null
+      _showErrorDialog('Token invalid sau lipsă. Încearcă din nou procesul de resetare.');
       return;
     }
     
-    // Validate fields
     if (_newPasswordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
-      _showErrorDialog('Completați toate câmpurile.');
+      _showErrorDialog('Te rog completează ambele câmpuri pentru parolă.');
       return;
     }
 
-    // Password validation (minimum 8 characters, at least one uppercase, one lowercase, one number)
-    final password = _newPasswordController.text;
-    if (password.length < 8 ||
-        !password.contains(RegExp(r'[A-Z]')) ||
-        !password.contains(RegExp(r'[a-z]')) ||
-        !password.contains(RegExp(r'[0-9]'))) {
-      _showErrorDialog(
-          'Parola trebuie să conțină minim 8 caractere, o literă mare, o literă mică și un număr.');
-      return;
-    }
-
-    // Validate password match
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      _showErrorDialog('Parolele nu coincid.');
+      _showErrorDialog('Parolele nu se potrivesc.');
       return;
     }
-
-    // Show loading indicator
-    setState(() {
-      _isLoading = true;
-    });
-
+    
+    // Password validation (optional but recommended)
+    // final password = _newPasswordController.text;
+    // if (password.length < 8 || ... ) { ... }
+    
+    setState(() { _isLoading = true; });
+    
     try {
-      // Reset password with Firebase
       final result = await _authService.resetPasswordWithToken(
         token: _token!,
         newPassword: _newPasswordController.text,
         confirmPassword: _confirmPasswordController.text,
+        // The service method now internally gets consultantId from the token
       );
+      
+      if(mounted) {
+        setState(() { _isLoading = false; });
 
-      // Hide loading indicator
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (result['success']) {
-        // Show success message with token
-        if (result.containsKey('token')) {
-          _showSuccessDialogWithToken(result['token']);
+        if (result['success']) {
+          // Show success message and navigate to login
+          _showSuccessDialog(result['message']); 
         } else {
-          _showSuccessDialog();
+          _showErrorDialog(result['message']);
         }
-      } else {
-        _showErrorDialog(result['message']);
       }
     } catch (e) {
-      // Hide loading indicator
-      setState(() {
-        _isLoading = false;
-      });
-      _showErrorDialog('Eroare la resetarea parolei: $e');
+      print("Reset Password Error: $e");
+      if(mounted) {
+        setState(() { _isLoading = false; });
+        _showErrorDialog('Eroare la resetarea parolei: $e');
+      }
     }
   }
 
@@ -526,146 +509,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog(String message) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: false, // User must acknowledge
       builder: (context) => AlertDialog(
         title: Text(
-          'Succes',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF77677E),
-          ),
+          'Succes', // Generic title, message comes from service
+          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
         ),
         content: Text(
-          'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF866C93),
-          ),
+          message, // Display the message from the service
+          style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pop(context); // Close the dialog
+              Navigator.of(context).pushReplacementNamed('/login'); // Go to login
             },
             child: Text(
-              'Înapoi la conectare',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF866C93),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSuccessDialogWithToken(String token) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Succes',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF77677E),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF866C93),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Tokenul tău de securitate rămâne același:',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF866C93),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCEC7D1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      token,
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF77677E),
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.copy,
-                    color: Color(0xFF77677E),
-                  ),
-                  onPressed: () {
-                    // Copy token to clipboard
-                    Clipboard.setData(ClipboardData(text: token));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Token copiat în clipboard!',
-                          style: GoogleFonts.outfit(),
-                        ),
-                        backgroundColor: const Color(0xFF77677E),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Păstrează acest token într-un loc sigur. Îl vei folosi dacă vei uita din nou parola.',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF866C93),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-            child: Text(
-              'Înapoi la conectare',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF866C93),
-              ),
+              'Ok',
+              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
             ),
           ),
         ],

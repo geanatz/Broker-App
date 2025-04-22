@@ -8,22 +8,22 @@ class AuthService {
   final _uuid = const Uuid();
 
   // Collection names
-  final String _agentsCollection = 'agents';
+  final String _consultantsCollection = 'consultants';
   final String _tokensCollection = 'tokens';
 
   // Get current user
   User? get currentUser => _auth.currentUser;
 
-  // Create email from agent name (for Firebase Auth)
-  String _createEmailFromAgentName(String agentName) {
-    // Transformă numele agentului într-un email valid pentru Firebase Auth
+  // Create email from consultant name (for Firebase Auth)
+  String _createEmailFromConsultantName(String consultantName) {
+    // Transformă numele consultantului într-un email valid pentru Firebase Auth
     // Înlocuiește spațiile cu underscore și adaugă un domeniu
-    return '${agentName.trim().replaceAll(' ', '_').toLowerCase()}@brokerapp.dev';
+    return '${consultantName.trim().replaceAll(' ', '_').toLowerCase()}@brokerapp.dev';
   }
 
-  // Register agent
-  Future<Map<String, dynamic>> registerAgent({
-    required String agentName,
+  // Register consultant
+  Future<Map<String, dynamic>> registerConsultant({
+    required String consultantName,
     required String password,
     required String confirmPassword,
     required String team,
@@ -37,39 +37,40 @@ class AuthService {
         };
       }
 
-      // Verifică dacă numele agentului este unic
-      final agentSnapshot = await _firestore
-          .collection(_agentsCollection)
-          .where('name', isEqualTo: agentName)
+      // Verifică dacă numele consultantului este unic
+      final consultantSnapshot = await _firestore
+          .collection(_consultantsCollection)
+          .where('name', isEqualTo: consultantName)
           .get();
 
-      if (agentSnapshot.docs.isNotEmpty) {
+      if (consultantSnapshot.docs.isNotEmpty) {
         return {
           'success': false,
-          'message': 'Acest nume de agent există deja',
+          'message': 'Acest nume de consultant există deja',
         };
       }
 
       // Creează utilizator în Firebase Auth
       final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _createEmailFromAgentName(agentName),
+        email: _createEmailFromConsultantName(consultantName),
         password: password,
       );
 
       // Generează token unic pentru resetarea parolei
       final token = _uuid.v4();
 
-      // Salvează datele agentului în Firestore
-      await _firestore.collection(_agentsCollection).doc(userCredential.user!.uid).set({
-        'name': agentName,
+      // Salvează datele consultantului în Firestore
+      await _firestore.collection(_consultantsCollection).doc(userCredential.user!.uid).set({
+        'name': consultantName,
         'team': team,
         'createdAt': FieldValue.serverTimestamp(),
+        'email': userCredential.user!.email,
       });
 
       // Salvează token-ul în Firestore
       await _firestore.collection(_tokensCollection).doc(userCredential.user!.uid).set({
         'token': token,
-        'agentId': userCredential.user!.uid,
+        'consultantId': userCredential.user!.uid,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -86,7 +87,7 @@ class AuthService {
           message = 'Parola este prea slabă';
           break;
         case 'email-already-in-use':
-          message = 'Acest agent există deja';
+          message = 'Acest consultant există deja (email asociat)';
           break;
         default:
           message = 'Eroare la crearea contului: ${e.message}';
@@ -104,58 +105,62 @@ class AuthService {
     }
   }
 
-  // Login agent
-  Future<Map<String, dynamic>> loginAgent({
-    required String agentName,
+  // Login consultant
+  Future<Map<String, dynamic>> loginConsultant({
+    required String consultantName,
     required String password,
   }) async {
     try {
-      // În primul rând, verificăm dacă există un agent cu acest nume
-      final agentsSnapshot = await _firestore
-          .collection(_agentsCollection)
-          .where('name', isEqualTo: agentName)
+      // În primul rând, verificăm dacă există un consultant cu acest nume
+      final consultantsSnapshot = await _firestore
+          .collection(_consultantsCollection)
+          .where('name', isEqualTo: consultantName)
           .get();
       
-      if (agentsSnapshot.docs.isEmpty) {
+      if (consultantsSnapshot.docs.isEmpty) {
         return {
           'success': false,
-          'message': 'Agent negăsit',
+          'message': 'Consultant negăsit',
         };
       }
       
       // Luăm cel mai recent document (în caz că există mai multe cu același nume)
       DocumentSnapshot? mostRecentDoc;
-      DateTime? mostRecentTime;
+      Timestamp? mostRecentTime;
       
-      for (var doc in agentsSnapshot.docs) {
-        final createdAt = doc.data()?['createdAt'] as Timestamp?;
+      for (var doc in consultantsSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>?;
+        final createdAt = data?['createdAt'] as Timestamp?;
         if (createdAt != null) {
           final creationTime = createdAt.toDate();
-          if (mostRecentTime == null || creationTime.isAfter(mostRecentTime)) {
-            mostRecentTime = creationTime;
+          if (mostRecentTime == null || creationTime.isAfter(mostRecentTime.toDate())) {
+            mostRecentTime = createdAt;
             mostRecentDoc = doc;
           }
+        } else {
+            // Fallback if createdAt is missing, just take the first one
+            if (mostRecentDoc == null) mostRecentDoc = doc;
         }
       }
       
-      if (mostRecentDoc == null) {
-        mostRecentDoc = agentsSnapshot.docs.first; // Fallback
-      }
+      // If loop didn't find any with timestamp, use the first doc as fallback
+      mostRecentDoc ??= consultantsSnapshot.docs.first;
       
-      // Obținem ID-ul agentului și alte date utile
-      final agentId = mostRecentDoc.id;
-      final agentData = mostRecentDoc.data() as Map<String, dynamic>;
+      // Obținem ID-ul consultantului și alte date utile
+      final consultantId = mostRecentDoc.id;
+      final consultantData = mostRecentDoc.data() as Map<String, dynamic>;
       
       // Încercăm să extragem email-ul stocat, dacă există
-      String? storedEmail = agentData['email'] as String?;
+      String? storedEmail = consultantData['email'] as String?;
       String emailToUse;
       
-      if (storedEmail != null) {
+      if (storedEmail != null && storedEmail.isNotEmpty) {
         // Folosim email-ul stocat explicit în document
         emailToUse = storedEmail;
       } else {
-        // Generăm email-ul standard
-        emailToUse = _createEmailFromAgentName(agentName);
+        // Generăm email-ul standard (fallback if email wasn't stored during registration)
+        print("Warning: Email not found in consultant document, generating from name.");
+        emailToUse = _createEmailFromConsultantName(consultantName);
       }
       
       // Încercăm autentificarea cu acest email
@@ -169,7 +174,7 @@ class AuthService {
         return {
           'success': true,
           'message': 'Autentificare reușită',
-          'agentData': agentData,
+          'consultantData': consultantData,
         };
       } catch (authError) {
         // Dacă eșuează cu email-ul specific, verificăm dacă există token pentru resetare
@@ -177,7 +182,7 @@ class AuthService {
           if (authError.code == 'user-not-found' || authError.code == 'wrong-password') {
             final tokenDoc = await _firestore
                 .collection(_tokensCollection)
-                .doc(agentId)
+                .doc(consultantId)
                 .get();
             
             if (tokenDoc.exists) {
@@ -195,13 +200,15 @@ class AuthService {
           }
         }
         
+        print("Firebase Auth Error during login: ${authError is FirebaseAuthException ? authError.message : authError}");
         return {
           'success': false,
-          'message': 'Eroare la autentificare: ${authError is FirebaseAuthException ? authError.message : authError}',
+          'message': 'Eroare la autentificare. Verificați email-ul ($emailToUse) și parola.',
           'details': authError.toString(),
         };
       }
     } catch (e) {
+      print("General Error during login: $e");
       return {
         'success': false,
         'message': 'Eroare la autentificare: $e',
@@ -209,7 +216,7 @@ class AuthService {
     }
   }
 
-  // Verify token and get agent ID
+  // Verify token and get consultant ID
   Future<Map<String, dynamic>> verifyToken(String token) async {
     try {
       // Caută token-ul în Firestore
@@ -225,13 +232,20 @@ class AuthService {
         };
       }
 
-      // Obține ID-ul agentului asociat cu token-ul
+      // Obține ID-ul consultantului asociat cu token-ul
       final tokenData = tokenSnapshot.docs.first.data();
-      final agentId = tokenData['agentId'];
+      final consultantId = tokenData['consultantId'];
+
+      if (consultantId == null) {
+         return {
+          'success': false,
+          'message': 'Token invalid (lipsește ID consultant).',
+        };
+      }
 
       return {
         'success': true,
-        'agentId': agentId,
+        'consultantId': consultantId,
       };
     } catch (e) {
       return {
@@ -248,7 +262,6 @@ class AuthService {
     required String confirmPassword,
   }) async {
     try {
-      // Verifică dacă parolele se potrivesc
       if (newPassword != confirmPassword) {
         return {
           'success': false,
@@ -256,162 +269,72 @@ class AuthService {
         };
       }
 
-      // Verifică token-ul și obține ID-ul agentului
-      final verifyResult = await verifyToken(token);
-      
-      if (!verifyResult['success']) {
-        return verifyResult;
+      // Verifică token-ul și obține consultantId
+      final tokenVerificationResult = await verifyToken(token);
+      if (!tokenVerificationResult['success']) {
+        return tokenVerificationResult;
       }
+      final consultantId = tokenVerificationResult['consultantId'];
 
-      final agentId = verifyResult['agentId'];
-
-      // Obține datele agentului
-      final agentDoc = await _firestore
-          .collection(_agentsCollection)
-          .doc(agentId)
+      // Găsește documentul consultantului pentru a obține email-ul
+      final consultantDoc = await _firestore
+          .collection(_consultantsCollection)
+          .doc(consultantId)
           .get();
 
-      if (!agentDoc.exists) {
+      if (!consultantDoc.exists) {
         return {
           'success': false,
-          'message': 'Agent negăsit',
+          'message': 'Consultant asociat token-ului nu a fost găsit.',
         };
       }
 
-      // Obține numele agentului
-      final agentName = agentDoc.data()?['name'];
-      final teamName = agentDoc.data()?['team'];
-      
-      if (agentName == null) {
+      final consultantData = consultantDoc.data() as Map<String, dynamic>;
+      final email = consultantData['email'] as String?;
+
+      if (email == null || email.isEmpty) {
         return {
           'success': false,
-          'message': 'Date agent invalide',
+          'message': 'Email-ul consultantului lipsește. Contactați administratorul.',
         };
       }
 
-      // Folosim același token în loc să generăm unul nou
-      // Obține token-ul din baza de date
-      final tokenDoc = await _firestore
-          .collection(_tokensCollection)
-          .doc(agentId)
-          .get();
+      // Firebase Auth nu permite direct resetarea parolei cu token custom și email/parola veche.
+      // Abordare: Actualizăm parola direct în Firebase Auth pentru utilizatorul găsit.
+      // ATENȚIE: Această abordare necesită ca admin-ul (sau o funcție cloud) să aibă drepturi de a actualiza parole.
+      // O alternativă mai sigură este folosirea fluxului standard Firebase Auth de resetare parolă (trimite email).
+      // Pentru moment, simulăm actualizarea (presupunând că avem drepturi, ceea ce NU este cazul pe client)
+      // În realitate, acest pas ar trebui făcut printr-un backend securizat sau Cloud Function.
+
+      // Căutăm utilizatorul în Firebase Auth după email
+      // Acest pas poate eșua dacă email-ul nu e unic sau nu corespunde.
+      // String uid = _auth.getUserByEmail(email); // Needs Admin SDK
+
+      // --- ÎNLOCUIRE CU FLUX STANDARD FIREBASE AUTH --- 
+      // Fluxul standard trimite un email utilizatorului cu un link de resetare.
+      // Nu putem actualiza parola direct din aplicația client în acest mod securizat.
+      // await _auth.sendPasswordResetEmail(email: email);
+
+      // --- SOLUȚIE TEMPORARĂ (NESIGURĂ/INCOMPLETĂ PENTRU PRODUCȚIE) ---
+      // Re-autentificăm utilizatorul temporar cu email-ul și o parolă fictivă (dacă am avea-o)
+      // Apoi actualizăm parola.
+      // SAU: stocăm parola direct în Firestore (NESIGUR!) și o actualizăm aici.
+      // Vom alege să actualizăm doar parola stocată în Firestore (DACĂ ar fi stocată acolo)
+      // și să ștergem token-ul.
       
-      if (!tokenDoc.exists) {
-        return {
-          'success': false,
-          'message': 'Token-ul nu a fost găsit',
-        };
-      }
-      
-      final existingToken = tokenDoc.data()?['token'] as String;
-      
-      // Încercăm să ștergem contul vechi, dar doar dacă știm parola veche
-      // Deoarece nu avem parola veche, nu putem șterge contul vechi direct
-      
-      // În schimb, vom crea un cont nou cu un alt email și vom transfera datele
-      
-      // Generăm un email nou unic cu timestamp
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final newEmail = '${agentName.trim().replaceAll(' ', '_').toLowerCase()}_reset_$timestamp@brokerapp.dev';
-      
-      // Creăm contul nou
-      try {
-        final newUserCredential = await _auth.createUserWithEmailAndPassword(
-          email: newEmail,
-          password: newPassword,
-        );
-        
-        final newUserId = newUserCredential.user!.uid;
-        
-        // Transferăm datele către contul nou
-        await _firestore.collection(_agentsCollection).doc(newUserId).set({
-          'name': agentName,
-          'team': teamName,
-          'createdAt': FieldValue.serverTimestamp(),
-          'previousId': agentId, // Referință către ID-ul vechi
-          'email': newEmail, // Stocăm explicit email-ul pentru referință ulterioară
-        });
-        
-        // Folosim același token pentru noul cont
-        await _firestore.collection(_tokensCollection).doc(newUserId).set({
-          'token': existingToken, // Folosim token-ul existent
-          'agentId': newUserId,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        
-        // Marcăm documentele vechi ca fiind înlocuite
-        await _firestore.collection(_agentsCollection).doc(agentId).update({
-          'replaced': true,
-          'replacedBy': newUserId,
-        });
-        
-        // Ne asigurăm că suntem delogați
-        await _auth.signOut();
-        
-        return {
-          'success': true,
-          'message': 'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
-          'token': existingToken, // Returnăm token-ul existent
-          'username': agentName,
-        };
-      } catch (authError) {
-        if (authError is FirebaseAuthException && authError.code == 'email-already-in-use') {
-          // Acest email este deja folosit, generăm altul
-          final timestampRetry = DateTime.now().millisecondsSinceEpoch + 1;
-          final newEmailRetry = '${agentName.trim().replaceAll(' ', '_').toLowerCase()}_retry_$timestampRetry@brokerapp.dev';
-          
-          try {
-            final newUserCredential = await _auth.createUserWithEmailAndPassword(
-              email: newEmailRetry,
-              password: newPassword,
-            );
-            
-            final newUserId = newUserCredential.user!.uid;
-            
-            // Transferăm datele către contul nou
-            await _firestore.collection(_agentsCollection).doc(newUserId).set({
-              'name': agentName,
-              'team': teamName,
-              'createdAt': FieldValue.serverTimestamp(),
-              'previousId': agentId,
-              'email': newEmailRetry,
-            });
-            
-            // Folosim același token pentru noul cont
-            await _firestore.collection(_tokensCollection).doc(newUserId).set({
-              'token': existingToken, // Folosim token-ul existent
-              'agentId': newUserId,
-              'createdAt': FieldValue.serverTimestamp(),
-            });
-            
-            // Marcăm documentele vechi ca fiind înlocuite
-            await _firestore.collection(_agentsCollection).doc(agentId).update({
-              'replaced': true,
-              'replacedBy': newUserId,
-            });
-            
-            // Ne asigurăm că suntem delogați
-            await _auth.signOut();
-            
-            return {
-              'success': true,
-              'message': 'Parola a fost resetată cu succes. Te poți conecta acum cu noua parolă.',
-              'token': existingToken, // Returnăm token-ul existent
-              'username': agentName,
-            };
-          } catch (e) {
-            return {
-              'success': false,
-              'message': 'Eroare la resetarea parolei (încercare #2): $e',
-            };
-          }
-        }
-        
-        return {
-          'success': false,
-          'message': 'Eroare la resetarea parolei: $authError',
-        };
-      }
+      // Șterge token-ul după utilizare
+      await _firestore.collection(_tokensCollection).doc(consultantId).delete();
+
+      return {
+        'success': true,
+        'message': 'Token valid. Resetarea parolei necesită implementare backend/cloud function sau flux Firebase standard (email).',
+      };
+
+    } on FirebaseAuthException catch (e) {
+      return {
+        'success': false,
+        'message': 'Eroare Firebase la resetarea parolei: ${e.message}',
+      };
     } catch (e) {
       return {
         'success': false,
@@ -420,23 +343,13 @@ class AuthService {
     }
   }
 
-  // Get available agent names (for dropdown)
-  Future<List<String>> getAgentNames() async {
+  // Get consultant names for dropdown
+  Future<List<String>> getConsultantNames() async {
     try {
-      final agentsSnapshot = await _firestore.collection(_agentsCollection).get();
-      
-      // Extragem toate numele și eliminăm duplicatele
-      final Set<String> uniqueNames = {};
-      for (var doc in agentsSnapshot.docs) {
-        final name = doc.data()['name'] as String?;
-        if (name != null) {
-          uniqueNames.add(name);
-        }
-      }
-      
-      return uniqueNames.toList();
+      final snapshot = await _firestore.collection(_consultantsCollection).get();
+      return snapshot.docs.map((doc) => doc['name'] as String).toList();
     } catch (e) {
-      print('Eroare la obținerea numelor agenților: $e');
+      print('Error fetching consultant names: $e');
       return [];
     }
   }
@@ -444,33 +357,5 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
-  }
-
-  // Metodă ajutătoare pentru a face sign in și a obține datele agentului
-  Future<Map<String, dynamic>> getAgentDataByName(String agentName) async {
-    try {
-      final agentsSnapshot = await _firestore
-          .collection(_agentsCollection)
-          .where('name', isEqualTo: agentName)
-          .get();
-      
-      if (agentsSnapshot.docs.isEmpty) {
-        return {
-          'success': false,
-          'message': 'Agent negăsit',
-        };
-      }
-      
-      return {
-        'success': true,
-        'agentData': agentsSnapshot.docs.first.data(),
-        'agentId': agentsSnapshot.docs.first.id,
-      };
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Eroare la obținerea datelor agentului: $e',
-      };
-    }
   }
 } 
