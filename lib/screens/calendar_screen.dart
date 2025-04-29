@@ -40,38 +40,70 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       print("Error: _fetchConsultantData called but currentUser is null!");
+      // Schedule sign out after the frame
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (mounted) { // Check mount status again inside callback
+             await FirebaseAuth.instance.signOut();
+             // Setting state might not be strictly needed here as AuthWrapper handles UI change
+             // setState(() { _isFetchingConsultantData = false; _currentConsultantData = null; });
+          }
+      });
       if(mounted) {
         setState(() { _isFetchingConsultantData = false; _currentConsultantData = null; });
       }
       return;
     }
 
-    setState(() { _isFetchingConsultantData = true; });
+    // Ensure initial state update happens before async gap
+    if (mounted) {
+      setState(() { _isFetchingConsultantData = true; });
+    }
+
     print("Fetching consultant data for user: ${currentUser.uid}");
     try {
       DocumentSnapshot consultantDoc = await FirebaseFirestore.instance
           .collection('consultants')
           .doc(currentUser.uid)
           .get();
+      
+      // Check mount status AFTER the await
+      if (!mounted) return;
+
       print("Consultant document exists: ${consultantDoc.exists}");
-      if (mounted) {
-        if (consultantDoc.exists) {
+      if (consultantDoc.exists) {
           print("Consultant data fetched: ${consultantDoc.data()}");
           setState(() {
             _currentConsultantData = consultantDoc.data() as Map<String, dynamic>?;
             _isFetchingConsultantData = false;
           });
-        } else {
-          print("Consultant document does not exist.");
+      } else {
+          print("Consultant document does not exist. Scheduling sign out.");
+          // Schedule sign out after the frame
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+             if (mounted) { // Check mount status again inside callback
+                 await FirebaseAuth.instance.signOut();
+                 // Setting state might not be strictly needed here as AuthWrapper handles UI change
+                 // setState(() { _isFetchingConsultantData = false; _currentConsultantData = null; });
+             }
+          });
           setState(() {
-            _currentConsultantData = null;
-            _isFetchingConsultantData = false;
+             _currentConsultantData = null;
+             _isFetchingConsultantData = false;
           });
         }
-      }
+      
     } catch (e) {
-      print("Error fetching consultant data for user ${currentUser.uid}: $e");
+      print("Error fetching consultant data for user ${currentUser.uid}: $e. Scheduling sign out.");
+      // Check mount status AFTER the await/catch
       if (mounted) {
+        // Schedule sign out after the frame
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (mounted) { // Check mount status again inside callback
+               await FirebaseAuth.instance.signOut();
+               // Setting state might not be strictly needed here as AuthWrapper handles UI change
+               // setState(() { _isFetchingConsultantData = false; _currentConsultantData = null; });
+            }
+        });
         setState(() {
           _currentConsultantData = null;
           _isFetchingConsultantData = false;
@@ -238,12 +270,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 }
 
                 final now = DateTime.now();
-                final today = DateTime(now.year, now.month, now.day);
                 final meetings = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final meetingTime = (data['dateTime'] as Timestamp).toDate();
-                  return meetingTime.isAfter(today.subtract(const Duration(microseconds: 1)));
+                  return meetingTime.isAfter(now);
                 }).toList();
+
+                meetings.sort((a, b) {
+                   final timeA = (a.data() as Map<String, dynamic>)['dateTime'] as Timestamp;
+                   final timeB = (b.data() as Map<String, dynamic>)['dateTime'] as Timestamp;
+                   return timeA.compareTo(timeB);
+                });
 
                 if (meetings.isEmpty) {
                    return Center(
