@@ -8,6 +8,7 @@ import 'screens/auth/token.dart';
 import 'screens/calendar/calendar_screen.dart';
 import 'screens/form/form_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
 import 'widgets/navigation/navigation_widget.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -242,6 +243,12 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         );
       case NavigationScreen.settings:
         return SettingsScreen(
+          consultantName: consultantName,
+          teamName: teamName,
+          onScreenChanged: _handleScreenChange,
+        );
+      case NavigationScreen.dashboard:
+        return DashboardScreen(
           consultantName: consultantName,
           teamName: teamName,
           onScreenChanged: _handleScreenChange,

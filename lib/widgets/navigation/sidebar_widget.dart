@@ -50,6 +50,7 @@ class SidebarWidget extends StatelessWidget {
             team: teamName,
             progress: progress,
             callCount: callCount,
+            onScreenChanged: onScreenChanged,
           ),
           
           const SizedBox(height: AppTheme.mediumGap),

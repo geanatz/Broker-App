@@ -9,7 +9,6 @@ class AuthService {
 
   // Collection names
   final String _consultantsCollection = 'consultants';
-  final String _tokensCollection = 'tokens';
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -59,19 +58,13 @@ class AuthService {
       // Generează token unic pentru resetarea parolei
       final token = _uuid.v4();
 
-      // Salvează datele consultantului în Firestore
+      // Salvează datele consultantului în Firestore, including token
       await _firestore.collection(_consultantsCollection).doc(userCredential.user!.uid).set({
         'name': consultantName,
         'team': team,
         'createdAt': FieldValue.serverTimestamp(),
         'email': userCredential.user!.email,
-      });
-
-      // Salvează token-ul în Firestore
-      await _firestore.collection(_tokensCollection).doc(userCredential.user!.uid).set({
-        'token': token,
-        'consultantId': userCredential.user!.uid,
-        'createdAt': FieldValue.serverTimestamp(),
+        'token': token, // Store token directly in consultant document
       });
 
       return {
@@ -180,12 +173,8 @@ class AuthService {
         // Dacă eșuează cu email-ul specific, verificăm dacă există token pentru resetare
         if (authError is FirebaseAuthException) {
           if (authError.code == 'user-not-found' || authError.code == 'wrong-password') {
-            final tokenDoc = await _firestore
-                .collection(_tokensCollection)
-                .doc(consultantId)
-                .get();
-            
-            if (tokenDoc.exists) {
+            // Check if consultant document has token
+            if (consultantData.containsKey('token')) {
               return {
                 'success': false,
                 'message': 'Parolă incorectă sau cont resetat. Verifică credențialele sau folosește token-ul pentru a reseta parola.',
@@ -219,13 +208,13 @@ class AuthService {
   // Verify token and get consultant ID
   Future<Map<String, dynamic>> verifyToken(String token) async {
     try {
-      // Caută token-ul în Firestore
-      final tokenSnapshot = await _firestore
-          .collection(_tokensCollection)
+      // Caută token-ul în documentele consultant
+      final consultantSnapshot = await _firestore
+          .collection(_consultantsCollection)
           .where('token', isEqualTo: token)
           .get();
 
-      if (tokenSnapshot.docs.isEmpty) {
+      if (consultantSnapshot.docs.isEmpty) {
         return {
           'success': false,
           'message': 'Token invalid',
@@ -233,8 +222,8 @@ class AuthService {
       }
 
       // Obține ID-ul consultantului asociat cu token-ul
-      final tokenData = tokenSnapshot.docs.first.data();
-      final consultantId = tokenData['consultantId'];
+      final consultantDoc = consultantSnapshot.docs.first;
+      final consultantId = consultantDoc.id;
 
       if (consultantId == null) {
          return {
@@ -257,26 +246,19 @@ class AuthService {
 
   // Reset password using token
   Future<Map<String, dynamic>> resetPasswordWithToken({
-    required String token,
+    required String consultantId,
     required String newPassword,
     required String confirmPassword,
   }) async {
+    if (newPassword != confirmPassword) {
+      return {
+        'success': false,
+        'message': 'Parolele nu se potrivesc',
+      };
+    }
+
     try {
-      if (newPassword != confirmPassword) {
-        return {
-          'success': false,
-          'message': 'Parolele nu se potrivesc',
-        };
-      }
-
-      // Verifică token-ul și obține consultantId
-      final tokenVerificationResult = await verifyToken(token);
-      if (!tokenVerificationResult['success']) {
-        return tokenVerificationResult;
-      }
-      final consultantId = tokenVerificationResult['consultantId'];
-
-      // Găsește documentul consultantului pentru a obține email-ul
+      // Obține datele consultantului
       final consultantDoc = await _firestore
           .collection(_consultantsCollection)
           .doc(consultantId)
@@ -285,7 +267,7 @@ class AuthService {
       if (!consultantDoc.exists) {
         return {
           'success': false,
-          'message': 'Consultant asociat token-ului nu a fost găsit.',
+          'message': 'Consultant negăsit',
         };
       }
 
@@ -295,7 +277,7 @@ class AuthService {
       if (email == null || email.isEmpty) {
         return {
           'success': false,
-          'message': 'Email-ul consultantului lipsește. Contactați administratorul.',
+          'message': 'Email consultant lipsă',
         };
       }
 
@@ -322,18 +304,14 @@ class AuthService {
       // Vom alege să actualizăm doar parola stocată în Firestore (DACĂ ar fi stocată acolo)
       // și să ștergem token-ul.
       
-      // Șterge token-ul după utilizare
-      await _firestore.collection(_tokensCollection).doc(consultantId).delete();
+      // Remove token after use by setting to null or removing field
+      await _firestore.collection(_consultantsCollection).doc(consultantId).update({
+        'token': FieldValue.delete(),
+      });
 
       return {
         'success': true,
         'message': 'Token valid. Resetarea parolei necesită implementare backend/cloud function sau flux Firebase standard (email).',
-      };
-
-    } on FirebaseAuthException catch (e) {
-      return {
-        'success': false,
-        'message': 'Eroare Firebase la resetarea parolei: ${e.message}',
       };
     } catch (e) {
       return {

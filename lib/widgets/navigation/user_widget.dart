@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
+import 'navigation_widget.dart';
 
 /// Widget care afișează informații despre utilizatorul curent
-/// inclusiv progresul său.
+/// inclusiv progresul său. Acționează și ca buton de navigație către Dashboard.
 class UserWidget extends StatelessWidget {
   /// Numele consultantului
   final String name;
@@ -16,6 +17,9 @@ class UserWidget extends StatelessWidget {
   
   /// Numărul de apeluri completate
   final int callCount;
+  
+  /// Callback pentru navigare către dashboard
+  final Function(NavigationScreen)? onScreenChanged;
 
   const UserWidget({
     Key? key,
@@ -23,95 +27,98 @@ class UserWidget extends StatelessWidget {
     required this.team,
     required this.progress,
     required this.callCount,
+    this.onScreenChanged,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.defaultGap),
-      decoration: AppTheme.widgetDecoration,
-      child: Column(
-        children: [
-          _buildUserInfoRow(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.mediumGap, 
-              0, 
-              AppTheme.mediumGap, 
-              0
-            ),
-            child: _buildProgressRow(),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () {
+        if (onScreenChanged != null) {
+          onScreenChanged!(NavigationScreen.dashboard);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.defaultGap),
+        decoration: AppTheme.widgetDecoration,
+        child: Column(
+          children: [
+            _buildUserInfo(),
+            _buildProgressBar(),
+          ],
+        ),
       ),
     );
   }
 
-  /// Construiește rândul cu avatar și informații despre utilizator
-  Widget _buildUserInfoRow() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.defaultGap),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
+  Widget _buildUserInfo() {
+    return Row(
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: AppTheme.avatarDecoration,
+          child: Padding(
             padding: const EdgeInsets.all(AppTheme.mediumGap),
-            decoration: AppTheme.avatarDecoration,
             child: SvgPicture.asset(
               'assets/UserIcon.svg',
-              width: AppTheme.iconSizeMedium,
-              height: AppTheme.iconSizeMedium,
               colorFilter: ColorFilter.mode(
                 AppTheme.fontMediumPurple,
                 BlendMode.srcIn,
               ),
             ),
           ),
-          
-          const SizedBox(width: AppTheme.defaultGap),
-          
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: AppTheme.primaryTitleStyle.copyWith(
-                    color: AppTheme.fontMediumPurple,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+        ),
+        
+        const SizedBox(width: AppTheme.defaultGap),
+        
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: AppTheme.primaryTitleStyle.copyWith(
+                  color: AppTheme.fontMediumPurple,
                 ),
-                Text(
-                  team,
-                  style: AppTheme.secondaryTitleStyle.copyWith(
-                    color: AppTheme.fontLightPurple,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                team,
+                style: AppTheme.subHeaderStyle.copyWith(
+                  color: AppTheme.fontLightPurple,
                 ),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  /// Construiește bara de progres și numărul de apeluri
-  Widget _buildProgressRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 16,
-            decoration: BoxDecoration(
-              color: AppTheme.backgroundLightPurple,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
+  Widget _buildProgressBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.mediumGap, 
+        AppTheme.defaultGap, 
+        AppTheme.mediumGap, 
+        0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 16,
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundLightPurple,
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
+              ),
               child: FractionallySizedBox(
-                widthFactor: progress.clamp(0.0, 1.0),
+                widthFactor: progress,
+                alignment: Alignment.centerLeft,
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundDarkPurple,
@@ -124,19 +131,15 @@ class UserWidget extends StatelessWidget {
               ),
             ),
           ),
-        ),
-        
-        const SizedBox(width: AppTheme.defaultGap),
-        
-        SizedBox(
-          width: 20,
-          child: Text(
+          
+          const SizedBox(width: AppTheme.defaultGap),
+          
+          Text(
             '$callCount',
             style: AppTheme.tinyTextStyle,
-            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 } 

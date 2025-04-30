@@ -387,8 +387,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   void _resetPassword() async {
-    if (_token == null) { // Check if token is null
-      _showErrorDialog('Token invalid sau lipsă. Încearcă din nou procesul de resetare.');
+    if (_token == null || _consultantId == null) { // Check if token or consultantId is null
+      _showErrorDialog('Token invalid sau lipsă sau ID consultant lipsă. Încearcă din nou procesul de resetare.');
       return;
     }
     
@@ -410,10 +410,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     
     try {
       final result = await _authService.resetPasswordWithToken(
-        token: _token!,
+        consultantId: _consultantId!,
         newPassword: _newPasswordController.text,
         confirmPassword: _confirmPasswordController.text,
-        // The service method now internally gets consultantId from the token
       );
       
       if(mounted) {

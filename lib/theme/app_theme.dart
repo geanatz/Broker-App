@@ -21,7 +21,7 @@ class AppTheme {
   static const Color backgroundDarkBlue = Color(0xFFACC6D3);
   static const Color backgroundDarkPurple = Color(0xFFC5B0CF);
   static const Color backgroundDarkRed = Color(0xFFD3ACAC);
-  static const Color slotReservedBackground = Color(0xFFC4B3CC);
+  static const Color slotReservedBackground = Color(0xFFC6ACD3);
 
   // Culori pentru text
   static const Color fontLightBlue = Color(0xFF8A9EA8);

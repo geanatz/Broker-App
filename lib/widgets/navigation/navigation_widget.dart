@@ -7,7 +7,8 @@ import '../../theme/app_theme.dart';
 enum NavigationScreen {
   calendar,
   form,
-  settings
+  settings,
+  dashboard
 }
 
 /// Widget pentru navigația principală a aplicației, care permite
@@ -66,7 +67,7 @@ class NavigationWidget extends StatelessWidget {
         AppTheme.mediumGap, 
         0, 
         AppTheme.mediumGap, 
-        AppTheme.defaultGap
+        AppTheme.defaultGap - 8
       ),
       child: SizedBox(
         height: 24,
@@ -108,44 +109,40 @@ class NavigationWidget extends StatelessWidget {
         ? AppTheme.activeNavButtonDecoration
         : AppTheme.inactiveNavButtonDecoration;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isActive ? null : () => onScreenChanged(screen),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.mediumGap, 
-            vertical: 12
-          ),
-          decoration: decoration,
-          child: Row(
-            children: [
-              SvgPicture.asset(
-                iconPath,
-                width: AppTheme.iconSizeMedium,
-                height: AppTheme.iconSizeMedium,
-                colorFilter: ColorFilter.mode(
-                  textColor,
-                  BlendMode.srcIn,
-                ),
+    return GestureDetector(
+      onTap: isActive ? null : () => onScreenChanged(screen),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.mediumGap, 
+          vertical: 12
+        ),
+        decoration: decoration,
+        child: Row(
+          children: [
+            SvgPicture.asset(
+              iconPath,
+              width: AppTheme.iconSizeMedium,
+              height: AppTheme.iconSizeMedium,
+              colorFilter: ColorFilter.mode(
+                textColor,
+                BlendMode.srcIn,
               ),
-              const SizedBox(width: AppTheme.mediumGap),
-              Expanded(
-                child: Text(
-                  text,
-                  style: GoogleFonts.outfit(
-                    fontSize: AppTheme.fontSizeMedium,
-                    fontWeight: FontWeight.w500,
-                    color: textColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(width: AppTheme.mediumGap),
+            Expanded(
+              child: Text(
+                text,
+                style: GoogleFonts.outfit(
+                  fontSize: AppTheme.fontSizeMedium,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
