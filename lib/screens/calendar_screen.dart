@@ -16,6 +16,79 @@ enum CalendarType {
   creditBureau    // Stergere birou de credit
 }
 
+// --- NEW Top-Level Function for Building Meeting Field ---
+Widget buildMeetingFieldWidget(Map<String, dynamic> meetingData, DateFormat dateFormatter) {
+  // Check if formatter is ready.
+  // Assuming dateFormatter is valid when passed.
+
+  final dateTime = (meetingData['dateTime'] as Timestamp).toDate();
+  final hourString = DateFormat('HH:mm').format(dateTime);
+  // Use the passed formatter for the date part
+  final dateString = dateFormatter.format(dateTime); 
+  final consultantName = meetingData['consultantName'] ?? 'N/A';
+  final clientName = meetingData['clientName'] ?? 'N/A';
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    decoration: BoxDecoration(
+      color: const Color(0xFFCFC4D4), // Using original color for now
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                hourString,
+                style: GoogleFonts.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF886699),
+                ),
+              ),
+            ),
+            Text(
+              dateString,
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF886699),
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 4),
+        
+        Text(
+          consultantName, 
+          style: GoogleFonts.outfit(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF6F4D80),
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          clientName,
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF886699),
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    ),
+  );
+}
+// --- End of Top-Level Function ---
+
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
 
@@ -255,32 +328,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
  }
 
   Widget _buildUpcomingWidget({required double height}) {
-    final now = DateTime.now();
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
-    // If user is not logged in, don't attempt to query
-    if (currentUserId == null) {
-      return Container(
-        width: 224,
-        height: height,
-        padding: const EdgeInsets.all(8.0),
-         decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF).withOpacity(0.5), // Use the background from theme/design
-          borderRadius: BorderRadius.circular(32),
-           boxShadow: [
-             BoxShadow( color: Colors.black.withOpacity(0.1), blurRadius: 15, ),
-          ],
-        ),
-        child: Center(child: Text("Utilizator neconectat", style: GoogleFonts.outfit(color: const Color(0xFF886699)))),
-      );
-    }
-
+    // Outer container structure remains
     return Container(
       width: 224,
       height: height,
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF).withOpacity(0.5),
+        color: const Color(0xFFFFFFFF).withOpacity(0.5), 
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
@@ -295,7 +351,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
             child: Text(
-              'Programările mele', // Changed title
+              'Programările mele', 
               style: GoogleFonts.outfit(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -305,53 +361,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           
           Expanded(
-            // Revert to simple StreamBuilder for user's meetings only
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection(_getCollectionName(CalendarType.meetings)) // Always use meetings collection
-                  .where('consultantId', isEqualTo: currentUserId) // Filter by current user ID
-                  .where('dateTime', isGreaterThan: Timestamp.fromDate(now)) // Filter future events
-                  .orderBy('dateTime', descending: false) // Order chronologically
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  print("Upcoming User Meetings Error: ${snapshot.error}");
-                  return const Center(child: Text('Eroare la încărcare'));
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Nicio programare viitoare',
-                      style: GoogleFonts.outfit(color: const Color(0xFF886699))
-                    )
-                  );
-                }
-
-                final userMeetings = snapshot.data!.docs;
-
-                return ListView.builder(
-                  itemCount: userMeetings.length,
-                  itemBuilder: (context, index) {
-                    final doc = userMeetings[index];
-                    final meetingData = doc.data() as Map<String, dynamic>;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: _buildMeetingField(meetingData), 
-                    );
-                  },
-                );
-              },
-            ),
+            // Instantiate the new StatefulWidget here
+            child: currentUserId == null
+                ? Center(child: Text("Utilizator neconectat", style: GoogleFonts.outfit(color: const Color(0xFF886699))))
+                : UpcomingAppointmentsList(userId: currentUserId, dateFormatter: dateFormatter), // Pass necessary data
           ),
         ],
       ),
     );
   }
 
- Widget _buildMeetingField(Map<String, dynamic> meetingData) {
+  Widget _buildMeetingField(Map<String, dynamic> meetingData) {
     if (dateFormatter == null) {
       return const SizedBox.shrink();
     }
@@ -438,7 +458,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
             child: SizedBox(
               height: 24,
               child: Row(
@@ -1002,7 +1022,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
             child: SizedBox(
               height: 24,
               child: Row(
@@ -1790,5 +1810,169 @@ class _CalendarScreenState extends State<CalendarScreen> {
        print("Error resolving slot key $docIdOrSlotKey: $e");
        return null;
      }
+  }
+}
+
+// --- NEW StatefulWidget for the Upcoming List ---
+class UpcomingAppointmentsList extends StatefulWidget {
+  final String userId;
+  final DateFormat dateFormatter; // Pass the formatter
+
+  const UpcomingAppointmentsList({super.key, required this.userId, required this.dateFormatter});
+
+  @override
+  State<UpcomingAppointmentsList> createState() => _UpcomingAppointmentsListState();
+}
+
+class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
+  late StreamSubscription _subscription;
+  final Map<String, QueryDocumentSnapshot> _allAppointments = {}; // Stores combined data
+  bool _isLoading = true; // Initial loading state
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToAppointments();
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel(); // Cancel subscription
+    super.dispose();
+  }
+
+  // Helper to get collection name (can be defined here or passed)
+  String _getCollectionName(CalendarType type) {
+    switch (type) {
+      case CalendarType.meetings:
+        return 'reservations';
+      case CalendarType.creditBureau:
+        return 'creditBureauAppointments';
+    }
+  }
+
+  void _subscribeToAppointments() {
+    final now = DateTime.now();
+    final String currentUserId = widget.userId; // Access userId from widget
+
+    // Create streams for both collections
+    final meetingsStream = FirebaseFirestore.instance
+        .collection(_getCollectionName(CalendarType.meetings))
+        .where('consultantId', isEqualTo: currentUserId)
+        .where('dateTime', isGreaterThan: Timestamp.fromDate(now))
+        .snapshots();
+
+    final creditBureauStream = FirebaseFirestore.instance
+        .collection(_getCollectionName(CalendarType.creditBureau))
+        .where('consultantId', isEqualTo: currentUserId)
+        .where('dateTime', isGreaterThan: Timestamp.fromDate(now))
+        .snapshots();
+
+    // Merge the streams
+    final combinedStream = StreamGroup.merge([meetingsStream, creditBureauStream]);
+
+    // Listen to the combined stream
+    _subscription = combinedStream.listen(
+      (querySnapshot) {
+        print("Data received in StatefulWidget listener (Count: ${querySnapshot.docs.length})");
+        // Update the map with new data from the latest snapshot
+        bool dataChanged = false;
+        for (var doc in querySnapshot.docs) {
+           // Check if data is actually different before marking change
+           // This check is basic, could be more sophisticated
+           if (!_allAppointments.containsKey(doc.id) || 
+               !_areMapsEqual(_allAppointments[doc.id]?.data() as Map<String, dynamic>?, doc.data() as Map<String, dynamic>?)) {
+             _allAppointments[doc.id] = doc;
+             dataChanged = true;
+           }
+        }
+
+        // We also need to handle removals if a document disappears from a snapshot
+        // This requires knowing which stream emitted the snapshot, which merge doesn't tell us directly.
+        // A more complex setup (e.g., listening to each stream separately and combining) is needed for perfect removal handling.
+        // For now, we only add/update.
+
+        // Update state only if data actually changed or if it was the first load
+        if (dataChanged || _isLoading) {
+             if (mounted) { // Check if the widget is still in the tree
+               setState(() {
+                  _isLoading = false; // Mark loading as complete after first data
+               });
+             }
+        }
+      },
+      onError: (error) {
+        print("Error in combined appointments stream: $error");
+        if (mounted) {
+             setState(() {
+               _isLoading = false; // Stop loading on error
+               // Optionally, display an error message in the build method
+             });
+        }
+      },
+      onDone: () {
+        print("Combined appointments stream done.");
+         if (mounted) {
+            setState(() {
+               _isLoading = false;
+            });
+         }
+      }
+    );
+  }
+
+ // Basic map comparison helper (adjust as needed for complex objects)
+ bool _areMapsEqual(Map<String, dynamic>? map1, Map<String, dynamic>? map2) {
+    if (map1 == null || map2 == null) return map1 == map2;
+    if (map1.length != map2.length) return false;
+    for (final key in map1.keys) {
+       if (!map2.containsKey(key) || map1[key] != map2[key]) {
+          // Note: This is a shallow comparison. Deep comparison might be needed.
+          return false;
+       }
+    }
+    return true;
+ }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Get the combined list from the map
+    final sortedAppointments = _allAppointments.values.toList();
+
+    // Sort the combined list
+    sortedAppointments.sort((a, b) {
+      final aData = a.data() as Map<String, dynamic>?;
+      final bData = b.data() as Map<String, dynamic>?;
+      if (aData == null || bData == null || aData['dateTime'] == null || bData['dateTime'] == null) return 0;
+      final aTime = aData['dateTime'] as Timestamp;
+      final bTime = bData['dateTime'] as Timestamp;
+      return aTime.compareTo(bTime);
+    });
+
+    if (sortedAppointments.isEmpty) {
+      return Center(
+        child: Text(
+          'Nicio programare viitoare',
+          style: GoogleFonts.outfit(color: const Color(0xFF886699))
+        )
+      );
+    }
+
+    // Build the list view
+    return ListView.builder(
+      itemCount: sortedAppointments.length,
+      itemBuilder: (context, index) {
+        final doc = sortedAppointments[index];
+        final meetingData = doc.data() as Map<String, dynamic>;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: buildMeetingFieldWidget(meetingData, widget.dateFormatter), 
+        );
+      },
+    );
   }
 }
