@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'screens/auth/register.dart';
 import 'screens/auth/login.dart';
 import 'screens/auth/reset_password.dart';
-import 'screens/auth/token.dart'; // Poți păstra acest ecran pentru moment, dar nu va fi folosit în fluxul standard de resetare parolă Firebase
-import 'screens/calendar_screen.dart'; // Import the CalendarScreen
-import 'package:firebase_core/firebase_core.dart'; // Import Firebase Core
-import 'package:firebase_auth/firebase_auth.dart'; // Added FirebaseAuth import
-// Importă opțiunile default generate de FlutterFire CLI
-import 'firebase_options.dart'; // Acest fișier este generat de comanda `flutterfire configure`
-import 'dart:async'; // Add this import for runZonedGuarded
+import 'screens/auth/token.dart';
+import 'screens/calendar/calendar_screen.dart';
+import 'screens/form/form_screen.dart';
+import 'screens/settings/settings_screen.dart';
+import 'widgets/navigation/navigation_widget.dart';
+import 'theme/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
+import 'dart:async';
 
 // For DevTools inspection
 class DebugOptions {
@@ -51,52 +55,47 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Removed GestureDetector and state management for debug toggles for simplicity now
-    // Can be added back around AuthWrapper if needed
     return MaterialApp(
       title: 'Broker App',
-      // Debug flags can be set here directly if needed for testing
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF866C93),
-          primary: const Color(0xFF77677E),
-          secondary: const Color(0xFF866C93),
-          background: const Color(0xFFF2F2F2),
+          seedColor: AppTheme.fontLightPurple,
+          primary: AppTheme.fontMediumPurple,
+          secondary: AppTheme.fontLightPurple,
+          background: Colors.white,
         ),
         useMaterial3: true,
         textTheme: GoogleFonts.outfitTextTheme(),
         scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
-          titleTextStyle: TextStyle(
-            color: Color(0xFF77677E),
+          titleTextStyle: GoogleFonts.outfit(
+            color: AppTheme.fontMediumPurple,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
           iconTheme: IconThemeData(
-            color: Color(0xFF866C93),
+            color: AppTheme.fontLightPurple,
           ),
         ),
       ),
       // Use AuthWrapper to determine the initial screen
       home: const AuthWrapper(),
-      // Routes might still be useful for named navigation elsewhere
+      // Routes pentru navigare
       routes: {
         '/register': (context) => const RegisterScreen(),
         '/login': (context) => const LoginScreen(),
-        '/token': (context) => const TokenScreen(), // Keeping for now, but explain its role
+        '/token': (context) => const TokenScreen(),
         '/reset_password': (context) => const ResetPasswordScreen(),
-        '/dashboard': (context) => const Placeholder(), // Replace with your dashboard screen
-        '/calendar': (context) => const CalendarScreen(), // Add CalendarScreen route
       },
     );
   }
 }
 
-// New AuthWrapper Widget
+// AuthWrapper verifică starea autentificării
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -119,8 +118,8 @@ class AuthWrapper extends StatelessWidget {
         // Log whether user data exists
         print('AuthWrapper: Has user data? ${snapshot.hasData}');
         if (snapshot.hasData) {
-          print('AuthWrapper: User is logged in (UID: ${snapshot.data?.uid}). Navigating to CalendarScreen.');
-          return const CalendarScreen();
+          print('AuthWrapper: User is logged in (UID: ${snapshot.data?.uid}). Navigating to MainApp.');
+          return const MainAppWrapper();
         }
         
         // User is logged out, show LoginScreen
@@ -128,5 +127,131 @@ class AuthWrapper extends StatelessWidget {
         return const LoginScreen();
       },
     );
+  }
+}
+
+// Wrapper pentru aplicația principală care gestionează navigarea
+class MainAppWrapper extends StatefulWidget {
+  const MainAppWrapper({super.key});
+
+  @override
+  State<MainAppWrapper> createState() => _MainAppWrapperState();
+}
+
+class _MainAppWrapperState extends State<MainAppWrapper> {
+  // Stare pentru ecranul activ
+  NavigationScreen _currentScreen = NavigationScreen.calendar;
+  
+  // Datele consultantului (vor fi încărcate din Firebase)
+  Map<String, dynamic>? _consultantData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchConsultantData();
+  }
+
+  // Încărcarea datelor consultantului din Firebase
+  Future<void> _fetchConsultantData() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _consultantData = null;
+        });
+      }
+      return;
+    }
+
+    try {
+      final consultantDoc = await FirebaseFirestore.instance
+          .collection('consultants')
+          .doc(currentUser.uid)
+          .get();
+      
+      if (!mounted) return;
+
+      if (consultantDoc.exists) {
+        setState(() {
+          _consultantData = consultantDoc.data() as Map<String, dynamic>?;
+          _isLoading = false;
+        });
+      } else {
+        // Dacă utilizatorul nu are date de consultant asociate, deconectează-l
+        await FirebaseAuth.instance.signOut();
+        setState(() {
+          _consultantData = null;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching consultant data: $e");
+      if (mounted) {
+        setState(() {
+          _consultantData = null;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Handler pentru schimbarea ecranului
+  void _handleScreenChange(NavigationScreen screen) {
+    setState(() {
+      _currentScreen = screen;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Afișează indicator de încărcare în timp ce se încarcă datele
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Verifică dacă datele consultantului există
+    if (_consultantData == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text("Nu există date de consultant asociate acestui cont."),
+        ),
+      );
+    }
+
+    // Extrage numele și echipa consultantului
+    final String consultantName = _consultantData!['name'] ?? 'Consultant';
+    final String teamName = _consultantData!['team'] ?? 'Echipa';
+
+    // Afișează ecranul corespunzător
+    switch (_currentScreen) {
+      case NavigationScreen.calendar:
+        return CalendarScreen(
+          consultantName: consultantName,
+          teamName: teamName,
+          onScreenChanged: _handleScreenChange,
+        );
+      case NavigationScreen.form:
+        return FormScreen(
+          consultantName: consultantName,
+          teamName: teamName,
+          onScreenChanged: _handleScreenChange,
+        );
+      case NavigationScreen.settings:
+        return SettingsScreen(
+          consultantName: consultantName,
+          teamName: teamName,
+          onScreenChanged: _handleScreenChange,
+        );
+      default:
+        return CalendarScreen(
+          consultantName: consultantName,
+          teamName: teamName,
+          onScreenChanged: _handleScreenChange,
+        );
+    }
   }
 }
