@@ -9,6 +9,7 @@ import 'package:firebase_core/firebase_core.dart'; // Import Firebase Core
 import 'package:firebase_auth/firebase_auth.dart'; // Added FirebaseAuth import
 // Importă opțiunile default generate de FlutterFire CLI
 import 'firebase_options.dart'; // Acest fișier este generat de comanda `flutterfire configure`
+import 'dart:async'; // Add this import for runZonedGuarded
 
 // For DevTools inspection
 class DebugOptions {
@@ -29,12 +30,20 @@ class DebugOptions {
   }
 }
 
-void main() async { // Make main async
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter binding is initialized
-  await Firebase.initializeApp( // Initialize Firebase
-    options: DefaultFirebaseOptions.currentPlatform, // Use default options
+void main() async { 
+  // Wrap the app initialization in runZonedGuarded
+  await runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized(); 
+    await Firebase.initializeApp( 
+      options: DefaultFirebaseOptions.currentPlatform, 
   );
   runApp(const MyApp());
+  }, (error, stackTrace) {
+    // Handle errors that might occur during initialization or later
+    print('Caught error in runZonedGuarded: $error');
+    print(stackTrace);
+    // You might want to report this error to a service like Crashlytics
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -106,7 +115,7 @@ class AuthWrapper extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-
+        
         // Log whether user data exists
         print('AuthWrapper: Has user data? ${snapshot.hasData}');
         if (snapshot.hasData) {

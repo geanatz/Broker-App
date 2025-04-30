@@ -7,6 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import 'dart:ui';
+import 'dart:async'; // Import async for StreamGroup
+import 'package:async/async.dart'; // Import for StreamGroup
+
+// Define enum for calendar types
+enum CalendarType {
+  meetings,       // Întâlniri cu clienții
+  creditBureau    // Stergere birou de credit
+}
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -19,6 +27,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   late DateFormat dateFormatter;
   Map<String, dynamic>? _currentConsultantData;
   bool _isFetchingConsultantData = true;
+  CalendarType _selectedCalendarType = CalendarType.meetings; // Default calendar type
 
   final TextEditingController _clientNameController = TextEditingController();
 
@@ -147,6 +156,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return monthsRo[month - 1];
   }
 
+  // Helper to get the Firestore collection name based on type
+  String _getCollectionName(CalendarType type) {
+    switch (type) {
+      case CalendarType.meetings:
+        return 'reservations';
+      case CalendarType.creditBureau:
+        return 'creditBureauAppointments'; // Choose a name for the new collection
+    }
+  }
+
+  // Helper to get the display name for the calendar type
+  String _getCalendarDisplayName(CalendarType type) {
+    switch (type) {
+      case CalendarType.meetings:
+        return 'Întâlniri cu clienții';
+      case CalendarType.creditBureau:
+        return 'Ștergere birou credit';
+    }
+  }
+
+  // Helper to get the display name for the NEXT calendar type (for button tooltip)
+  String _getNextCalendarDisplayName() {
+    return _getCalendarDisplayName(
+        _selectedCalendarType == CalendarType.meetings 
+        ? CalendarType.creditBureau 
+        : CalendarType.meetings);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isFetchingConsultantData) {
@@ -218,12 +255,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
  }
 
   Widget _buildUpcomingWidget({required double height}) {
+    final now = DateTime.now();
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    // If user is not logged in, don't attempt to query
+    if (currentUserId == null) {
+      return Container(
+        width: 224,
+        height: height,
+        padding: const EdgeInsets.all(8.0),
+         decoration: BoxDecoration(
+          color: const Color(0xFFFFFFFF).withOpacity(0.5), // Use the background from theme/design
+          borderRadius: BorderRadius.circular(32),
+           boxShadow: [
+             BoxShadow( color: Colors.black.withOpacity(0.1), blurRadius: 15, ),
+          ],
+        ),
+        child: Center(child: Text("Utilizator neconectat", style: GoogleFonts.outfit(color: const Color(0xFF886699)))),
+      );
+    }
+
     return Container(
       width: 224,
       height: height,
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2).withOpacity(0.5),
+        color: const Color(0xFFFFFFFF).withOpacity(0.5),
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
@@ -238,7 +295,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
             child: Text(
-              'In curand',
+              'Programările mele', // Changed title
               style: GoogleFonts.outfit(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -248,57 +305,41 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           
           Expanded(
+            // Revert to simple StreamBuilder for user's meetings only
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('reservations')
-                  .orderBy('dateTime', descending: false)
+                  .collection(_getCollectionName(CalendarType.meetings)) // Always use meetings collection
+                  .where('consultantId', isEqualTo: currentUserId) // Filter by current user ID
+                  .where('dateTime', isGreaterThan: Timestamp.fromDate(now)) // Filter future events
+                  .orderBy('dateTime', descending: false) // Order chronologically
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Eroare la încărcare întâlniri'));
+                  print("Upcoming User Meetings Error: ${snapshot.error}");
+                  return const Center(child: Text('Eroare la încărcare'));
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
                     child: Text(
-                      'Nicio întâlnire programată',
-                       style: GoogleFonts.outfit(color: const Color(0xFF886699))
+                      'Nicio programare viitoare',
+                      style: GoogleFonts.outfit(color: const Color(0xFF886699))
                     )
                   );
                 }
 
-                final now = DateTime.now();
-                final meetings = snapshot.data!.docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final meetingTime = (data['dateTime'] as Timestamp).toDate();
-                  return meetingTime.isAfter(now);
-                }).toList();
-
-                meetings.sort((a, b) {
-                   final timeA = (a.data() as Map<String, dynamic>)['dateTime'] as Timestamp;
-                   final timeB = (b.data() as Map<String, dynamic>)['dateTime'] as Timestamp;
-                   return timeA.compareTo(timeB);
-                });
-
-                if (meetings.isEmpty) {
-                   return Center(
-                    child: Text(
-                      'Nicio întâlnire viitoare',
-                       style: GoogleFonts.outfit(color: const Color(0xFF886699))
-                    )
-                  );
-                }
+                final userMeetings = snapshot.data!.docs;
 
                 return ListView.builder(
-                  itemCount: meetings.length,
-              itemBuilder: (context, index) {
-                    final doc = meetings[index];
+                  itemCount: userMeetings.length,
+                  itemBuilder: (context, index) {
+                    final doc = userMeetings[index];
                     final meetingData = doc.data() as Map<String, dynamic>;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                      child: _buildMeetingField(meetingData),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: _buildMeetingField(meetingData), 
                     );
                   },
                 );
@@ -391,7 +432,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final calendarContainer = Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2).withOpacity(0.5),
+        color: const Color(0xFFFFFFFF).withOpacity(0.5),
         borderRadius: BorderRadius.circular(32),
       ),
       child: Column(
@@ -412,8 +453,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ),
                   ),
+                  // Display current calendar name
                   Text(
-                    'Întâlniri cu clienții',
+                    _getCalendarDisplayName(_selectedCalendarType),
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -421,7 +463,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _buildDropdownButton(),
+                  // Swap button
+                  Tooltip(
+                    message: "Schimbă pe ${_getNextCalendarDisplayName()}",
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedCalendarType = 
+                              _selectedCalendarType == CalendarType.meetings 
+                              ? CalendarType.creditBureau 
+                              : CalendarType.meetings;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12), // Make ripple effect circular
+                      child: SvgPicture.asset(
+                        'assets/SwapIcon.svg', // Use the correct SVG asset
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF9E8AA8),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -458,8 +523,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
+                      // Use helper to get collection name based on state
                       stream: FirebaseFirestore.instance
-                          .collection('reservations')
+                          .collection(_getCollectionName(_selectedCalendarType))
                           .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
                           .where('dateTime', isLessThan: Timestamp.fromDate(endOfWeek))
                           .snapshots(),
@@ -473,6 +539,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         }
 
                         final Map<String, Map<String, dynamic>> reservedSlotsMap = {};
+                        final Map<String, String> reservedSlotsDocIds = {}; // Store doc IDs
                         if (snapshot.hasData) {
                           for (var doc in snapshot.data!.docs) {
                             final data = doc.data() as Map<String, dynamic>;
@@ -485,7 +552,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             final hourIndex = hours.indexOf(timeString);
                             if (hourIndex == -1) continue;
                             
-                            reservedSlotsMap['$dayIndex-$hourIndex'] = data;
+                            final slotKey = '$dayIndex-$hourIndex';
+                            reservedSlotsMap[slotKey] = data;
+                            reservedSlotsDocIds[slotKey] = doc.id; // Store the document ID
                           }
                         }
 
@@ -531,6 +600,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         children: List.generate(hours.length, (hourIndex) {
                                               final slotKey = '$dayIndex-$hourIndex';
                                               final reservationData = reservedSlotsMap[slotKey];
+                                              final docId = reservedSlotsDocIds[slotKey]; // Get the stored doc ID
                                               final isReserved = reservationData != null;
                                           
                                           return Padding(
@@ -539,11 +609,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                               height: 64,
                                                   width: double.infinity, 
                                               child: isReserved 
-                                                    ? _buildReservedSlot(
-                                                        reservationData?['consultantName'] ?? 'N/A', 
-                                                        reservationData?['clientName'] ?? 'N/A'
-                                                      )
-                                                    : _buildAvailableSlot(dayIndex, hourIndex), 
+                                                    ? _buildReservedSlot(reservationData, docId ?? slotKey)
+                                                    : _buildAvailableSlot(dayIndex, hourIndex, _selectedCalendarType), 
                                             ),
                                           );
                                         }),
@@ -571,46 +638,63 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return isExpanded ? Expanded(child: calendarContainer) : calendarContainer;
   }
 
-  Widget _buildReservedSlot(String consultantName, String clientName) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFC4B3CC),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            consultantName,
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF6F4D80),
+  Widget _buildReservedSlot(Map<String, dynamic> reservationData, String docId) {
+    final consultantName = reservationData['consultantName'] ?? 'N/A';
+    final clientName = reservationData['clientName'] ?? 'N/A';
+    final consultantId = reservationData['consultantId'] as String?;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final bool isOwner = consultantId != null && currentUserId == consultantId;
+    
+    // Determine the calendar type based on the current state
+    // This assumes the slot being built belongs to the currently selected calendar
+    // A more robust approach might involve storing the type in the reservation data itself
+    final CalendarType calendarType = _selectedCalendarType;
+
+    return InkWell(
+      // Only allow tap if the current user is the owner
+      onTap: isOwner ? () => _showEditReservationDialog(reservationData, docId, calendarType) : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+        decoration: BoxDecoration(
+          color: const Color(0xFFC4B3CC), // Background color for reserved slot
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              consultantName,
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF6F4D80), // Darker text color
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            clientName,
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF886699),
+            Text(
+              clientName,
+              style: GoogleFonts.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF886699), // Lighter text color
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
- Widget _buildAvailableSlot(int dayIndex, int hourIndex) {
+ Widget _buildAvailableSlot(int dayIndex, int hourIndex, CalendarType calendarType) {
     return InkWell(
-      onTap: () => _showReservationDialog(dayIndex, hourIndex),
+      // Pass calendar type to the reservation dialog
+      onTap: () => _showReservationDialog(dayIndex, hourIndex, calendarType),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
@@ -635,7 +719,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
- void _showReservationDialog(int dayIndex, int hourIndex) {
+ void _showReservationDialog(int dayIndex, int hourIndex, CalendarType calendarType) {
     final now = DateTime.now();
     final monday = now.subtract(Duration(days: now.weekday - 1));
     final selectedDate = monday.add(Duration(days: dayIndex));
@@ -659,7 +743,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            backgroundColor: const Color(0xFFF2F2F2),
+            backgroundColor: const Color(0xFFFFFFFF),
             title: Text(
               'Rezervare Slot',
               style: GoogleFonts.outfit(
@@ -694,7 +778,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 onPressed: () {
                   final clientName = _clientNameController.text.trim();
                   if (clientName.isNotEmpty && _currentConsultantData != null) {
-                    _createReservation(selectedDateTime, clientName);
+                    // Pass calendar type to create reservation
+                    _createReservation(selectedDateTime, clientName, calendarType);
                     Navigator.of(context).pop();
                   } else {
                     print("Client name is empty or consultant data missing.");
@@ -711,7 +796,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
- Future<void> _createReservation(DateTime dateTime, String clientName) async {
+ Future<void> _createReservation(DateTime dateTime, String clientName, CalendarType calendarType) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null || _currentConsultantData == null) {
       print("Cannot create reservation: User not logged in or consultant data missing.");
@@ -728,7 +813,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
 
     try {
-      await FirebaseFirestore.instance.collection('reservations').add({
+      await FirebaseFirestore.instance
+          .collection(_getCollectionName(calendarType)) // Use correct collection
+          .add({
         'consultantId': currentUser.uid,
         'consultantName': _currentConsultantData?['name'] ?? 'N/A',
         'clientName': clientName,
@@ -753,7 +840,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildDropdownButton() {
     return SvgPicture.asset(
-      'assets/DropdownIcon.svg',
+      'assets/SwapIcon.svg',
       width: 24,
       height: 24,
       colorFilter: const ColorFilter.mode(
@@ -783,7 +870,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Container(
       padding: const EdgeInsets.all(8.0), 
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2).withOpacity(0.5),
+        color: const Color(0xFFFFFFFF).withOpacity(0.5),
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
@@ -903,7 +990,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2).withOpacity(0.5),
+        color: const Color(0xFFFFFFFF).withOpacity(0.5),
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
@@ -1028,5 +1115,680 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
       ),
     );
+  }
+
+  // Modify Edit Dialog to accept and use CalendarType
+  void _showEditReservationDialog(Map<String, dynamic> reservationData, String docId, CalendarType calendarType) {
+    // Extract initial data
+    final initialClientName = reservationData['clientName'] as String? ?? '';
+    final initialDateTime = (reservationData['dateTime'] as Timestamp).toDate();
+
+    // Controllers for fields
+    final clientNameController = TextEditingController(text: initialClientName);
+    
+    // Variables for state within the dialog
+    DateTime selectedDate = initialDateTime;
+    String selectedTime = DateFormat('HH:mm').format(initialDateTime);
+    List<String> availableHours = []; // Start empty, will be populated by fetch
+    bool isLoadingSlots = true; // Start as true, fetch will set to false
+    bool initialFetchTriggered = false; // Flag to ensure fetch runs only once initially
+    
+    // Function to fetch available time slots for the selected date
+    Future<void> fetchAvailableTimeSlots(BuildContext dialogContext, DateTime date, String excludeDocId, String collectionName, StateSetter setStateCallback) async {
+      print("Fetching slots for $date from $collectionName, excluding $excludeDocId");
+      // Ensure we only update state if the dialog is still mounted
+      if (!dialogContext.mounted) {
+        print("Fetch cancelled: Dialog context not mounted.");
+        return;
+      }
+      
+      // Set loading state immediately
+      // Check mount again before calling setStateCallback
+      if (dialogContext.mounted) {
+          setStateCallback(() {
+              if (!isLoadingSlots) isLoadingSlots = true;
+          });
+      }
+      
+      List<String> finalAvailableHours = [];
+      try {
+        // Get the start and end of the selected day
+        final startOfDay = DateTime(date.year, date.month, date.day);
+        final endOfDay = startOfDay.add(const Duration(days: 1));
+        
+        Set<String> reservedTimes = {};
+        
+        // Query reservations safely
+        QuerySnapshot reservations = await FirebaseFirestore.instance
+            .collection(collectionName)
+            .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+            .where('dateTime', isLessThan: Timestamp.fromDate(endOfDay))
+            .get();
+        print("Found ${reservations.docs.length} reservations for the day.");
+            
+        for (var doc in reservations.docs) {
+          try {
+            // Determine the ID to exclude based on format
+            String? reservationDocIdToCompare = doc.id;
+            DateTime? excludeSlotDateTime;
+            
+            // Complex logic to handle both slot key and direct docId for exclusion
+            bool isCurrentReservation = false;
+            if (excludeDocId.contains('-')) {
+              final parts = excludeDocId.split('-');
+                if (parts.length == 2) {
+                  final dayIndex = int.parse(parts[0]);
+                  final hourIndex = int.parse(parts[1]);
+                  final now = DateTime.now();
+                  final monday = now.subtract(Duration(days: now.weekday - 1));
+                  final excludeDate = monday.add(Duration(days: dayIndex));
+                  final excludeHourMin = hours[hourIndex].split(':');
+                  excludeSlotDateTime = DateTime(
+                    excludeDate.year, excludeDate.month, excludeDate.day,
+                    int.parse(excludeHourMin[0]), int.parse(excludeHourMin[1])
+                  );
+                  final data = doc.data() as Map<String, dynamic>;
+                  final timestamp = data['dateTime'] as Timestamp;
+                  final reservationTime = timestamp.toDate();
+                   if (reservationTime.year == excludeSlotDateTime.year &&
+                        reservationTime.month == excludeSlotDateTime.month &&
+                        reservationTime.day == excludeSlotDateTime.day &&
+                        reservationTime.hour == excludeSlotDateTime.hour &&
+                        reservationTime.minute == excludeSlotDateTime.minute) {
+                      isCurrentReservation = true;
+                  }
+                }
+            } else if (doc.id == excludeDocId) {
+               isCurrentReservation = true;
+            }
+
+            // If it's the one being edited, skip adding its time to reservedTimes
+            if (isCurrentReservation) {
+              print("Skipping current reservation: ${doc.id}");
+              continue; 
+            }
+            
+            // Add other reserved times
+            final data = doc.data() as Map<String, dynamic>;
+            final timestamp = data['dateTime'] as Timestamp;
+            final slotTime = DateFormat('HH:mm').format(timestamp.toDate());
+            reservedTimes.add(slotTime);
+          } catch (e) {
+            print("Error processing a reservation document (${doc.id}): $e");
+          }
+        }
+        print("Reserved times found: $reservedTimes");
+        
+        // Filter hours based on reserved times
+        finalAvailableHours = hours.where((hour) => !reservedTimes.contains(hour)).toList();
+        print("Initially available hours: $finalAvailableHours");
+        
+        // Ensure the original time slot of the reservation being edited is always available
+        String originalTimeSlot = DateFormat('HH:mm').format(initialDateTime);
+        if (!finalAvailableHours.contains(originalTimeSlot)) {
+          print("Adding original slot $originalTimeSlot back to list.");
+          finalAvailableHours.add(originalTimeSlot);
+          finalAvailableHours.sort(); // Keep sorted
+        }
+        print("Final available hours: $finalAvailableHours");
+
+      } catch (e) {
+        print("Error during fetchAvailableTimeSlots query/processing: $e");
+        // Fallback: provide all hours if there was an error during fetch
+        finalAvailableHours = [...hours];
+      } finally {
+        print("Fetch complete. Setting state. isLoadingSlots will be false.");
+        // Always ensure isLoadingSlots is set to false after attempt, only update state if mounted
+        if (dialogContext.mounted) {
+          setStateCallback(() {
+            availableHours = finalAvailableHours;
+            isLoadingSlots = false; // Explicitly set to false here
+            
+            // Adjust selectedTime ONLY if it's NOT the original slot AND it's not available
+            String originalTimeSlot = DateFormat('HH:mm').format(initialDateTime);
+            if (selectedTime != originalTimeSlot && !availableHours.contains(selectedTime)) {
+               print("Selected time $selectedTime is no longer available. Resetting...");
+               if (availableHours.isNotEmpty) {
+                  selectedTime = availableHours.first; // Select first available
+                  print("New selected time: $selectedTime");
+                  // Update selectedDate's time component accordingly
+                  final timeParts = selectedTime.split(':');
+                  selectedDate = DateTime(
+                    selectedDate.year, selectedDate.month, selectedDate.day,
+                    int.parse(timeParts[0]), int.parse(timeParts[1]),
+                  );
+               } else {
+                  print("Warning: No available time slots found, cannot reset selectedTime.");
+                  // Consider disabling dropdown or showing message
+               }
+            } else {
+              print("Selected time $selectedTime is still available or is the original slot.");
+            }
+          });
+        } else {
+           print("Dialog context was not mounted in finally block.");
+        }
+      }
+    }
+    
+    // Show the dialog
+    showDialog(
+        context: context, // Use the original context here
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.25),
+        builder: (BuildContext dialogContext) { // New context for the builder
+          // StatefulBuilder to manage state inside the dialog
+          return StatefulBuilder(
+              builder: (stfContext, stfSetState) {
+              // Trigger initial fetch using WidgetsBinding
+              // We need a way to track if it has been done for this dialog instance
+              // Use a simple boolean flag within this scope
+              if (!initialFetchTriggered) {
+                  initialFetchTriggered = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                  // Pass the correct context and setState
+                  fetchAvailableTimeSlots(dialogContext, selectedDate, docId, _getCollectionName(calendarType), stfSetState);
+                  });
+              }
+              
+              return BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Dialog(
+                  insetPadding: EdgeInsets.zero,
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                      width: 352,
+                      height: 360,
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                      color: const Color(0xFFFFFFFF).withOpacity(0.75),
+                      borderRadius: BorderRadius.circular(32),
+                      ),
+                      child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                          // Header (aligns with EditReservationHeader and Title CSS)
+                          Container(
+                              width: 336, // width: 336px
+                              height: 32,
+                              padding: const EdgeInsets.only(left: 8), // padding: 0px 0px 0px 8px
+                              alignment: Alignment.centerLeft, // Align text left within its container
+                              child: Text(
+                                  'Modifica programare',
+                                  style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 20,
+                                      color: const Color(0xFF9E8AA8),
+                                  ),
+                              ),
+                          ),
+                          
+                          const SizedBox(height: 8), // gap: 8px
+                          
+                          // Form Container
+                          Container(
+                              width: 336,
+                              height: 248,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                              color: const Color(0xFFCFC4D4),
+                              borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                  // Client Name Field
+                                  Container(
+                                      width: 320,
+                                      height: 72,
+                                      child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                              Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                  height: 24,
+                                                  alignment: Alignment.centerLeft,
+                                                  child: Text('Nume client', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 18, color: const Color(0xFF886699)))
+                                              ),
+                                              Container(
+                                                  height: 48,
+                                                  width: 320,
+                                                  decoration: BoxDecoration(color: const Color(0xFFC5B0CF), borderRadius: BorderRadius.circular(16)),
+                                                  child: TextField(
+                                                      controller: clientNameController,
+                                                      textAlignVertical: TextAlignVertical.center,
+                                                      style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w500, color: const Color(0xFF6F4D80)),
+                                                      decoration: InputDecoration(
+                                                          border: InputBorder.none,
+                                                          hintText: 'Introdu numele clientului',
+                                                          hintStyle: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w500, color: const Color(0xFF6F4D80).withOpacity(0.7)),
+                                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                                          isDense: true,
+                                                      ),
+                                                  ),
+                                              ),
+                                          ],
+                                      ),
+                                  ),
+                                  
+                                  const SizedBox(height: 8),
+                                  
+                                  // Date Field
+                                  Container(
+                                      width: 320,
+                                      height: 72,
+                                      child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                              Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                  height: 24,
+                                                  alignment: Alignment.centerLeft,
+                                                  child: Text('Data', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 18, color: const Color(0xFF886699)))
+                                              ),
+                                              InkWell(
+                                                  onTap: () async {
+                                                      final DateTime? pickedDate = await showDatePicker(
+                                                        context: context,
+                                                        initialDate: selectedDate,
+                                                        firstDate: DateTime.now(),
+                                                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                                                        builder: (context, child) {
+                                                          return Theme(
+                                                            data: ThemeData.light().copyWith(
+                                                              colorScheme: const ColorScheme.light(
+                                                                primary: Color(0xFF9E8AA8),
+                                                                onPrimary: Colors.white,
+                                                                surface: Color(0xFFFFFFFF),
+                                                                onSurface: Color(0xFF886699),
+                                                              ),
+                                                            ),
+                                                            child: child!,
+                                                          );
+                                                        },
+                                                      );
+                                                      
+                                                      if (pickedDate != null) {
+                                                          if (stfContext.mounted) {
+                                                              stfSetState(() {
+                                                                  selectedDate = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, selectedDate.hour, selectedDate.minute);
+                                                              });
+                                                              // Trigger fetch for new date
+                                                              fetchAvailableTimeSlots(dialogContext, selectedDate, docId, _getCollectionName(calendarType), stfSetState);
+                                                          }
+                                                      }
+                                                  },
+                                                  child: Container(
+                                                      height: 48,
+                                                      width: 320,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                                      decoration: BoxDecoration(color: const Color(0xFFC5B0CF), borderRadius: BorderRadius.circular(16)),
+                                                      alignment: Alignment.centerLeft,
+                                                      child: Row(
+                                                          children: [
+                                                              Expanded(child: Text(DateFormat('dd/MM/yyyy').format(selectedDate), style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w500, color: const Color(0xFF6F4D80)))),
+                                                              SvgPicture.asset('assets/CalendarIcon.svg', width: 24, height: 24, colorFilter: const ColorFilter.mode(Color(0xFF6F4D80), BlendMode.srcIn)),
+                                                          ],
+                                                      ),
+                                                  ),
+                                              ),
+                                          ],
+                                      ),
+                                  ),
+                                  
+                                  const SizedBox(height: 8),
+                                  
+                                  // Time Field
+                                  Container(
+                                      width: 320,
+                                      height: 72,
+                                      child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                              Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                  height: 24,
+                                                  alignment: Alignment.centerLeft,
+                                                  child: Text('Ora', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 18, color: const Color(0xFF886699)))
+                                              ),
+                                              Container(
+                                                  height: 48,
+                                                  width: 320,
+                                                  decoration: BoxDecoration(color: const Color(0xFFC5B0CF), borderRadius: BorderRadius.circular(16)),
+                                                  child: isLoadingSlots 
+                                                      ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Color(0xFF6F4D80), strokeWidth: 2.5)))
+                                                      : DropdownButtonHideUnderline(
+                                                      child: DropdownButton<String>(
+                                                          value: availableHours.contains(selectedTime) ? selectedTime : (availableHours.isNotEmpty ? availableHours.first : null),
+                                                          dropdownColor: const Color(0xFFC5B0CF),
+                                                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF6F4D80)),
+                                                          isExpanded: true,
+                                                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                          style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w500, color: const Color(0xFF6F4D80)),
+                                                          underline: const SizedBox.shrink(),
+                                                          items: availableHours.map((String hour) => DropdownMenuItem<String>(value: hour, child: Text(hour))).toList(),
+                                                          onChanged: isLoadingSlots ? null : (String? newValue) {
+                                                              if (newValue != null) {
+                                                                  stfSetState(() {
+                                                                      selectedTime = newValue;
+                                                                      final timeParts = newValue.split(':');
+                                                                      selectedDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, int.parse(timeParts[0]), int.parse(timeParts[1]));
+                                                                  });
+                                                              }
+                                                          },
+                                                      ),
+                                                      ),
+                                              ),
+                                          ],
+                                      ),
+                                  ),
+                              ],
+                              ),
+                          ),
+                          
+                          const SizedBox(height: 8),
+                          
+                          // Button Section
+                          Container(
+                              width: 336,
+                              height: 48,
+                              child: Row(
+                                  children: [
+                                      // Delete Button
+                                      Container(
+                                          width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFFC5B0CF), borderRadius: BorderRadius.circular(24)),
+                                          child: Material(color: Colors.transparent, child: InkWell(
+                                            onTap: () async {
+                                              // Directly close the edit dialog and delete
+                                              if (dialogContext.mounted) {
+                                                   Navigator.of(dialogContext).pop(); // Close edit dialog
+                                              }
+                                              // Call the delete function
+                                              await _deleteReservation(docId, _getCollectionName(calendarType));
+                                            },
+                                            borderRadius: BorderRadius.circular(24),
+                                            child: Center(child: SvgPicture.asset('assets/TrashIcon.svg', width: 24, height: 24, colorFilter: const ColorFilter.mode(Color(0xFF6F4D80), BlendMode.srcIn)))))
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // Save Button
+                                      Expanded(
+                                          child: Container(
+                                              width: 280, height: 48, decoration: BoxDecoration(color: const Color(0xFFC5B0CF), borderRadius: BorderRadius.circular(24)),
+                                              child: Material(
+                                                  color: Colors.transparent,
+                                                  child: InkWell(
+                                                    onTap: isLoadingSlots ? null : () async {
+                                                      print("Save button tapped.");
+                                                      final String clientName = clientNameController.text.trim();
+                                                      if (clientName.isEmpty) {
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text('Introduceți numele clientului.'),
+                                                            backgroundColor: Colors.orange,
+                                                          ),
+                                                        );
+                                                        return;
+                                                      }
+                                                      
+                                                      print("Checking availability for $selectedDate (excluding $docId)");
+                                                      bool isAvailable = await _isTimeSlotAvailable(selectedDate, docId, _getCollectionName(calendarType));
+                                                      print("Slot available: $isAvailable");
+                                                      
+                                                      if (isAvailable) {
+                                                        if (dialogContext.mounted) {
+                                                          Navigator.of(dialogContext).pop();
+                                                        }
+                                                        
+                                                        _updateReservation(
+                                                          docId,
+                                                          clientName,
+                                                          selectedDate,
+                                                          _getCollectionName(calendarType)
+                                                        );
+                                                      } else {
+                                                        if (stfContext.mounted) { 
+                                                          ScaffoldMessenger.of(stfContext).showSnackBar(
+                                                            const SnackBar(
+                                                                content: Text('Acest slot nu mai este disponibil.'),
+                                                                backgroundColor: Colors.red,
+                                                            ),
+                                                          );
+                                                        }
+                                                      }
+                                                    },
+                                                    borderRadius: BorderRadius.circular(24),
+                                                    child: Center(child: Text('Salveaza programare', style: GoogleFonts.outfit(fontWeight: FontWeight.w500, fontSize: 18, color: const Color(0xFF6F4D80)), textAlign: TextAlign.center))))
+                                          )
+                                      ),
+                                  ],
+                              ),
+                          ),
+                      ],
+                      ),
+                  ),
+                  ),
+              );
+              });
+        });
+  }
+
+  // Modify helper methods to accept collection name
+  Future<bool> _isTimeSlotAvailable(DateTime dateTime, String excludeDocId, String collectionName) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(dateTime);
+    final formattedTime = DateFormat('HH:mm').format(dateTime);
+    
+    // Create a range for the exact date/time
+    final startOfDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final timestamp = Timestamp.fromDate(dateTime);
+    
+    try {
+      // Query reservations for this exact date/time
+      QuerySnapshot reservations = await FirebaseFirestore.instance
+          .collection(collectionName)
+          .where('dateTime', isEqualTo: timestamp)
+          .get();
+      
+      // If no reservations or the only one is the current one (excludeDocId), the slot is available
+      if (reservations.docs.isEmpty) {
+        return true;
+      }
+      
+      // Check if the only reservation is the one we're editing
+      if (reservations.docs.length == 1) {
+        // If excludeDocId is in format dayIndex-hourIndex, we need to get the actual document ID
+        if (excludeDocId.contains('-')) {
+          // Extract day and hour indices
+          final dayHourParts = excludeDocId.split('-');
+          if (dayHourParts.length == 2) {
+            final dayIndex = int.parse(dayHourParts[0]);
+            final hourIndex = int.parse(dayHourParts[1]);
+            
+            // Calculate the DateTime for this slot
+            final now = DateTime.now();
+            final monday = now.subtract(Duration(days: now.weekday - 1));
+            final slotDate = monday.add(Duration(days: dayIndex));
+            final slotHour = hours[hourIndex].split(':');
+            
+            final slotDateTime = DateTime(
+              slotDate.year, slotDate.month, slotDate.day,
+              int.parse(slotHour[0]), int.parse(slotHour[1])
+            );
+            
+            // Compare timestamp of the reservation with our slot
+            final reservationTimestamp = (reservations.docs.first.data() as Map<String, dynamic>)['dateTime'] as Timestamp;
+            final reservationDateTime = reservationTimestamp.toDate();
+            
+            // If the times match (same minute), this is our reservation
+            if (reservationDateTime.year == slotDateTime.year &&
+                reservationDateTime.month == slotDateTime.month &&
+                reservationDateTime.day == slotDateTime.day &&
+                reservationDateTime.hour == slotDateTime.hour &&
+                reservationDateTime.minute == slotDateTime.minute) {
+              return true;
+            }
+          }
+        } else if (reservations.docs.first.id == excludeDocId) {
+          // Direct document ID comparison
+          return true;
+        }
+      }
+      
+      // If we got here, the slot is taken by someone else
+      return false;
+    } catch (e) {
+      print("Error checking time slot availability: $e");
+      return false;
+    }
+  }
+
+  // Modify update function to accept collection name
+  Future<void> _updateReservation(String docId, String clientName, DateTime dateTime, String collectionName) async {
+    print("_updateReservation called for $collectionName with docId: $docId");
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    
+    try {
+      String? actualDocId = await _resolveDocId(docId, collectionName);
+      if (actualDocId == null) throw Exception("Failed to resolve document ID");
+      
+      await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(actualDocId)
+          .update({
+            'clientName': clientName,
+            'dateTime': Timestamp.fromDate(dateTime),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+      
+      print("Reservation updated successfully: $actualDocId");
+      
+      // Close the loading dialog (make sure we're on the main thread)
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Programare actualizată cu succes!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Log the error
+      print("Error updating reservation: $e");
+      
+      // Close the loading dialog if it's showing
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eroare la actualizarea programării: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Modify delete function to accept collection name
+  Future<void> _deleteReservation(String docId, String collectionName) async {
+    print("_deleteReservation called for $collectionName with docId: $docId");
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    
+    try {
+      String? actualDocId = await _resolveDocId(docId, collectionName);
+      if (actualDocId == null) throw Exception("Failed to resolve document ID");
+      
+      await FirebaseFirestore.instance
+          .collection(collectionName)
+          .doc(actualDocId)
+          .delete();
+      
+      print("Reservation deleted successfully: $actualDocId");
+      
+      // Close the loading dialog (make sure we're on the main thread)
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Programare ștearsă cu succes!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Log the error
+      print("Error deleting reservation: $e");
+      
+      // Close the loading dialog if it's showing
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eroare la ștergerea programării: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // NEW Helper method to resolve docId (slot key or actual ID) reliably
+  Future<String?> _resolveDocId(String docIdOrSlotKey, String collectionName) async {
+     if (!docIdOrSlotKey.contains('-')) {
+       // It's already (presumably) a document ID
+       return docIdOrSlotKey;
+     }
+     
+     // It's a slot key, resolve it
+     try {
+       final parts = docIdOrSlotKey.split('-');
+       if (parts.length != 2) return null;
+       final dayIndex = int.parse(parts[0]);
+       final hourIndex = int.parse(parts[1]);
+
+       final now = DateTime.now();
+       final monday = now.subtract(Duration(days: now.weekday - 1));
+       final slotDate = monday.add(Duration(days: dayIndex));
+       final slotHour = hours[hourIndex].split(':');
+       final slotDateTime = DateTime(
+           slotDate.year, slotDate.month, slotDate.day,
+           int.parse(slotHour[0]), int.parse(slotHour[1])
+       );
+       final slotTimestamp = Timestamp.fromDate(slotDateTime);
+
+       QuerySnapshot query = await FirebaseFirestore.instance
+           .collection(collectionName)
+           .where('dateTime', isEqualTo: slotTimestamp)
+           .limit(1)
+           .get();
+           
+       if (query.docs.isNotEmpty) {
+         return query.docs.first.id;
+       } else {
+         print("Warning: No document found for slot key $docIdOrSlotKey in $collectionName");
+         return null;
+       }
+     } catch (e) {
+       print("Error resolving slot key $docIdOrSlotKey: $e");
+       return null;
+     }
   }
 }
