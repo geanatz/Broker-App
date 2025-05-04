@@ -11,6 +11,7 @@ import '../../widgets/navigation/sidebar_widget.dart';
 import '../../widgets/navigation/navigation_widget.dart';
 import '../../widgets/common/panel_container.dart';
 import '../../services/reservation_service.dart';
+import '../../widgets/calendar/reservation_dialogs.dart';
 import 'calendar_widgets.dart';
 
 /// Ecranul principal de calendar al aplicației
@@ -53,7 +54,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   final TextEditingController _clientNameController = TextEditingController();
 
   // Calendar data
-  final List<String> daysOfWeek = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri'];
+  final List<String> daysOfWeek = ['Luni', 'Marti', 'Miercuri', 'Joi', 'Vineri'];
   final List<String> hours = [
     '09:30', '10:00', '10:30', '11:00', '11:30', 
     '12:00', '12:30', '13:00', '13:30', '14:00', 
@@ -64,7 +65,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     
-    // Inițializează formatarea datelor pentru limba română
+    // Initializeaza formatarea datelor pentru limba romana
     initializeDateFormatting('ro_RO', null).then((_) {
       if (mounted) {
         setState(() {
@@ -80,17 +81,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.dispose();
   }
 
-  // Helper pentru a obține numele afișat al calendarului în funcție de tip
+  // Helper pentru a obtine numele afisat al calendarului in functie de tip
   String _getCalendarDisplayName(ReservationType type) {
     switch (type) {
       case ReservationType.meeting:
-        return 'Întâlniri cu clienții';
+        return 'Intalniri cu clientii';
       case ReservationType.bureauDelete:
-        return 'Ștergere birou credit';
+        return 'Stergere birou credit';
     }
   }
 
-  // Helper pentru a obține numele următorului tip de calendar (pentru tooltip buton)
+  // Helper pentru a obtine numele urmatorului tip de calendar (pentru tooltip buton)
   String _getNextCalendarDisplayName() {
     return _getCalendarDisplayName(
         _selectedReservationType == ReservationType.meeting 
@@ -136,7 +137,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  /// Construiește layout-ul pentru ecrane mici (< 1200px)
+  /// Construieste layout-ul pentru ecrane mici (< 1200px)
   Widget _buildSmallScreenLayout(double contentHeight) {
     return SingleChildScrollView(
       child: Column(
@@ -164,7 +165,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  /// Construiește layout-ul pentru ecrane mari (>= 1200px)
+  /// Construieste layout-ul pentru ecrane mari (>= 1200px)
   Widget _buildLargeScreenLayout(double contentHeight) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +177,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
         const SizedBox(width: AppTheme.largeGap),
         PanelContainer(
-          width: 1100, // Lățimea panoului de calendar
+          width: 1100, // Latimea panoului de calendar
           height: contentHeight,
           isExpanded: true,
           child: _buildCalendarWidget(),
@@ -193,7 +194,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  /// Construiește widget-ul pentru "Upcoming" (programări viitoare)
+  /// Construieste widget-ul pentru "Upcoming" (programari viitoare)
   Widget _buildUpcomingWidget() {
     final currentUserId = _auth.currentUser?.uid;
 
@@ -208,7 +209,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             AppTheme.defaultGap
           ),
           child: Text(
-            'Programările mele',
+            'Programarile mele',
             style: AppTheme.headerTitleStyle,
           ),
         ),
@@ -228,7 +229,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  /// Construiește widget-ul pentru calendar
+  /// Construieste widget-ul pentru calendar
   Widget _buildCalendarWidget() {
     final weekDates = _getCurrentWeekDates();
     final now = DateTime.now();
@@ -262,24 +263,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   style: AppTheme.subHeaderStyle,
                 ),
                 const SizedBox(width: AppTheme.defaultGap),
-                Tooltip(
-                  message: "Schimbă pe ${_getNextCalendarDisplayName()}",
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedReservationType = 
-                            _selectedReservationType == ReservationType.meeting 
-                            ? ReservationType.bureauDelete 
-                            : ReservationType.meeting;
-                      });
-                    },
-                    child: SvgPicture.asset(
-                      'assets/SwapIcon.svg',
-                      width: AppTheme.iconSizeSmall,
-                      height: AppTheme.iconSizeSmall,
-                      colorFilter: ColorFilter.mode(
-                        AppTheme.fontLightPurple,
-                        BlendMode.srcIn,
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Tooltip(
+                    message: "Schimba pe ${_getNextCalendarDisplayName()}",
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedReservationType = 
+                              _selectedReservationType == ReservationType.meeting 
+                              ? ReservationType.bureauDelete 
+                              : ReservationType.meeting;
+                        });
+                      },
+                      child: SvgPicture.asset(
+                        'assets/SwapIcon.svg',
+                        width: AppTheme.iconSizeSmall,
+                        height: AppTheme.iconSizeSmall,
+                        colorFilter: ColorFilter.mode(
+                          AppTheme.fontLightPurple,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ),
@@ -331,7 +335,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       }
                       if (snapshot.hasError) {
                         print("Calendar Stream Error: ${snapshot.error}");
-                        return const Center(child: Text('Eroare la încărcare calendar'));
+                        return const Center(child: Text('Eroare la incarcare calendar'));
                       }
 
                       // Process reservations data
@@ -370,14 +374,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
                         child: SingleChildScrollView(
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start, 
                             children: [
                               // Hours column
                               Column(
                                 children: hours.map((hour) {
                                   return Container(
                                     width: AppTheme.hourLabelWidth,
-                                    height: 64 + AppTheme.mediumGap, // Slot height + bottom gap
+                                    height: 40, // Match the slot height
+                                    margin: const EdgeInsets.only(bottom: 40), // Match slot bottom padding
                                     alignment: Alignment.center,
                                     child: Text(
                                       hour,
@@ -407,7 +412,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             final isReserved = reservationData != null;
                                         
                                             return Padding(
-                                              padding: const EdgeInsets.only(bottom: AppTheme.mediumGap),
+                                              padding: const EdgeInsets.only(bottom: AppTheme.mediumGap), // Keep the gap between rows
                                               child: SizedBox(
                                                 height: 64, // Fixed height
                                                 width: double.infinity, 
@@ -445,59 +450,65 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final currentUserId = _auth.currentUser?.uid;
     final bool isOwner = consultantId != null && currentUserId == consultantId;
     
-    // Determinăm tipul de calendar
+    // Determinam tipul de calendar
     final ReservationType calendarType = _selectedReservationType;
 
-    return GestureDetector(
-      // Permite tap doar pentru proprietar
-      onTap: isOwner ? () => _showEditReservationDialog(reservationData, docId, calendarType) : null,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-        decoration: BoxDecoration(
-          color: AppTheme.slotReservedBackground,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-          boxShadow: [AppTheme.slotShadow],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              consultantName,
-              style: AppTheme.primaryTitleStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              clientName,
-              style: AppTheme.secondaryTitleStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+    return MouseRegion(
+      cursor: isOwner ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        // Permite tap doar pentru proprietar
+        onTap: isOwner ? () => _showEditReservationDialog(reservationData, docId, calendarType) : null,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+          decoration: BoxDecoration(
+            color: AppTheme.slotReservedBackground,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            boxShadow: [AppTheme.slotShadow],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                consultantName,
+                style: AppTheme.primaryTitleStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                clientName,
+                style: AppTheme.secondaryTitleStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildAvailableSlot(int dayIndex, int hourIndex, ReservationType calendarType) {
-    return GestureDetector(
-      onTap: () => _showReservationDialog(dayIndex, hourIndex, calendarType),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: AppTheme.slotReservedBackground,
-            width: AppTheme.slotBorderThickness,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => _showReservationDialog(dayIndex, hourIndex, calendarType),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: AppTheme.slotReservedBackground,
+              width: AppTheme.slotBorderThickness,
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-        ),
-        child: Center(
-          child: Text(
-            'Loc disponibil',
-            style: AppTheme.secondaryTitleStyle.copyWith(
-              fontWeight: FontWeight.w600,
+          child: Center(
+            child: Text(
+              'Loc disponibil',
+              style: AppTheme.secondaryTitleStyle.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -525,65 +536,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.25),
       builder: (BuildContext context) {
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            backgroundColor: Colors.white,
-            title: Text(
-              'Rezervare Slot',
-              style: AppTheme.primaryTitleStyle,
-            ),
-            content: TextField(
-              controller: _clientNameController,
-              autofocus: true,
-              style: TextStyle(color: AppTheme.fontDarkPurple),
-              decoration: InputDecoration(
-                labelText: 'Nume Client',
-                labelStyle: TextStyle(color: AppTheme.fontMediumPurple),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppTheme.fontMediumPurple),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppTheme.fontMediumPurple.withOpacity(0.5)),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-            actions: [
-              GestureDetector(
-                onTap: () {
+        return CreateReservationDialog(
+          clientNameController: _clientNameController,
+          selectedDateTime: selectedDateTime,
+          onSave: () {
                   final clientName = _clientNameController.text.trim();
-                  if (clientName.isNotEmpty) {
                     _createReservation(selectedDateTime, clientName, calendarType);
                     Navigator.of(context).pop();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Introduceți numele clientului."), 
-                        backgroundColor: Colors.orange
-                      )
-                    );
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.backgroundDarkPurple,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    'Creează Rezervare',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600, 
-                      color: AppTheme.fontDarkPurple
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          }
         );
       },
     );
@@ -607,7 +567,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Rezervare creată cu succes!"), backgroundColor: Colors.green)
+          const SnackBar(content: Text("Rezervare creata cu succes!"), backgroundColor: Colors.green)
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -618,7 +578,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       Navigator.of(context).pop(); // Close loading dialog
       print("Error creating reservation: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Eroare la crearea rezervării: $e"), backgroundColor: Colors.red)
+        SnackBar(content: Text("Eroare la crearea rezervarii: $e"), backgroundColor: Colors.red)
       );
     }
   }
@@ -631,29 +591,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     // Controllers for fields
     final clientNameController = TextEditingController(text: initialClientName);
     
-    // Variables for state within the dialog
-    DateTime selectedDate = initialDateTime;
-    String selectedTime = DateFormat('HH:mm').format(initialDateTime);
-    List<String> availableHours = []; // Start empty, will be populated by fetch
-    bool isLoadingSlots = true; // Start as true, fetch will set to false
-    bool initialFetchTriggered = false; // Flag to ensure fetch runs only once initially
-    
-    // Function to fetch available time slots for the selected date
-    Future<void> fetchAvailableTimeSlots(BuildContext dialogContext, DateTime date, String excludeDocId, StateSetter setStateCallback) async {
-      // Ensure we only update state if the dialog is still mounted
-      if (!dialogContext.mounted) {
-        print("Fetch cancelled: Dialog context not mounted.");
-        return;
-      }
-      
-      // Set loading state immediately
-      if (dialogContext.mounted) {
-          setStateCallback(() {
-              if (!isLoadingSlots) isLoadingSlots = true;
-          });
-      }
-      
-      List<String> finalAvailableHours = [];
+    // Function to fetch available time slots
+    Future<List<String>> fetchAvailableTimeSlots(DateTime date, String excludeDocId) async {
+      List<String> availableHours = [];
       try {
         // Get the start and end of the selected day
         final startOfDay = DateTime(date.year, date.month, date.day);
@@ -696,42 +636,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
         }
         
         // Filter hours based on reserved times
-        finalAvailableHours = hours.where((hour) => !reservedTimes.contains(hour)).toList();
+        availableHours = hours.where((hour) => !reservedTimes.contains(hour)).toList();
         
         // Ensure the original time slot of the reservation being edited is always available
         String originalTimeSlot = DateFormat('HH:mm').format(initialDateTime);
-        if (!finalAvailableHours.contains(originalTimeSlot)) {
-          finalAvailableHours.add(originalTimeSlot);
-          finalAvailableHours.sort(); // Keep sorted
+        if (!availableHours.contains(originalTimeSlot)) {
+          availableHours.add(originalTimeSlot);
+          availableHours.sort(); // Keep sorted
         }
-
       } catch (e) {
         print("Error during fetchAvailableTimeSlots query/processing: $e");
         // Fallback: provide all hours if there was an error during fetch
-        finalAvailableHours = [...hours];
-      } finally {
-        // Always ensure isLoadingSlots is set to false after attempt, only update state if mounted
-        if (dialogContext.mounted) {
-          setStateCallback(() {
-            availableHours = finalAvailableHours;
-            isLoadingSlots = false; // Explicitly set to false here
-            
-            // Adjust selectedTime ONLY if it's NOT the original slot AND it's not available
-            String originalTimeSlot = DateFormat('HH:mm').format(initialDateTime);
-            if (selectedTime != originalTimeSlot && !availableHours.contains(selectedTime)) {
-               if (availableHours.isNotEmpty) {
-                  selectedTime = availableHours.first; // Select first available
-                  // Update selectedDate's time component accordingly
-                  final timeParts = selectedTime.split(':');
-                  selectedDate = DateTime(
-                    selectedDate.year, selectedDate.month, selectedDate.day,
-                    int.parse(timeParts[0]), int.parse(timeParts[1]),
-                  );
-               }
-            }
-          });
-        }
+        availableHours = [...hours];
       }
+      
+      return availableHours;
     }
     
     // Show the dialog
@@ -740,420 +659,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.25),
       builder: (BuildContext dialogContext) {
-        // StatefulBuilder to manage state inside the dialog
-        return StatefulBuilder(
-          builder: (stfContext, stfSetState) {
-            // Trigger initial fetch
-            if (!initialFetchTriggered) {
-              initialFetchTriggered = true;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                fetchAvailableTimeSlots(dialogContext, selectedDate, docId, stfSetState);
-              });
-            }
-            
-            return BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Dialog(
-                insetPadding: EdgeInsets.zero,
-                backgroundColor: Colors.transparent,
-                child: Container(
-                  width: 352,
-                  height: 360,
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.75),
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Header
-                      Container(
-                        width: 336,
-                        height: 32,
-                        padding: const EdgeInsets.only(left: 8),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Modifica programare',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 20,
-                            color: AppTheme.fontLightPurple,
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Form Container
-                      Container(
-                        width: 336,
-                        height: 248,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.backgroundLightPurple,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            // Client Name Field
-                            SizedBox(
-                              width: 320,
-                              height: 72,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    height: 24,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Nume client',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600, 
-                                        fontSize: 18, 
-                                        color: AppTheme.fontMediumPurple
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 48,
-                                    width: 320,
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.backgroundDarkPurple, 
-                                      borderRadius: BorderRadius.circular(16)
-                                    ),
-                                    child: TextField(
-                                      controller: clientNameController,
-                                      textAlignVertical: TextAlignVertical.center,
-                                      style: TextStyle(
-                                        fontSize: 18, 
-                                        fontWeight: FontWeight.w500, 
-                                        color: AppTheme.fontDarkPurple
-                                      ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: 'Introdu numele clientului',
-                                        hintStyle: TextStyle(
-                                          fontSize: 18, 
-                                          fontWeight: FontWeight.w500, 
-                                          color: AppTheme.fontDarkPurple.withOpacity(0.7)
-                                        ),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                        isDense: true,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 8),
-                            
-                            // Date Field
-                            SizedBox(
-                              width: 320,
-                              height: 72,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    height: 24,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Data',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600, 
-                                        fontSize: 18, 
-                                        color: AppTheme.fontMediumPurple
-                                      ),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      final DateTime? pickedDate = await showDatePicker(
-                                        context: context,
-                                        initialDate: selectedDate,
-                                        firstDate: DateTime.now(),
-                                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                                        builder: (context, child) {
-                                          return Theme(
-                                            data: ThemeData.light().copyWith(
-                                              colorScheme: ColorScheme.light(
-                                                primary: AppTheme.fontLightPurple,
-                                                onPrimary: Colors.white,
-                                                surface: Colors.white,
-                                                onSurface: AppTheme.fontMediumPurple,
-                                              ),
-                                            ),
-                                            child: child!,
-                                          );
-                                        },
-                                      );
-                                      
-                                      if (pickedDate != null) {
-                                        if (stfContext.mounted) {
-                                          stfSetState(() {
-                                            selectedDate = DateTime(
-                                              pickedDate.year, 
-                                              pickedDate.month, 
-                                              pickedDate.day, 
-                                              selectedDate.hour, 
-                                              selectedDate.minute
-                                            );
-                                          });
-                                          // Trigger fetch for new date
-                                          fetchAvailableTimeSlots(dialogContext, selectedDate, docId, stfSetState);
-                                        }
-                                      }
-                                    },
-                                    child: Container(
-                                      height: 48,
-                                      width: 320,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.backgroundDarkPurple, 
-                                        borderRadius: BorderRadius.circular(16)
-                                      ),
-                                      alignment: Alignment.centerLeft,
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              DateFormat('dd/MM/yyyy').format(selectedDate),
-                                              style: TextStyle(
-                                                fontSize: 18, 
-                                                fontWeight: FontWeight.w500, 
-                                                color: AppTheme.fontDarkPurple
-                                              ),
-                                            ),
-                                          ),
-                                          SvgPicture.asset(
-                                            'assets/CalendarIcon.svg',
-                                            width: 24,
-                                            height: 24,
-                                            colorFilter: ColorFilter.mode(
-                                              AppTheme.fontDarkPurple,
-                                              BlendMode.srcIn
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 8),
-                            
-                            // Time Field
-                            SizedBox(
-                              width: 320,
-                              height: 72,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    height: 24,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Ora',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600, 
-                                        fontSize: 18, 
-                                        color: AppTheme.fontMediumPurple
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    height: 48,
-                                    width: 320,
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.backgroundDarkPurple, 
-                                      borderRadius: BorderRadius.circular(16)
-                                    ),
-                                    child: isLoadingSlots 
-                                      ? Center(
-                                          child: SizedBox(
-                                            width: 20, 
-                                            height: 20, 
-                                            child: CircularProgressIndicator(
-                                              color: AppTheme.fontDarkPurple, 
-                                              strokeWidth: 2.5
-                                            ),
-                                          ),
-                                        )
-                                      : DropdownButtonHideUnderline(
-                                          child: DropdownButton<String>(
-                                            value: availableHours.contains(selectedTime) 
-                                              ? selectedTime 
-                                              : (availableHours.isNotEmpty ? availableHours.first : null),
-                                            dropdownColor: AppTheme.backgroundDarkPurple,
-                                            icon: Icon(Icons.arrow_drop_down, color: AppTheme.fontDarkPurple),
-                                            isExpanded: true,
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                                            style: TextStyle(
-                                              fontSize: 18, 
-                                              fontWeight: FontWeight.w500, 
-                                              color: AppTheme.fontDarkPurple
-                                            ),
-                                            underline: const SizedBox.shrink(),
-                                            items: availableHours.map((String hour) => 
-                                              DropdownMenuItem<String>(
-                                                value: hour, 
-                                                child: Text(hour)
-                                              )
-                                            ).toList(),
-                                            onChanged: isLoadingSlots 
-                                              ? null 
-                                              : (String? newValue) {
-                                                  if (newValue != null) {
-                                                    stfSetState(() {
-                                                      selectedTime = newValue;
-                                                      final timeParts = newValue.split(':');
-                                                      selectedDate = DateTime(
-                                                        selectedDate.year, 
-                                                        selectedDate.month, 
-                                                        selectedDate.day, 
-                                                        int.parse(timeParts[0]), 
-                                                        int.parse(timeParts[1])
-                                                      );
-                                                    });
-                                                  }
-                                                },
-                                          ),
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Button Section
-                      SizedBox(
-                        width: 336,
-                        height: 48,
-                        child: Row(
-                          children: [
-                            // Delete Button
-                            Container(
-                              width: 48, 
-                              height: 48, 
-                              decoration: BoxDecoration(
-                                color: AppTheme.backgroundDarkPurple, 
-                                borderRadius: BorderRadius.circular(24)
-                              ),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  // Close the edit dialog and delete
-                                  if (dialogContext.mounted) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                  // Call the delete function
-                                  await _deleteReservation(docId);
-                                },
-                                child: Center(
-                                  child: SvgPicture.asset(
-                                    'assets/TrashIcon.svg',
-                                    width: 24,
-                                    height: 24,
-                                    colorFilter: ColorFilter.mode(
-                                      AppTheme.fontDarkPurple,
-                                      BlendMode.srcIn
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            // Save Button
-                            Expanded(
-                              child: Container(
-                                width: 280, 
-                                height: 48, 
-                                decoration: BoxDecoration(
-                                  color: AppTheme.backgroundDarkPurple, 
-                                  borderRadius: BorderRadius.circular(24)
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: isLoadingSlots 
-                                      ? null 
-                                      : () async {
-                                          final String clientName = clientNameController.text.trim();
-                                          if (clientName.isEmpty) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Introduceți numele clientului.'),
-                                                backgroundColor: Colors.orange,
-                                              ),
-                                            );
-                                            return;
-                                          }
-                                          
-                                          bool isAvailable = await _reservationService.isTimeSlotAvailable(
-                                            selectedDate, 
-                                            excludeDocId: docId
-                                          );
-                                          
-                                          if (isAvailable) {
-                                            if (dialogContext.mounted) {
-                                              Navigator.of(dialogContext).pop();
-                                            }
-                                            
-                                            _updateReservation(docId, clientName, selectedDate);
-                                          } else {
-                                            if (stfContext.mounted) { 
-                                              ScaffoldMessenger.of(stfContext).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Acest slot nu mai este disponibil.'),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          }
-                                        },
-                                    borderRadius: BorderRadius.circular(24),
-                                    child: Center(
-                                      child: Text(
-                                        'Salveaza programare',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w500, 
-                                          fontSize: 18, 
-                                          color: AppTheme.fontDarkPurple
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
+        return EditReservationDialog(
+          reservationData: reservationData,
+          docId: docId,
+          clientNameController: clientNameController,
+          initialDateTime: initialDateTime,
+          onUpdate: _updateReservation,
+          onDelete: _deleteReservation,
+          fetchAvailableTimeSlots: fetchAvailableTimeSlots,
+          calendarType: calendarType,
         );
-      }
+      },
     );
   }
 
   Future<void> _updateReservation(String docId, String clientName, DateTime dateTime) async {
+    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1161,6 +682,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
     
     try {
+      // Check if time slot is available before updating
+      final bool isAvailable = await _reservationService.isTimeSlotAvailable(
+        dateTime, 
+        excludeDocId: docId
+      );
+      
+      if (!isAvailable) {
+        // Close loading indicator
+        if (context.mounted) Navigator.of(context).pop();
+        
+        // Show error message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Acest slot nu mai este disponibil.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      
+      // Perform the update
       final result = await _reservationService.updateReservation(
         id: docId,
         clientName: clientName,
@@ -1185,7 +729,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la actualizarea programării: $e'),
+            content: Text('Eroare la actualizarea programarii: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1221,7 +765,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la ștergerea programării: $e'),
+            content: Text('Eroare la stergerea programarii: $e'),
             backgroundColor: Colors.red,
           ),
         );

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 
 /// Tipurile de ecrane disponibile pentru navigare
 enum NavigationScreen {
+  dashboard,
   calendar,
   form,
-  settings,
-  dashboard
+  settings
 }
 
 /// Widget pentru navigația principală a aplicației, care permite
@@ -30,119 +29,97 @@ class NavigationWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppTheme.defaultGap),
-      decoration: AppTheme.widgetDecoration,
+      decoration: BoxDecoration(
+        color: AppTheme.widgetBackground.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+        boxShadow: [AppTheme.widgetShadow],
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // To fit content or expand
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildNavigationHeader(),
-          const SizedBox(height: AppTheme.defaultGap),
-          _buildNavigationButton(
-            'Formular clienți',
-            'assets/FormIcon.svg',
-            NavigationScreen.form,
-            isActive: currentScreen == NavigationScreen.form,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.largeGap),
+            child: Text(
+              'Navigatie',
+              style: AppTheme.headerTitleStyle,
+            ),
           ),
           const SizedBox(height: AppTheme.defaultGap),
-          _buildNavigationButton(
-            'Calendar',
-            'assets/CalendarIcon.svg',
-            NavigationScreen.calendar,
-            isActive: currentScreen == NavigationScreen.calendar,
+          _buildNavButton(
+            context,
+            iconPath: 'assets/DashboardIcon.svg',
+            title: 'Dashboard',
+            screen: NavigationScreen.dashboard,
           ),
-          const SizedBox(height: AppTheme.defaultGap),
-          _buildNavigationButton(
-            'Setări',
-            'assets/SettingsIcon.svg',
-            NavigationScreen.settings,
-            isActive: currentScreen == NavigationScreen.settings,
+          _buildNavButton(
+            context,
+            iconPath: 'assets/FormIcon.svg',
+            title: 'Formular',
+            screen: NavigationScreen.form,
+          ),
+          _buildNavButton(
+            context,
+            iconPath: 'assets/CalendarIcon.svg',
+            title: 'Calendar',
+            screen: NavigationScreen.calendar,
+          ),
+          _buildNavButton(
+            context,
+            iconPath: 'assets/SettingsIcon.svg',
+            title: 'Setari',
+            screen: NavigationScreen.settings,
           ),
         ],
       ),
     );
   }
 
-  /// Construiește header-ul secțiunii de navigație
-  Widget _buildNavigationHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.mediumGap, 
-        0, 
-        AppTheme.mediumGap, 
-        AppTheme.defaultGap - 8
-      ),
-      child: SizedBox(
-        height: 24,
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Navigație',
-                style: AppTheme.headerTitleStyle,
-              ),
-            ),
-            SvgPicture.asset(
-              'assets/DropdownIcon.svg',
-              width: AppTheme.iconSizeMedium,
-              height: AppTheme.iconSizeMedium,
-              colorFilter: ColorFilter.mode(
-                AppTheme.fontLightPurple,
-                BlendMode.srcIn,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Construiește un buton de navigație
-  Widget _buildNavigationButton(
-    String text, 
-    String iconPath, 
-    NavigationScreen screen, 
-    {bool isActive = false}
+  Widget _buildNavButton(
+    BuildContext context,
+    {
+      required String iconPath,
+      required String title,
+      required NavigationScreen screen,
+    }
   ) {
-    final Color textColor = isActive 
-        ? AppTheme.fontDarkPurple 
-        : AppTheme.fontMediumPurple;
-        
-    final BoxDecoration decoration = isActive
-        ? AppTheme.activeNavButtonDecoration
-        : AppTheme.inactiveNavButtonDecoration;
+    final bool isActive = currentScreen == screen;
+    final Color iconColor = isActive ? AppTheme.fontDarkPurple : AppTheme.fontMediumPurple;
+    final Color textColor = isActive ? AppTheme.fontDarkPurple : AppTheme.fontMediumPurple;
+    final BoxDecoration decoration = isActive 
+      ? AppTheme.activeNavButtonDecoration 
+      : AppTheme.inactiveNavButtonDecoration;
 
-    return GestureDetector(
-      onTap: isActive ? null : () => onScreenChanged(screen),
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.mediumGap, 
-          vertical: 12
-        ),
-        decoration: decoration,
-        child: Row(
-          children: [
-            SvgPicture.asset(
-              iconPath,
-              width: AppTheme.iconSizeMedium,
-              height: AppTheme.iconSizeMedium,
-              colorFilter: ColorFilter.mode(
-                textColor,
-                BlendMode.srcIn,
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppTheme.defaultGap),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => onScreenChanged(screen),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.mediumGap,
+              vertical: 12, // Approximate height 48px
             ),
-            const SizedBox(width: AppTheme.mediumGap),
-            Expanded(
-              child: Text(
-                text,
-                style: GoogleFonts.outfit(
-                  fontSize: AppTheme.fontSizeMedium,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
+            decoration: decoration,
+            child: Row(
+              children: [
+                SvgPicture.asset(
+                  iconPath,
+                  width: AppTheme.iconSizeMedium,
+                  height: AppTheme.iconSizeMedium,
+                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+                const SizedBox(width: AppTheme.mediumGap),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTheme.secondaryTitleStyle.copyWith(color: textColor),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

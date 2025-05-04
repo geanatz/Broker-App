@@ -4,7 +4,7 @@ import '../../widgets/navigation/sidebar_widget.dart';
 import '../../widgets/navigation/navigation_widget.dart';
 import '../../widgets/common/panel_container.dart';
 
-/// Ecranul pentru formularul de clienți
+/// Ecranul pentru formularul de clienti
 class FormScreen extends StatelessWidget {
   /// Numele consultantului
   final String consultantName;
@@ -45,7 +45,7 @@ class FormScreen extends StatelessWidget {
     );
   }
 
-  /// Construiește layout-ul pentru ecrane mici (< 1200px)
+  /// Construieste layout-ul pentru ecrane mici (< 1200px)
   Widget _buildSmallScreenLayout() {
     return SingleChildScrollView(
       child: Column(
@@ -67,13 +67,13 @@ class FormScreen extends StatelessWidget {
     );
   }
 
-  /// Construiește layout-ul pentru ecrane mari (>= 1200px)
+  /// Construieste layout-ul pentru ecrane mari (>= 1200px)
   Widget _buildLargeScreenLayout(double contentHeight) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         PanelContainer(
-          width: 1376, // Lățimea panoului principal
+          width: 1376, // Latimea panoului principal
           height: contentHeight,
           isExpanded: true,
           child: _buildFormContent(),
@@ -90,9 +90,9 @@ class FormScreen extends StatelessWidget {
     );
   }
 
-  /// Construiește conținutul formularului
+  /// Construieste continutul formularului
   Widget _buildFormContent() {
-    // Placeholdere pentru momentul în care se va implementa formularul
+    // Placeholdere pentru momentul in care se va implementa formularul
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -104,14 +104,14 @@ class FormScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.mediumGap),
           Text(
-            'Formular clienți',
+            'Formular clienti',
             style: AppTheme.headerTitleStyle.copyWith(
               fontSize: 24,
             ),
           ),
           const SizedBox(height: AppTheme.defaultGap),
           Text(
-            'Formularul pentru clienți va fi implementat aici.',
+            'Formularul pentru clienti va fi implementat aici.',
             style: AppTheme.secondaryTitleStyle,
           ),
         ],

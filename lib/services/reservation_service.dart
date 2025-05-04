@@ -1,249 +1,179 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 /// Tipul de rezervare
 enum ReservationType {
-  /// Întâlnire cu clientul
-  meeting,
-  
-  /// Ștergere birou de credit
-  bureauDelete
+  meeting,      // Intalnire cu clientul
+  bureauDelete  // Stergere birou de credit
 }
 
-/// Service pentru gestionarea rezervărilor
+/// Service pentru gestionarea rezervarilor
 class ReservationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
-  // Numele colecției
-  final String _reservationsCollection = 'reservations';
-  
-  // Obține utilizatorul curent
+  final String _collectionName = 'reservations'; // Numele colectiei
+
+  // Obtine utilizatorul curent
   User? get currentUser => _auth.currentUser;
-  
-  /// Creează o rezervare nouă
+
+  /// Creeaza o rezervare noua
   Future<Map<String, dynamic>> createReservation({
     required DateTime dateTime,
     required String clientName,
     required ReservationType type,
   }) async {
+    final user = currentUser;
+    if (user == null) {
+      return {'success': false, 'message': 'Utilizator neautentificat'};
+    }
+
     try {
-      final user = currentUser;
-      if (user == null) {
-        return {
-          'success': false,
-          'message': 'Utilizator neautentificat',
-        };
-      }
-      
-      // Obține datele consultantului
-      final consultantDoc = await _firestore
-          .collection('consultants')
-          .doc(user.uid)
-          .get();
-          
+      // Obtine datele consultantului
+      final consultantDoc = await _firestore.collection('consultants').doc(user.uid).get();
       if (!consultantDoc.exists) {
-        return {
-          'success': false,
-          'message': 'Date consultant negăsite',
-        };
+        return {'success': false, 'message': 'Date consultant negasite'};
       }
-      
-      final consultantData = consultantDoc.data() as Map<String, dynamic>;
-      final consultantName = consultantData['name'] as String? ?? 'N/A';
-      
-      // Creează documentul rezervării
-      final docRef = await _firestore.collection(_reservationsCollection).add({
+      final consultantData = consultantDoc.data()!;
+      final consultantName = consultantData['name'] ?? 'Necunoscut';
+
+      // Creeaza documentul rezervarii
+      await _firestore.collection(_collectionName).add({
         'consultantId': user.uid,
         'consultantName': consultantName,
         'clientName': clientName,
         'dateTime': Timestamp.fromDate(dateTime),
-        'type': type.toString().split('.').last, // Store enum as string 'meeting' or 'bureauDelete'
         'createdAt': FieldValue.serverTimestamp(),
+        'type': type == ReservationType.meeting ? 'meeting' : 'bureauDelete',
       });
-      
-      return {
-        'success': true,
-        'message': 'Rezervare creată cu succes',
-        'id': docRef.id,
-      };
+      return {'success': true, 'message': 'Rezervare creata cu succes'};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Eroare la crearea rezervării: $e',
-      };
+      print("Eroare createReservation: $e");
+      return {'success': false, 'message': 'Eroare la crearea rezervarii: $e'};
     }
   }
-  
-  /// Obține toate rezervările pentru un interval de timp
-  Stream<QuerySnapshot> getReservationsForDateRange(DateTime start, DateTime end, {ReservationType? type}) {
+
+  /// Obtine toate rezervarile pentru un interval de timp
+  Stream<QuerySnapshot> getReservationsForWeek(DateTime startOfWeek, DateTime endOfWeek, {ReservationType? type}) {
     Query query = _firestore
-        .collection(_reservationsCollection)
-        .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
-        .where('dateTime', isLessThan: Timestamp.fromDate(end));
-        
-    // Adaugă filtrare după tip dacă este specificat
+        .collection(_collectionName)
+        .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
+        .where('dateTime', isLessThan: Timestamp.fromDate(endOfWeek));
+
+    // Adauga filtrare dupa tip daca este specificat
     if (type != null) {
-      final typeStr = type.toString().split('.').last;
-      query = query.where('type', isEqualTo: typeStr);
+      query = query.where('type', isEqualTo: type == ReservationType.meeting ? 'meeting' : 'bureauDelete');
     }
-    
+
     return query.snapshots();
   }
-  
-  /// Obține rezervările viitoare pentru consultantul curent
-  Stream<QuerySnapshot> getUpcomingReservationsForCurrentConsultant() {
+
+  /// Obtine rezervarile viitoare pentru consultantul curent
+  Stream<QuerySnapshot> getUpcomingReservations() {
     final user = currentUser;
-    if (user == null) {
-      // Returnează un stream gol dacă utilizatorul nu este autentificat
-      return Stream.empty();
-    }
-    
-    final now = DateTime.now();
-    
+    // Returneaza un stream gol daca utilizatorul nu este autentificat
+    if (user == null) return const Stream.empty();
+
     return _firestore
-        .collection(_reservationsCollection)
+        .collection(_collectionName)
         .where('consultantId', isEqualTo: user.uid)
-        .where('dateTime', isGreaterThan: Timestamp.fromDate(now))
+        .where('dateTime', isGreaterThanOrEqualTo: Timestamp.now())
         .orderBy('dateTime')
+        .limit(10) // Limit to 10 upcoming reservations
         .snapshots();
   }
-  
-  /// Actualizează o rezervare existentă
+
+  /// Actualizeaza o rezervare existenta
   Future<Map<String, dynamic>> updateReservation({
     required String id,
-    String? clientName,
-    DateTime? dateTime,
+    required String clientName,
+    required DateTime dateTime,
   }) async {
+    final user = currentUser;
+    if (user == null) {
+      return {'success': false, 'message': 'Utilizator neautentificat'};
+    }
+
     try {
-      final user = currentUser;
-      if (user == null) {
-        return {
-          'success': false,
-          'message': 'Utilizator neautentificat',
-        };
+      final docRef = _firestore.collection(_collectionName).doc(id);
+      final docSnapshot = await docRef.get();
+
+      // Verifica daca rezervarea exista si apartine consultantului curent
+      if (!docSnapshot.exists) {
+        return {'success': false, 'message': 'Rezervarea nu exista'};
       }
-      
-      // Verifică dacă rezervarea există și aparține consultantului curent
-      final reservationDoc = await _firestore
-          .collection(_reservationsCollection)
-          .doc(id)
-          .get();
-          
-      if (!reservationDoc.exists) {
-        return {
-          'success': false,
-          'message': 'Rezervarea nu există',
-        };
+      final data = docSnapshot.data()!;
+      if (data['consultantId'] != user.uid) {
+        return {'success': false, 'message': 'Nu aveti permisiunea de a modifica aceasta rezervare'};
       }
-      
-      final reservationData = reservationDoc.data() as Map<String, dynamic>;
-      if (reservationData['consultantId'] != user.uid) {
-        return {
-          'success': false,
-          'message': 'Nu aveți permisiunea de a modifica această rezervare',
-        };
-      }
-      
-      // Construiește datele de actualizat
-      final updateData = <String, dynamic>{
+
+      // Construieste datele de actualizat
+      final updateData = {
+        'clientName': clientName,
+        'dateTime': Timestamp.fromDate(dateTime),
         'updatedAt': FieldValue.serverTimestamp(),
       };
-      
-      if (clientName != null && clientName.isNotEmpty) {
-        updateData['clientName'] = clientName;
-      }
-      
-      if (dateTime != null) {
-        updateData['dateTime'] = Timestamp.fromDate(dateTime);
-      }
-      
-      // Actualizează documentul
-      await _firestore
-          .collection(_reservationsCollection)
-          .doc(id)
-          .update(updateData);
-          
-      return {
-        'success': true,
-        'message': 'Rezervare actualizată cu succes',
-      };
+
+      // Actualizeaza documentul
+      await docRef.update(updateData);
+      return {'success': true, 'message': 'Rezervare actualizata cu succes'};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Eroare la actualizarea rezervării: $e',
-      };
+      print("Eroare updateReservation: $e");
+      return {'success': false, 'message': 'Eroare la actualizarea rezervarii: $e'};
     }
   }
-  
-  /// Șterge o rezervare
+
+  /// Sterge o rezervare
   Future<Map<String, dynamic>> deleteReservation(String id) async {
+    final user = currentUser;
+    if (user == null) {
+      return {'success': false, 'message': 'Utilizator neautentificat'};
+    }
+
     try {
-      final user = currentUser;
-      if (user == null) {
-        return {
-          'success': false,
-          'message': 'Utilizator neautentificat',
-        };
+      final docRef = _firestore.collection(_collectionName).doc(id);
+      final docSnapshot = await docRef.get();
+
+      // Verifica daca rezervarea exista si apartine consultantului curent
+      if (!docSnapshot.exists) {
+        return {'success': false, 'message': 'Rezervarea nu exista'};
       }
-      
-      // Verifică dacă rezervarea există și aparține consultantului curent
-      final reservationDoc = await _firestore
-          .collection(_reservationsCollection)
-          .doc(id)
-          .get();
-          
-      if (!reservationDoc.exists) {
-        return {
-          'success': false,
-          'message': 'Rezervarea nu există',
-        };
+      final data = docSnapshot.data()!;
+      if (data['consultantId'] != user.uid) {
+        return {'success': false, 'message': 'Nu aveti permisiunea de a sterge aceasta rezervare'};
       }
-      
-      final reservationData = reservationDoc.data() as Map<String, dynamic>;
-      if (reservationData['consultantId'] != user.uid) {
-        return {
-          'success': false,
-          'message': 'Nu aveți permisiunea de a șterge această rezervare',
-        };
-      }
-      
-      // Șterge documentul
-      await _firestore.collection(_reservationsCollection).doc(id).delete();
-      
-      return {
-        'success': true,
-        'message': 'Rezervare ștearsă cu succes',
-      };
+
+      // Sterge documentul
+      await docRef.delete();
+      return {'success': true, 'message': 'Rezervare stearsa cu succes'};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Eroare la ștergerea rezervării: $e',
-      };
+      print("Eroare deleteReservation: $e");
+      return {'success': false, 'message': 'Eroare la stergerea rezervarii: $e'};
     }
   }
-  
-  /// Verifică dacă un slot este disponibil
+
+  /// Verifica daca un slot este disponibil
   Future<bool> isTimeSlotAvailable(DateTime dateTime, {String? excludeDocId}) async {
     try {
-      final snapshot = await _firestore
-          .collection(_reservationsCollection)
-          .where('dateTime', isEqualTo: Timestamp.fromDate(dateTime))
-          .get();
-          
-      if (snapshot.docs.isEmpty) {
+      Query query = _firestore
+          .collection(_collectionName)
+          .where('dateTime', isEqualTo: Timestamp.fromDate(dateTime));
+
+      final querySnapshot = await query.get();
+
+      if (querySnapshot.docs.isEmpty) {
+        return true; // Nicio rezervare la aceasta ora
+      }
+
+      // Daca exista doar un document si acesta este cel exclus, slotul este disponibil
+      if (querySnapshot.docs.length == 1 && querySnapshot.docs.first.id == excludeDocId) {
         return true;
       }
-      
-      // Dacă există doar un document și acesta este cel exclus, slotul este disponibil
-      if (snapshot.docs.length == 1 && excludeDocId != null && snapshot.docs.first.id == excludeDocId) {
-        return true;
-      }
-      
-      return false;
+
+      return false; // Slot ocupat
     } catch (e) {
-      print('Eroare la verificarea disponibilității slotului: $e');
-      return false;
+      print('Eroare la verificarea disponibilitatii slotului: $e');
+      return false; // Considera slotul ocupat in caz de eroare
     }
   }
 } 

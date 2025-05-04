@@ -96,14 +96,14 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// AuthWrapper verifică starea autentificării
+// AuthWrapper verifica starea autentificarii
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    return StreamBuilder<User?>( 
+      stream: FirebaseAuth.instance.authStateChanges(), 
       builder: (context, snapshot) {
         // Log the connection state
         print('AuthWrapper: ConnectionState: ${snapshot.connectionState}');
@@ -131,7 +131,7 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-// Wrapper pentru aplicația principală care gestionează navigarea
+// Wrapper pentru aplicatia principala care gestioneaza navigarea
 class MainAppWrapper extends StatefulWidget {
   const MainAppWrapper({super.key});
 
@@ -143,7 +143,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
   // Stare pentru ecranul activ
   NavigationScreen _currentScreen = NavigationScreen.calendar;
   
-  // Datele consultantului (vor fi încărcate din Firebase)
+  // Datele consultantului (vor fi incarcate din Firebase)
   Map<String, dynamic>? _consultantData;
   bool _isLoading = true;
 
@@ -153,7 +153,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     _fetchConsultantData();
   }
 
-  // Încărcarea datelor consultantului din Firebase
+  // Incarcarea datelor consultantului din Firebase
   Future<void> _fetchConsultantData() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
@@ -180,7 +180,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
           _isLoading = false;
         });
       } else {
-        // Dacă utilizatorul nu are date de consultant asociate, deconectează-l
+        // Daca utilizatorul nu are date de consultant asociate, deconecteaza-l
         await FirebaseAuth.instance.signOut();
         setState(() {
           _consultantData = null;
@@ -207,27 +207,27 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Afișează indicator de încărcare în timp ce se încarcă datele
+    // Afiseaza indicator de incarcare in timp ce se incarca datele
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // Verifică dacă datele consultantului există
+    // Verifica daca datele consultantului exista
     if (_consultantData == null) {
       return const Scaffold(
         body: Center(
-          child: Text("Nu există date de consultant asociate acestui cont."),
+          child: Text("Nu exista date de consultant asociate acestui cont."),
         ),
       );
     }
 
-    // Extrage numele și echipa consultantului
+    // Extrage numele si echipa consultantului
     final String consultantName = _consultantData!['name'] ?? 'Consultant';
     final String teamName = _consultantData!['team'] ?? 'Echipa';
 
-    // Afișează ecranul corespunzător
+    // Afiseaza ecranul corespunzator
     switch (_currentScreen) {
       case NavigationScreen.calendar:
         return CalendarScreen(

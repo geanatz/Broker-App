@@ -63,7 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: AppTheme.largeGap),
           SidebarWidget(
-            currentScreen: NavigationScreen.form, // No dashboard nav yet, use form
+            currentScreen: NavigationScreen.dashboard,
             onScreenChanged: widget.onScreenChanged,
             consultantName: widget.consultantName,
             teamName: widget.teamName,
@@ -86,7 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(width: AppTheme.largeGap),
         SidebarWidget(
-          currentScreen: NavigationScreen.form, // No dashboard nav yet, use form
+          currentScreen: NavigationScreen.dashboard,
           onScreenChanged: widget.onScreenChanged,
           consultantName: widget.consultantName,
           teamName: widget.teamName,
