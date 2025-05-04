@@ -55,11 +55,9 @@ class DropdownWidget extends StatelessWidget {
             value: value,
             hint: Text(
               hintText,
-              style: TextStyle(
-                fontFamily: 'Outfit',
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
+              style: AppTheme.primaryTitleStyle.copyWith(
                 color: textColor,
+                fontWeight: FontWeight.w500,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -71,11 +69,9 @@ class DropdownWidget extends StatelessWidget {
             ),
             isExpanded: true,
             dropdownColor: backgroundColor,
-            style: TextStyle(
-              fontFamily: 'Outfit',
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+            style: AppTheme.primaryTitleStyle.copyWith(
               color: textColor,
+              fontWeight: FontWeight.w500,
             ),
             items: items.map<DropdownMenuItem<String>>((String item) {
               return DropdownMenuItem<String>(

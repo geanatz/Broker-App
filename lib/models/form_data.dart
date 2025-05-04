@@ -43,6 +43,25 @@ class CreditFormData extends BaseFormData {
     return selectedBank != null && selectedCreditType != null;
   }
 
+  // Method to update from another CreditFormData instance
+  void updateFrom(CreditFormData other) {
+    selectedBank = other.selectedBank;
+    selectedCreditType = other.selectedCreditType;
+    sold = other.sold;
+    consumat = other.consumat;
+    rata = other.rata;
+    perioada = other.perioada;
+    selectedRateType = other.selectedRateType;
+    
+    // Update isEmpty based on essential fields
+    isEmpty = !isFilled();
+  }
+
+  @override
+  String toString() {
+    return 'CreditFormData{id: $id, isEmpty: $isEmpty, bank: $selectedBank, type: $selectedCreditType}';
+  }
+
   // Factory constructor for creating an empty form data
   factory CreditFormData.empty() {
     // Use foundation.objectRuntimeType
@@ -66,13 +85,29 @@ class IncomeFormData extends BaseFormData {
   }) : super(id: id, isEmpty: isEmpty, selectedBank: selectedBank);
 
   // Check if essential fields are set
-   bool isFilled() {
+  bool isFilled() {
     return selectedBank != null && selectedIncomeType != null;
   }
 
-   // Factory constructor for creating an empty form data
+  // Method to update from another IncomeFormData instance
+  void updateFrom(IncomeFormData other) {
+    selectedBank = other.selectedBank;
+    selectedIncomeType = other.selectedIncomeType;
+    income = other.income;
+    vechime = other.vechime;
+    
+    // Update isEmpty based on essential fields
+    isEmpty = !isFilled();
+  }
+
+  @override
+  String toString() {
+    return 'IncomeFormData{id: $id, isEmpty: $isEmpty, bank: $selectedBank, type: $selectedIncomeType}';
+  }
+
+  // Factory constructor for creating an empty form data
   factory IncomeFormData.empty() {
-     // Use foundation.objectRuntimeType
+    // Use foundation.objectRuntimeType
     return IncomeFormData(id: 'form_${DateTime.now().millisecondsSinceEpoch}_${foundation.objectRuntimeType(IncomeFormData, 'IncomeFormData')}');
   }
 } 

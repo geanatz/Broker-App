@@ -37,8 +37,8 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
   // GlobalKey to access ScaffoldMessenger for SnackBar or other context needs
   final GlobalKey _containerKey = GlobalKey();
 
-  // Offset for placing the context menu
-  Offset _tapPosition = Offset.zero;
+  // Store the GLOBAL tap position for the context menu
+  Offset _globalTapPosition = Offset.zero;
 
   @override
   void initState() {
@@ -49,28 +49,37 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
         : [IncomeFormData.empty()];
   }
 
-  // Store tap position
+  // Store GLOBAL tap position
   void _getTapPosition(TapDownDetails details) {
-    final RenderBox referenceBox = context.findRenderObject() as RenderBox;
+    // No need to convert to local, store the global position directly
     setState(() {
-      _tapPosition = referenceBox.globalToLocal(details.globalPosition);
+      _globalTapPosition = details.globalPosition;
     });
   }
 
-  // Show context menu
+  // Show context menu at the stored GLOBAL position
   void _showContextMenu(BuildContext context, int index) async {
     final RenderObject? overlay = Overlay.of(context).context.findRenderObject();
+    if (overlay == null) return; // Guard against null overlay
+
     final String deleteLabel = widget.type == FormContainerType.credit ? 'Sterge credit' : 'Sterge venit';
 
     await showMenu(
       context: context,
-      position: RelativeRect.fromRect(
-          Rect.fromLTWH(_tapPosition.dx, _tapPosition.dy, 30, 30),
-          Rect.fromLTWH(0, 0, overlay!.paintBounds.size.width, overlay.paintBounds.size.height)),
+      // Use the stored global position to create the RelativeRect
+      position: RelativeRect.fromLTRB(
+        _globalTapPosition.dx, 
+        _globalTapPosition.dy, 
+        overlay.paintBounds.size.width - _globalTapPosition.dx, 
+        overlay.paintBounds.size.height - _globalTapPosition.dy
+      ),
       items: [
         PopupMenuItem(
           value: 'delete',
-          child: Text(deleteLabel, style: const TextStyle(fontFamily: 'Outfit')), // Ensure font
+          child: Text(
+            deleteLabel,
+            style: AppTheme.secondaryTitleStyle.copyWith(color: AppTheme.fontDarkPurple),
+          ),
         ),
       ],
       elevation: 8.0,
@@ -132,35 +141,41 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
 
   /// Gestioneaza modificarile dintr-un formular
   void _handleFormChanged(int index, BaseFormData updatedData) {
-    // Salveaza starea anterioara a ultimului element
-    bool lastElementWasEmpty = _formDataList.isNotEmpty && _formDataList.last.isEmpty;
+    // Verificam starea curenta a formularului inainte de update
+    final bool isLastForm = index == _formDataList.length - 1;
+    final bool wasEmpty = _formDataList[index].isEmpty;
     
-    // Determine the new filled status based on the updatedData
-    bool isNowFilled = false;
-    if (updatedData is CreditFormData) {
-      isNowFilled = updatedData.isFilled();
-    } else if (updatedData is IncomeFormData) {
-      isNowFilled = updatedData.isFilled();
+    // Actualizam formularul existent, pastrand referinta obiectului
+    if (widget.type == FormContainerType.credit && 
+        updatedData is CreditFormData && 
+        _formDataList[index] is CreditFormData) {
+      ((_formDataList[index] as CreditFormData)).updateFrom(updatedData);
+    } else if (widget.type == FormContainerType.income && 
+               updatedData is IncomeFormData && 
+               _formDataList[index] is IncomeFormData) {
+      ((_formDataList[index] as IncomeFormData)).updateFrom(updatedData);
+    } else {
+      // Fallback in cazul in care tipurile nu se potrivesc (nu ar trebui sa se intample)
+      _formDataList[index] = updatedData;
     }
-
-    // Update the isEmpty property explicitly
-    updatedData.isEmpty = !isNowFilled;
-
-    // Use setState only if the data actually changed or if a new form needs to be added
-    if (_formDataList[index] != updatedData || (index == _formDataList.length - 1 && lastElementWasEmpty && isNowFilled)) {
-        setState(() {
-            _formDataList[index] = updatedData;
-
-            // Verifica daca ultimul formular a fost completat
-            if (index == _formDataList.length - 1 && lastElementWasEmpty && isNowFilled) {
-                // Adauga un nou formular gol daca ultimul a devenit completat
-                if (widget.type == FormContainerType.credit) {
-                  _formDataList.add(CreditFormData.empty());
-                } else {
-                  _formDataList.add(IncomeFormData.empty());
-                }
-            }
-        });
+    
+    // Verificam daca formularul nu mai este gol dupa update
+    final bool isNowFilled = !_formDataList[index].isEmpty;
+    
+    // Debugging
+    print("Form at index $index: wasEmpty=$wasEmpty, isNowFilled=$isNowFilled, isLastForm=$isLastForm");
+    print("Form data: ${_formDataList[index]}");
+    
+    // Daca este ultimul formular si acum contine date (banca si tip credit/venit), adaugam un nou formular
+    if (isLastForm && isNowFilled) {
+      print("Adding new form because the last one is now filled.");
+      setState(() {
+        if (widget.type == FormContainerType.credit) {
+          _formDataList.add(CreditFormData.empty());
+        } else {
+          _formDataList.add(IncomeFormData.empty());
+        }
+      });
     }
   }
 
@@ -171,10 +186,13 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
       // Optionally show a message to the user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Nu se poate șterge ultimul formular gol.', style: TextStyle(fontFamily: 'Outfit')),
+          content: Text(
+            'Nu se poate șterge ultimul formular gol.',
+            style: AppTheme.secondaryTitleStyle.copyWith(color: Colors.white),
+          ),
           backgroundColor: AppTheme.fontLightRed,
-          duration: Duration(seconds: 2),
-          ), 
+          duration: const Duration(seconds: 2),
+        ), 
       );
       return;
     }

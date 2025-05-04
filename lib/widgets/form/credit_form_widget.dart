@@ -3,6 +3,7 @@ import '../../models/form_data.dart'; // Import data model
 import '../../theme/app_theme.dart';
 import '../common/dropdown_widget.dart';
 import '../common/input_field_widget.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Enum pentru diferitele tipuri de credite
 enum CreditType {
@@ -154,7 +155,10 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
 
     // Update isEmpty based on whether bank and type are selected
     final bool wasEmpty = widget.formData.isEmpty;
-    widget.formData.isEmpty = !(_selectedBank != null && _selectedCreditType != null);
+    widget.formData.isEmpty = !widget.formData.isFilled();
+
+    // Debug
+    print("Credit form updated: wasEmpty=$wasEmpty, isEmpty=${widget.formData.isEmpty}, bank=${widget.formData.selectedBank}, type=${widget.formData.selectedCreditType}");
 
     // Notify parent widget
     widget.onChanged(widget.formData);
@@ -165,6 +169,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
   Widget build(BuildContext context) {
     // Styling from design (Form)
     return Container(
+      // width: 624, // REMOVED Fixed width from Figma - Let parent decide width
       padding: const EdgeInsets.all(16), // Padding from design
       decoration: BoxDecoration(
         color: const Color(0xFFCFC4D4), // Background from design
@@ -173,12 +178,20 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildFirstRow(),
+          // SizedBox( // REMOVED fixed width SizedBox
+          //   width: 592, // Inner width from Figma spec
+          //   child: _buildFirstRow(),
+          // ),
+          _buildFirstRow(), // Use Row directly
           // Only show the second row if the form is not empty (bank and type selected)
           if (!widget.formData.isEmpty)
              Padding(
                 padding: const EdgeInsets.only(top: 16), // Gap from design
-                child: _buildSecondRow(),
+                // child: SizedBox( // REMOVED fixed width SizedBox
+                //   width: 592, // Inner width from Figma spec
+                //   child: _buildSecondRow(),
+                // ),
+                child: _buildSecondRow(), // Use Row directly
             ),
         ],
       ),
@@ -187,10 +200,12 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
 
   // Primul rand cu banca si tipul de credit
   Widget _buildFirstRow() {
-    // Row styling from design
+    // Row styling from design - Use Expanded for flexible width
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start, // Align items to top
       children: [
+        // Expanded( // Replace SizedBox with Expanded - Already Expanded, just remove explicit width
+        //   child: _buildFieldWithLabel(
         Expanded(
           child: _buildFieldWithLabel(
             label: 'Banca',
@@ -210,6 +225,8 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           ),
         ),
         const SizedBox(width: 16), // Gap from design
+        // Expanded( // Replace SizedBox with Expanded - Already Expanded, just remove explicit width
+        //   child: _buildFieldWithLabel(
         Expanded(
           child: _buildFieldWithLabel(
             label: 'Tip credit',
@@ -238,30 +255,43 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
 
   // Al doilea rand cu campuri specifice tipului de credit
   Widget _buildSecondRow() {
-     // Row styling from design
-     final specificFields = _getSpecificFieldsForCreditType();
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(specificFields.length, (index) {
-          return Expanded(
-            flex: specificFields[index]['flex'] ?? 1, // Default flex: 1
-            child: Padding(
-              padding: EdgeInsets.only(left: index == 0 ? 0 : 16), // Add gap between fields
-              child: specificFields[index]['widget'],
-            ),
-          );
-        }),
-      );
+    // Get the specific fields for this credit type
+    final List<Widget> specificFields = _getSpecificFieldsForCreditType();
+
+    // Create a Row with Expanded children and gaps
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List<Widget>.generate(specificFields.length * 2 - 1, (index) {
+        if (index.isEven) {
+          // It's a field - wrap in Expanded
+          return Expanded(child: specificFields[index ~/ 2]);
+        } else {
+          // It's a gap
+          return const SizedBox(width: 16);
+        }
+      }),
+      // children: specificFields.asMap().entries.map((entry) {
+      //   int index = entry.key;
+      //   Widget widget = entry.value;
+
+      //   return Padding(
+      //     padding: EdgeInsets.only(left: index == 0 ? 0 : 16), // 16px gap from design
+      //     child: widget,
+      //   );
+      // }).toList(),
+    );
   }
 
   // Helper to get fields based on credit type
-  List<Map<String, dynamic>> _getSpecificFieldsForCreditType() {
-     switch (_selectedCreditType) {
+  List<Widget> _getSpecificFieldsForCreditType() {
+    switch (_selectedCreditType) {
       case CreditType.cardCumparaturi:
       case CreditType.overdraft:
         return [
-          {
-            'widget': _buildFieldWithLabel(
+          // SizedBox( // Remove SizedBox wrapper, Expanded is handled in _buildSecondRow
+          //   width: 288, // From Figma (592px - 16px) / 2
+          //   child:
+          _buildFieldWithLabel(
               label: 'Sold',
               field: InputFieldWidget(
                 controller: _soldController,
@@ -271,10 +301,11 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                 textColor: const Color(0xFF7C568F),
               ),
             ),
-            'flex': 1
-          },
-           {
-            'widget': _buildFieldWithLabel(
+          // ),
+          // SizedBox(
+          //   width: 288, // From Figma (592px - 16px) / 2
+          //   child:
+          _buildFieldWithLabel(
               label: 'Consumat',
               field: InputFieldWidget(
                 controller: _consumatController,
@@ -284,13 +315,16 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                 textColor: const Color(0xFF7C568F),
               ),
             ),
-            'flex': 1
-          },
+          // ),
         ];
       case CreditType.nevoi:
+        // 3 fields
+        // final fieldWidth = (592 - 32) / 3; // REMOVE calculation, use Expanded
         return [
-          {
-            'widget': _buildFieldWithLabel(
+          // SizedBox(
+          //   width: fieldWidth,
+          //   child:
+          _buildFieldWithLabel(
               label: 'Sold',
               field: InputFieldWidget(
                 controller: _soldController,
@@ -300,10 +334,11 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                 textColor: const Color(0xFF7C568F),
               ),
             ),
-            'flex': 1
-          },
-          {
-            'widget': _buildFieldWithLabel(
+          // ),
+          // SizedBox(
+          //   width: fieldWidth,
+          //   child:
+          _buildFieldWithLabel(
               label: 'Rata',
               field: InputFieldWidget(
                 controller: _rataController,
@@ -313,26 +348,31 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                 textColor: const Color(0xFF7C568F),
               ),
             ),
-            'flex': 1
-          },
-          {
-            'widget': _buildFieldWithLabel(
-              label: 'Perioada',
-              field: InputFieldWidget(
-                controller: _perioadaController,
-                hintText: '0 ani',
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+          // ),
+          // SizedBox(
+          //   width: fieldWidth,
+          //   child:
+          // _buildPerioadaField(width: fieldWidth), // Revert to standard field
+          _buildFieldWithLabel(
+            label: 'Perioada',
+            field: InputFieldWidget(
+              controller: _perioadaController,
+              hintText: '0 ani',
+              backgroundColor: const Color(0xFFC6ACD3),
+              textColor: const Color(0xFF7C568F),
             ),
-            'flex': 0 // Let it take natural width or adjust flex
-          },
+          ),
+          // ),
         ];
       case CreditType.ipotecar:
       case CreditType.primaCasa:
+        // 4 fields
+        // final fieldWidth = (592 - (3 * 16)) / 4; // REMOVE calculation, use Expanded
         return [
-           {
-            'widget': _buildFieldWithLabel(
+          // SizedBox(
+          //   width: fieldWidth, // Adjusted width to prevent overflow
+          //   child:
+          _buildFieldWithLabel(
               label: 'Sold',
               field: InputFieldWidget(
                 controller: _soldController,
@@ -342,10 +382,11 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                 textColor: const Color(0xFF7C568F),
               ),
             ),
-            'flex': 1 // Adjust flex based on design proportions
-          },
-           {
-            'widget': _buildFieldWithLabel(
+          // ),
+          // SizedBox(
+          //   width: fieldWidth, // Adjusted width to prevent overflow
+          //   child:
+          _buildFieldWithLabel(
               label: 'Rata',
               field: InputFieldWidget(
                 controller: _rataController,
@@ -355,39 +396,41 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                 textColor: const Color(0xFF7C568F),
               ),
             ),
-            'flex': 1 // Adjust flex
-          },
-          {
-            'widget': _buildFieldWithLabel(
-              label: 'Tip rata',
-              field: DropdownWidget(
-                items: rateTypes,
-                value: _selectedRateType,
-                hintText: 'Tip',
-                onChanged: (value) {
-                  setState(() {
-                    _selectedRateType = value;
-                  });
-                  _handleFieldChange();
-                },
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+          // ),
+          // SizedBox(
+          //   width: fieldWidth, // Adjusted width to prevent overflow
+          //   child:
+          // _buildTipRataField(width: fieldWidth), // Revert to standard field
+          _buildFieldWithLabel(
+            label: 'Tip rata',
+            field: DropdownWidget(
+              items: rateTypes,
+              value: _selectedRateType,
+              hintText: 'Tip',
+              onChanged: (value) {
+                 setState(() {
+                  _selectedRateType = value;
+                });
+                _handleFieldChange();
+              },
+              backgroundColor: const Color(0xFFC6ACD3),
+              textColor: const Color(0xFF7C568F),
             ),
-            'flex': 1 // Adjust flex
-          },
-          {
-            'widget': _buildFieldWithLabel(
-              label: 'Perioada',
-              field: InputFieldWidget(
-                controller: _perioadaController,
-                hintText: '0 ani',
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+          ),
+          // ),
+          // SizedBox(
+          //   width: fieldWidth, // Adjusted width to prevent overflow
+          //   child:
+          _buildFieldWithLabel(
+            label: 'Perioada',
+            field: InputFieldWidget(
+              controller: _perioadaController,
+              hintText: '0 ani',
+              backgroundColor: const Color(0xFFC6ACD3),
+              textColor: const Color(0xFF7C568F),
             ),
-            'flex': 0 // Adjust flex
-          },
+          ),
+          // ),
         ];
       default:
         return [];
@@ -409,11 +452,8 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           padding: const EdgeInsets.only(left: 8.0, bottom: 8.0), // Padding from design
           child: Text(
             label,
-            style: const TextStyle( // Style from design
-              fontFamily: 'Outfit',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF886699), // Color from design
+            style: AppTheme.primaryTitleStyle.copyWith(
+              color: const Color(0xFF886699), // Color from design
             ),
           ),
         ),
@@ -422,6 +462,109 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           child: field,
         ),
       ],
+    );
+  }
+
+  // Custom override to precisely match the Figma design for Perioada field
+  Widget _buildPerioadaField({double? width}) {
+    return _buildFieldWithLabel(
+      label: 'Perioada',
+      field: Container(
+        height: 48,
+        width: width ?? 136, // Use provided width or default to 136
+        decoration: BoxDecoration(
+          color: const Color(0xFFC6ACD3),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF000000).withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        alignment: Alignment.centerLeft,
+        child: TextField(
+          controller: _perioadaController,
+          style: AppTheme.primaryTitleStyle.copyWith(
+            color: const Color(0xFF7C568F),
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: '0 ani',
+            hintStyle: AppTheme.primaryTitleStyle.copyWith(
+              color: const Color(0xFF7C568F).withOpacity(0.7),
+              fontWeight: FontWeight.w500,
+            ),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Custom override to precisely match the Figma design for Tip rata field
+  Widget _buildTipRataField({double? width}) {
+    return _buildFieldWithLabel(
+      label: 'Tip rata',
+      field: Container(
+        height: 48,
+        width: width ?? 136, // Use provided width or default to 136
+        decoration: BoxDecoration(
+          color: const Color(0xFFC6ACD3),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF000000).withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _selectedRateType,
+            icon: SvgPicture.asset(
+              'assets/DropdownIcon.svg',
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(const Color(0xFF7C568F), BlendMode.srcIn),
+            ),
+            isExpanded: true,
+            dropdownColor: const Color(0xFFC6ACD3),
+            hint: Text(
+              'Tip',
+              style: AppTheme.primaryTitleStyle.copyWith(
+                color: const Color(0xFF7C568F),
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            style: AppTheme.primaryTitleStyle.copyWith(
+              color: const Color(0xFF7C568F),
+              fontWeight: FontWeight.w500,
+            ),
+            items: rateTypes.map<DropdownMenuItem<String>>((String item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(
+                  item,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedRateType = value;
+              });
+              _handleFieldChange();
+            },
+          ),
+        ),
+      ),
     );
   }
 } 

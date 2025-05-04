@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/navigation/sidebar_widget.dart';
 import '../../widgets/navigation/navigation_widget.dart';
 import '../../widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
+
+/// Definirea temei de text pentru a asigura consistența fontului Outfit în întreaga aplicație
+class TextStyles {
+  static final TextStyle titleStyle = GoogleFonts.outfit(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+  );
+  
+  static final TextStyle subtitleStyle = GoogleFonts.outfit(
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+  );
+
+  static final TextStyle headerStyle = GoogleFonts.outfit(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+  );
+}
 
 /// Enum pentru diferitele tipuri de panouri secundare disponibile
 enum SecondaryPanelType {
@@ -84,7 +103,12 @@ class _FormScreenState extends State<FormScreen> {
             onScreenChanged: widget.onScreenChanged,
             consultantName: widget.consultantName,
             teamName: widget.teamName,
-            secondaryMenuBuilder: _buildSecondaryMenu,
+            activeSecondaryPanel: _selectedSecondaryPanel,
+            onSecondaryPanelChange: (panelType) {
+              setState(() {
+                _selectedSecondaryPanel = panelType;
+              });
+            },
           ),
         ],
       ),
@@ -110,135 +134,19 @@ class _FormScreenState extends State<FormScreen> {
         ),
         const SizedBox(width: AppTheme.largeGap),
         SidebarWidget(
+          height: contentHeight,
           currentScreen: NavigationScreen.form,
           onScreenChanged: widget.onScreenChanged,
           consultantName: widget.consultantName,
           teamName: widget.teamName,
-          height: contentHeight,
-          secondaryMenuBuilder: _buildSecondaryMenu,
-        ),
-      ],
-    );
-  }
-
-  /// Construieste meniul secundar pentru navigarea intre panouri
-  Widget _buildSecondaryMenu(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-          child: Text(
-            'Panouri',
-            style: const TextStyle(
-              fontFamily: 'Outfit',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF927B9D),
-            ),
-          ),
-        ),
-        _buildPanelButton(
-          iconAsset: 'assets/CallIcon.svg',
-          title: 'Apeluri',
-          panelType: SecondaryPanelType.calls,
-          activeColor: const Color(0xFF7C568F),
-          inactiveColor: const Color(0xFF886699),
-          activeBgColor: const Color(0xFFC6ACD3),
-        ),
-        _buildPanelButton(
-          iconAsset: 'assets/ReturnIcon.svg',
-          title: 'Reveniri',
-          panelType: SecondaryPanelType.returns,
-          activeColor: const Color(0xFF7C568F),
-          inactiveColor: const Color(0xFF886699),
-          activeBgColor: const Color(0xFFC6ACD3),
-        ),
-        _buildPanelButton(
-          iconAsset: 'assets/CalculatorIcon.svg',
-          title: 'Calculator',
-          panelType: SecondaryPanelType.calculator,
-          activeColor: const Color(0xFF7C568F),
-          inactiveColor: const Color(0xFF886699),
-          activeBgColor: const Color(0xFFC6ACD3),
-        ),
-        _buildPanelButton(
-          iconAsset: 'assets/RecommendIcon.svg',
-          title: 'Recomandare',
-          panelType: SecondaryPanelType.recommendation,
-          activeColor: const Color(0xFF7C568F),
-          inactiveColor: const Color(0xFF886699),
-          activeBgColor: const Color(0xFFC6ACD3),
-        ),
-      ],
-    );
-  }
-
-  /// Construieste secțiunea pentru butonul de selectie a panoului secundar
-  Widget _buildPanelButton({
-    required String iconAsset,
-    required String title,
-    required SecondaryPanelType panelType,
-    required Color activeColor,
-    required Color inactiveColor,
-    required Color activeBgColor,
-  }) {
-    final bool isActive = _selectedSecondaryPanel == panelType;
-    final Color iconColor = isActive ? activeColor : inactiveColor;
-    final Color textColor = isActive ? activeColor : inactiveColor;
-    
-    // Stilizare conform design-ului
-    final BoxDecoration decoration = isActive 
-      ? BoxDecoration(
-          color: activeBgColor,
-          borderRadius: BorderRadius.circular(16),
-        )
-      : BoxDecoration(
-          color: const Color(0xFFCFC4D4),
-          borderRadius: BorderRadius.circular(16),
-      );
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: () {
+          activeSecondaryPanel: _selectedSecondaryPanel,
+          onSecondaryPanelChange: (panelType) {
             setState(() {
               _selectedSecondaryPanel = panelType;
             });
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-            decoration: decoration,
-            child: Row(
-              children: [
-                SvgPicture.asset(
-                  iconAsset,
-                  width: 24,
-                  height: 24,
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -280,7 +188,7 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   // ========== IMPLEMENTARILE PANOURILOR SECUNDARE ==========
-  
+
   /// Construieste panoul pentru apeluri
   Widget _buildCallPanel() {
     // Use a layout builder to get the available height
@@ -295,26 +203,31 @@ class _FormScreenState extends State<FormScreen> {
         // Calculate heights ensuring they don't exceed available space minus gaps
         double nextCallsHeight = 440;
         double ongoingCallHeight = 120;
-        double pastCallsMinHeight = 100; // Minimum height for past calls
+        double pastCallsHeight = availableHeight - nextCallsHeight - ongoingCallHeight - (2 * gap); 
+        pastCallsHeight = pastCallsHeight.clamp(100.0, double.infinity); // Minimum height
 
-        double totalExplicitHeight = nextCallsHeight + ongoingCallHeight + (2 * gap);
-
-        if (totalExplicitHeight + pastCallsMinHeight > availableHeight) {
-          // Reduce heights proportionally if needed, prioritize minimum PastCalls height
-          double excess = totalExplicitHeight + pastCallsMinHeight - availableHeight;
-          double totalReducibleHeight = nextCallsHeight + ongoingCallHeight;
-          if (totalReducibleHeight > 0) {
-             double reductionFactor = (totalReducibleHeight - excess) / totalReducibleHeight;
-             reductionFactor = reductionFactor.clamp(0.0, 1.0); // Ensure factor is valid
-             nextCallsHeight = (nextCallsHeight * reductionFactor).clamp(300.0, 440.0); // Add minimums
-             ongoingCallHeight = (ongoingCallHeight * reductionFactor).clamp(80.0, 120.0);
+        // Recalculate if total exceeds available, prioritizing PastCalls height
+        double totalHeight = nextCallsHeight + ongoingCallHeight + pastCallsHeight + (2 * gap);
+        if (totalHeight > availableHeight) {
+          double excess = totalHeight - availableHeight;
+          // Reduce NextCalls and OngoingCall proportionally, maintaining minimums
+          double reducibleHeight = nextCallsHeight + ongoingCallHeight;
+          if (reducibleHeight > 280) { // Ensure minimums (200 + 80)
+             double reductionFactor = (reducibleHeight - excess) / reducibleHeight;
+             reductionFactor = reductionFactor.clamp(0.0, 1.0); 
+             nextCallsHeight = (nextCallsHeight * reductionFactor).clamp(300.0, 440.0); // Min 300
+             ongoingCallHeight = (ongoingCallHeight * reductionFactor).clamp(80.0, 120.0); // Min 80
+             pastCallsHeight = availableHeight - nextCallsHeight - ongoingCallHeight - (2 * gap);
           } else {
-             // Handle edge case where reducible height is zero or negative
+             // Fallback if not enough space for minimums (unlikely with clamp above)
              nextCallsHeight = 300.0;
              ongoingCallHeight = 80.0;
+             pastCallsHeight = (availableHeight - 380 - (2 * gap)).clamp(100.0, double.infinity);
           }
+
         }
-        
+
+
         return Column(
           children: [
             SizedBox(
@@ -328,7 +241,10 @@ class _FormScreenState extends State<FormScreen> {
             ),
             const SizedBox(height: gap),
             Expanded(
-              child: _buildPastCallsWidget(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: pastCallsHeight),
+                 child: _buildPastCallsWidget(),
+               ),
             ),
           ],
         );
@@ -530,10 +446,7 @@ class _FormScreenState extends State<FormScreen> {
                 children: [
                   Text(
                     name,
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                    style: TextStyles.titleStyle.copyWith(
                       height: 1.28,
                       color: nameColor,
                     ),
@@ -543,10 +456,7 @@ class _FormScreenState extends State<FormScreen> {
                   const SizedBox(height: 4),
                   Text(
                     phone,
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                    style: TextStyles.subtitleStyle.copyWith(
                       height: 1.25,
                       color: phoneColor,
                     ),
@@ -603,10 +513,7 @@ class _FormScreenState extends State<FormScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontFamily: 'Outfit',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+            style: TextStyles.titleStyle.copyWith(
               height: 1.28,
               color: color,
             ),
@@ -614,10 +521,7 @@ class _FormScreenState extends State<FormScreen> {
           if (count != null)
             Text(
               count.toString(),
-              style: TextStyle(
-                fontFamily: 'Outfit',
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+              style: TextStyles.subtitleStyle.copyWith(
                 height: 1.25,
                 color: countColor,
               ),
@@ -625,10 +529,7 @@ class _FormScreenState extends State<FormScreen> {
           if (duration != null)
             Text(
               duration,
-               style: TextStyle(
-                fontFamily: 'Outfit',
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+               style: TextStyles.subtitleStyle.copyWith(
                 height: 1.25,
                 color: countColor,
               ),
@@ -650,11 +551,8 @@ class _FormScreenState extends State<FormScreen> {
       ),
       child: Text(
             'Panou Reveniri (în dezvoltare)',
-             style: const TextStyle(
-              fontFamily: 'Outfit',
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF927B9D),
+            style: TextStyles.subtitleStyle.copyWith(
+              color: const Color(0xFF927B9D),
             ),
           ),
     );
@@ -672,11 +570,8 @@ class _FormScreenState extends State<FormScreen> {
       ),
       child: Text(
             'Panou Calculator (în dezvoltare)',
-             style: const TextStyle(
-              fontFamily: 'Outfit',
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF927B9D),
+            style: TextStyles.subtitleStyle.copyWith(
+              color: const Color(0xFF927B9D),
             ),
           ),
     );
@@ -694,11 +589,8 @@ class _FormScreenState extends State<FormScreen> {
       ),
       child: Text(
             'Panou Recomandări (în dezvoltare)',
-            style: const TextStyle(
-              fontFamily: 'Outfit',
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF927B9D),
+            style: TextStyles.subtitleStyle.copyWith(
+              color: const Color(0xFF927B9D),
             ),
           ),
     );
@@ -729,11 +621,8 @@ class _FormScreenState extends State<FormScreen> {
                   children: [
                     Text(
                       _showingClientLoanForm ? 'Credite client' : 'Credite codebitor',
-                      style: const TextStyle(
-                        fontFamily: 'Outfit',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF927B9D),
+                      style: TextStyles.titleStyle.copyWith(
+                        color: const Color(0xFF927B9D),
                       ),
                     ),
                   ],
@@ -746,10 +635,7 @@ class _FormScreenState extends State<FormScreen> {
               child: _buildLoansContainer(),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-            child: _buildLoanToggleButtons(),
-          ),
+          _buildLoanToggleButtons(),
         ],
       ),
     );
@@ -758,12 +644,10 @@ class _FormScreenState extends State<FormScreen> {
   /// Construieste containerul pentru lista de credite
   Widget _buildLoansContainer() {
     // Container for the scrollable list of forms
-    return Container(
-      child: SingleChildScrollView(
-        child: FormsContainerWidget(
-          type: FormContainerType.credit,
-          isClientForm: _showingClientLoanForm,
-        ),
+    return SingleChildScrollView(
+      child: FormsContainerWidget(
+        type: FormContainerType.credit,
+        isClientForm: _showingClientLoanForm,
       ),
     );
   }
@@ -789,16 +673,13 @@ class _FormScreenState extends State<FormScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-          Text(
-                      _showingClientIncomeForm ? 'Venit client' : 'Venit codebitor',
-                      style: const TextStyle(
-                        fontFamily: 'Outfit',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF927B9D),
-                      ),
+                  Text(
+                    _showingClientIncomeForm ? 'Venit client' : 'Venit codebitor',
+                    style: TextStyles.titleStyle.copyWith(
+                      color: const Color(0xFF927B9D),
                     ),
-                  ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -808,10 +689,7 @@ class _FormScreenState extends State<FormScreen> {
               child: _buildIncomesContainer(),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-            child: _buildIncomeToggleButtons(),
-          ),
+          _buildIncomeToggleButtons(),
         ],
       ),
     );
@@ -820,12 +698,10 @@ class _FormScreenState extends State<FormScreen> {
   /// Construieste containerul pentru lista de venituri
   Widget _buildIncomesContainer() {
      // Container for the scrollable list of forms
-    return Container(
-      child: SingleChildScrollView(
-        child: FormsContainerWidget(
-          type: FormContainerType.income,
-          isClientForm: _showingClientIncomeForm,
-        ),
+    return SingleChildScrollView(
+      child: FormsContainerWidget(
+        type: FormContainerType.income,
+        isClientForm: _showingClientIncomeForm,
       ),
     );
   }

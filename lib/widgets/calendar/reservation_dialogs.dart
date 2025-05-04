@@ -53,10 +53,7 @@ class CreateReservationDialog extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Creeaza programare',
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18,
-                      height: 1.25, // Aproximativ line-height: 25px
+                    style: AppTheme.primaryTitleStyle.copyWith(
                       color: AppTheme.fontLightPurple,
                     ),
                   ),
@@ -84,10 +81,7 @@ class CreateReservationDialog extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'Nume client',
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                          height: 1.28, // Aproximativ line-height: 23px
+                        style: AppTheme.primaryTitleStyle.copyWith(
                           color: AppTheme.fontMediumPurple,
                         ),
                       ),
@@ -103,19 +97,13 @@ class CreateReservationDialog extends StatelessWidget {
                       child: TextField(
                         controller: clientNameController,
                         autofocus: true,
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18,
-                          height: 1.28, // Aproximativ line-height: 23px
+                        style: AppTheme.secondaryTitleStyle.copyWith(
                           color: AppTheme.fontDarkPurple,
                         ),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: 'Introdu numele clientului',
-                          hintStyle: GoogleFonts.outfit(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 18,
-                            height: 1.28, // Aproximativ line-height: 23px
+                          hintStyle: AppTheme.secondaryTitleStyle.copyWith(
                             color: AppTheme.fontDarkPurple.withOpacity(0.7),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
@@ -161,10 +149,7 @@ class CreateReservationDialog extends StatelessWidget {
                       child: Center(
                         child: Text(
                           'Salveaza',
-                          style: GoogleFonts.outfit(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 18,
-                            height: 1.28, // Aproximativ line-height: 23px
+                          style: AppTheme.secondaryTitleStyle.copyWith(
                             color: AppTheme.fontDarkPurple,
                           ),
                         ),
@@ -315,10 +300,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Modifica programare',
-                  style: GoogleFonts.outfit(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18,
-                    height: 1.25, // Aproximativ line-height: 25px
+                  style: AppTheme.primaryTitleStyle.copyWith(
                     color: AppTheme.fontLightPurple,
                   ),
                 ),
@@ -351,10 +333,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Nume client',
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                height: 1.28, // Aproximativ line-height: 23px
+                              style: AppTheme.primaryTitleStyle.copyWith(
                                 color: AppTheme.fontMediumPurple,
                               ),
                             ),
@@ -369,19 +348,13 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                             child: TextField(
                               controller: widget.clientNameController,
                               textAlignVertical: TextAlignVertical.center,
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 18,
-                                height: 1.28, // Aproximativ line-height: 23px
+                              style: AppTheme.secondaryTitleStyle.copyWith(
                                 color: AppTheme.fontDarkPurple,
                               ),
                               decoration: InputDecoration(
                                 border: InputBorder.none,
                                 hintText: 'Introdu numele clientului',
-                                hintStyle: GoogleFonts.outfit(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 18,
-                                  height: 1.28, // Aproximativ line-height: 23px
+                                hintStyle: AppTheme.secondaryTitleStyle.copyWith(
                                   color: AppTheme.fontDarkPurple.withOpacity(0.7),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -408,10 +381,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Data',
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                height: 1.28, // Aproximativ line-height: 23px
+                              style: AppTheme.primaryTitleStyle.copyWith(
                                 color: AppTheme.fontMediumPurple,
                               ),
                             ),
@@ -476,10 +446,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                     Expanded(
                                       child: Text(
                                         DateFormat('dd/MM/yyyy').format(_selectedDate),
-                                        style: GoogleFonts.outfit(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 18,
-                                          height: 1.28, // Aproximativ line-height: 23px
+                                        style: AppTheme.secondaryTitleStyle.copyWith(
                                           color: AppTheme.fontDarkPurple,
                                         ),
                                       ),
@@ -517,10 +484,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Ora',
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                height: 1.28, // Aproximativ line-height: 23px
+                              style: AppTheme.primaryTitleStyle.copyWith(
                                 color: AppTheme.fontMediumPurple,
                               ),
                             ),
@@ -563,10 +527,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                     ),
                                     isExpanded: true,
                                     padding: const EdgeInsets.only(left: 16), // Adjust left padding
-                                    style: GoogleFonts.outfit(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 18,
-                                      height: 1.28, // Aproximativ line-height: 23px
+                                    style: AppTheme.secondaryTitleStyle.copyWith(
                                       color: AppTheme.fontDarkPurple,
                                     ),
                                     items: _availableHours.map((String hour) =>
@@ -671,10 +632,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                               child: Center(
                                 child: Text(
                                   'Salveaza programare',
-                                  style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 18,
-                                    height: 1.28, // Aproximativ line-height: 23px
+                                  style: AppTheme.secondaryTitleStyle.copyWith(
                                     color: AppTheme.fontDarkPurple,
                                   ),
                                   textAlign: TextAlign.center,

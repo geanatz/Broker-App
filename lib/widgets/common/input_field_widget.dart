@@ -61,17 +61,15 @@ class InputFieldWidget extends StatelessWidget {
           onSubmitted: onSubmitted,
           keyboardType: keyboardType,
           readOnly: readOnly,
-          style: TextStyle(
+          style: AppTheme.primaryTitleStyle.copyWith(
             color: textColor,
-            fontSize: AppTheme.fontSizeMedium,
-            fontFamily: 'Outfit',
+            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: TextStyle(
+            hintStyle: AppTheme.primaryTitleStyle.copyWith(
               color: textColor.withOpacity(0.7),
-              fontSize: AppTheme.fontSizeMedium,
-              fontFamily: 'Outfit',
+              fontWeight: FontWeight.w500,
             ),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 12),

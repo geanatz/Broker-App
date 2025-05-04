@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/auth_service.dart'; // Import AuthService
+import '../../theme/app_theme.dart'; // Import AppTheme
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -237,10 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'Consultant',
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              height: 1.28,
+            style: AppTheme.primaryTitleStyle.copyWith(
               color: const Color(0xFF866C93),
             ),
           ),
@@ -314,10 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'Parola',
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              height: 1.28,
+            style: AppTheme.primaryTitleStyle.copyWith(
               color: const Color(0xFF866C93),
             ),
           ),

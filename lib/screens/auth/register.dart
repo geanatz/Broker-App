@@ -6,6 +6,7 @@ import 'dart:math';
 import '../../services/auth_service.dart'; // Import AuthService
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import '../../theme/app_theme.dart'; // Import AppTheme
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -122,7 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Text(
                         'Ai deja un cont de consultant? ',
-                        style: GoogleFonts.outfit(
+                        style: AppTheme.secondaryTitleStyle.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           height: 1.25,
@@ -142,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: Text(
                           'Conectează-te!',
-                          style: GoogleFonts.outfit(
+                          style: AppTheme.secondaryTitleStyle.copyWith(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             height: 1.25,
@@ -182,10 +183,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   padding: const EdgeInsets.only(top: 8, left: 8),
                   child: Text(
                     'Bun venit în echipă!',
-                    style: GoogleFonts.outfit(
+                    style: AppTheme.primaryTitleStyle.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      height: 1.25,
                       color: const Color(0xFF77677E),
                     ),
                   ),
@@ -195,10 +195,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
                     'Hai să oficializăm intrarea ta în sistem.',
-                    style: GoogleFonts.outfit(
+                    style: AppTheme.secondaryTitleStyle.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      height: 1.25,
                       color: const Color(0xFF866C93),
                     ),
                   ),
@@ -247,7 +246,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.outfit(
+                style: AppTheme.secondaryTitleStyle.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   height: 1.28,
@@ -304,7 +303,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: isPassword ? (controller == _passwordController ? _obscurePassword : _obscureConfirmPassword) : false,
                     decoration: InputDecoration(
                       hintText: hintText,
-                      hintStyle: GoogleFonts.outfit(
+                      hintStyle: AppTheme.secondaryTitleStyle.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
                         height: 1.28,
@@ -314,7 +313,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
                     ),
-                    style: GoogleFonts.outfit(
+                    style: AppTheme.secondaryTitleStyle.copyWith(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                       height: 1.28,
@@ -367,7 +366,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'Alege echipa',
-            style: GoogleFonts.outfit(
+            style: AppTheme.secondaryTitleStyle.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               height: 1.28,
@@ -391,7 +390,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               isExpanded: true,
               hint: Text(
                 'Selectează echipa',
-                style: GoogleFonts.outfit(
+                style: AppTheme.secondaryTitleStyle.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
                   height: 1.28,
@@ -413,7 +412,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   value: team,
                   child: Text(
                     team,
-                    style: GoogleFonts.outfit(
+                    style: AppTheme.secondaryTitleStyle.copyWith(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                       height: 1.28,
@@ -456,7 +455,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   )
                 : Text(
                     'Creează cont',
-                    style: GoogleFonts.outfit(
+                    style: AppTheme.secondaryTitleStyle.copyWith(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                       height: 1.28,
@@ -522,7 +521,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           'Cont creat cu succes!',
-          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
+          style: AppTheme.primaryTitleStyle.copyWith(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -530,12 +529,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             Text(
               'Contul tău de consultant a fost creat.', // Updated text
-              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
+              style: AppTheme.secondaryTitleStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
             ),
             const SizedBox(height: 16),
             Text(
               'Token-ul tău unic pentru resetarea parolei este:',
-              style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
+              style: AppTheme.secondaryTitleStyle.copyWith(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
             ),
             const SizedBox(height: 8),
             Container(
@@ -568,7 +567,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 8),
              Text(
               'Păstrează acest token într-un loc sigur! Îl vei putea folosi pentru a-ți reseta parola dacă o uiți.',
-              style: GoogleFonts.outfit(fontSize: 12, color: const Color(0xFF866C93)),
+              style: AppTheme.secondaryTitleStyle.copyWith(fontSize: 12, color: const Color(0xFF866C93)),
             ),
           ],
         ),
@@ -581,7 +580,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             },
             child: Text(
               'Ok, am înțeles',
-              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
+              style: AppTheme.secondaryTitleStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
             ),
           ),
         ],
@@ -595,18 +594,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           'Eroare',
-          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
+          style: AppTheme.primaryTitleStyle.copyWith(fontSize: 20, fontWeight: FontWeight.w600, color: const Color(0xFF77677E)),
         ),
         content: Text(
           message,
-          style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
+          style: AppTheme.secondaryTitleStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFF866C93)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Ok',
-              style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
+              style: AppTheme.secondaryTitleStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF866C93)),
             ),
           ),
         ],
@@ -620,7 +619,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           title,
-          style: GoogleFonts.outfit(
+          style: AppTheme.primaryTitleStyle.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF77677E),
@@ -628,7 +627,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         content: Text(
           message,
-          style: GoogleFonts.outfit(
+          style: AppTheme.secondaryTitleStyle.copyWith(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF866C93),
@@ -639,7 +638,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Am înțeles',
-              style: GoogleFonts.outfit(
+              style: AppTheme.secondaryTitleStyle.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF866C93),

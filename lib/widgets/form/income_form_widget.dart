@@ -127,7 +127,10 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
 
     // Update isEmpty based on whether bank and type are selected
     final bool wasEmpty = widget.formData.isEmpty;
-    widget.formData.isEmpty = !(_selectedBank != null && _selectedIncomeType != null);
+    widget.formData.isEmpty = !widget.formData.isFilled();
+    
+    // Debug
+    print("Income form updated: wasEmpty=$wasEmpty, isEmpty=${widget.formData.isEmpty}, bank=${widget.formData.selectedBank}, type=${widget.formData.selectedIncomeType}");
 
     // Notify parent widget
     widget.onChanged(widget.formData);
@@ -147,7 +150,7 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildFirstRow(),
-           // Only show the second row if the form is not empty
+          // Only show the second row if the form is not empty
           if (!widget.formData.isEmpty)
              Padding(
                 padding: const EdgeInsets.only(top: 16), // Gap from design
@@ -160,7 +163,7 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
 
   // Primul rand cu banca si tipul de venit
   Widget _buildFirstRow() {
-     // Row styling from design
+    // Row styling from design - Use Expanded for flexible width
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -210,19 +213,19 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
 
   // Al doilea rand cu campuri specifice tipului de venit
   Widget _buildSecondRow() {
-     // Row styling from design
+    // Row styling from design - Use Expanded instead of fixed width calculation
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: _buildFieldWithLabel(
-            label: 'Suma', // Changed from Sold to Suma
+            label: 'Suma',
             field: InputFieldWidget(
               controller: _incomeController,
               hintText: '0',
               keyboardType: TextInputType.number,
-              backgroundColor: const Color(0xFFC6ACD3), // Color from design
-              textColor: const Color(0xFF7C568F), // Color from design
+              backgroundColor: const Color(0xFFC6ACD3),
+              textColor: const Color(0xFF7C568F),
             ),
           ),
         ),
@@ -233,8 +236,8 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
             field: InputFieldWidget(
               controller: _vechimeController,
               hintText: '0 ani',
-               backgroundColor: const Color(0xFFC6ACD3), // Color from design
-              textColor: const Color(0xFF7C568F), // Color from design
+              backgroundColor: const Color(0xFFC6ACD3),
+              textColor: const Color(0xFF7C568F),
             ),
           ),
         ),
@@ -256,11 +259,8 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
           padding: const EdgeInsets.only(left: 8.0, bottom: 8.0), // Padding from design
           child: Text(
             label,
-            style: const TextStyle( // Style from design
-              fontFamily: 'Outfit',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF886699), // Color from design
+            style: AppTheme.primaryTitleStyle.copyWith(
+              color: const Color(0xFF886699), // Color from design
             ),
           ),
         ),
