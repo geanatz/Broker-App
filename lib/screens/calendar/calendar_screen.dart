@@ -99,13 +99,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
         : ReservationType.meeting);
   }
   
-  List<String> _getCurrentWeekDates() {
+  // Helper function to determine the Monday of the week to display
+  DateTime _getStartOfWeekToDisplay() {
     final now = DateTime.now();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
-    return List.generate(5, (index) {
-      final date = monday.add(Duration(days: index));
-      return '${date.day}';
-    });
+    final currentWeekday = now.weekday; // Monday = 1, Sunday = 7
+
+    DateTime startOfWeek;
+    // If it's Saturday (6) or Sunday (7)
+    if (currentWeekday >= DateTime.saturday) {
+      // Calculate days until next Monday
+      final daysUntilNextMonday = 8 - currentWeekday;
+      // Get next Monday's date
+      final nextMonday = now.add(Duration(days: daysUntilNextMonday));
+      // Set startOfWeek to the beginning of that Monday
+      startOfWeek = DateTime(nextMonday.year, nextMonday.month, nextMonday.day);
+    } else {
+      // If it's Monday to Friday, get the current week's Monday
+      final currentMonday = now.subtract(Duration(days: currentWeekday - 1));
+      // Set startOfWeek to the beginning of that Monday
+      startOfWeek = DateTime(currentMonday.year, currentMonday.month, currentMonday.day);
+    }
+    return startOfWeek;
   }
 
   @override
@@ -231,12 +245,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   /// Construieste widget-ul pentru calendar
   Widget _buildCalendarWidget() {
-    final weekDates = _getCurrentWeekDates();
-    final now = DateTime.now();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
-    final startOfWeek = DateTime(monday.year, monday.month, monday.day);
-    final endOfWeek = startOfWeek.add(const Duration(days: 5));
-    
+    // Get the correct start of the week (current or next)
+    final DateTime startOfWeek = _getStartOfWeekToDisplay();
+    // Calculate the end of that week (Friday end of day, for query purposes)
+    final endOfWeek = startOfWeek.add(const Duration(days: 5)); 
+    // Generate the day numbers for the header labels for the displayed week
+    final List<String> weekDates = List.generate(5, (index) {
+      return startOfWeek.add(Duration(days: index)).day.toString();
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -301,7 +318,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Day labels row
+                // Day labels row - Uses the calculated weekDates
                 Padding(
                   padding: const EdgeInsets.only(
                     left: 64.0, // Space for hour labels + gap
@@ -310,7 +327,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     children: List.generate(daysOfWeek.length, (index) {
                       return Expanded(
                         child: Text(
-                          '${daysOfWeek[index]} ${weekDates[index]}',
+                          '${daysOfWeek[index]} ${weekDates[index]}', // Use updated weekDates
                           style: AppTheme.secondaryTitleStyle,
                           textAlign: TextAlign.center,
                         ),
@@ -324,6 +341,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 // Calendar grid with slots
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
+                    // Query uses the calculated startOfWeek and endOfWeek
                     stream: _firestore
                         .collection('reservations')
                         .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
@@ -357,8 +375,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           
                           final dateTime = (data['dateTime'] as Timestamp).toDate();
                           
-                          final dayIndex = dateTime.weekday - 1;
-                          if (dayIndex < 0 || dayIndex > 4) continue;
+                          // Calculate dayIndex relative to the startOfWeek being displayed
+                          final dayDifference = dateTime.difference(startOfWeek).inDays;
+                          // final dayIndex = dateTime.weekday - 1;
+                          if (dayDifference < 0 || dayDifference > 4) continue; // Only show days within the displayed week
+                          final dayIndex = dayDifference;
 
                           final timeString = DateFormat('HH:mm').format(dateTime);
                           final hourIndex = hours.indexOf(timeString);
@@ -517,9 +538,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _showReservationDialog(int dayIndex, int hourIndex, ReservationType calendarType) {
-    final now = DateTime.now();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
-    final selectedDate = monday.add(Duration(days: dayIndex));
+    // Calculate the selected date based on the displayed startOfWeek
+    final DateTime startOfWeek = _getStartOfWeekToDisplay(); 
+    final selectedDate = startOfWeek.add(Duration(days: dayIndex));
     final selectedHourMinute = hours[hourIndex].split(':');
     final selectedDateTime = DateTime(
       selectedDate.year,

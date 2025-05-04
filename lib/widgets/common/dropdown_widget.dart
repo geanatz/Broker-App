@@ -1,22 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../theme/app_theme.dart';
 
-// Placeholder for DropdownWidget
-// TODO: Implement the actual DropdownWidget UI and logic
+/// Widget reutilizabil pentru dropdown-uri in formulare
 class DropdownWidget extends StatelessWidget {
-  const DropdownWidget({super.key});
+  /// Lista de optiuni pentru dropdown
+  final List<String> items;
+  
+  /// Valoarea selectata curent
+  final String? value;
+  
+  /// Hint text cand nu e selectata nicio valoare
+  final String hintText;
+  
+  /// Callback apelat cand se schimba valoarea
+  final Function(String?) onChanged;
+  
+  /// Culoarea de background a dropdownului
+  final Color backgroundColor;
+  
+  /// Culoarea textului
+  final Color textColor;
+
+  const DropdownWidget({
+    Key? key,
+    required this.items,
+    this.value,
+    required this.hintText,
+    required this.onChanged,
+    this.backgroundColor = Colors.white,
+    this.textColor = Colors.black,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Return a simple placeholder for now
-    return DropdownButtonFormField<String>(
-      decoration: const InputDecoration(
-        border: OutlineInputBorder(),
-        labelText: 'Dropdown (Placeholder)',
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.only(left: 16, right: 12),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF000000).withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: value,
+            hint: Text(
+              hintText,
+              style: TextStyle(
+                fontFamily: 'Outfit',
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            icon: SvgPicture.asset(
+              'assets/DropdownIcon.svg',
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
+            ),
+            isExpanded: true,
+            dropdownColor: backgroundColor,
+            style: TextStyle(
+              fontFamily: 'Outfit',
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+            items: items.map<DropdownMenuItem<String>>((String item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(
+                  item,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ),
       ),
-      items: const [
-        DropdownMenuItem(value: 'Option 1', child: Text('Option 1')),
-      ],
-      onChanged: (value) {},
     );
   }
 } 

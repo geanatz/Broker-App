@@ -85,6 +85,11 @@ flutter:
     - assets/CalculatorIcon.svg
     - assets/FormIcon.svg
     - assets/DashboardIcon.svg
+    - assets/CallIcon.svg
+    - assets/MinusIcon.svg
+    - assets/SpeechIcon.svg
+    - assets/EditIcon.svg
+    - assets/CodebitorIcon.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

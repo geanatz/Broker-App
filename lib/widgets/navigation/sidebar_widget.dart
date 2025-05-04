@@ -21,6 +21,10 @@ class SidebarWidget extends StatelessWidget {
 
   /// Înălțimea sidebar-ului (poate fi null pentru flexibilitate)
   final double? height;
+  
+  /// Builder pentru meniul secundar (opțional)
+  /// Folosit pentru a adăuga meniuri suplimentare în panouri specifice
+  final Widget Function(BuildContext)? secondaryMenuBuilder;
 
   const SidebarWidget({
     Key? key,
@@ -29,6 +33,7 @@ class SidebarWidget extends StatelessWidget {
     required this.consultantName,
     required this.teamName,
     this.height,
+    this.secondaryMenuBuilder,
   }) : super(key: key);
 
   @override
@@ -44,10 +49,31 @@ class SidebarWidget extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.mediumGap),
           Expanded(
-            child: NavigationWidget(
-              currentScreen: currentScreen,
-              onScreenChanged: onScreenChanged,
-            ),
+            child: secondaryMenuBuilder != null
+                ? Column(
+                    children: [
+                      NavigationWidget(
+                        currentScreen: currentScreen,
+                        onScreenChanged: onScreenChanged,
+                      ),
+                      const SizedBox(height: AppTheme.mediumGap),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(AppTheme.defaultGap),
+                          decoration: BoxDecoration(
+                            color: AppTheme.widgetBackground.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                            boxShadow: [AppTheme.widgetShadow],
+                          ),
+                          child: secondaryMenuBuilder!(context),
+                        ),
+                      ),
+                    ],
+                  )
+                : NavigationWidget(
+                    currentScreen: currentScreen,
+                    onScreenChanged: onScreenChanged,
+                  ),
           ),
         ],
       ),
