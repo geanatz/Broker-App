@@ -9,7 +9,7 @@ import 'screens/calendar/calendar_screen.dart';
 import 'screens/form/form_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
-import 'widgets/navigation/navigation_widget.dart';
+import 'sidebar/navigation_config.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/navigation/sidebar_widget.dart';
-import '../../widgets/navigation/navigation_widget.dart';
+// import '../../widgets/navigation/sidebar_widget.dart'; // Removed old import
+// import '../../widgets/navigation/navigation_widget.dart'; // Removed old import
+import '../../sidebar/navigation_config.dart'; // Added config import
+import '../../sidebar/user_widget.dart';      // Added user widget import
+import '../../sidebar/navigation_widget.dart'; // Added navigation widget import
+import '../../sidebar/user_config.dart'; // Added user config import
 import '../../widgets/common/panel_container.dart';
 
 /// Ecranul principal de dashboard al aplicației
@@ -52,21 +56,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Construiește layout-ul pentru ecrane mici (< 1200px)
   Widget _buildSmallScreenLayout(double contentHeight) {
+    // Note: height for PanelContainer might need adjustment
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           PanelContainer(
             width: double.infinity,
-            height: 300,
+            // height: 300, // Consider removing fixed height or making it flexible
             child: _buildDashboardContent(),
           ),
           const SizedBox(height: AppTheme.largeGap),
-          SidebarWidget(
-            currentScreen: NavigationScreen.dashboard,
-            onScreenChanged: widget.onScreenChanged,
-            consultantName: widget.consultantName,
-            teamName: widget.teamName,
+          // Replace SidebarWidget with Column[UserWidget, SizedBox, NavigationWidget]
+          Container(
+            width: 224, // Maintain sidebar width
+            child: Column(
+              children: [
+                UserWidget(
+                  consultantName: widget.consultantName,
+                  teamName: widget.teamName,
+                  progress: 0.0, // Add placeholder progress
+                  callCount: 0,  // Add placeholder count
+                ),
+                const SizedBox(height: AppTheme.mediumGap),
+                NavigationWidget(
+                  currentScreen: NavigationScreen.dashboard,
+                  onScreenChanged: widget.onScreenChanged,
+                  // No secondary panels on dashboard
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -79,18 +98,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         PanelContainer(
-          width: 1100,
+          // width: 1100, // This might be too specific, Expanded handles width better
           height: contentHeight,
           isExpanded: true,
           child: _buildDashboardContent(),
         ),
         const SizedBox(width: AppTheme.largeGap),
-        SidebarWidget(
-          currentScreen: NavigationScreen.dashboard,
-          onScreenChanged: widget.onScreenChanged,
-          consultantName: widget.consultantName,
-          teamName: widget.teamName,
-          height: contentHeight,
+        // Replace SidebarWidget with Column[UserWidget, SizedBox, Expanded(NavigationWidget)]
+        SizedBox(
+           width: 224, // Fixed width for the sidebar area
+           height: contentHeight, // Use the calculated height
+           child: Column(
+             crossAxisAlignment: CrossAxisAlignment.stretch,
+             children: [
+                UserWidget(
+                  consultantName: widget.consultantName,
+                  teamName: widget.teamName,
+                  progress: 0.0, // Add placeholder progress
+                  callCount: 0,  // Add placeholder count
+                ),
+                const SizedBox(height: AppTheme.mediumGap),
+                Expanded(
+                  child: NavigationWidget(
+                    currentScreen: NavigationScreen.dashboard,
+                    onScreenChanged: widget.onScreenChanged,
+                    // No secondary panels on dashboard
+                  ),
+                ),
+             ],
+           ),
         ),
       ],
     );
@@ -98,22 +134,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Construiește conținutul placeholderului pentru dashboard
   Widget _buildDashboardContent() {
+    // Assuming AppTheme.headerTitleStyle, primaryTitleStyle, secondaryTitleStyle exist
+    // If not, define inline styles using AppTheme constants
+    final TextStyle headerStyle = const TextStyle(
+      fontSize: AppTheme.fontSizeLarge, 
+      fontWeight: FontWeight.bold, 
+      color: AppTheme.fontDarkPurple
+    );
+    final TextStyle primaryStyle = const TextStyle(
+      fontSize: AppTheme.fontSizeLarge, 
+      color: AppTheme.fontMediumPurple
+    );
+     final TextStyle secondaryStyle = const TextStyle(
+      fontSize: AppTheme.fontSizeMedium, 
+      color: AppTheme.fontLightPurple
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppTheme.mediumGap, 
-            0, 
-            AppTheme.mediumGap, 
-            AppTheme.defaultGap
+            AppTheme.mediumGap,
+            AppTheme.mediumGap, // Add top padding
+            AppTheme.mediumGap,
+            AppTheme.smallGap
           ),
           child: Text(
             'Dashboard',
-            style: AppTheme.headerTitleStyle,
+            style: headerStyle, // Use defined style
           ),
         ),
-        
+
         Expanded(
           child: Center(
             child: Column(
@@ -127,17 +179,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: AppTheme.mediumGap),
                 Text(
                   'Dashboard în construcție',
-                  style: AppTheme.primaryTitleStyle.copyWith(
-                    color: AppTheme.fontMediumPurple,
-                  ),
+                  style: primaryStyle, // Use defined style
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppTheme.defaultGap),
+                const SizedBox(height: AppTheme.smallGap),
                 Text(
                   'Această secțiune va fi disponibilă în curând',
-                  style: AppTheme.secondaryTitleStyle.copyWith(
-                    color: AppTheme.fontLightPurple,
-                  ),
+                  style: secondaryStyle, // Use defined style
                   textAlign: TextAlign.center,
                 ),
               ],

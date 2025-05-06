@@ -1,13 +1,13 @@
 # Background Color
-app_background = gradient ( #A4B8C2 top left, #C2A4A4 bottom right )
-widget_background = #FFFFFF 50% opacity
-popup_background = #FFFFFF 75% opacity
+background_app = gradient ( #A4B8C2 top left, #C2A4A4 bottom right )
+background_widget = #FFFFFF 50% opacity
+background_popup = #D9D9D9
 background_light_blue = #C4CFD4
 background_light_purple = #CFC4D4
 background_light_red = #D4C4C4
-background_dark_blue = #B0C5CF
-background_dark_purple = #C5B0CF
-background_dark_red = #CFB0B0
+background_dark_blue = #ACC6D3
+background_dark_purple = #C6ACD3
+background_dark_red = #D3ACAC
 
 # Font Color
 font_light_blue = #8A9EA8
@@ -20,17 +20,20 @@ font_dark_blue = #4D6F80
 font_dark_purple = #6F4D80
 font_dark_red = #804D4D
 
+# Font Family
+'Outfit'
+
 # Font Size
-tiny = 12
-small = 14
-medium = 16
-large = 18
-huge = 20
+tiny = 13
+small = 15
+medium = 17
+large = 19
+huge = 21
 
 # Font Weight
-small = Regular
-medium = Medium
-large = SemiBold
+small = w400
+medium = w500
+large = w600
 
 # Border Radius
 tiny = 8
@@ -45,3 +48,15 @@ small = 20 px
 medium = 24 px
 large = 28 px
 huge = 32 px
+
+# Gap
+tiny = 4px
+small = 8px
+medium = 16px
+large = 24px
+huge = 32px
+
+# Shadows
+widgetShadow = x0 y0 blur15 rgba(0, 0, 0, 0.1);
+calendarReservedSlotShadow = x0px y2px blur4px rgba(0, 0, 0, 0.2);
+

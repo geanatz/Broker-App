@@ -7,14 +7,12 @@ align-items: flex-start;
 padding: 0px;
 gap: 16px;
 
+position: absolute;
 width: 224px;
 height: 1032px;
+left: 1672px;
+top: 24px;
 
-
-/* Inside auto layout */
-flex: none;
-order: 2;
-flex-grow: 0;
 
 
 /* UserWidget */
@@ -37,6 +35,26 @@ border-radius: 32px;
 /* Inside auto layout */
 flex: none;
 order: 0;
+flex-grow: 0;
+
+
+/* UserSection */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 10px;
+
+width: 208px;
+height: 56px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
 flex-grow: 0;
 
 
@@ -111,8 +129,8 @@ display: flex;
 flex-direction: column;
 justify-content: center;
 align-items: flex-start;
-padding: 8px;
-gap: 8px;
+padding: 0px 8px;
+gap: 4px;
 
 width: 144px;
 height: 56px;
@@ -125,20 +143,17 @@ align-self: stretch;
 flex-grow: 1;
 
 
-/* Consultant */
+/* Text */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 10px;
 
 width: 128px;
-height: 16px;
-
-font-family: 'Outfit';
-font-style: normal;
-font-weight: 600;
-font-size: 18px;
-line-height: 23px;
-display: flex;
-align-items: center;
-
-color: #886699;
+height: 21px;
 
 
 /* Inside auto layout */
@@ -148,16 +163,59 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* Team */
+/* Consultant */
+
+width: 59px;
+height: 21px;
+
+font-family: 'Outfit';
+font-style: normal;
+font-weight: 600;
+font-size: 17px;
+line-height: 21px;
+display: flex;
+align-items: center;
+
+color: #886699;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Text */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 10px;
 
 width: 128px;
-height: 16px;
+height: 19px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Team */
+
+width: 106px;
+height: 19px;
 
 font-family: 'Outfit';
 font-style: normal;
 font-weight: 500;
-font-size: 16px;
-line-height: 20px;
+font-size: 15px;
+line-height: 19px;
+/* identical to box height */
 display: flex;
 align-items: center;
 
@@ -166,8 +224,26 @@ color: #927B9D;
 
 /* Inside auto layout */
 flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* StatisticsSection */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 10px;
+
+width: 176px;
+height: 16px;
+
+
+/* Inside auto layout */
+flex: none;
 order: 1;
-align-self: stretch;
 flex-grow: 0;
 
 
@@ -187,7 +263,7 @@ height: 16px;
 
 /* Inside auto layout */
 flex: none;
-order: 1;
+order: 0;
 flex-grow: 0;
 
 
@@ -274,6 +350,7 @@ flex-grow: 0;
 /* Auto layout */
 display: flex;
 flex-direction: column;
+justify-content: space-between;
 align-items: center;
 padding: 8px;
 gap: 8px;
@@ -291,7 +368,7 @@ order: 1;
 flex-grow: 1;
 
 
-/* MainPanel */
+/* Section */
 
 /* Auto layout */
 display: flex;
@@ -300,8 +377,9 @@ align-items: flex-start;
 padding: 0px;
 gap: 8px;
 
+margin: 0 auto;
 width: 208px;
-height: 248px;
+height: 448px;
 
 
 /* Inside auto layout */
@@ -311,13 +389,34 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* WidgetHeader */
+/* Section */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+gap: 8px;
+
+width: 208px;
+height: 192px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Header */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
+justify-content: space-between;
 align-items: center;
-padding: 0px 24px;
+padding: 0px 8px;
 gap: 16px;
 
 width: 208px;
@@ -331,16 +430,38 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* Title */
+/* Text */
 
-width: 120px;
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 99px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Navigatie */
+
+width: 83px;
 height: 24px;
 
 font-family: 'Outfit';
 font-style: normal;
-font-weight: 600;
-font-size: 18px;
-line-height: 23px;
+font-weight: 500;
+font-size: 19px;
+line-height: 24px;
+/* identical to box height */
 display: flex;
 align-items: center;
 
@@ -350,10 +471,10 @@ color: #927B9D;
 /* Inside auto layout */
 flex: none;
 order: 0;
-flex-grow: 1;
+flex-grow: 0;
 
 
-/* Button */
+/* CollapseButton */
 
 /* Auto layout */
 display: flex;
@@ -362,6 +483,7 @@ align-items: center;
 padding: 0px;
 gap: 10px;
 
+margin: 0 auto;
 width: 24px;
 height: 24px;
 
@@ -405,7 +527,7 @@ padding: 0px;
 gap: 8px;
 
 width: 208px;
-height: 216px;
+height: 160px;
 
 
 /* Inside auto layout */
@@ -415,21 +537,20 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* OpenCalendarButton */
+/* GoToDashboardButton(inactive) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
 padding: 12px 16px;
-gap: 16px;
 
 width: 208px;
 height: 48px;
 
 background: #CFC4D4;
-border-radius: 16px;
+border-radius: 24px;
 
 /* Inside auto layout */
 flex: none;
@@ -438,7 +559,68 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* DashboardIcon */
+/* Text */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+
+margin: 0 auto;
+width: 101px;
+height: 21px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Dashboard */
+
+width: 85px;
+height: 21px;
+
+font-family: 'Outfit';
+font-style: normal;
+font-weight: 500;
+font-size: 17px;
+line-height: 21px;
+display: flex;
+align-items: center;
+
+color: #886699;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 40px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* DashboardIcon.svg */
 
 width: 24px;
 height: 24px;
@@ -448,16 +630,6 @@ height: 24px;
 flex: none;
 order: 0;
 flex-grow: 0;
-
-
-/* Interface / Command */
-
-position: absolute;
-width: 24px;
-height: 24px;
-left: 0px;
-top: 0px;
-
 
 
 /* Vector */
@@ -471,64 +643,20 @@ bottom: 12.5%;
 border: 2px solid #886699;
 
 
-/* Title */
+/* GoToFormButton(inactive) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 0px;
-gap: 10px;
-
-width: 136px;
-height: 24px;
-
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-align-self: stretch;
-flex-grow: 1;
-
-
-/* Dashboard */
-
-width: 136px;
-height: 16px;
-
-font-family: 'Outfit';
-font-style: normal;
-font-weight: 500;
-font-size: 16px;
-line-height: 20px;
-display: flex;
-align-items: center;
-
-color: #886699;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* OpenFormButton */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
 padding: 12px 16px;
-gap: 16px;
 
 width: 208px;
 height: 48px;
 
 background: #C6ACD3;
-border-radius: 16px;
+border-radius: 24px;
 
 /* Inside auto layout */
 flex: none;
@@ -537,17 +665,17 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* Icon */
+/* Text */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
 align-items: center;
-padding: 0px;
-gap: 10px;
+padding: 0px 8px;
 
-width: 24px;
-height: 24px;
+margin: 0 auto;
+width: 87px;
+height: 21px;
 
 
 /* Inside auto layout */
@@ -556,7 +684,49 @@ order: 0;
 flex-grow: 0;
 
 
-/* FormIcon */
+/* Formular */
+
+width: 71px;
+height: 21px;
+
+font-family: 'Outfit';
+font-style: normal;
+font-weight: 500;
+font-size: 17px;
+line-height: 21px;
+display: flex;
+align-items: center;
+
+color: #7C568F;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 40px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* FormIcon.svg */
 
 width: 24px;
 height: 24px;
@@ -579,58 +749,14 @@ bottom: 12.5%;
 border: 2px solid #7C568F;
 
 
-/* Title */
+/* GoToCalendarButton(active) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 0px;
-gap: 10px;
-
-width: 136px;
-height: 24px;
-
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-align-self: stretch;
-flex-grow: 1;
-
-
-/* Formular */
-
-width: 136px;
-height: 16px;
-
-font-family: 'Outfit';
-font-style: normal;
-font-weight: 500;
-font-size: 16px;
-line-height: 20px;
-display: flex;
-align-items: center;
-
-color: #7C568F;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* OpenCalendarButton */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
 padding: 12px 16px;
-gap: 16px;
 
 width: 208px;
 height: 48px;
@@ -645,17 +771,17 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* Icon */
+/* Text */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
 align-items: center;
-padding: 0px;
-gap: 10px;
+padding: 0px 8px;
 
-width: 24px;
-height: 24px;
+margin: 0 auto;
+width: 87px;
+height: 21px;
 
 
 /* Inside auto layout */
@@ -664,7 +790,49 @@ order: 0;
 flex-grow: 0;
 
 
-/* CalendarIcon */
+/* Calendar */
+
+width: 71px;
+height: 21px;
+
+font-family: 'Outfit';
+font-style: normal;
+font-weight: 500;
+font-size: 17px;
+line-height: 21px;
+display: flex;
+align-items: center;
+
+color: #886699;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 40px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* CalendarIcon.svg */
 
 width: 24px;
 height: 24px;
@@ -687,158 +855,7 @@ bottom: 16.67%;
 border: 2px solid #886699;
 
 
-/* Title */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 0px;
-gap: 10px;
-
-width: 136px;
-height: 24px;
-
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-align-self: stretch;
-flex-grow: 1;
-
-
-/* Calendar */
-
-width: 136px;
-height: 16px;
-
-font-family: 'Outfit';
-font-style: normal;
-font-weight: 500;
-font-size: 16px;
-line-height: 20px;
-display: flex;
-align-items: center;
-
-color: #886699;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* OpenSettingsButton */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 12px 16px;
-gap: 16px;
-
-width: 208px;
-height: 48px;
-
-background: #CFC4D4;
-border-radius: 16px;
-
-/* Inside auto layout */
-flex: none;
-order: 3;
-align-self: stretch;
-flex-grow: 0;
-
-
-/* Frame 152 */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-align-items: center;
-padding: 0px;
-gap: 10px;
-
-width: 24px;
-height: 24px;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
-
-
-/* SettingsIcon */
-
-width: 24px;
-height: 24px;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 0;
-
-
-/* Vector */
-
-position: absolute;
-left: 8.35%;
-right: 8.35%;
-top: 10.72%;
-bottom: 10.72%;
-
-border: 2px solid #886699;
-
-
-/* Frame 153 */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 0px;
-gap: 10px;
-
-width: 136px;
-height: 24px;
-
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-align-self: stretch;
-flex-grow: 1;
-
-
-/* Setari */
-
-width: 136px;
-height: 16px;
-
-font-family: 'Outfit';
-font-style: normal;
-font-weight: 500;
-font-size: 16px;
-line-height: 20px;
-display: flex;
-align-items: center;
-
-color: #886699;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* SecondaryPanel */
+/* Section */
 
 /* Auto layout */
 display: flex;
@@ -858,13 +875,14 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* WidgetHeader */
+/* Header */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
+justify-content: space-between;
 align-items: center;
-padding: 0px 24px;
+padding: 0px 8px;
 gap: 16px;
 
 width: 208px;
@@ -878,16 +896,38 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* Title */
+/* Text */
 
-width: 120px;
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 82px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Panouri */
+
+width: 66px;
 height: 24px;
 
 font-family: 'Outfit';
 font-style: normal;
-font-weight: 600;
-font-size: 18px;
-line-height: 23px;
+font-weight: 500;
+font-size: 19px;
+line-height: 24px;
+/* identical to box height */
 display: flex;
 align-items: center;
 
@@ -897,10 +937,10 @@ color: #927B9D;
 /* Inside auto layout */
 flex: none;
 order: 0;
-flex-grow: 1;
+flex-grow: 0;
 
 
-/* Button */
+/* CollapseButton */
 
 /* Auto layout */
 display: flex;
@@ -909,6 +949,7 @@ align-items: center;
 padding: 0px;
 gap: 10px;
 
+margin: 0 auto;
 width: 24px;
 height: 24px;
 
@@ -962,15 +1003,14 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* OpenCallsButton */
+/* GoToDashboardButton(inactive) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
 padding: 12px 16px;
-gap: 16px;
 
 width: 208px;
 height: 48px;
@@ -982,6 +1022,67 @@ border-radius: 16px;
 flex: none;
 order: 0;
 align-self: stretch;
+flex-grow: 0;
+
+
+/* Text */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+
+margin: 0 auto;
+width: 71px;
+height: 21px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Apeluri */
+
+width: 55px;
+height: 21px;
+
+font-family: 'Outfit';
+font-style: normal;
+font-weight: 500;
+font-size: 17px;
+line-height: 21px;
+display: flex;
+align-items: center;
+
+color: #7C568F;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 40px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
 flex-grow: 0;
 
 
@@ -1027,63 +1128,20 @@ bottom: 12.5%;
 border: 2px solid #7C568F;
 
 
-/* Title */
+/* GoToDashboardButton(inactive) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
-align-items: center;
-padding: 0px;
-gap: 10px;
-
-width: 136px;
-height: 16px;
-
-
-/* Inside auto layout */
-flex: none;
-order: 1;
-flex-grow: 1;
-
-
-/* Apeluri */
-
-width: 136px;
-height: 16px;
-
-font-family: 'Outfit';
-font-style: normal;
-font-weight: 500;
-font-size: 16px;
-line-height: 20px;
-display: flex;
-align-items: center;
-
-color: #7C568F;
-
-
-/* Inside auto layout */
-flex: none;
-order: 0;
-flex-grow: 1;
-
-
-/* OpenReturnsButton */
-
-/* Auto layout */
-display: flex;
-flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
 padding: 12px 16px;
-gap: 16px;
 
 width: 208px;
 height: 48px;
 
 background: #CFC4D4;
-border-radius: 16px;
+border-radius: 24px;
 
 /* Inside auto layout */
 flex: none;
@@ -1092,22 +1150,64 @@ align-self: stretch;
 flex-grow: 0;
 
 
-/* ReturnIcon */
+/* Text */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
 align-items: center;
-padding: 0px;
-gap: 10px;
+padding: 0px 8px;
 
-width: 24px;
-height: 24px;
+margin: 0 auto;
+width: 77px;
+height: 21px;
 
 
 /* Inside auto layout */
 flex: none;
 order: 0;
+flex-grow: 0;
+
+
+/* Reveniri */
+
+width: 61px;
+height: 21px;
+
+font-family: 'Outfit';
+font-style: normal;
+font-weight: 500;
+font-size: 17px;
+line-height: 21px;
+display: flex;
+align-items: center;
+
+color: #886699;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 40px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
 flex-grow: 0;
 
 
@@ -1134,36 +1234,57 @@ bottom: 16.67%;
 border: 2px solid #886699;
 
 
-/* Title */
+/* GoToDashboardButton(inactive) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
-padding: 0px;
-gap: 10px;
+padding: 12px 16px;
 
-width: 136px;
-height: 16px;
+width: 208px;
+height: 48px;
+
+background: #CFC4D4;
+border-radius: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Text */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+
+margin: 0 auto;
+width: 96px;
+height: 21px;
 
 
 /* Inside auto layout */
 flex: none;
-order: 1;
-flex-grow: 1;
+order: 0;
+flex-grow: 0;
 
 
-/* Reveniri */
+/* Calculator */
 
-width: 136px;
-height: 16px;
+width: 80px;
+height: 21px;
 
 font-family: 'Outfit';
 font-style: normal;
 font-weight: 500;
-font-size: 16px;
-line-height: 20px;
+font-size: 17px;
+line-height: 21px;
 display: flex;
 align-items: center;
 
@@ -1173,29 +1294,26 @@ color: #886699;
 /* Inside auto layout */
 flex: none;
 order: 0;
-flex-grow: 1;
+flex-grow: 0;
 
 
-/* OpenCalculatorButton */
+/* Button */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
 align-items: center;
-padding: 12px 16px;
-gap: 16px;
+padding: 0px 8px;
+gap: 10px;
 
-width: 208px;
-height: 48px;
+margin: 0 auto;
+width: 40px;
+height: 24px;
 
-background: #CFC4D4;
-border-radius: 16px;
 
 /* Inside auto layout */
 flex: none;
-order: 2;
-align-self: stretch;
+order: 1;
 flex-grow: 0;
 
 
@@ -1241,36 +1359,57 @@ bottom: 20.83%;
 border: 2px solid #886699;
 
 
-/* Title */
+/* GoToDashboardButton(inactive) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
-padding: 0px;
-gap: 10px;
+padding: 12px 16px;
 
-width: 136px;
-height: 16px;
+width: 208px;
+height: 48px;
+
+background: #CFC4D4;
+border-radius: 24px;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Text */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+
+margin: 0 auto;
+width: 123px;
+height: 21px;
 
 
 /* Inside auto layout */
 flex: none;
-order: 1;
-flex-grow: 1;
+order: 0;
+flex-grow: 0;
 
 
-/* Calculator */
+/* Recomandare */
 
-width: 136px;
-height: 16px;
+width: 107px;
+height: 21px;
 
 font-family: 'Outfit';
 font-style: normal;
 font-weight: 500;
-font-size: 16px;
-line-height: 20px;
+font-size: 17px;
+line-height: 21px;
 display: flex;
 align-items: center;
 
@@ -1280,29 +1419,26 @@ color: #886699;
 /* Inside auto layout */
 flex: none;
 order: 0;
-flex-grow: 1;
+flex-grow: 0;
 
 
-/* OpenRecommendButton */
+/* Button */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
 align-items: center;
-padding: 12px 16px;
-gap: 16px;
+padding: 0px 8px;
+gap: 10px;
 
-width: 208px;
-height: 48px;
+margin: 0 auto;
+width: 40px;
+height: 24px;
 
-background: #CFC4D4;
-border-radius: 16px;
 
 /* Inside auto layout */
 flex: none;
-order: 3;
-align-self: stretch;
+order: 1;
 flex-grow: 0;
 
 
@@ -1348,36 +1484,58 @@ bottom: 16.67%;
 border: 2px solid #886699;
 
 
-/* Frame 148 */
+/* GoToSettingsButton(inactive) */
 
 /* Auto layout */
 display: flex;
 flex-direction: row;
-justify-content: center;
+justify-content: space-between;
 align-items: center;
-padding: 0px;
-gap: 10px;
+padding: 12px 16px;
 
-width: 136px;
-height: 16px;
+margin: 0 auto;
+width: 208px;
+height: 48px;
 
+background: #CFC4D4;
+border-radius: 24px;
 
 /* Inside auto layout */
 flex: none;
 order: 1;
-flex-grow: 1;
+align-self: stretch;
+flex-grow: 0;
 
 
-/* Recomandare */
+/* Text */
 
-width: 136px;
-height: 16px;
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+
+margin: 0 auto;
+width: 62px;
+height: 21px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Setari */
+
+width: 46px;
+height: 21px;
 
 font-family: 'Outfit';
 font-style: normal;
 font-weight: 500;
-font-size: 16px;
-line-height: 20px;
+font-size: 17px;
+line-height: 21px;
 display: flex;
 align-items: center;
 
@@ -1387,4 +1545,47 @@ color: #886699;
 /* Inside auto layout */
 flex: none;
 order: 0;
-flex-grow: 1;
+flex-grow: 0;
+
+
+/* Button */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px;
+gap: 10px;
+
+margin: 0 auto;
+width: 40px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* SettingsIcon.svg */
+
+width: 24px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 8.35%;
+right: 8.35%;
+top: 10.72%;
+bottom: 10.72%;
+
+border: 2px solid #886699;

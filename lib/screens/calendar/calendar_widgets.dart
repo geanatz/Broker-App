@@ -191,7 +191,7 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
         final doc = sortedAppointments[index];
         final meetingData = doc.data() as Map<String, dynamic>;
         return Padding(
-          padding: const EdgeInsets.only(bottom: AppTheme.defaultGap),
+          padding: const EdgeInsets.only(bottom: AppTheme.smallGap),
           child: buildMeetingFieldWidget(meetingData, widget.dateFormatter),
         );
       },

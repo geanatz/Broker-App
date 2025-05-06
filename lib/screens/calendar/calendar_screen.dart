@@ -5,14 +5,18 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
-import '../../widgets/navigation/sidebar_widget.dart';
-import '../../widgets/navigation/navigation_widget.dart';
+import '../../sidebar/navigation_config.dart';
+import '../../sidebar/user_widget.dart';
+import '../../sidebar/navigation_widget.dart';
+import '../../sidebar/user_config.dart';
 import '../../widgets/common/panel_container.dart';
 import '../../services/reservation_service.dart';
 import '../../widgets/calendar/reservation_dialogs.dart';
 import 'calendar_widgets.dart';
+import 'calendar_constants.dart';
 
 /// Ecranul principal de calendar al aplicației
 class CalendarScreen extends StatefulWidget {
@@ -60,6 +64,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     '12:00', '12:30', '13:00', '13:30', '14:00', 
     '14:30', '15:00', '15:30', '16:00'
   ];
+  
+  // Current week offset (0 = current week, -1 = previous week, 1 = next week)
+  int _currentWeekOffset = 0;
 
   @override
   void initState() {
@@ -104,22 +111,45 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final now = DateTime.now();
     final currentWeekday = now.weekday; // Monday = 1, Sunday = 7
 
-    DateTime startOfWeek;
+    DateTime baseMonday;
     // If it's Saturday (6) or Sunday (7)
     if (currentWeekday >= DateTime.saturday) {
       // Calculate days until next Monday
       final daysUntilNextMonday = 8 - currentWeekday;
       // Get next Monday's date
       final nextMonday = now.add(Duration(days: daysUntilNextMonday));
-      // Set startOfWeek to the beginning of that Monday
-      startOfWeek = DateTime(nextMonday.year, nextMonday.month, nextMonday.day);
+      // Set baseMonday to the beginning of that Monday
+      baseMonday = DateTime(nextMonday.year, nextMonday.month, nextMonday.day);
     } else {
       // If it's Monday to Friday, get the current week's Monday
       final currentMonday = now.subtract(Duration(days: currentWeekday - 1));
-      // Set startOfWeek to the beginning of that Monday
-      startOfWeek = DateTime(currentMonday.year, currentMonday.month, currentMonday.day);
+      // Set baseMonday to the beginning of that Monday
+      baseMonday = DateTime(currentMonday.year, currentMonday.month, currentMonday.day);
     }
-    return startOfWeek;
+    
+    // Apply the week offset
+    return baseMonday.add(Duration(days: 7 * _currentWeekOffset));
+  }
+  
+  // Navigate to previous week
+  void _navigateToPreviousWeek() {
+    setState(() {
+      _currentWeekOffset--;
+    });
+  }
+  
+  // Navigate to next week
+  void _navigateToNextWeek() {
+    setState(() {
+      _currentWeekOffset++;
+    });
+  }
+  
+  // Navigate to current week
+  void _navigateToCurrentWeek() {
+    setState(() {
+      _currentWeekOffset = 0;
+    });
   }
 
   @override
@@ -159,7 +189,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           PanelContainer(
             width: double.infinity,
-            height: 300,
             child: _buildUpcomingWidget(),
           ),
           const SizedBox(height: AppTheme.largeGap),
@@ -168,11 +197,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
             child: _buildCalendarWidget(),
           ),
           const SizedBox(height: AppTheme.largeGap),
-          SidebarWidget(
-            currentScreen: NavigationScreen.calendar,
-            onScreenChanged: widget.onScreenChanged,
-            consultantName: widget.consultantName,
-            teamName: widget.teamName,
+          Container(
+            width: 224,
+            child: Column(
+              children: [
+                UserWidget(
+                  consultantName: widget.consultantName,
+                  teamName: widget.teamName,
+                  progress: 0.0,
+                  callCount: 0,
+                ),
+                const SizedBox(height: AppTheme.mediumGap),
+                NavigationWidget(
+                  currentScreen: NavigationScreen.calendar,
+                  onScreenChanged: widget.onScreenChanged,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -191,18 +232,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
         const SizedBox(width: AppTheme.largeGap),
         PanelContainer(
-          width: 1100, // Latimea panoului de calendar
+          width: 1100,
           height: contentHeight,
           isExpanded: true,
           child: _buildCalendarWidget(),
         ),
         const SizedBox(width: AppTheme.largeGap),
-        SidebarWidget(
-          currentScreen: NavigationScreen.calendar,
-          onScreenChanged: widget.onScreenChanged,
-          consultantName: widget.consultantName,
-          teamName: widget.teamName,
+        SizedBox(
+          width: 224,
           height: contentHeight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              UserWidget(
+                consultantName: widget.consultantName,
+                teamName: widget.teamName,
+                progress: 0.0,
+                callCount: 0,
+              ),
+              const SizedBox(height: AppTheme.mediumGap),
+              Expanded(
+                child: NavigationWidget(
+                  currentScreen: NavigationScreen.calendar,
+                  onScreenChanged: widget.onScreenChanged,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -210,29 +266,43 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   /// Construieste widget-ul pentru "Upcoming" (programari viitoare)
   Widget _buildUpcomingWidget() {
+    // Corrected header style according to meetingsSecondaryPanel.md
+    final TextStyle headerStyle = GoogleFonts.outfit(
+      fontSize: AppTheme.fontSizeLarge, // 19px
+      fontWeight: FontWeight.w600,
+      color: AppTheme.fontLightPurple, // #927B9D
+    );
+    final TextStyle secondaryStyle = const TextStyle(fontSize: AppTheme.fontSizeMedium, color: AppTheme.fontMediumPurple);
+
     final currentUserId = _auth.currentUser?.uid;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch, // Changed from CrossAxisAlignment.start
       children: [
+        // Header part - Title "Intalnirile mele"
+        // PanelContainer has 8px padding. Header has 0px top/bottom, 16px left/right internal padding.
+        // Total height of this header area should be 24px.
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.mediumGap, 
-            0, 
-            AppTheme.mediumGap, 
-            AppTheme.defaultGap
-          ),
-          child: Text(
-            'Programarile mele',
-            style: AppTheme.headerTitleStyle,
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap), // 16px horizontal to achieve 0px 16px internal
+          child: SizedBox(
+            height: 24.0, // Enforce header height
+            child: Align(
+              alignment: Alignment.centerLeft, // Align text to the left
+              child: Text(
+                'Intalnirile mele', // As per existing code, can be changed if "Întâlniri" is preferred from MD
+                style: headerStyle,
+              ),
+            ),
           ),
         ),
         
+        const SizedBox(height: AppTheme.smallGap), // 8px gap between header and list container
+
         Expanded(
           child: currentUserId == null
               ? Center(child: Text(
                   "Utilizator neconectat", 
-                  style: AppTheme.secondaryTitleStyle,
+                  style: secondaryStyle,
                 ))
               : UpcomingAppointmentsList(
                   userId: currentUserId, 
@@ -245,103 +315,197 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   /// Construieste widget-ul pentru calendar
   Widget _buildCalendarWidget() {
-    // Get the correct start of the week (current or next)
+    // Styling based on Figma design
     final DateTime startOfWeek = _getStartOfWeekToDisplay();
-    // Calculate the end of that week (Friday end of day, for query purposes)
     final endOfWeek = startOfWeek.add(const Duration(days: 5)); 
-    // Generate the day numbers for the header labels for the displayed week
     final List<String> weekDates = List.generate(5, (index) {
       return startOfWeek.add(Duration(days: index)).day.toString();
     });
 
+    final dateInterval = "${weekDates.first}-${weekDates.last} ${dateFormatter!.format(startOfWeek).split(' ').last}";
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header with title and calendar type switch
+        // Widget header with title and date navigation
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.mediumGap, 
-            0, 
-            AppTheme.mediumGap, 
-            AppTheme.defaultGap
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
           child: SizedBox(
             height: 24,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
+                // Title "Calendar"
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
                   child: Text(
                     'Calendar',
-                    style: AppTheme.headerTitleStyle,
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w600,
+                      fontSize: AppTheme.fontSizeLarge,
+                      color: AppTheme.fontLightPurple,
+                    ),
                   ),
                 ),
-                Text(
-                  _getCalendarDisplayName(_selectedReservationType),
-                  style: AppTheme.subHeaderStyle,
-                ),
-                const SizedBox(width: AppTheme.defaultGap),
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: Tooltip(
-                    message: "Schimba pe ${_getNextCalendarDisplayName()}",
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedReservationType = 
-                              _selectedReservationType == ReservationType.meeting 
-                              ? ReservationType.bureauDelete 
-                              : ReservationType.meeting;
-                        });
-                      },
-                      child: SvgPicture.asset(
-                        'assets/SwapIcon.svg',
-                        width: AppTheme.iconSizeSmall,
-                        height: AppTheme.iconSizeSmall,
-                        colorFilter: ColorFilter.mode(
-                          AppTheme.fontLightPurple,
-                          BlendMode.srcIn,
+                
+                // Calendar switch - date navigation and type
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Arrow left
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: _navigateToPreviousWeek,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+                          child: SvgPicture.asset(
+                            'assets/ArrowLeftIcon.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              AppTheme.fontLightPurple,
+                              BlendMode.srcIn,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    
+                    // Date interval text
+                    GestureDetector(
+                      onTap: _navigateToCurrentWeek,
+                      child: SizedBox(
+                        width: 128,
+                        child: Center(
+                          child: Tooltip(
+                            message: _currentWeekOffset != 0 ? "Revenire la săptămâna curentă" : "",
+                            child: Text(
+                              dateInterval,
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w500,
+                                fontSize: AppTheme.fontSizeSmall,
+                                color: _currentWeekOffset != 0 
+                                    ? AppTheme.fontMediumPurple 
+                                    : AppTheme.fontLightPurple,
+                                decoration: _currentWeekOffset != 0 
+                                    ? TextDecoration.underline 
+                                    : TextDecoration.none,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    // Arrow right
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: _navigateToNextWeek,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+                          child: SvgPicture.asset(
+                            'assets/ArrowRightIcon.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              AppTheme.fontLightPurple,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(width: AppTheme.smallGap),
+
+                    // Calendar type selection (originally in header)
+                    Text(
+                      _getCalendarDisplayName(_selectedReservationType),
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w500,
+                        fontSize: AppTheme.fontSizeSmall,
+                        color: AppTheme.fontLightPurple,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.smallGap),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Tooltip(
+                        message: "Schimba pe ${_getNextCalendarDisplayName()}",
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedReservationType = 
+                                  _selectedReservationType == ReservationType.meeting 
+                                  ? ReservationType.bureauDelete 
+                                  : ReservationType.meeting;
+                            });
+                          },
+                          child: SvgPicture.asset(
+                            'assets/SwapIcon.svg',
+                            width: AppTheme.iconSizeSmall,
+                            height: AppTheme.iconSizeSmall,
+                            colorFilter: ColorFilter.mode(
+                              AppTheme.fontLightPurple,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
         
-        // Calendar container
+        const SizedBox(height: AppTheme.smallGap),
+        
+        // Calendar container with days and slots
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(AppTheme.mediumGap),
-            decoration: AppTheme.calendarContainerDecoration,
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundLightPurple,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Day labels row - Uses the calculated weekDates
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 64.0, // Space for hour labels + gap
-                  ),
-                  child: Row(
-                    children: List.generate(daysOfWeek.length, (index) {
-                      return Expanded(
-                        child: Text(
-                          '${daysOfWeek[index]} ${weekDates[index]}', // Use updated weekDates
-                          style: AppTheme.secondaryTitleStyle,
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }),
+                // Day headers - Ensure it has a fixed height of 24px
+                SizedBox(
+                  height: CalendarConstants.dayHeaderHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      left: CalendarConstants.hourLabelWidth + AppTheme.mediumGap,
+                    ),
+                    child: Row(
+                      children: List.generate(daysOfWeek.length, (index) {
+                        return Expanded(
+                          child: Text(
+                            '${daysOfWeek[index]} ${weekDates[index]}',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w500,
+                              fontSize: AppTheme.fontSizeSmall,
+                              color: AppTheme.fontMediumPurple,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }),
+                    ),
                   ),
                 ),
                 
-                const SizedBox(height: AppTheme.defaultGap),
+                const SizedBox(height: AppTheme.smallGap), // 8px gap from Figma
                 
-                // Calendar grid with slots
+                // Calendar grid with hours and slots
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
-                    // Query uses the calculated startOfWeek and endOfWeek
                     stream: _firestore
                         .collection('reservations')
                         .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
@@ -356,14 +520,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         return const Center(child: Text('Eroare la incarcare calendar'));
                       }
 
-                      // Process reservations data
                       final Map<String, Map<String, dynamic>> reservedSlotsMap = {};
                       final Map<String, String> reservedSlotsDocIds = {};
                       if (snapshot.hasData) {
                         for (var doc in snapshot.data!.docs) {
                           final data = doc.data() as Map<String, dynamic>;
                           
-                          // Filter by reservation type
                           final type = data['type'] as String?;
                           final ReservationType? reservationType = type == 'meeting' 
                               ? ReservationType.meeting 
@@ -375,10 +537,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           
                           final dateTime = (data['dateTime'] as Timestamp).toDate();
                           
-                          // Calculate dayIndex relative to the startOfWeek being displayed
                           final dayDifference = dateTime.difference(startOfWeek).inDays;
-                          // final dayIndex = dateTime.weekday - 1;
-                          if (dayDifference < 0 || dayDifference > 4) continue; // Only show days within the displayed week
+                          if (dayDifference < 0 || dayDifference > 4) continue;
                           final dayIndex = dayDifference;
 
                           final timeString = DateFormat('HH:mm').format(dateTime);
@@ -398,33 +558,54 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start, 
                             children: [
                               // Hours column
+                              // This column should effectively have 8px top padding before the first hour text.
+                              // Each hour text is 24px high, followed by 56px gap.
                               Column(
-                                children: hours.map((hour) {
-                                  return Container(
-                                    width: AppTheme.hourLabelWidth,
-                                    height: 40, // Match the slot height
-                                    margin: const EdgeInsets.only(bottom: 40), // Match slot bottom padding
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      hour,
-                                      style: AppTheme.secondaryTitleStyle,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  );
-                                }).toList(),
+                                crossAxisAlignment: CrossAxisAlignment.center, // Center text horizontally
+                                children: [
+                                  SizedBox(height: AppTheme.smallGap), // 8px top padding for the content of CalendarHours
+                                  ...hours.expand((hour) {
+                                    final isLastHour = hour == hours.last;
+                                    return [
+                                      Container(
+                                        width: CalendarConstants.hourLabelWidth,
+                                        height: CalendarConstants.dayHeaderHeight, // Hour text container height 24px
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          hour,
+                                          style: GoogleFonts.outfit(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: AppTheme.fontSizeSmall,
+                                            color: AppTheme.fontMediumPurple,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                      // Gap of 56px after each hour text, except the last one
+                                      if (!isLastHour) const SizedBox(height: 56.0),
+                                    ];
+                                  }).toList(),
+                                  // If a bottom padding of 8px is needed for CalendarHours, add it here.
+                                  // Based on slot alignment, it might not be strictly necessary if total height matches slots.
+                                  // For now, let total height be dynamic based on content.
+                                ],
                               ),
                               
-                              const SizedBox(width: AppTheme.mediumGap),
+                              const SizedBox(width: AppTheme.mediumGap), // Gap between hours column and slots
                               
-                              // Days columns with slots
+                              // Slots columns (one for each day)
                               Expanded(
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: List.generate(daysOfWeek.length, (dayIndex) {
+                                    // Each day column
                                     return Expanded(
-                                      child: Padding(
-                                        // Add horizontal padding to the right of each column, except the last one
-                                        padding: EdgeInsets.only(right: dayIndex < daysOfWeek.length - 1 ? AppTheme.mediumGap : 0),
+                                      child: Container(
+                                        width: CalendarConstants.slotColumnWidth,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
+                                        ),
+                                        margin: EdgeInsets.only(right: dayIndex < daysOfWeek.length - 1 ? AppTheme.mediumGap : 0),
                                         child: Column(
                                           children: List.generate(hours.length, (hourIndex) {
                                             final slotKey = '$dayIndex-$hourIndex';
@@ -433,9 +614,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             final isReserved = reservationData != null;
                                         
                                             return Padding(
-                                              padding: const EdgeInsets.only(bottom: AppTheme.mediumGap), // Keep the gap between rows
+                                              padding: const EdgeInsets.only(bottom: CalendarConstants.slotGapVertical),
                                               child: SizedBox(
-                                                height: 64, // Fixed height
+                                                height: CalendarConstants.slotHeight,
                                                 width: double.infinity, 
                                                 child: isReserved 
                                                   ? _buildReservedSlot(reservationData!, docId ?? slotKey)
@@ -471,19 +652,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final currentUserId = _auth.currentUser?.uid;
     final bool isOwner = consultantId != null && currentUserId == consultantId;
     
-    // Determinam tipul de calendar
     final ReservationType calendarType = _selectedReservationType;
 
     return MouseRegion(
       cursor: isOwner ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
-        // Permite tap doar pentru proprietar
         onTap: isOwner ? () => _showEditReservationDialog(reservationData, docId, calendarType) : null,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: CalendarConstants.slotPaddingHorizontal, 
+            vertical: CalendarConstants.slotPaddingVertical
+          ),
           decoration: BoxDecoration(
-            color: AppTheme.slotReservedBackground,
+            color: AppTheme.backgroundDarkPurple,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             boxShadow: [AppTheme.slotShadow],
           ),
@@ -493,13 +675,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
             children: [
               Text(
                 consultantName,
-                style: AppTheme.primaryTitleStyle,
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w600,
+                  fontSize: AppTheme.fontSizeMedium,
+                  color: AppTheme.fontDarkPurple,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 clientName,
-                style: AppTheme.secondaryTitleStyle,
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w500,
+                  fontSize: AppTheme.fontSizeSmall,
+                  color: AppTheme.fontMediumPurple,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -517,19 +707,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
         onTap: () => _showReservationDialog(dayIndex, hourIndex, calendarType),
         child: Container(
           width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: CalendarConstants.slotPaddingHorizontal, 
+            vertical: CalendarConstants.slotPaddingVertical
+          ),
           decoration: BoxDecoration(
             border: Border.all(
-              color: AppTheme.slotReservedBackground,
+              color: AppTheme.backgroundDarkPurple, // Color from Figma for AvailableSlot border
               width: AppTheme.slotBorderThickness,
             ),
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),
           child: Center(
             child: Text(
-              'Loc disponibil',
-              style: AppTheme.secondaryTitleStyle.copyWith(
-                fontWeight: FontWeight.w600,
+              'Creeaza intalnire',
+              style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w600,       // Figma: font-weight: 600
+                fontSize: AppTheme.fontSizeMedium, // Figma: font-size: 17px
+                color: AppTheme.fontMediumPurple,  // Figma: color: #886699
               ),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
@@ -538,7 +735,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _showReservationDialog(int dayIndex, int hourIndex, ReservationType calendarType) {
-    // Calculate the selected date based on the displayed startOfWeek
     final DateTime startOfWeek = _getStartOfWeekToDisplay(); 
     final selectedDate = startOfWeek.add(Duration(days: dayIndex));
     final selectedHourMinute = hours[hourIndex].split(':');
@@ -584,7 +780,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         type: type,
       );
 
-      Navigator.of(context).pop(); // Close loading dialog
+      Navigator.of(context).pop();
 
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -596,7 +792,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         );
       }
     } catch (e) {
-      Navigator.of(context).pop(); // Close loading dialog
+      Navigator.of(context).pop();
       print("Error creating reservation: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Eroare la crearea rezervarii: $e"), backgroundColor: Colors.red)
@@ -605,24 +801,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _showEditReservationDialog(Map<String, dynamic> reservationData, String docId, ReservationType calendarType) {
-    // Extract initial data
     final initialClientName = reservationData['clientName'] as String? ?? '';
     final initialDateTime = (reservationData['dateTime'] as Timestamp).toDate();
 
-    // Controllers for fields
     final clientNameController = TextEditingController(text: initialClientName);
     
-    // Function to fetch available time slots
     Future<List<String>> fetchAvailableTimeSlots(DateTime date, String excludeDocId) async {
       List<String> availableHours = [];
       try {
-        // Get the start and end of the selected day
         final startOfDay = DateTime(date.year, date.month, date.day);
         final endOfDay = startOfDay.add(const Duration(days: 1));
         
         Set<String> reservedTimes = {};
         
-        // Query reservations safely
         QuerySnapshot reservations = await _firestore
             .collection('reservations')
             .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
@@ -631,12 +822,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
             
         for (var doc in reservations.docs) {
           try {
-            // Skip the current reservation
             if (doc.id == excludeDocId) {
               continue; 
             }
 
-            // Skip reservations with different type
             final data = doc.data() as Map<String, dynamic>;
             final type = data['type'] as String?;
             final ReservationType? reservationType = type == 'meeting' 
@@ -647,7 +836,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
               continue;
             }
             
-            // Add other reserved times
             final timestamp = data['dateTime'] as Timestamp;
             final slotTime = DateFormat('HH:mm').format(timestamp.toDate());
             reservedTimes.add(slotTime);
@@ -656,25 +844,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
           }
         }
         
-        // Filter hours based on reserved times
         availableHours = hours.where((hour) => !reservedTimes.contains(hour)).toList();
         
-        // Ensure the original time slot of the reservation being edited is always available
         String originalTimeSlot = DateFormat('HH:mm').format(initialDateTime);
         if (!availableHours.contains(originalTimeSlot)) {
           availableHours.add(originalTimeSlot);
-          availableHours.sort(); // Keep sorted
+          availableHours.sort();
         }
       } catch (e) {
         print("Error during fetchAvailableTimeSlots query/processing: $e");
-        // Fallback: provide all hours if there was an error during fetch
         availableHours = [...hours];
       }
       
       return availableHours;
     }
     
-    // Show the dialog
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -695,7 +879,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _updateReservation(String docId, String clientName, DateTime dateTime) async {
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -703,17 +886,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
     
     try {
-      // Check if time slot is available before updating
       final bool isAvailable = await _reservationService.isTimeSlotAvailable(
         dateTime, 
         excludeDocId: docId
       );
       
       if (!isAvailable) {
-        // Close loading indicator
         if (context.mounted) Navigator.of(context).pop();
         
-        // Show error message
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -725,7 +905,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         return;
       }
       
-      // Perform the update
       final result = await _reservationService.updateReservation(
         id: docId,
         clientName: clientName,
@@ -733,9 +912,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
       
       if (context.mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pop();
         
-        // Show result message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message']),
@@ -745,9 +923,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pop();
         
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Eroare la actualizarea programarii: $e'),
@@ -769,9 +946,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       final result = await _reservationService.deleteReservation(docId);
       
       if (context.mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pop();
         
-        // Show result message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message']),
@@ -781,9 +957,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pop();
         
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Eroare la stergerea programarii: $e'),

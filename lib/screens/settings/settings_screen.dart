@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/navigation/sidebar_widget.dart';
-import '../../widgets/navigation/navigation_widget.dart';
+// import '../../widgets/navigation/sidebar_widget.dart'; // Removed old import
+// import '../../widgets/navigation/navigation_widget.dart'; // Removed old import
+import '../../sidebar/navigation_config.dart'; // Added config import
+import '../../sidebar/user_widget.dart';      // Added user widget import
+import '../../sidebar/navigation_widget.dart'; // Added navigation widget import
+import '../../sidebar/user_config.dart'; // Added user config import
 import '../../widgets/common/panel_container.dart';
 
 /// Ecranul pentru setările aplicației
@@ -56,11 +60,25 @@ class SettingsScreen extends StatelessWidget {
             child: _buildSettingsContent(),
           ),
           const SizedBox(height: AppTheme.largeGap),
-          SidebarWidget(
-            currentScreen: NavigationScreen.settings,
-            onScreenChanged: onScreenChanged,
-            consultantName: consultantName,
-            teamName: teamName,
+          // Replace SidebarWidget with Column[UserWidget, SizedBox, NavigationWidget]
+           Container(
+            width: 224, // Maintain sidebar width
+            child: Column(
+              children: [
+                UserWidget(
+                  consultantName: consultantName,
+                  teamName: teamName,
+                  progress: 0.0, // Add placeholder progress
+                  callCount: 0,  // Add placeholder count
+                ),
+                const SizedBox(height: AppTheme.mediumGap),
+                NavigationWidget(
+                  currentScreen: NavigationScreen.settings,
+                  onScreenChanged: onScreenChanged,
+                  // No secondary panels on settings
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -73,18 +91,35 @@ class SettingsScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         PanelContainer(
-          width: 1376, // Lățimea panoului principal
+          // width: 1376, // Let Expanded handle width
           height: contentHeight,
           isExpanded: true,
           child: _buildSettingsContent(),
         ),
         const SizedBox(width: AppTheme.largeGap),
-        SidebarWidget(
-          currentScreen: NavigationScreen.settings,
-          onScreenChanged: onScreenChanged,
-          consultantName: consultantName,
-          teamName: teamName,
-          height: contentHeight,
+         // Replace SidebarWidget with Column[UserWidget, SizedBox, Expanded(NavigationWidget)]
+        SizedBox(
+           width: 224, // Fixed width for the sidebar area
+           height: contentHeight, // Use the calculated height
+           child: Column(
+             crossAxisAlignment: CrossAxisAlignment.stretch,
+             children: [
+                UserWidget(
+                  consultantName: consultantName,
+                  teamName: teamName,
+                  progress: 0.0, // Add placeholder progress
+                  callCount: 0,  // Add placeholder count
+                ),
+                const SizedBox(height: AppTheme.mediumGap),
+                Expanded(
+                  child: NavigationWidget(
+                    currentScreen: NavigationScreen.settings,
+                    onScreenChanged: onScreenChanged,
+                     // No secondary panels on settings
+                  ),
+                ),
+             ],
+           ),
         ),
       ],
     );
@@ -92,6 +127,18 @@ class SettingsScreen extends StatelessWidget {
 
   /// Construiește conținutul setărilor
   Widget _buildSettingsContent() {
+    // Assuming AppTheme.headerTitleStyle, secondaryTitleStyle exist
+    // If not, define inline styles using AppTheme constants
+    final TextStyle headerStyle = const TextStyle(
+      fontSize: AppTheme.fontSizeLarge, // Use a relevant size
+      fontWeight: FontWeight.bold,
+      color: AppTheme.fontDarkPurple
+    );
+    final TextStyle secondaryStyle = const TextStyle(
+      fontSize: AppTheme.fontSizeMedium,
+      color: AppTheme.fontMediumPurple
+    );
+
     // Placeholdere pentru momentul în care se vor implementa setările
     return Center(
       child: Column(
@@ -105,14 +152,12 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: AppTheme.mediumGap),
           Text(
             'Setări aplicație',
-            style: AppTheme.headerTitleStyle.copyWith(
-              fontSize: 24,
-            ),
+            style: headerStyle.copyWith(fontSize: 24), // Adjust size if needed
           ),
-          const SizedBox(height: AppTheme.defaultGap),
+          const SizedBox(height: AppTheme.smallGap),
           Text(
             'Setările aplicației vor fi implementate aici.',
-            style: AppTheme.secondaryTitleStyle,
+            style: secondaryStyle, // Use defined style
           ),
         ],
       ),

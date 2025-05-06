@@ -34,7 +34,7 @@ class CreateReservationDialog extends StatelessWidget {
         child: Container(
           width: 320,
           height: 192,
-          padding: const EdgeInsets.all(AppTheme.defaultGap),
+          padding: const EdgeInsets.all(AppTheme.smallGap),
           decoration: BoxDecoration(
             color: const Color(0xDFDFDFDF),
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
@@ -60,13 +60,13 @@ class CreateReservationDialog extends StatelessWidget {
                 ),
               ),
               
-              const SizedBox(height: AppTheme.defaultGap),
+              const SizedBox(height: AppTheme.smallGap),
               
               // Form Container
               Container(
                 width: 304,
                 height: 88,
-                padding: const EdgeInsets.all(AppTheme.defaultGap),
+                padding: const EdgeInsets.all(AppTheme.smallGap),
                 decoration: BoxDecoration(
                   color: AppTheme.backgroundLightPurple,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
@@ -76,7 +76,7 @@ class CreateReservationDialog extends StatelessWidget {
                   children: [
                     // Label
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultGap),
+                      padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
                       height: 24,
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -117,7 +117,7 @@ class CreateReservationDialog extends StatelessWidget {
                 ),
               ),
               
-              const SizedBox(height: AppTheme.defaultGap),
+              const SizedBox(height: AppTheme.smallGap),
               
               // Button
               Container(
@@ -283,7 +283,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
         child: Container(
           width: 352,
           height: 352,
-          padding: const EdgeInsets.all(AppTheme.defaultGap),
+          padding: const EdgeInsets.all(AppTheme.smallGap),
           decoration: BoxDecoration(
             color: const Color(0xDFDFDFDF),
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
@@ -306,13 +306,13 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                 ),
               ),
               
-              const SizedBox(height: AppTheme.defaultGap),
+              const SizedBox(height: AppTheme.smallGap),
               
               // Form Container
               Container(
                 width: 336,
                 height: 248,
-                padding: const EdgeInsets.all(AppTheme.defaultGap),
+                padding: const EdgeInsets.all(AppTheme.smallGap),
                 decoration: BoxDecoration(
                   color: AppTheme.backgroundLightPurple,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
@@ -328,7 +328,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultGap),
+                            padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
                             height: 24,
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -366,7 +366,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                       ),
                     ),
                     
-                    const SizedBox(height: AppTheme.defaultGap),
+                    const SizedBox(height: AppTheme.smallGap),
                     
                     // Date Field
                     SizedBox(
@@ -376,7 +376,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultGap),
+                            padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
                             height: 24,
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -469,7 +469,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                       ),
                     ),
                     
-                    const SizedBox(height: AppTheme.defaultGap),
+                    const SizedBox(height: AppTheme.smallGap),
                     
                     // Time Field
                     SizedBox(
@@ -479,7 +479,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultGap),
+                            padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
                             height: 24,
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -556,7 +556,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                 ),
               ),
               
-              const SizedBox(height: AppTheme.defaultGap),
+              const SizedBox(height: AppTheme.smallGap),
               
               // Button Section
               SizedBox(
@@ -597,7 +597,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: AppTheme.defaultGap),
+                    const SizedBox(width: AppTheme.smallGap),
                     // Save Button
                     Expanded(
                       child: Container(

@@ -28,7 +28,7 @@ class PanelContainer extends StatelessWidget {
     final container = Container(
       width: width,
       height: height,
-      padding: const EdgeInsets.all(AppTheme.defaultGap),
+      padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: AppTheme.widgetDecoration,
       child: child,
     );

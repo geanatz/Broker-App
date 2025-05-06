@@ -11,15 +11,15 @@ class AppTheme {
   // Background-uri
   static const Color appBackgroundStart = Color(0xFFA4B8C2);
   static const Color appBackgroundEnd = Color(0xFFC2A4A4);
-  static const Color widgetBackground = Color(0xFFFFFFFF); // Cu opacitate 0.5 când se aplică
-  static const Color popupBackground = Color(0xFFFFFFFF); // Cu opacitate 0.75 când se aplică
+  static const Color widgetBackground = Color(0xFFFFFFFF);
+  static const Color popupBackground = Color(0xD9D9D9D9);
   
   // Background-uri pentru panel-uri
   static const Color backgroundLightBlue = Color(0xFFC4CFD4);
   static const Color backgroundLightPurple = Color(0xFFCFC4D4);
   static const Color backgroundLightRed = Color(0xFFD4C4C4);
   static const Color backgroundDarkBlue = Color(0xFFACC6D3);
-  static const Color backgroundDarkPurple = Color(0xFFC5B0CF);
+  static const Color backgroundDarkPurple = Color(0xFFC6ACD3);
   static const Color backgroundDarkRed = Color(0xFFD3ACAC);
   static const Color slotReservedBackground = Color(0xFFC6ACD3);
 
@@ -38,10 +38,10 @@ class AppTheme {
   
   // Dimensiuni pentru text
   static const double fontSizeTiny = 13.0;    // Număr de apeluri
-  static const double fontSizeSmall = 14.0;   // Ora/Data întâlnirii
-  static const double fontSizeMedium = 16.0;  // Descrierea întâlnirii, Etichetele din calendar, Titlurile din navigație, Echipa
-  static const double fontSizeLarge = 18.0;   // Titlurile widget-urilor, Titlul întâlnirii, Consultant, Numele utilizatorului
-  static const double fontSizeHuge = 20.0;    // Pentru titluri mai mari (dacă e nevoie)
+  static const double fontSizeSmall = 15.0;   // Ora/Data întâlnirii
+  static const double fontSizeMedium = 17.0;  // Descrierea întâlnirii, Etichetele din calendar, Titlurile din navigație, Echipa
+  static const double fontSizeLarge = 19.0;   // Titlurile widget-urilor, Titlul întâlnirii, Consultant, Numele utilizatorului
+  static const double fontSizeHuge = 21.0;    // Pentru titluri mai mari (dacă e nevoie)
 
   // Border radius
   static const double borderRadiusTiny = 8.0;      // Bara de încărcare
@@ -55,15 +55,14 @@ class AppTheme {
   static const double iconSizeMedium = 24.0;    // Icon-uri user/navigație
 
   // Spațieri
-  static const double defaultGap = 8.0;
+  static const double smallGap = 8.0;
   static const double mediumGap = 16.0;
   static const double largeGap = 24.0;
 
   // Alte dimensiuni
-  static const double slotColumnWidth = 240.0;    // Lățimea unei coloane de zile
-  static const double hourLabelWidth = 48.0;      // Lățimea coloanei de ore
   static const double slotBorderThickness = 4.0;  // Grosimea border-ului slot-ului disponibil
   static const double iconBorderThickness = 2.0;  // Grosimea border-ului icon-urilor
+  static const double navButtonHeight = 48.0;     // Înălțimea butoanelor de navigare
 
   // ======== UMBRELE ========
   static final BoxShadow widgetShadow = BoxShadow(
@@ -78,7 +77,7 @@ class AppTheme {
   );
   
   static final BoxShadow slotShadow = BoxShadow(
-    color: Colors.black.withOpacity(0.25),
+    color: Colors.black.withOpacity(0.2),
     blurRadius: 4,
     offset: const Offset(0, 2),
   );
@@ -97,15 +96,15 @@ class AppTheme {
   );
 
   static final TextStyle primaryTitleStyle = GoogleFonts.outfit(
-    fontSize: fontSizeLarge,
+    fontSize: fontSizeMedium,
     fontWeight: FontWeight.w600,
-    color: fontDarkPurple,
+    color: fontMediumPurple,
   );
 
   static final TextStyle secondaryTitleStyle = GoogleFonts.outfit(
-    fontSize: fontSizeMedium,
+    fontSize: fontSizeSmall,
     fontWeight: FontWeight.w500,
-    color: fontMediumPurple,
+    color: fontLightPurple,
   );
 
   static final TextStyle smallTextStyle = GoogleFonts.outfit(
@@ -116,8 +115,19 @@ class AppTheme {
 
   static final TextStyle tinyTextStyle = GoogleFonts.outfit(
     fontSize: fontSizeTiny,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500,
     color: fontMediumPurple,
+  );
+
+  static final TextStyle navigationHeaderStyle = GoogleFonts.outfit(
+    fontSize: fontSizeLarge,
+    fontWeight: FontWeight.w500,
+    color: fontLightPurple,
+  );
+
+  static final TextStyle navigationButtonTextStyle = GoogleFonts.outfit(
+    fontSize: fontSizeMedium,
+    fontWeight: FontWeight.w500,
   );
 
   // ======== DECORATIUNI ========
@@ -139,7 +149,7 @@ class AppTheme {
 
   // Decorațiune pentru popup-uri
   static BoxDecoration popupDecoration = BoxDecoration(
-    color: popupBackground.withOpacity(0.75),
+    color: popupBackground,
     borderRadius: BorderRadius.circular(borderRadiusLarge),
   );
 
@@ -170,16 +180,15 @@ class AppTheme {
     borderRadius: BorderRadius.circular(borderRadiusSmall),
   );
 
-  // Decorațiune pentru buton navigație activ
+  // Decorațiune pentru buton navigație activ (conform Figma)
   static final BoxDecoration activeNavButtonDecoration = BoxDecoration(
-    color: backgroundDarkPurple,
-    borderRadius: BorderRadius.circular(borderRadiusSmall),
-    boxShadow: [buttonShadow],
+    color: backgroundDarkPurple, // #C6ACD3 
+    borderRadius: BorderRadius.circular(borderRadiusMedium), // 24px
   );
 
-  // Decorațiune pentru buton navigație inactiv
+  // Decorațiune pentru buton navigație inactiv (conform Figma)
   static final BoxDecoration inactiveNavButtonDecoration = BoxDecoration(
-    color: backgroundLightPurple,
-    borderRadius: BorderRadius.circular(borderRadiusSmall),
+    color: backgroundLightPurple, // #CFC4D4
+    borderRadius: BorderRadius.circular(borderRadiusMedium), // 24px
   );
 } 

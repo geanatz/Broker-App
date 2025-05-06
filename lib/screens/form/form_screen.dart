@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/navigation/sidebar_widget.dart';
-import '../../widgets/navigation/navigation_widget.dart';
+import '../../sidebar/navigation_config.dart';
+import '../../sidebar/user_widget.dart';
+import '../../sidebar/navigation_widget.dart';
+import '../../sidebar/user_config.dart';
 import '../../widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
 
 /// Definirea temei de text pentru a asigura consistența fontului Outfit în întreaga aplicație
@@ -22,14 +24,6 @@ class TextStyles {
     fontSize: 18,
     fontWeight: FontWeight.w600,
   );
-}
-
-/// Enum pentru diferitele tipuri de panouri secundare disponibile
-enum SecondaryPanelType {
-  calls,
-  returns,
-  calculator,
-  recommendation
 }
 
 /// Ecranul pentru formularul de clienti
@@ -98,18 +92,30 @@ class _FormScreenState extends State<FormScreen> {
           const SizedBox(height: AppTheme.largeGap),
           _buildFormPanelContent(),
           const SizedBox(height: AppTheme.largeGap),
-          SidebarWidget(
-            currentScreen: NavigationScreen.form,
-            onScreenChanged: widget.onScreenChanged,
-            consultantName: widget.consultantName,
-            teamName: widget.teamName,
-            activeSecondaryPanel: _selectedSecondaryPanel,
-            onSecondaryPanelChange: (panelType) {
-              setState(() {
-                _selectedSecondaryPanel = panelType;
-              });
-            },
-          ),
+          Container(
+             width: 224,
+             child: Column(
+               children: [
+                 UserWidget(
+                   consultantName: widget.consultantName,
+                   teamName: widget.teamName,
+                   progress: 0.0,
+                   callCount: 0,
+                 ),
+                 const SizedBox(height: AppTheme.mediumGap),
+                 NavigationWidget(
+                   currentScreen: NavigationScreen.form,
+                   onScreenChanged: widget.onScreenChanged,
+                   activeSecondaryPanel: _selectedSecondaryPanel,
+                   onPanelChanged: (panelType) {
+                     setState(() {
+                       _selectedSecondaryPanel = panelType;
+                     });
+                   },
+                 ),
+               ],
+             ),
+           ),
         ],
       ),
     );
@@ -133,18 +139,33 @@ class _FormScreenState extends State<FormScreen> {
           ),
         ),
         const SizedBox(width: AppTheme.largeGap),
-        SidebarWidget(
-          height: contentHeight,
-          currentScreen: NavigationScreen.form,
-          onScreenChanged: widget.onScreenChanged,
-          consultantName: widget.consultantName,
-          teamName: widget.teamName,
-          activeSecondaryPanel: _selectedSecondaryPanel,
-          onSecondaryPanelChange: (panelType) {
-            setState(() {
-              _selectedSecondaryPanel = panelType;
-            });
-          },
+        SizedBox(
+           width: 224,
+           height: contentHeight,
+           child: Column(
+             crossAxisAlignment: CrossAxisAlignment.stretch,
+             children: [
+                UserWidget(
+                  consultantName: widget.consultantName,
+                  teamName: widget.teamName,
+                  progress: 0.0,
+                  callCount: 0,
+                ),
+                const SizedBox(height: AppTheme.mediumGap),
+                Expanded(
+                  child: NavigationWidget(
+                    currentScreen: NavigationScreen.form,
+                    onScreenChanged: widget.onScreenChanged,
+                    activeSecondaryPanel: _selectedSecondaryPanel,
+                    onPanelChanged: (panelType) {
+                      setState(() {
+                        _selectedSecondaryPanel = panelType;
+                      });
+                    },
+                  ),
+                ),
+             ],
+           ),
         ),
       ],
     );
