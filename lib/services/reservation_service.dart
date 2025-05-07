@@ -21,6 +21,7 @@ class ReservationService {
   Future<Map<String, dynamic>> createReservation({
     required DateTime dateTime,
     required String clientName,
+    String phoneNumber = '',
     required ReservationType type,
   }) async {
     final user = currentUser;
@@ -42,6 +43,7 @@ class ReservationService {
         'consultantId': user.uid,
         'consultantName': consultantName,
         'clientName': clientName,
+        'phoneNumber': phoneNumber,
         'dateTime': Timestamp.fromDate(dateTime),
         'createdAt': FieldValue.serverTimestamp(),
         'type': type == ReservationType.meeting ? 'meeting' : 'bureauDelete',
@@ -87,7 +89,9 @@ class ReservationService {
   Future<Map<String, dynamic>> updateReservation({
     required String id,
     required String clientName,
+    String phoneNumber = '',
     required DateTime dateTime,
+    required ReservationType type,
   }) async {
     final user = currentUser;
     if (user == null) {
@@ -95,31 +99,33 @@ class ReservationService {
     }
 
     try {
-      final docRef = _firestore.collection(_collectionName).doc(id);
-      final docSnapshot = await docRef.get();
-
-      // Verifica daca rezervarea exista si apartine consultantului curent
-      if (!docSnapshot.exists) {
-        return {'success': false, 'message': 'Rezervarea nu exista'};
+      // Verifica daca rezervarea exista si ii apartine utilizatorului curent
+      final reservationDoc = await _firestore.collection(_collectionName).doc(id).get();
+      if (!reservationDoc.exists) {
+        return {'success': false, 'message': 'Rezervarea nu există'};
       }
-      final data = docSnapshot.data()!;
-      if (data['consultantId'] != user.uid) {
-        return {'success': false, 'message': 'Nu aveti permisiunea de a modifica aceasta rezervare'};
+      
+      final reservationData = reservationDoc.data() as Map<String, dynamic>;
+      final String? consultantId = reservationData['consultantId'] as String?;
+      
+      // Verifica daca utilizatorul curent este proprietarul rezervarii
+      if (consultantId != user.uid) {
+        return {'success': false, 'message': 'Nu aveți permisiunea de a modifica această rezervare'};
       }
 
-      // Construieste datele de actualizat
-      final updateData = {
+      // Actualizeaza documentul rezervarii
+      await _firestore.collection(_collectionName).doc(id).update({
         'clientName': clientName,
+        'phoneNumber': phoneNumber,
         'dateTime': Timestamp.fromDate(dateTime),
         'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      // Actualizeaza documentul
-      await docRef.update(updateData);
-      return {'success': true, 'message': 'Rezervare actualizata cu succes'};
+        'type': type == ReservationType.meeting ? 'meeting' : 'bureauDelete',
+      });
+      
+      return {'success': true, 'message': 'Rezervarea a fost actualizată cu succes'};
     } catch (e) {
       print("Eroare updateReservation: $e");
-      return {'success': false, 'message': 'Eroare la actualizarea rezervarii: $e'};
+      return {'success': false, 'message': 'Eroare la actualizarea rezervării: $e'};
     }
   }
 
@@ -131,24 +137,27 @@ class ReservationService {
     }
 
     try {
-      final docRef = _firestore.collection(_collectionName).doc(id);
-      final docSnapshot = await docRef.get();
-
-      // Verifica daca rezervarea exista si apartine consultantului curent
-      if (!docSnapshot.exists) {
-        return {'success': false, 'message': 'Rezervarea nu exista'};
+      // Verifica daca rezervarea exista si ii apartine utilizatorului curent
+      final reservationDoc = await _firestore.collection(_collectionName).doc(id).get();
+      if (!reservationDoc.exists) {
+        return {'success': false, 'message': 'Rezervarea nu există'};
       }
-      final data = docSnapshot.data()!;
-      if (data['consultantId'] != user.uid) {
-        return {'success': false, 'message': 'Nu aveti permisiunea de a sterge aceasta rezervare'};
+      
+      final reservationData = reservationDoc.data() as Map<String, dynamic>;
+      final String? consultantId = reservationData['consultantId'] as String?;
+      
+      // Verifica daca utilizatorul curent este proprietarul rezervarii
+      if (consultantId != user.uid) {
+        return {'success': false, 'message': 'Nu aveți permisiunea de a șterge această rezervare'};
       }
 
-      // Sterge documentul
-      await docRef.delete();
-      return {'success': true, 'message': 'Rezervare stearsa cu succes'};
+      // Sterge documentul rezervarii
+      await _firestore.collection(_collectionName).doc(id).delete();
+      
+      return {'success': true, 'message': 'Rezervarea a fost ștearsă cu succes'};
     } catch (e) {
       print("Eroare deleteReservation: $e");
-      return {'success': false, 'message': 'Eroare la stergerea rezervarii: $e'};
+      return {'success': false, 'message': 'Eroare la ștergerea rezervării: $e'};
     }
   }
 

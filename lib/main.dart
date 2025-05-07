@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'screens/auth/register.dart';
-import 'screens/auth/login.dart';
-import 'screens/auth/reset_password.dart';
-import 'screens/auth/token.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Nu mai este folosit direct aici pentru fetch consultant data în MainAppWrapper inițial
+// import 'screens/auth/register.dart'; // Eliminat
+// import 'screens/auth/login.dart'; // Eliminat
+// import 'screens/auth/reset_password.dart'; // Eliminat
+// import 'screens/auth/token.dart'; // Eliminat
 import 'screens/calendar/calendar_screen.dart';
 import 'screens/form/form_screen.dart';
 import 'screens/settings/settings_screen.dart';
@@ -13,8 +13,10 @@ import 'sidebar/navigation_config.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Necesar pentru MainAppWrapper _fetchConsultantData
 import 'firebase_options.dart';
 import 'dart:async';
+import 'auth/authScreen.dart'; // Import noul AuthScreen
 
 // For DevTools inspection
 class DebugOptions {
@@ -36,7 +38,6 @@ class DebugOptions {
 }
 
 void main() async { 
-  // Wrap the app initialization in runZonedGuarded
   await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized(); 
     await Firebase.initializeApp( 
@@ -44,10 +45,8 @@ void main() async {
   );
   runApp(const MyApp());
   }, (error, stackTrace) {
-    // Handle errors that might occur during initialization or later
     print('Caught error in runZonedGuarded: $error');
     print(stackTrace);
-    // You might want to report this error to a service like Crashlytics
   });
 }
 
@@ -83,20 +82,17 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      // Use AuthWrapper to determine the initial screen
       home: const AuthWrapper(),
-      // Routes pentru navigare
-      routes: {
-        '/register': (context) => const RegisterScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/token': (context) => const TokenScreen(),
-        '/reset_password': (context) => const ResetPasswordScreen(),
-      },
+      // routes: { // Eliminat vechile rute
+      //   '/register': (context) => const RegisterScreen(),
+      //   '/login': (context) => const LoginScreen(),
+      //   '/token': (context) => const TokenScreen(),
+      //   '/reset_password': (context) => const ResetPasswordScreen(),
+      // },
     );
   }
 }
 
-// AuthWrapper verifica starea autentificarii
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -105,33 +101,22 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>( 
       stream: FirebaseAuth.instance.authStateChanges(), 
       builder: (context, snapshot) {
-        // Log the connection state
-        print('AuthWrapper: ConnectionState: ${snapshot.connectionState}');
-
-        // Show loading indicator while checking auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print('AuthWrapper: Waiting for auth state...');
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
         
-        // Log whether user data exists
-        print('AuthWrapper: Has user data? ${snapshot.hasData}');
         if (snapshot.hasData) {
-          print('AuthWrapper: User is logged in (UID: ${snapshot.data?.uid}). Navigating to MainApp.');
           return const MainAppWrapper();
         }
         
-        // User is logged out, show LoginScreen
-        print('AuthWrapper: User is logged out. Navigating to LoginScreen.');
-        return const LoginScreen();
+        return const AuthScreen(); // Navighează la noul AuthScreen
       },
     );
   }
 }
 
-// Wrapper pentru aplicatia principala care gestioneaza navigarea
 class MainAppWrapper extends StatefulWidget {
   const MainAppWrapper({super.key});
 
@@ -140,10 +125,7 @@ class MainAppWrapper extends StatefulWidget {
 }
 
 class _MainAppWrapperState extends State<MainAppWrapper> {
-  // Stare pentru ecranul activ
   NavigationScreen _currentScreen = NavigationScreen.calendar;
-  
-  // Datele consultantului (vor fi incarcate din Firebase)
   Map<String, dynamic>? _consultantData;
   bool _isLoading = true;
 
@@ -153,7 +135,6 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     _fetchConsultantData();
   }
 
-  // Incarcarea datelor consultantului din Firebase
   Future<void> _fetchConsultantData() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
@@ -163,12 +144,13 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
           _consultantData = null;
         });
       }
+      // Nu mai facem signOut aici, AuthWrapper va duce la AuthScreen dacă user e null
       return;
     }
 
     try {
       final consultantDoc = await FirebaseFirestore.instance
-          .collection('consultants')
+          .collection('consultants') // Numele colecției din AuthService
           .doc(currentUser.uid)
           .get();
       
@@ -180,8 +162,10 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
           _isLoading = false;
         });
       } else {
-        // Daca utilizatorul nu are date de consultant asociate, deconecteaza-l
-        await FirebaseAuth.instance.signOut();
+        // Dacă utilizatorul autentificat nu are date în Firestore, ar trebui deconectat
+        // pentru a preveni o stare invalidă în aplicație.
+        await FirebaseAuth.instance.signOut(); // Acest signOut va fi detectat de AuthWrapper
+        // setState-ul de mai jos nu va mai fi relevant imediat, dar e bun ca fallback.
         setState(() {
           _consultantData = null;
           _isLoading = false;
@@ -193,12 +177,13 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         setState(() {
           _consultantData = null;
           _isLoading = false;
+          // Consideră deconectarea și aici în caz de eroare la fetch
+          // await FirebaseAuth.instance.signOut();
         });
       }
     }
   }
 
-  // Handler pentru schimbarea ecranului
   void _handleScreenChange(NavigationScreen screen) {
     setState(() {
       _currentScreen = screen;
@@ -207,27 +192,28 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Afiseaza indicator de incarcare in timp ce se incarca datele
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // Verifica daca datele consultantului exista
     if (_consultantData == null) {
+      // Această stare nu ar trebui atinsă dacă AuthWrapper funcționează corect
+      // și dacă _fetchConsultantData deconectează user-ul dacă nu are date.
+      // Ca fallback, afișăm un mesaj și AuthWrapper ar trebui să intervină.
+      print("MainAppWrapper: _consultantData is null, user should be redirected to AuthScreen by AuthWrapper.");
       return const Scaffold(
         body: Center(
-          child: Text("Nu exista date de consultant asociate acestui cont."),
+          child: Text("Date consultant indisponibile. Redirecționare...",
+             style: TextStyle(color: AppTheme.fontMediumRed)),
         ),
       );
     }
 
-    // Extrage numele si echipa consultantului
     final String consultantName = _consultantData!['name'] ?? 'Consultant';
     final String teamName = _consultantData!['team'] ?? 'Echipa';
 
-    // Afiseaza ecranul corespunzator
     switch (_currentScreen) {
       case NavigationScreen.calendar:
         return CalendarScreen(
@@ -255,10 +241,9 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         );
       default:
         return CalendarScreen(
-          consultantName: consultantName,
-          teamName: teamName,
-          onScreenChanged: _handleScreenChange,
-        );
+            consultantName: consultantName,
+            teamName: teamName,
+            onScreenChanged: _handleScreenChange);
     }
   }
 }

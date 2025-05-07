@@ -2,6 +2,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 
+/// Enum pentru a defini stările/pașii posibili ai ecranului de autentificare.
+/// Aceasta va controla ce popup este afișat.
+enum AuthStep {
+  /// Starea inițială sau nedefinită.
+  initial,
+
+  /// Afișează popup-ul de login.
+  login,
+
+  /// Afișează popup-ul de înregistrare.
+  registration,
+
+  /// Afișează popup-ul pentru introducerea token-ului de resetare a parolei.
+  tokenEntry,
+
+  /// Afișează popup-ul pentru setarea unei noi parole după validarea token-ului.
+  passwordReset,
+}
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -225,13 +244,6 @@ class AuthService {
       final consultantDoc = consultantSnapshot.docs.first;
       final consultantId = consultantDoc.id;
 
-      if (consultantId == null) {
-         return {
-          'success': false,
-          'message': 'Token invalid (lipsește ID consultant).',
-        };
-      }
-
       return {
         'success': true,
         'consultantId': consultantId,
@@ -336,4 +348,4 @@ class AuthService {
   Future<void> signOut() async {
     await _auth.signOut();
   }
-} 
+}

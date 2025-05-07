@@ -55,10 +55,11 @@ class AppTheme {
   static const double iconSizeMedium = 24.0;    // Icon-uri user/navigație
 
   // Spațieri
+  static const double tinyGap = 4.0;
   static const double smallGap = 8.0;
   static const double mediumGap = 16.0;
   static const double largeGap = 24.0;
-
+  static const double hugeGap = 32.0;
   // Alte dimensiuni
   static const double slotBorderThickness = 4.0;  // Grosimea border-ului slot-ului disponibil
   static const double iconBorderThickness = 2.0;  // Grosimea border-ului icon-urilor
