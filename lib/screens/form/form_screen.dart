@@ -5,6 +5,9 @@ import '../../theme/app_theme.dart';
 import '../../sidebar/navigation_config.dart';
 import '../../sidebar/sidebar_widget.dart';
 import '../../sidebar/user_config.dart';
+import '../../models/contact_data.dart';
+import '../../models/form_data.dart';
+import '../../services/contact_form_service.dart';
 import '../../widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
 
 /// Definirea temei de text pentru a asigura consistența fontului Outfit în întreaga aplicație
@@ -54,6 +57,71 @@ class _FormScreenState extends State<FormScreen> {
   // Controleaza daca se afiseaza formularul pentru client sau pentru codebitor
   bool _showingClientLoanForm = true;
   bool _showingClientIncomeForm = true;
+  
+  // Serviciul pentru gestionarea contactelor și formularelor
+  final ContactFormService _contactService = ContactFormService();
+  
+  // Contactul selectat curent (pentru completarea formularelor)
+  ContactData? _selectedContact;
+  
+  // Hover state for contacts
+  String? _hoveredContactId;
+  
+  // Flag pentru a arăta dacă procesul de export este în desfășurare
+  bool _isExporting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize demo data using the service
+    _contactService.initializeDemoData();
+  }
+  
+  /// Export data to Excel
+  Future<void> _exportToExcel() async {
+    setState(() {
+      _isExporting = true;
+    });
+    
+    try {
+      final success = await _contactService.exportToExcel();
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Date exportate cu succes!',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Eroare la exportarea datelor.',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Eroare: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isExporting = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +237,7 @@ class _FormScreenState extends State<FormScreen> {
 
   /// Construieste continutul panoului de formulare fara wrapper
   Widget _buildFormPanelContent() {
-    // This Row replaces the PanelContainer
+    // Remove the export button and header section
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -196,54 +264,22 @@ class _FormScreenState extends State<FormScreen> {
         // Calculate appropriate heights based on available space
         final double availableHeight = constraints.maxHeight;
         
-        // Define gaps from design
-        const double gap = 16.0;
+        // Define gap from design
+        const double gap = AppTheme.largeGap; // 24px gap between widgets
         
-        // Calculate heights ensuring they don't exceed available space minus gaps
-        double nextCallsHeight = 440;
-        double ongoingCallHeight = 120;
-        double pastCallsHeight = availableHeight - nextCallsHeight - ongoingCallHeight - (2 * gap); 
-        pastCallsHeight = pastCallsHeight.clamp(100.0, double.infinity); // Minimum height
-
-        // Recalculate if total exceeds available, prioritizing PastCalls height
-        double totalHeight = nextCallsHeight + ongoingCallHeight + pastCallsHeight + (2 * gap);
-        if (totalHeight > availableHeight) {
-          double excess = totalHeight - availableHeight;
-          // Reduce NextCalls and OngoingCall proportionally, maintaining minimums
-          double reducibleHeight = nextCallsHeight + ongoingCallHeight;
-          if (reducibleHeight > 280) { // Ensure minimums (200 + 80)
-             double reductionFactor = (reducibleHeight - excess) / reducibleHeight;
-             reductionFactor = reductionFactor.clamp(0.0, 1.0); 
-             nextCallsHeight = (nextCallsHeight * reductionFactor).clamp(300.0, 440.0); // Min 300
-             ongoingCallHeight = (ongoingCallHeight * reductionFactor).clamp(80.0, 120.0); // Min 80
-             pastCallsHeight = availableHeight - nextCallsHeight - ongoingCallHeight - (2 * gap);
-          } else {
-             // Fallback if not enough space for minimums (unlikely with clamp above)
-             nextCallsHeight = 300.0;
-             ongoingCallHeight = 80.0;
-             pastCallsHeight = (availableHeight - 380 - (2 * gap)).clamp(100.0, double.infinity);
-          }
-
-        }
-
+        // Calculate height for each widget (equal split minus gap divided by 2)
+        double widgetHeight = (availableHeight - gap) / 2;
 
         return Column(
           children: [
             SizedBox(
-              height: nextCallsHeight,
+              height: widgetHeight,
               child: _buildNextCallsWidget(),
             ),
             const SizedBox(height: gap),
             SizedBox(
-              height: ongoingCallHeight,
-              child: _buildOngoingCallWidget(),
-            ),
-            const SizedBox(height: gap),
-            Expanded(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: pastCallsHeight),
-                 child: _buildPastCallsWidget(),
-               ),
+              height: widgetHeight,
+              child: _buildPastCallsWidget(),
             ),
           ],
         );
@@ -253,50 +289,80 @@ class _FormScreenState extends State<FormScreen> {
 
   /// Construieste widget-ul pentru apelurile urmatoare
   Widget _buildNextCallsWidget() {
+    // Get contacts from service
+    final upcomingContacts = _contactService.upcomingContacts;
+    
     // Container styling from design (NextCallsWidget)
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF).withOpacity(0.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF000000).withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 0),
-          )
-        ],
-        borderRadius: BorderRadius.circular(32),
+        color: AppTheme.widgetBackground.withOpacity(0.5),
+        boxShadow: [AppTheme.widgetShadow],
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge), // 32px
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap), // 16px horizontal padding
             child: _buildWidgetHeader(
-              title: 'Apeluri urmatoare',
-              count: 3,
-              color: const Color(0xFF8A9EA8),
-              countColor: const Color(0xFF8A9EA8),
+              title: 'Clienti', // Changed from "Apeluri" to "Clienti"
+              count: upcomingContacts.length,
+              color: AppTheme.fontLightBlue, // #8A9EA8
+              countColor: AppTheme.fontLightBlue,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.smallGap), // 8px gap
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemCount: 3,
+              itemCount: upcomingContacts.length,
               itemBuilder: (context, index) {
+                final contact = upcomingContacts[index];
+                final bool isSelected = _selectedContact?.id == contact.id;
+                final bool isHovered = _hoveredContactId == contact.id;
+                
                 return _buildContactItem(
-                  name: 'Contact name ${index + 1}',
-                  phone: '0712 345 678',
-                  onTap: () {
-                    // Actiune pentru apelare
+                  contactId: contact.id,
+                  name: contact.name,
+                  phone: contact.phone,
+                  isSelected: isSelected,
+                  isHovered: isHovered,
+                  onHoverChanged: (isHovering) {
+                    setState(() {
+                      _hoveredContactId = isHovering ? contact.id : null;
+                    });
                   },
-                  backgroundColor: const Color(0xFFC4CFD4),
-                  nameColor: const Color(0xFF4D6F80),
-                  phoneColor: const Color(0xFF668899),
-                  buttonColor: const Color(0xFFACC6D3),
-                  buttonIconAsset: 'assets/CallIcon.svg',
-                  buttonIconColor: const Color(0xFF4D6F80),
+                  onTap: () {
+                    // Save data for previously selected contact before switching
+                    if (_selectedContact != null && _selectedContact!.id != contact.id) {
+                      _saveDataForContact();
+                    }
+                    setState(() {
+                      _selectedContact = contact;
+                    });
+                  },
+                  onCallTap: () {
+                    // Save data for this contact
+                    setState(() {
+                      _selectedContact = contact;
+                    });
+                    _saveDataForContact();
+                  },
+                  backgroundColor: isSelected || isHovered 
+                      ? AppTheme.backgroundDarkBlue
+                      : AppTheme.backgroundLightBlue,
+                  nameColor: isSelected || isHovered 
+                      ? AppTheme.fontDarkBlue
+                      : AppTheme.fontMediumBlue,
+                  phoneColor: isSelected || isHovered 
+                      ? AppTheme.fontMediumBlue
+                      : AppTheme.fontLightBlue,
+                  buttonColor: AppTheme.backgroundDarkBlue,
+                  buttonIconAsset: isSelected 
+                      ? 'assets/DoneIcon.svg'
+                      : 'assets/LookupIcon.svg',
+                  buttonIconColor: AppTheme.fontDarkBlue,
                 );
               },
             ),
@@ -306,103 +372,82 @@ class _FormScreenState extends State<FormScreen> {
     );
   }
 
-  /// Construieste widget-ul pentru apelul in desfasurare
-  Widget _buildOngoingCallWidget() {
-    // Container styling from design (OngoingCallWidget)
-     return Container(
-      padding: const EdgeInsets.all(8),
+  /// Construieste widget-ul pentru apelurile anterioare
+  Widget _buildPastCallsWidget() {
+    // Get contacts from service
+    final recentContacts = _contactService.recentContacts;
+    
+    // Container styling from design (PastCallWidget)
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF).withOpacity(0.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF000000).withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 0),
-          )
-        ],
-        borderRadius: BorderRadius.circular(32),
+        color: AppTheme.widgetBackground.withOpacity(0.5),
+        boxShadow: [AppTheme.widgetShadow],
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge), // 32px
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap), // 16px horizontal padding
             child: _buildWidgetHeader(
-              title: 'Apel in desfasurare',
-              duration: '01:49',
-              color: const Color(0xFF927B9D),
-              countColor: const Color(0xFF927B9D),
+              title: 'Recente',
+              count: recentContacts.length,
+              color: AppTheme.fontLightRed, // #A88A8A
+              countColor: AppTheme.fontLightRed,
             ),
           ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: _buildContactItem(
-              name: 'Contact name 4',
-              phone: '0712 345 678',
-              onTap: () {
-                // Actiune pentru speech
-              },
-              backgroundColor: const Color(0xFFCFC4D4),
-              nameColor: const Color(0xFF7C568F),
-              phoneColor: const Color(0xFF886699),
-              buttonColor: const Color(0xFFC6ACD3),
-              buttonIconAsset: 'assets/SpeechIcon.svg',
-              buttonIconColor: const Color(0xFF7C568F),
-              addMargin: false,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Construieste widget-ul pentru apelurile anterioare
-  Widget _buildPastCallsWidget() {
-    // Container styling from design (PastCallWidget)
-     return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF).withOpacity(0.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF000000).withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 0),
-          )
-        ],
-        borderRadius: BorderRadius.circular(32),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _buildWidgetHeader(
-              title: 'Apeluri anterioare',
-              count: 6,
-              color: const Color(0xFFA88A8A),
-              countColor: const Color(0xFFA88A8A),
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.smallGap), // 8px gap
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.zero,
-              itemCount: 6,
+              itemCount: recentContacts.length,
               itemBuilder: (context, index) {
+                final contact = recentContacts[index];
+                final bool isSelected = _selectedContact?.id == contact.id;
+                final bool isHovered = _hoveredContactId == contact.id;
+                
                 return _buildContactItem(
-                  name: 'Contact name ${index + 5}',
-                  phone: '0712 345 678',
-                  onTap: () {
-                    // Actiune pentru reapelare
+                  contactId: contact.id,
+                  name: contact.name,
+                  phone: contact.phone,
+                  isSelected: isSelected,
+                  isHovered: isHovered,
+                  onHoverChanged: (isHovering) {
+                    setState(() {
+                      _hoveredContactId = isHovering ? contact.id : null;
+                    });
                   },
-                  backgroundColor: const Color(0xFFD4C4C4),
-                  nameColor: const Color(0xFF804D4D),
-                  phoneColor: const Color(0xFF996666),
-                  buttonColor: const Color(0xFFD3ACAC),
-                  buttonIconAsset: 'assets/CallIcon.svg',
-                  buttonIconColor: const Color(0xFF804D4D),
-                  rotateIcon: true,
+                  onTap: () {
+                    // Save data for previously selected contact before switching
+                    if (_selectedContact != null && _selectedContact!.id != contact.id) {
+                      _saveDataForContact();
+                    }
+                    setState(() {
+                      _selectedContact = contact;
+                    });
+                  },
+                  onCallTap: () {
+                    // Save data for this contact
+                    setState(() {
+                      _selectedContact = contact;
+                    });
+                    _saveDataForContact();
+                  },
+                  backgroundColor: isSelected || isHovered 
+                      ? AppTheme.backgroundDarkRed
+                      : AppTheme.backgroundLightRed,
+                  nameColor: isSelected || isHovered 
+                      ? AppTheme.fontDarkRed
+                      : AppTheme.fontMediumRed,
+                  phoneColor: isSelected || isHovered 
+                      ? AppTheme.fontMediumRed
+                      : AppTheme.fontLightRed,
+                  buttonColor: AppTheme.backgroundDarkRed,
+                  buttonIconAsset: isSelected
+                      ? 'assets/DoneIcon.svg'
+                      : 'assets/LookupIcon.svg',
+                  buttonIconColor: AppTheme.fontDarkRed,
                 );
               },
             ),
@@ -414,83 +459,99 @@ class _FormScreenState extends State<FormScreen> {
 
   /// Construieste un element de contact reutilizabil
   Widget _buildContactItem({
+    required String contactId,
     required String name,
     required String phone,
     required VoidCallback onTap,
+    required VoidCallback onCallTap,
+    required Function(bool) onHoverChanged,
     required Color backgroundColor,
     required Color nameColor,
     required Color phoneColor,
     required Color buttonColor,
     required String buttonIconAsset,
     required Color buttonIconColor,
-    bool rotateIcon = false,
-    bool addMargin = true,
+    bool isSelected = false,
+    bool isHovered = false,
   }) {
-    // Container styling from design (Contact)
-    return Container(
-      margin: EdgeInsets.only(bottom: addMargin ? 8.0 : 0.0),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyles.titleStyle.copyWith(
-                      height: 1.28,
-                      color: nameColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    phone,
-                    style: TextStyles.subtitleStyle.copyWith(
-                      height: 1.25,
-                      color: phoneColor,
-                    ),
-                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
+    // Container styling from design (Contact) - Based on callsPanel.md specs
+    return MouseRegion(
+      onEnter: (_) => onHoverChanged(true),
+      onExit: (_) => onHoverChanged(false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: EdgeInsets.only(bottom: AppTheme.smallGap), // 8px bottom margin
+          padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium), // 24px border radius
           ),
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: onTap,
-              child: Container(
-                width: 56,
-                height: 56,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: buttonColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Transform.rotate(
-                  angle: rotateIcon ? (135 * 3.14159 / 180) : 0,
-                  child: SvgPicture.asset(
-                    buttonIconAsset,
-                    width: 24,
-                    height: 24,
-                    colorFilter: ColorFilter.mode(buttonIconColor, BlendMode.srcIn),
+          child: Row(
+            children: [
+              // Contact Details
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: AppTheme.smallGap), // 8px left padding
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyles.titleStyle.copyWith(
+                          height: 1.28,
+                          color: nameColor,
+                          fontWeight: FontWeight.w600, // large font weight
+                          fontSize: AppTheme.fontSizeMedium, // 17px as specified in callsPanel.md
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppTheme.tinyGap), // 4px gap
+                      Text(
+                        phone,
+                        style: TextStyles.subtitleStyle.copyWith(
+                          height: 1.25,
+                          color: phoneColor,
+                          fontWeight: FontWeight.w500, // medium font weight
+                          fontSize: AppTheme.fontSizeSmall, // 15px as specified in callsPanel.md
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
+              // Call Button - Exactly as specified in callsPanel.md
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: onCallTap,
+                  child: Container(
+                    width: 48, // 48px width as specified
+                    height: 48, // 48px height as specified
+                    decoration: BoxDecoration(
+                      color: buttonColor,
+                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall), // 16px border radius
+                    ),
+                    // Center the icon without padding to ensure it appears at the correct 24px size
+                    child: Center(
+                      child: SvgPicture.asset(
+                        buttonIconAsset,
+                        width: 24, // Exactly 24px as specified
+                        height: 24, // Exactly 24px as specified
+                        colorFilter: ColorFilter.mode(buttonIconColor, BlendMode.srcIn),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -515,6 +576,8 @@ class _FormScreenState extends State<FormScreen> {
             style: TextStyles.titleStyle.copyWith(
               height: 1.28,
               color: color,
+              fontWeight: FontWeight.w500, // medium font weight
+              fontSize: AppTheme.fontSizeLarge, // 19px
             ),
           ),
           if (count != null)
@@ -523,14 +586,18 @@ class _FormScreenState extends State<FormScreen> {
               style: TextStyles.subtitleStyle.copyWith(
                 height: 1.25,
                 color: countColor,
+                fontWeight: FontWeight.w500, // medium font weight
+                fontSize: AppTheme.fontSizeSmall, // 15px
               ),
             ),
           if (duration != null)
             Text(
               duration,
-               style: TextStyles.subtitleStyle.copyWith(
+              style: TextStyles.subtitleStyle.copyWith(
                 height: 1.25,
                 color: countColor,
+                fontWeight: FontWeight.w500, // medium font weight
+                fontSize: AppTheme.fontSizeSmall, // 15px
               ),
             ),
         ],
@@ -647,13 +714,14 @@ class _FormScreenState extends State<FormScreen> {
       child: FormsContainerWidget(
         type: FormContainerType.credit,
         isClientForm: _showingClientLoanForm,
+        contactId: _selectedContact?.id, // Pass the selected contact ID
       ),
     );
   }
 
   /// Construieste widget-ul pentru venituri
   Widget _buildIncomeWidget() {
-     // Container styling from design (IncomeWidget)
+    // Container styling from design (IncomeWidget)
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -701,6 +769,7 @@ class _FormScreenState extends State<FormScreen> {
       child: FormsContainerWidget(
         type: FormContainerType.income,
         isClientForm: _showingClientIncomeForm,
+        contactId: _selectedContact?.id, // Pass the selected contact ID
       ),
     );
   }
@@ -800,5 +869,67 @@ class _FormScreenState extends State<FormScreen> {
         ),
       ),
     );
+  }
+
+  /// Helper method to save data for the selected contact
+  void _saveDataForContact() {
+    if (_selectedContact == null) return;
+    
+    try {
+      // Get current form data for both credit and income forms
+      final creditForms = _contactService.getCreditForms(_selectedContact!.id);
+      final incomeForms = _contactService.getIncomeForms(_selectedContact!.id);
+      
+      // Update any modified forms in the service
+      for (var form in creditForms) {
+        if (!form.isEmpty) {
+          _contactService.updateCreditForm(_selectedContact!.id, form);
+        }
+      }
+      
+      for (var form in incomeForms) {
+        if (!form.isEmpty) {
+          _contactService.updateIncomeForm(_selectedContact!.id, form);
+        }
+      }
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Date salvate pentru ${_selectedContact!.name}',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      
+      print('Salvat date pentru contactul: ${_selectedContact!.id}');
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Eroare la salvarea datelor: $e',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      print('Eroare la salvarea datelor: $e');
+    }
+  }
+
+  @override
+  void didUpdateWidget(FormScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // If the selected contact changes, ensure forms are loaded with the correct data
+    if (_selectedContact != null) {
+      // This will trigger the FormsContainerWidget to load the appropriate data
+      setState(() {});
+    }
   }
 } 

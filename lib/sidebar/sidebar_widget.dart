@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_theme.dart';
+import '../popups/consultant_popup.dart';
 import 'navigation_config.dart';
 
 /// Widget care integrează informațiile despre consultant și toate butoanele de navigare
@@ -92,60 +93,75 @@ class _SidebarWidgetState extends State<SidebarWidget> {
 
   // Build consultant info section (avatar, name, team)
   Widget _buildConsultantInfo() {
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.all(AppTheme.smallGap),
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-      ),
-      child: Row(
-        children: [
-          // Avatar
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppTheme.backgroundDarkPurple,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          // Show consultant popup
+          showDialog(
+            context: context,
+            builder: (context) => ConsultantPopup(
+              consultantName: widget.consultantName,
+              teamName: widget.teamName,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppTheme.mediumGap),
-              child: SvgPicture.asset(
-                'assets/UserIcon.svg',
-                width: AppTheme.iconSizeMedium,
-                height: AppTheme.iconSizeMedium,
-                colorFilter: const ColorFilter.mode(
-                  AppTheme.fontMediumPurple,
-                  BlendMode.srcIn,
+          );
+        },
+        child: Container(
+          height: 72,
+          padding: const EdgeInsets.all(AppTheme.smallGap),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundLightPurple,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          ),
+          child: Row(
+            children: [
+              // Avatar
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundDarkPurple,
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.mediumGap),
+                  child: SvgPicture.asset(
+                    'assets/UserIcon.svg',
+                    width: AppTheme.iconSizeMedium,
+                    height: AppTheme.iconSizeMedium,
+                    colorFilter: const ColorFilter.mode(
+                      AppTheme.fontMediumPurple,
+                      BlendMode.srcIn,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: AppTheme.mediumGap),
-          // Consultant Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  widget.consultantName,
-                  style: AppTheme.primaryTitleStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(width: AppTheme.mediumGap),
+              // Consultant Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.consultantName,
+                      style: AppTheme.primaryTitleStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.teamName,
+                      style: AppTheme.secondaryTitleStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.teamName,
-                  style: AppTheme.secondaryTitleStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

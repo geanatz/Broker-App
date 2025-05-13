@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart'; // Import for gesture recognizer
 import '../../models/form_data.dart'; // Import data models
 import '../../theme/app_theme.dart';
+import '../../services/contact_form_service.dart'; // Import ContactFormService
 import 'credit_form_widget.dart';
 import 'income_form_widget.dart';
 
@@ -18,11 +19,15 @@ class FormsContainerWidget extends StatefulWidget {
 
   /// Daca se afiseaza formulare pentru client sau codebitor
   final bool isClientForm;
+  
+  /// ID-ul contactului asociat cu aceste formulare
+  final String? contactId;
 
   const FormsContainerWidget({
     Key? key,
     required this.type,
     required this.isClientForm,
+    this.contactId,
   }) : super(key: key);
 
   @override
@@ -34,6 +39,9 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
   // Initializata cu un formular gol
   late List<BaseFormData> _formDataList;
 
+  // Service pentru gestionarea contactelor și formularelor
+  final ContactFormService _contactService = ContactFormService();
+
   // GlobalKey to access ScaffoldMessenger for SnackBar or other context needs
   final GlobalKey _containerKey = GlobalKey();
 
@@ -43,10 +51,34 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
   @override
   void initState() {
     super.initState();
-    // Initializeaza lista cu un formular gol specific tipului
-    _formDataList = widget.type == FormContainerType.credit
-        ? [CreditFormData.empty()]
-        : [IncomeFormData.empty()];
+    _loadFormsForContact();
+  }
+  
+  /// Încarcă formularele pentru contactul curent
+  void _loadFormsForContact() {
+    if (widget.contactId != null) {
+      // Încarcă formularele existente pentru acest contact
+      if (widget.type == FormContainerType.credit) {
+        _formDataList = _contactService.getCreditForms(widget.contactId!);
+      } else {
+        _formDataList = _contactService.getIncomeForms(widget.contactId!);
+      }
+    } else {
+      // Dacă nu există un contact selectat, folosim un formular gol
+      _formDataList = widget.type == FormContainerType.credit
+          ? [CreditFormData.empty()]
+          : [IncomeFormData.empty()];
+    }
+  }
+  
+  @override
+  void didUpdateWidget(FormsContainerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Verifică dacă s-a schimbat contactul și adaptează formularele corespunzător
+    if (widget.contactId != oldWidget.contactId) {
+      _loadFormsForContact();
+    }
   }
 
   // Store GLOBAL tap position
@@ -96,46 +128,34 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Containerul nu mai are decoratiuni proprii, preia stilul din parinte
-    return Column(
-      key: _containerKey, // Assign key
-      children: List.generate(_formDataList.length, (index) {
-        return _buildFormWidget(index);
-      }),
-    );
-  }
-
-  /// Construieste un formular individual (credit sau venit)
-  Widget _buildFormWidget(int index) {
-    final formData = _formDataList[index];
-    final bool isLastForm = index == _formDataList.length - 1;
-    // Only allow deletion if it's not the last empty form
-    final bool allowDelete = !isLastForm || !formData.isEmpty;
-
-    Widget formContent;
-    if (widget.type == FormContainerType.credit && formData is CreditFormData) {
-      formContent = CreditFormWidget(
-        formData: formData,
-        onChanged: (updatedData) => _handleFormChanged(index, updatedData),
-      );
-    } else if (widget.type == FormContainerType.income && formData is IncomeFormData) {
-      formContent = IncomeFormWidget(
-        formData: formData,
-        onChanged: (updatedData) => _handleFormChanged(index, updatedData),
-      );
-    } else {
-      formContent = const SizedBox.shrink(); // Should not happen
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: GestureDetector( // Changed from Stack to GestureDetector
-        onTapDown: _getTapPosition, // Store position on tap down
-        onSecondaryTap: allowDelete // Enable right-click only if deletion is allowed
-            ? () => _showContextMenu(context, index)
-            : null,
-        child: formContent, // The actual form widget
-      ),
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _formDataList.length,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTapDown: _getTapPosition, // Store tap position for context menu
+          onLongPress: () => _showContextMenu(context, index),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: AppTheme.mediumGap),
+            child: widget.type == FormContainerType.credit
+                ? CreditFormWidget(
+                    formData: _formDataList[index] as CreditFormData,
+                    onChanged: (updatedData) {
+                      _handleFormChanged(index, updatedData);
+                    },
+                    contactId: widget.contactId, // Pass contactId
+                  )
+                : IncomeFormWidget(
+                    formData: _formDataList[index] as IncomeFormData,
+                    onChanged: (updatedData) {
+                      _handleFormChanged(index, updatedData);
+                    },
+                    contactId: widget.contactId, // Pass contactId
+                  ),
+          ),
+        );
+      },
     );
   }
 
@@ -150,10 +170,20 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
         updatedData is CreditFormData && 
         _formDataList[index] is CreditFormData) {
       ((_formDataList[index] as CreditFormData)).updateFrom(updatedData);
+      
+      // Salvează formularul actualizat în service dacă avem un contact selectat
+      if (widget.contactId != null) {
+        _contactService.updateCreditForm(widget.contactId!, updatedData);
+      }
     } else if (widget.type == FormContainerType.income && 
                updatedData is IncomeFormData && 
                _formDataList[index] is IncomeFormData) {
       ((_formDataList[index] as IncomeFormData)).updateFrom(updatedData);
+      
+      // Salvează formularul actualizat în service dacă avem un contact selectat
+      if (widget.contactId != null) {
+        _contactService.updateIncomeForm(widget.contactId!, updatedData);
+      }
     } else {
       // Fallback in cazul in care tipurile nu se potrivesc (nu ar trebui sa se intample)
       _formDataList[index] = updatedData;
@@ -197,6 +227,9 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
       return;
     }
 
+    // Obține ID-ul formularului care va fi șters
+    final String formId = _formDataList[index].id;
+
     setState(() {
       _formDataList.removeAt(index);
 
@@ -209,5 +242,14 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
         }
       }
     });
+
+    // Șterge și din service
+    if (widget.contactId != null) {
+      if (widget.type == FormContainerType.credit) {
+        _contactService.removeCreditForm(widget.contactId!, formId);
+      } else {
+        _contactService.removeIncomeForm(widget.contactId!, formId);
+      }
+    }
   }
 } 

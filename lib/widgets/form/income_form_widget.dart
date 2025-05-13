@@ -8,9 +8,7 @@ import '../common/input_field_widget.dart';
 enum IncomeType {
   salariu,
   pensie,
-  chirie,
-  dividende,
-  altele
+  indemnizatie
 }
 
 /// Extinde String pentru a obtine titluri pentru dropdown
@@ -21,12 +19,8 @@ extension IncomeTypeExtension on IncomeType {
         return 'Salariu';
       case IncomeType.pensie:
         return 'Pensie';
-      case IncomeType.chirie:
-        return 'Chirie';
-      case IncomeType.dividende:
-        return 'Dividende';
-      case IncomeType.altele:
-        return 'Altele';
+      case IncomeType.indemnizatie:
+        return 'Indemnizatie';
     }
   }
 }
@@ -35,11 +29,13 @@ extension IncomeTypeExtension on IncomeType {
 class IncomeFormWidget extends StatefulWidget {
   final IncomeFormData formData;
   final Function(IncomeFormData) onChanged;
+  final String? contactId;
 
   const IncomeFormWidget({
     Key? key,
     required this.formData,
     required this.onChanged,
+    this.contactId,
   }) : super(key: key);
 
   @override
@@ -141,7 +137,7 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
   Widget build(BuildContext context) {
     // Styling from design (Form)
     return Container(
-      padding: const EdgeInsets.all(16), // Padding from design
+      padding: const EdgeInsets.all(8), // Changed from 16 to 8
       decoration: BoxDecoration(
         color: const Color(0xFFCFC4D4), // Background from design
         borderRadius: BorderRadius.circular(24), // Radius from design

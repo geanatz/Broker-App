@@ -42,13 +42,6 @@ class DropdownWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF000000).withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            )
-          ],
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(

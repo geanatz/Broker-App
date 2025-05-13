@@ -53,7 +53,6 @@ class InputFieldWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-          boxShadow: [AppTheme.buttonShadow],
         ),
         child: TextField(
           controller: controller,
@@ -68,7 +67,7 @@ class InputFieldWidget extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: AppTheme.primaryTitleStyle.copyWith(
-              color: textColor.withOpacity(0.7),
+              color: textColor,
               fontWeight: FontWeight.w500,
             ),
             border: InputBorder.none,

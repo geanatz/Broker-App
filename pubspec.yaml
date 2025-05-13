@@ -96,6 +96,9 @@ flutter:
     - assets/ArrowRightIcon.svg
     - assets/CopyIcon.svg
     - assets/ContactsIcon.svg
+    - assets/SaveIcon.svg
+    - assets/DoneIcon.svg
+    - assets/LookupIcon.svg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

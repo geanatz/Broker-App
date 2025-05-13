@@ -36,11 +36,13 @@ extension CreditTypeExtension on CreditType {
 class CreditFormWidget extends StatefulWidget {
   final CreditFormData formData;
   final Function(CreditFormData) onChanged;
+  final String? contactId;
 
   const CreditFormWidget({
     Key? key,
     required this.formData,
     required this.onChanged,
+    this.contactId,
   }) : super(key: key);
 
   @override
@@ -170,7 +172,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
     // Styling from design (Form)
     return Container(
       // width: 624, // REMOVED Fixed width from Figma - Let parent decide width
-      padding: const EdgeInsets.all(16), // Padding from design
+      padding: const EdgeInsets.all(8), // Changed from 16 to 8
       decoration: BoxDecoration(
         color: const Color(0xFFCFC4D4), // Background from design
         borderRadius: BorderRadius.circular(24), // Radius from design
@@ -475,13 +477,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
         decoration: BoxDecoration(
           color: const Color(0xFFC6ACD3),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF000000).withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            )
-          ],
+          // Removed box shadow as requested
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         alignment: Alignment.centerLeft,
@@ -494,7 +490,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           decoration: InputDecoration(
             hintText: '0 ani',
             hintStyle: AppTheme.primaryTitleStyle.copyWith(
-              color: const Color(0xFF7C568F).withOpacity(0.7),
+              color: const Color(0xFF7C568F), // Full opacity
               fontWeight: FontWeight.w500,
             ),
             border: InputBorder.none,
@@ -515,13 +511,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
         decoration: BoxDecoration(
           color: const Color(0xFFC6ACD3),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF000000).withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            )
-          ],
+          // Removed box shadow as requested
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: DropdownButtonHideUnderline(
@@ -538,7 +528,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
             hint: Text(
               'Tip',
               style: AppTheme.primaryTitleStyle.copyWith(
-                color: const Color(0xFF7C568F),
+                color: const Color(0xFF7C568F), // Full opacity
                 fontWeight: FontWeight.w500,
               ),
               overflow: TextOverflow.ellipsis,
