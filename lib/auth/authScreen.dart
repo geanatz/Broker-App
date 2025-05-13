@@ -5,6 +5,7 @@ import 'loginPopup.dart';
 import 'registerPopup.dart';
 import 'tokenPopup.dart';
 import 'resetpasswordPopup.dart';
+import 'accountCreatedPopup.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -19,6 +20,7 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _errorMessage;
   String? _successMessage;
   String? _tempConsultantIdForPasswordReset; // Stochează ID-ul consultantului după verificarea tokenului
+  String? _registrationToken; // Stochează token-ul generat la înregistrare
 
   void _navigateTo(AuthStep step) {
     setState(() {
@@ -67,12 +69,10 @@ class _AuthScreenState extends State<AuthScreen> {
     if (mounted) {
       if (result['success']) {
         setState(() {
-          _successMessage = "${result['message']}. Folosește token-ul: ${result['token']} pentru a-ți seta parola inițială sau la resetare.";
+          _successMessage = result['message'];
           _errorMessage = null;
-          // După înregistrare cu succes, ar trebui să ghidăm utilizatorul să-și seteze parola folosind token-ul.
-          // Poate direct la token entry sau înapoi la login cu un mesaj clar.
-          // Deocamdată, afișăm mesajul și lăsăm utilizatorul să navigheze.
-          _navigateTo(AuthStep.tokenEntry); // Trimite la token pentru a continua fluxul.
+          _registrationToken = result['token']; // Salvăm token-ul pentru afișare în popup
+          _navigateTo(AuthStep.accountCreated); // Navigăm la popup-ul de confirmare cont creat
         });
       } else {
         setState(() {
@@ -152,6 +152,12 @@ class _AuthScreenState extends State<AuthScreen> {
           onGoToLogin: () => _navigateTo(AuthStep.login),
         );
         break;
+      case AuthStep.accountCreated:
+        popupToShow = AccountCreatedPopup(
+          token: _registrationToken ?? 'Token indisponibil',
+          onContinue: () => _navigateTo(AuthStep.login),
+        );
+        break;
       case AuthStep.tokenEntry:
         popupToShow = TokenPopup(
           onTokenSubmit: _handleTokenSubmit,
@@ -192,12 +198,22 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (_successMessage != null && _currentStep != AuthStep.passwordReset && _currentStep != AuthStep.tokenEntry) // Nu afișa la succes de token/resetare aici, ci în popup-ul următor
+                if (_successMessage != null && _currentStep != AuthStep.passwordReset && _currentStep != AuthStep.tokenEntry && _currentStep != AuthStep.accountCreated) // Nu afișa la succes de token/resetare aici, ci în popup-ul următor
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppTheme.mediumGap),
                     child: Text(
                       _successMessage!,
                       style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontMediumBlue), // O culoare pentru succes
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                // ADDED: Display error message if present
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppTheme.mediumGap),
+                    child: Text(
+                      _errorMessage!,
+                      style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontMediumRed), // Error color
                       textAlign: TextAlign.center,
                     ),
                   ),

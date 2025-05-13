@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
+import 'loginPopup.dart';
 
 class TokenPopup extends StatefulWidget {
   final Function(String token) onTokenSubmit;
@@ -20,14 +21,27 @@ class _TokenPopupState extends State<TokenPopup> {
   final _formKey = GlobalKey<FormState>();
   final _tokenController = TextEditingController();
   String? _tokenError;
+  
+  // Adăugare stare pentru validare
+  bool _isTokenInvalid = false;
 
   void _submitToken() {
-    if (_formKey.currentState!.validate()) {
+    // Resetăm starea de validare
+    setState(() {
+      _isTokenInvalid = false;
+      _tokenError = null;
+    });
+    
+    // Validare manuală
+    if (_tokenController.text.isEmpty) {
       setState(() {
-        _tokenError = null;
+        _isTokenInvalid = true;
       });
-      widget.onTokenSubmit(_tokenController.text);
+      return;
     }
+    
+    // Dacă token-ul e valid, continuăm
+    widget.onTokenSubmit(_tokenController.text);
   }
 
   @override
@@ -47,13 +61,14 @@ class _TokenPopupState extends State<TokenPopup> {
       child: Container(
         width: popupWidth,
         height: popupHeight,
-        padding: const EdgeInsets.all(AppTheme.tinyGap),
+        padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: AppTheme.popupDecoration.copyWith(
           color: AppTheme.widgetBackground.withOpacity(0.5),
           boxShadow: [AppTheme.widgetShadow],
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(),
             SizedBox(height: AppTheme.smallGap),
@@ -61,10 +76,10 @@ class _TokenPopupState extends State<TokenPopup> {
             SizedBox(height: AppTheme.smallGap),
             _buildGoToLoginLink(),
             SizedBox(height: AppTheme.smallGap),
-            _buildContinueButton(),
+            _buildSubmitButton(),
             if (_tokenError != null)
               Padding(
-                padding: const EdgeInsets.only(top: AppTheme.smallGap),
+                padding: const EdgeInsets.only(top: AppTheme.tinyGap),
                 child: Text(
                   _tokenError!,
                   style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.fontMediumRed),
@@ -80,20 +95,18 @@ class _TokenPopupState extends State<TokenPopup> {
   Widget _buildHeader() {
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+      padding: const EdgeInsets.fromLTRB(AppTheme.mediumGap, 0, AppTheme.smallGap, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 211, // Figma
+          Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 24, // Figma
-                  alignment: Alignment.centerLeft,
+                SizedBox(
+                  height: 24,
                   child: Text(
                     "Ai uitat parola?",
                     style: AppTheme.primaryTitleStyle.copyWith(
@@ -101,36 +114,33 @@ class _TokenPopupState extends State<TokenPopup> {
                       fontWeight: FontWeight.w600,
                       color: AppTheme.fontMediumPurple,
                     ),
-                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  height: 21, // Figma
-                  alignment: Alignment.centerLeft,
+                SizedBox(
+                  height: 21,
                   child: Text(
                     "Intai, dovedeste ca esti tu!",
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF927B9D),
-                      height: 21/17,
                     ),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            width: 48, height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 13),
-             child: SvgPicture.asset(
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: SvgPicture.asset(
               'assets/Logo.svg',
-               width: 26.58,
-              height: 22.4,
               colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
-            ), 
+            ),
           ),
         ],
       ),
@@ -149,12 +159,12 @@ class _TokenPopupState extends State<TokenPopup> {
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start, // Aliniere la început
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-             Padding(
+            Padding(
               padding: const EdgeInsets.only(left: AppTheme.smallGap, right: AppTheme.smallGap, bottom: 0),
               child: Container(
-                height: 24, // Figma title height
+                height: 24,
                 alignment: Alignment.centerLeft,
                 child: Text(
                   "Token secret",
@@ -166,24 +176,33 @@ class _TokenPopupState extends State<TokenPopup> {
                 ),
               )
             ),
-            // Fără SizedBox între titlu și input
             Container(
-              height: 48, // Figma input height
+              height: 48,
               decoration: BoxDecoration(
                 color: AppTheme.backgroundDarkPurple,
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                border: _isTokenInvalid 
+                    ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                    : null,
               ),
               child: TextFormField(
                 controller: _tokenController,
-                style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+                style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
                 textAlignVertical: TextAlignVertical.center,
+                onChanged: (value) {
+                  if (_isTokenInvalid && value.isNotEmpty) {
+                    setState(() {
+                      _isTokenInvalid = false;
+                    });
+                  }
+                },
                 decoration: InputDecoration(
                   hintText: "Introdu token-ul tau",
-                  hintStyle: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+                  hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap), // Doar padding orizontal
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Introdu token-ul' : null,
+                validator: null, // Eliminăm validatorul standard
               ),
             ),
           ],
@@ -193,8 +212,8 @@ class _TokenPopupState extends State<TokenPopup> {
   }
 
   Widget _buildGoToLoginLink() {
-     return Container(
-       height: 24, // Figma
+    return Container(
+      height: 24,
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -228,29 +247,10 @@ class _TokenPopupState extends State<TokenPopup> {
     );
   }
 
-  Widget _buildContinueButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: _submitToken,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.backgroundLightPurple,
-          foregroundColor: AppTheme.fontMediumPurple,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium)),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
-        ),
-        child: Text(
-          "Continua",
-          style: AppTheme.primaryTitleStyle.copyWith(
-            fontSize: 18.0, // Figma specifică 18px aici
-            fontWeight: FontWeight.w500, // Figma: medium (500)
-            color: AppTheme.fontMediumPurple,
-            height: 23/18, // Figma: line-height 23px
-          ),
-        ),
-      ),
+  Widget _buildSubmitButton() {
+    return AuthPopupButton(
+      onPressed: _submitToken,
+      text: "Verifica token",
     );
   }
 }

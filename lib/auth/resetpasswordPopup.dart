@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
+import 'loginPopup.dart';
 
 class ResetPasswordPopup extends StatefulWidget {
   final Function(String newPassword, String confirmPassword) onResetPasswordAttempt;
@@ -23,12 +24,50 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
   String? _resetError;
+  
+  // Adăugare stări pentru validare
+  bool _isNewPasswordInvalid = false;
+  bool _isConfirmPasswordInvalid = false;
 
   void _attemptResetPassword() {
-    if (_formKey.currentState!.validate()) {
+    // Resetăm stările de validare
+    setState(() {
+      _isNewPasswordInvalid = false;
+      _isConfirmPasswordInvalid = false;
+      _resetError = null;
+    });
+    
+    // Validare manuală
+    bool isValid = true;
+    
+    // Validare parolă nouă
+    if (_newPasswordController.text.isEmpty) {
       setState(() {
-        _resetError = null;
+        _isNewPasswordInvalid = true;
+        isValid = false;
       });
+    } else if (_newPasswordController.text.length < 6) {
+      setState(() {
+        _isNewPasswordInvalid = true;
+        isValid = false;
+      });
+    }
+    
+    // Validare confirmare parolă
+    if (_confirmPasswordController.text.isEmpty) {
+      setState(() {
+        _isConfirmPasswordInvalid = true;
+        isValid = false;
+      });
+    } else if (_confirmPasswordController.text != _newPasswordController.text) {
+      setState(() {
+        _isConfirmPasswordInvalid = true;
+        isValid = false;
+      });
+    }
+    
+    // Dacă totul e valid, trimitem datele
+    if (isValid) {
       widget.onResetPasswordAttempt(
         _newPasswordController.text,
         _confirmPasswordController.text,
@@ -54,13 +93,14 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
       child: Container(
         width: popupWidth,
         height: popupHeight,
-        padding: const EdgeInsets.all(AppTheme.tinyGap),
+        padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: AppTheme.popupDecoration.copyWith(
           color: AppTheme.widgetBackground.withOpacity(0.5),
           boxShadow: [AppTheme.widgetShadow],
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(),
             SizedBox(height: AppTheme.smallGap),
@@ -71,7 +111,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
             _buildResetButton(),
             if (_resetError != null)
               Padding(
-                padding: const EdgeInsets.only(top: AppTheme.smallGap),
+                padding: const EdgeInsets.only(top: AppTheme.tinyGap),
                 child: Text(
                   _resetError!,
                   style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.fontMediumRed),
@@ -87,20 +127,18 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   Widget _buildHeader() {
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+      padding: const EdgeInsets.fromLTRB(AppTheme.mediumGap, 0, AppTheme.smallGap, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-             width: 273, // Figma
+          Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 24, // Figma
-                  alignment: Alignment.centerLeft,
+                SizedBox(
+                  height: 24,
                   child: Text(
                     "Gandeste o parola noua",
                     style: AppTheme.primaryTitleStyle.copyWith(
@@ -108,35 +146,31 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
                       fontWeight: FontWeight.w600,
                       color: AppTheme.fontMediumPurple,
                     ),
-                     overflow: TextOverflow.ellipsis,
-                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  height: 21, // Figma
-                  alignment: Alignment.centerLeft,
+                SizedBox(
+                  height: 21,
                   child: Text(
                     "Una calumea, nu ziua de nastere...",
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF927B9D),
-                      height: 21/17,
                     ),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            width: 48, height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 13),
+          SizedBox(
+            width: 48,
+            height: 48,
             child: SvgPicture.asset(
               'assets/Logo.svg',
-               width: 26.58,
-              height: 22.4,
               colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
             ),
           ),
@@ -147,7 +181,6 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
 
   Widget _buildResetForm() {
     return Container(
-      // height: 168, // Determinat de conținut
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
         color: AppTheme.backgroundLightPurple,
@@ -167,7 +200,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
                 if (value == null || value.isEmpty) return 'Introdu noua parolă';
                 if (value.length < 6) return 'Parola trebuie să aibă minim 6 caractere';
                 return null;
-              }
+              },
+              isInvalid: _isNewPasswordInvalid,
             ),
             SizedBox(height: AppTheme.smallGap),
             _buildPasswordField(
@@ -180,7 +214,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
                 if (value == null || value.isEmpty) return 'Confirmă noua parolă';
                 if (value != _newPasswordController.text) return 'Parolele nu se potrivesc';
                 return null;
-              }
+              },
+              isInvalid: _isConfirmPasswordInvalid,
             ),
           ],
         ),
@@ -188,7 +223,6 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
     );
   }
 
-  // Refolosim metodele helper pentru consistență
   Widget _buildTextField({
     required TextEditingController controller,
     required String title,
@@ -197,6 +231,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
     bool obscureText = false,
     Widget? suffixIcon,
     TextInputType? keyboardType,
+    bool isInvalid = false,
+    Function(String)? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,21 +250,25 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
           decoration: BoxDecoration(
             color: AppTheme.backgroundDarkPurple,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            border: isInvalid 
+                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                : null,
           ),
           child: TextFormField(
             controller: controller,
             obscureText: obscureText,
             keyboardType: keyboardType,
-            style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
             textAlignVertical: TextAlignVertical.center,
+            onChanged: onChanged,
             decoration: InputDecoration(
               hintText: hintText,
-              hintStyle: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+              hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
               suffixIcon: suffixIcon,
             ),
-            validator: validator,
+            validator: null, // Eliminăm validatorul standard
           ),
         ),
       ],
@@ -242,6 +282,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
     required bool obscureText,
     required VoidCallback onToggleObscure,
     required String? Function(String?) validator,
+    bool isInvalid = false,
   }) {
     return _buildTextField(
       controller: controller,
@@ -249,23 +290,38 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
       hintText: hintText,
       obscureText: obscureText,
       validator: validator,
-      suffixIcon: IconButton(
-        icon: SvgPicture.asset(
-           obscureText ? 'assets/ShowIcon.svg' : 'assets/HideIcon.svg',
-          width: AppTheme.iconSizeMedium, 
-          height: AppTheme.iconSizeMedium,
-          colorFilter: const ColorFilter.mode(Color(0xFF7C568F), BlendMode.srcIn),
+      isInvalid: isInvalid,
+      onChanged: (value) {
+        if (title == "Parola noua" && _isNewPasswordInvalid && value.length >= 6) {
+          setState(() {
+            _isNewPasswordInvalid = false;
+          });
+        } else if (title == "Repeta parola" && _isConfirmPasswordInvalid && value == _newPasswordController.text) {
+          setState(() {
+            _isConfirmPasswordInvalid = false;
+          });
+        }
+      },
+      suffixIcon: Padding(
+        padding: const EdgeInsets.only(right: AppTheme.smallGap),
+        child: IconButton(
+          icon: SvgPicture.asset(
+            obscureText ? 'assets/ShowIcon.svg' : 'assets/HideIcon.svg',
+            width: AppTheme.iconSizeMedium, 
+            height: AppTheme.iconSizeMedium,
+            colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
+          ),
+          iconSize: AppTheme.iconSizeMedium,
+          onPressed: onToggleObscure,
+          padding: EdgeInsets.zero,
         ),
-        iconSize: AppTheme.iconSizeMedium,
-        onPressed: onToggleObscure,
-        padding: EdgeInsets.zero,
       ),
     );
   }
 
   Widget _buildGoToLoginLink() {
     return Container(
-      height: 24, // Figma
+      height: 24,
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -300,23 +356,9 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   }
 
   Widget _buildResetButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: _attemptResetPassword,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.backgroundLightPurple,
-          foregroundColor: AppTheme.fontMediumPurple,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium)),
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
-        ),
-        child: Text(
-          "Schimba parola", // Text actualizat conform Figma/Markdown
-          style: AppTheme.primaryTitleStyle.copyWith(fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500, color: AppTheme.fontMediumPurple), // Figma: medium weight (500)
-        ),
-      ),
+    return AuthPopupButton(
+      onPressed: _attemptResetPassword,
+      text: "Reseteaza parola",
     );
   }
 }

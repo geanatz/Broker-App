@@ -3,9 +3,9 @@ import '../../theme/app_theme.dart';
 // import '../../widgets/navigation/sidebar_widget.dart'; // Removed old import
 // import '../../widgets/navigation/navigation_widget.dart'; // Removed old import
 import '../../sidebar/navigation_config.dart'; // Added config import
-import '../../sidebar/user_widget.dart';      // Added user widget import
-import '../../sidebar/navigation_widget.dart'; // Added navigation widget import
-import '../../sidebar/user_config.dart'; // Added user config import
+// import '../../sidebar/user_widget.dart'; // Remove UserWidget import
+// import '../../sidebar/navigation_widget.dart'; // Remove NavigationWidget import
+import '../../sidebar/sidebar_widget.dart'; // Add SidebarWidget import
 import '../../widgets/common/panel_container.dart';
 
 /// Ecranul principal de dashboard al aplicației
@@ -67,24 +67,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: _buildDashboardContent(),
           ),
           const SizedBox(height: AppTheme.largeGap),
-          // Replace SidebarWidget with Column[UserWidget, SizedBox, NavigationWidget]
           Container(
-            width: 224, // Maintain sidebar width
-            child: Column(
-              children: [
-                UserWidget(
-                  consultantName: widget.consultantName,
-                  teamName: widget.teamName,
-                  progress: 0.0, // Add placeholder progress
-                  callCount: 0,  // Add placeholder count
-                ),
-                const SizedBox(height: AppTheme.mediumGap),
-                NavigationWidget(
-                  currentScreen: NavigationScreen.dashboard,
-                  onScreenChanged: widget.onScreenChanged,
-                  // No secondary panels on dashboard
-                ),
-              ],
+            width: 224,
+            child: SidebarWidget( // Replace with SidebarWidget
+              consultantName: widget.consultantName,
+              teamName: widget.teamName,
+              currentScreen: NavigationScreen.dashboard,
+              onScreenChanged: widget.onScreenChanged,
             ),
           ),
         ],
@@ -104,28 +93,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: _buildDashboardContent(),
         ),
         const SizedBox(width: AppTheme.largeGap),
-        // Replace SidebarWidget with Column[UserWidget, SizedBox, Expanded(NavigationWidget)]
         SizedBox(
-           width: 224, // Fixed width for the sidebar area
-           height: contentHeight, // Use the calculated height
-           child: Column(
-             crossAxisAlignment: CrossAxisAlignment.stretch,
-             children: [
-                UserWidget(
-                  consultantName: widget.consultantName,
-                  teamName: widget.teamName,
-                  progress: 0.0, // Add placeholder progress
-                  callCount: 0,  // Add placeholder count
-                ),
-                const SizedBox(height: AppTheme.mediumGap),
-                Expanded(
-                  child: NavigationWidget(
-                    currentScreen: NavigationScreen.dashboard,
-                    onScreenChanged: widget.onScreenChanged,
-                    // No secondary panels on dashboard
-                  ),
-                ),
-             ],
+           width: 224,
+           height: contentHeight,
+           child: SidebarWidget( // Replace with SidebarWidget
+             consultantName: widget.consultantName,
+             teamName: widget.teamName,
+             currentScreen: NavigationScreen.dashboard,
+             onScreenChanged: widget.onScreenChanged,
            ),
         ),
       ],

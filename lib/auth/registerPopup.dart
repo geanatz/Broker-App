@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/app_theme.dart';
+import '../auth/authService.dart';
+import 'loginPopup.dart';
 
 class RegisterPopup extends StatefulWidget {
   final Function(String consultantName, String password, String confirmPassword, String team) onRegisterAttempt;
@@ -22,22 +24,74 @@ class _RegisterPopupState extends State<RegisterPopup> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String? _selectedTeam;
-  final List<String> _teamOptions = ['Team Alpha', 'Team Beta', 'Team Gamma'];
+  final List<String> _teamOptions = ['Echipa Andreea', 'Echipa Cristina', 'Echipa Scarlat'];
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _registerError;
 
+  // Adăugare stări pentru validare vizuală
+  bool _isNameInvalid = false;
+  bool _isPasswordInvalid = false;
+  bool _isConfirmPasswordInvalid = false;
+  bool _isTeamInvalid = false;
+
   void _attemptRegister() {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedTeam == null) {
-        setState(() {
-          _registerError = 'Te rugăm să selectezi o echipă.';
-        });
-        return;
-      }
+    // Resetăm stările de validare
+    setState(() {
+      _isNameInvalid = false;
+      _isPasswordInvalid = false;
+      _isConfirmPasswordInvalid = false;
+      _isTeamInvalid = false;
+      _registerError = null;
+    });
+
+    // Validăm manual
+    bool isValid = true;
+    
+    // Validare nume
+    if (_nameController.text.isEmpty) {
       setState(() {
-        _registerError = null;
+        _isNameInvalid = true;
+        isValid = false;
       });
+    }
+    
+    // Validare parolă
+    if (_passwordController.text.isEmpty) {
+      setState(() {
+        _isPasswordInvalid = true;
+        isValid = false;
+      });
+    } else if (_passwordController.text.length < 6) {
+      setState(() {
+        _isPasswordInvalid = true;
+        isValid = false;
+      });
+    }
+    
+    // Validare confirmare parolă
+    if (_confirmPasswordController.text.isEmpty) {
+      setState(() {
+        _isConfirmPasswordInvalid = true;
+        isValid = false;
+      });
+    } else if (_confirmPasswordController.text != _passwordController.text) {
+      setState(() {
+        _isConfirmPasswordInvalid = true;
+        isValid = false;
+      });
+    }
+    
+    // Validare echipă
+    if (_selectedTeam == null) {
+      setState(() {
+        _isTeamInvalid = true;
+        isValid = false;
+      });
+    }
+    
+    // Dacă totul e valid, trimitem datele
+    if (isValid) {
       widget.onRegisterAttempt(
         _nameController.text,
         _passwordController.text,
@@ -66,13 +120,14 @@ class _RegisterPopupState extends State<RegisterPopup> {
       child: Container(
         width: popupWidth,
         height: popupHeight,
-        padding: const EdgeInsets.all(AppTheme.tinyGap),
+        padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: AppTheme.popupDecoration.copyWith(
           color: AppTheme.widgetBackground.withOpacity(0.5),
           boxShadow: [AppTheme.widgetShadow],
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(),
             SizedBox(height: AppTheme.smallGap),
@@ -83,7 +138,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
             _buildRegisterButton(),
             if (_registerError != null)
               Padding(
-                padding: const EdgeInsets.only(top: AppTheme.smallGap),
+                padding: const EdgeInsets.only(top: AppTheme.tinyGap),
                 child: Text(
                   _registerError!,
                   style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.fontMediumRed),
@@ -99,20 +154,18 @@ class _RegisterPopupState extends State<RegisterPopup> {
   Widget _buildHeader() {
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+      padding: const EdgeInsets.fromLTRB(AppTheme.mediumGap, 0, AppTheme.smallGap, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 213,
+          Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
+                SizedBox(
                   height: 24,
-                  alignment: Alignment.centerLeft,
                   child: Text(
                     "Bun venit in echipa!",
                     style: AppTheme.primaryTitleStyle.copyWith(
@@ -120,35 +173,33 @@ class _RegisterPopupState extends State<RegisterPopup> {
                       fontWeight: FontWeight.w600,
                       color: AppTheme.fontMediumPurple,
                     ),
-                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
+                SizedBox(
                   height: 21,
-                  alignment: Alignment.centerLeft,
                   child: Text(
                     "Hai sa te bagam in sistem.",
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF927B9D),
-                      height: 21/17,
                     ),
-                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            width: 48, height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 13),
+          SizedBox(
+            width: 48,
+            height: 48,
             child: SvgPicture.asset(
               'assets/Logo.svg',
-               width: 26.58,
-              height: 22.4,
               colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
-            ), 
+            ),
           ),
         ],
       ),
@@ -171,6 +222,14 @@ class _RegisterPopupState extends State<RegisterPopup> {
               title: "Cum te numesti?",
               hintText: "Introdu numele tau",
               validator: (value) => value == null || value.isEmpty ? 'Introdu numele' : null,
+              isInvalid: _isNameInvalid,
+              onChanged: (value) {
+                if (_isNameInvalid && value.isNotEmpty) {
+                  setState(() {
+                    _isNameInvalid = false;
+                  });
+                }
+              },
             ),
             SizedBox(height: AppTheme.smallGap),
             _buildPasswordField(
@@ -183,7 +242,8 @@ class _RegisterPopupState extends State<RegisterPopup> {
                 if (value == null || value.isEmpty) return 'Introdu parola';
                 if (value.length < 6) return 'Parola trebuie să aibă minim 6 caractere';
                 return null;
-              }
+              },
+              isInvalid: _isPasswordInvalid,
             ),
             SizedBox(height: AppTheme.smallGap),
             _buildPasswordField(
@@ -196,7 +256,8 @@ class _RegisterPopupState extends State<RegisterPopup> {
                 if (value == null || value.isEmpty) return 'Confirmă parola';
                 if (value != _passwordController.text) return 'Parolele nu se potrivesc';
                 return null;
-              }
+              },
+              isInvalid: _isConfirmPasswordInvalid,
             ),
             SizedBox(height: AppTheme.smallGap),
             _buildTeamDropdown(),
@@ -214,6 +275,8 @@ class _RegisterPopupState extends State<RegisterPopup> {
     bool obscureText = false,
     Widget? suffixIcon,
     TextInputType? keyboardType,
+    bool isInvalid = false,
+    Function(String)? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,21 +294,25 @@ class _RegisterPopupState extends State<RegisterPopup> {
           decoration: BoxDecoration(
             color: AppTheme.backgroundDarkPurple,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            border: isInvalid 
+                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                : null,
           ),
           child: TextFormField(
             controller: controller,
             obscureText: obscureText,
             keyboardType: keyboardType,
-            style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
             textAlignVertical: TextAlignVertical.center,
+            onChanged: onChanged,
             decoration: InputDecoration(
               hintText: hintText,
-              hintStyle: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+              hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
               suffixIcon: suffixIcon,
             ),
-            validator: validator,
+            validator: null, // Eliminăm validatorul standard
           ),
         ),
       ],
@@ -259,6 +326,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
     required bool obscureText,
     required VoidCallback onToggleObscure,
     required String? Function(String?) validator,
+    bool isInvalid = false,
   }) {
     return _buildTextField(
       controller: controller,
@@ -266,16 +334,31 @@ class _RegisterPopupState extends State<RegisterPopup> {
       hintText: hintText,
       obscureText: obscureText,
       validator: validator,
-      suffixIcon: IconButton(
-        icon: SvgPicture.asset(
-          obscureText ? 'assets/ShowIcon.svg' : 'assets/HideIcon.svg',
-          width: AppTheme.iconSizeMedium, 
-          height: AppTheme.iconSizeMedium,
-          colorFilter: const ColorFilter.mode(Color(0xFF7C568F), BlendMode.srcIn),
+      isInvalid: isInvalid,
+      onChanged: (value) {
+        if (title == "Creaza parola" && _isPasswordInvalid && value.length >= 6) {
+          setState(() {
+            _isPasswordInvalid = false;
+          });
+        } else if (title == "Repeta parola" && _isConfirmPasswordInvalid && value == _passwordController.text) {
+          setState(() {
+            _isConfirmPasswordInvalid = false;
+          });
+        }
+      },
+      suffixIcon: Padding(
+        padding: const EdgeInsets.only(right: AppTheme.smallGap),
+        child: IconButton(
+          icon: SvgPicture.asset(
+            obscureText ? 'assets/ShowIcon.svg' : 'assets/HideIcon.svg',
+            width: AppTheme.iconSizeMedium, 
+            height: AppTheme.iconSizeMedium,
+            colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
+          ),
+          iconSize: AppTheme.iconSizeMedium,
+          onPressed: onToggleObscure,
+          padding: EdgeInsets.zero,
         ),
-        iconSize: AppTheme.iconSizeMedium,
-        onPressed: onToggleObscure,
-        padding: EdgeInsets.zero,
       ),
     );
   }
@@ -304,41 +387,44 @@ class _RegisterPopupState extends State<RegisterPopup> {
           decoration: BoxDecoration(
             color: AppTheme.backgroundDarkPurple, 
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            border: _isTeamInvalid 
+                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                : null,
           ),
           child: DropdownButtonFormField<String>(
             value: _selectedTeam,
             items: _teamOptions.map((team) {
                     return DropdownMenuItem(
                       value: team,
-                      child: Text(team, style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium)), 
+                      child: Text(team, style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600)),
                     );
                   }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedTeam = value;
+                if (value != null) {
+                  _isTeamInvalid = false;
+                }
               });
             },
             hint: Text(
                     "Selecteaza echipa",
-                    style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium)
+                    style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
                   ),
             isExpanded: true,
-            icon: Padding(
-              padding: const EdgeInsets.only(right: AppTheme.smallGap),
-              child: SvgPicture.asset(
-                'assets/DropdownIcon.svg',
-                width: AppTheme.iconSizeMedium, 
-                height: AppTheme.iconSizeMedium,
-                colorFilter: const ColorFilter.mode(Color(0xFF7C568F), BlendMode.srcIn),
-              ),
+            icon: SvgPicture.asset(
+              'assets/DropdownIcon.svg',
+              width: AppTheme.iconSizeMedium, 
+              height: AppTheme.iconSizeMedium,
+              colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
             ),
             decoration: const InputDecoration(
               border: InputBorder.none, 
-              contentPadding: EdgeInsets.symmetric(horizontal: AppTheme.smallGap, vertical: (48-21)/2), 
+              contentPadding: EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
             ),
-            style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
             dropdownColor: AppTheme.backgroundDarkPurple,
-            validator: (value) => value == null ? 'Selectează o echipă' : null,
+            validator: null, // Eliminăm validatorul standard
           ),
         ),
       ],
@@ -382,23 +468,9 @@ class _RegisterPopupState extends State<RegisterPopup> {
   }
 
   Widget _buildRegisterButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: _attemptRegister,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.backgroundLightPurple,
-          foregroundColor: AppTheme.fontMediumPurple,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium)),
-          elevation: 0,
-           padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
-        ),
-        child: Text(
-          "Creaza cont",
-          style: AppTheme.primaryTitleStyle.copyWith(fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500, color: AppTheme.fontMediumPurple),
-        ),
-      ),
+    return AuthPopupButton(
+      onPressed: _attemptRegister,
+      text: "Inregistrare",
     );
   }
 }

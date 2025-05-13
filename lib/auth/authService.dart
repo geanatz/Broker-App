@@ -13,6 +13,9 @@ enum AuthStep {
 
   /// Afișează popup-ul de înregistrare.
   registration,
+  
+  /// Afișează popup-ul de confirmare a creării contului și afișare token.
+  accountCreated,
 
   /// Afișează popup-ul pentru introducerea token-ului de resetare a parolei.
   tokenEntry,
@@ -67,10 +70,28 @@ class AuthService {
           'message': 'Acest nume de consultant există deja',
         };
       }
+      
+      // Verifică dacă email-ul este deja folosit
+      final email = _createEmailFromConsultantName(consultantName);
+      try {
+        // Încearcă să găsim un utilizator cu acest email
+        // Dacă găsim, înseamnă că există un cont asociat cu acest email
+        // chiar dacă a fost șters din Firestore
+        final methods = await _auth.fetchSignInMethodsForEmail(email);
+        if (methods.isNotEmpty) {
+          return {
+            'success': false,
+            'message': 'Acest consultant există deja (email asociat). Folosiți o altă denumire sau ștergeți contul asociat.',
+          };
+        }
+      } catch (e) {
+        // Ignorăm eroarea, presupunem că email-ul nu există
+        print('Error checking email existence: $e');
+      }
 
       // Creează utilizator în Firebase Auth
       final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _createEmailFromConsultantName(consultantName),
+        email: email,
         password: password,
       );
 
@@ -330,6 +351,99 @@ class AuthService {
         'success': false,
         'message': 'Eroare la resetarea parolei: $e',
       };
+    }
+  }
+
+  // Șterge un consultant după nume
+  Future<Map<String, dynamic>> deleteConsultantByName(String consultantName) async {
+    try {
+      // Pasul 1: Găsește consultantul în Firestore după nume
+      final consultantsSnapshot = await _firestore
+          .collection(_consultantsCollection)
+          .where('name', isEqualTo: consultantName)
+          .get();
+          
+      if (consultantsSnapshot.docs.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Consultant negăsit',
+        };
+      }
+      
+      // Luăm cel mai recent document cu numele specificat
+      DocumentSnapshot? mostRecentDoc;
+      Timestamp? mostRecentTime;
+      
+      for (var doc in consultantsSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>?;
+        final createdAt = data?['createdAt'] as Timestamp?;
+        if (createdAt != null) {
+          final creationTime = createdAt.toDate();
+          if (mostRecentTime == null || creationTime.isAfter(mostRecentTime.toDate())) {
+            mostRecentTime = createdAt;
+            mostRecentDoc = doc;
+          }
+        } else {
+          if (mostRecentDoc == null) mostRecentDoc = doc;
+        }
+      }
+      
+      mostRecentDoc ??= consultantsSnapshot.docs.first;
+      final consultantDoc = mostRecentDoc;
+      
+      // Pasul 2: Șterge documentul din Firestore
+      await _firestore.collection(_consultantsCollection).doc(consultantDoc.id).delete();
+      
+      // Pasul 3: Șterge utilizatorul din Firebase Auth dacă avem email-ul
+      final consultantData = consultantDoc.data() as Map<String, dynamic>;
+      final email = consultantData['email'] as String?;
+      
+      if (email != null && email.isNotEmpty) {
+        // Salvăm email-ul pentru verificări viitoare
+        await deleteAuthUserByEmail(email);
+        return {
+          'success': true,
+          'message': 'Consultant șters cu succes',
+        };
+      } else {
+        // Dacă nu avem email, folosim email-ul generat
+        final generatedEmail = _createEmailFromConsultantName(consultantName);
+        await deleteAuthUserByEmail(generatedEmail);
+        return {
+          'success': true,
+          'message': 'Consultant șters, dar nu s-a găsit email-ul în document. S-a încercat ștergerea utilizatorului bazat pe email-ul generat.',
+        };
+      }
+    } catch (e) {
+      print("Error deleting consultant: $e");
+      return {
+        'success': false,
+        'message': 'Eroare la ștergerea consultantului: $e',
+      };
+    }
+  }
+  
+  // Metodă ajutătoare pentru a șterge un utilizator din Firebase Auth după email
+  // Notă: Această metodă este pentru Firebase Admin SDK și NU va funcționa direct în aplicația client
+  // Este inclusă ca referință pentru implementare backend/cloud functions
+  Future<void> deleteAuthUserByEmail(String email) async {
+    try {
+      // În aplicația client, singura opțiune este să ne autentificăm ca acel utilizator și apoi să-l ștergem
+      // Aceasta necesită cunoașterea parolei, ceea ce în majoritatea cazurilor nu este posibil
+      // Verificăm doar dacă există contul
+      final methods = await _auth.fetchSignInMethodsForEmail(email);
+      if (methods.isNotEmpty) {
+        print('Auth user exists, but cannot be deleted from client app. Email: $email');
+        print('Available sign-in methods: $methods');
+        
+        // În realitate, aici ar trebui să apelăm un endpoint backend securizat sau Cloud Function
+        // Exemplu pseudocod pentru Cloud Function (implementat în backend):
+        // await cloudFunctions.httpsCallable('deleteUserByEmail')({'email': email});
+      }
+    } catch (e) {
+      print('Error checking/deleting auth user: $e');
+      // Transmitem eroarea mai departe pentru a fi gestionată de apelant
+      rethrow;
     }
   }
 

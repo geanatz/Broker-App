@@ -3,8 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../sidebar/navigation_config.dart';
-import '../../sidebar/user_widget.dart';
-import '../../sidebar/navigation_widget.dart';
+import '../../sidebar/sidebar_widget.dart';
 import '../../sidebar/user_config.dart';
 import '../../widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
 
@@ -94,26 +93,17 @@ class _FormScreenState extends State<FormScreen> {
           const SizedBox(height: AppTheme.largeGap),
           Container(
              width: 224,
-             child: Column(
-               children: [
-                 UserWidget(
-                   consultantName: widget.consultantName,
-                   teamName: widget.teamName,
-                   progress: 0.0,
-                   callCount: 0,
-                 ),
-                 const SizedBox(height: AppTheme.mediumGap),
-                 NavigationWidget(
-                   currentScreen: NavigationScreen.form,
-                   onScreenChanged: widget.onScreenChanged,
-                   activeSecondaryPanel: _selectedSecondaryPanel,
-                   onPanelChanged: (panelType) {
-                     setState(() {
-                       _selectedSecondaryPanel = panelType;
-                     });
-                   },
-                 ),
-               ],
+             child: SidebarWidget(
+               consultantName: widget.consultantName,
+               teamName: widget.teamName,
+               currentScreen: NavigationScreen.form,
+               activeSecondaryPanel: _selectedSecondaryPanel,
+               onScreenChanged: widget.onScreenChanged,
+               onPanelChanged: (panelType) {
+                 setState(() {
+                   _selectedSecondaryPanel = panelType;
+                 });
+               },
              ),
            ),
         ],
@@ -142,29 +132,17 @@ class _FormScreenState extends State<FormScreen> {
         SizedBox(
            width: 224,
            height: contentHeight,
-           child: Column(
-             crossAxisAlignment: CrossAxisAlignment.stretch,
-             children: [
-                UserWidget(
-                  consultantName: widget.consultantName,
-                  teamName: widget.teamName,
-                  progress: 0.0,
-                  callCount: 0,
-                ),
-                const SizedBox(height: AppTheme.mediumGap),
-                Expanded(
-                  child: NavigationWidget(
-                    currentScreen: NavigationScreen.form,
-                    onScreenChanged: widget.onScreenChanged,
-                    activeSecondaryPanel: _selectedSecondaryPanel,
-                    onPanelChanged: (panelType) {
-                      setState(() {
-                        _selectedSecondaryPanel = panelType;
-                      });
-                    },
-                  ),
-                ),
-             ],
+           child: SidebarWidget(
+             consultantName: widget.consultantName,
+             teamName: widget.teamName,
+             currentScreen: NavigationScreen.form,
+             activeSecondaryPanel: _selectedSecondaryPanel,
+             onScreenChanged: widget.onScreenChanged,
+             onPanelChanged: (panelType) {
+               setState(() {
+                 _selectedSecondaryPanel = panelType;
+               });
+             },
            ),
         ),
       ],

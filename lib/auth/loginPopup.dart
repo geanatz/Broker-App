@@ -3,6 +3,53 @@ import 'package:flutter_svg/flutter_svg.dart'; // Import pentru SVG
 import '../../theme/app_theme.dart'; // Ajustează calea dacă e necesar
 import '../auth/authService.dart'; // Pentru getConsultantNames
 
+// Custom InkWell Button for consistent styling and hover effects
+class AuthPopupButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final String text;
+
+  const AuthPopupButton({
+    super.key,
+    required this.onPressed,
+    required this.text,
+  });
+
+  @override
+  State<AuthPopupButton> createState() => _AuthPopupButtonState();
+}
+
+class _AuthPopupButtonState extends State<AuthPopupButton> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: GestureDetector(
+        onTap: widget.onPressed,
+        child: Container(
+          width: double.infinity,
+          height: 48,
+          decoration: BoxDecoration(
+            color: _isHovering ? AppTheme.backgroundDarkPurple : AppTheme.backgroundLightPurple, // Change color on hover
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            widget.text,
+            style: AppTheme.primaryTitleStyle.copyWith(
+              fontSize: AppTheme.fontSizeMedium, // 17px
+              fontWeight: FontWeight.w500, // Figma: medium weight (500)
+              color: _isHovering ? AppTheme.fontDarkPurple : AppTheme.fontMediumPurple, // Change text color on hover
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class LoginPopup extends StatefulWidget {
   final Function(String consultantName, String password) onLoginAttempt;
   final VoidCallback onGoToRegister;
@@ -26,6 +73,10 @@ class _LoginPopupState extends State<LoginPopup> {
   List<String> _consultantNames = [];
   bool _isLoadingConsultants = true;
   String? _loginError;
+  
+  // Adăugare stări pentru validare
+  bool _isConsultantInvalid = false;
+  bool _isPasswordInvalid = false;
 
   // Serviciul de autentificare
   // Ar putea fi injectat sau accesat printr-un provider dacă preferi o arhitectură mai avansată
@@ -58,16 +109,31 @@ class _LoginPopupState extends State<LoginPopup> {
   }
 
   void _attemptLogin() {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedConsultant == null) {
-        setState(() {
-          _loginError = 'Te rugăm să selectezi un consultant.';
-        });
-        return;
-      }
+    // Resetăm stările de validare
+    setState(() {
+      _isConsultantInvalid = false;
+      _isPasswordInvalid = false;
+      _loginError = null;
+    });
+
+    // Validăm manual în loc să folosim formKey.currentState!.validate()
+    bool isValid = true;
+    
+    if (_selectedConsultant == null) {
       setState(() {
-        _loginError = null; 
+        _isConsultantInvalid = true;
+        isValid = false;
       });
+    }
+    
+    if (_passwordController.text.isEmpty) {
+      setState(() {
+        _isPasswordInvalid = true;
+        isValid = false;
+      });
+    }
+    
+    if (isValid) {
       widget.onLoginAttempt(_selectedConsultant!, _passwordController.text);
     }
   }
@@ -86,17 +152,18 @@ class _LoginPopupState extends State<LoginPopup> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero, // Pentru a controla manual poziționarea
+      insetPadding: EdgeInsets.zero,
       child: Container(
         width: popupWidth,
         height: popupHeight,
-        padding: const EdgeInsets.all(AppTheme.tinyGap), // Figma: padding: 8px (tiny)
+        padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: AppTheme.popupDecoration.copyWith(
-          color: AppTheme.widgetBackground.withOpacity(0.5), // Figma: background: rgba(255, 255, 255, 0.5)
+          color: AppTheme.widgetBackground.withOpacity(0.5),
           boxShadow: [AppTheme.widgetShadow],
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Ensure column takes minimum space needed
           children: [
             _buildHeader(),
             SizedBox(height: AppTheme.smallGap), // Gap între elemente: small (8px)
@@ -104,10 +171,10 @@ class _LoginPopupState extends State<LoginPopup> {
             SizedBox(height: AppTheme.smallGap),
             _buildGoToRegisterLink(),
             SizedBox(height: AppTheme.smallGap),
-            _buildLoginButton(),
+            _buildLoginButton(), // Use new button widget
             if (_loginError != null)
               Padding(
-                padding: const EdgeInsets.only(top: AppTheme.smallGap),
+                padding: const EdgeInsets.only(top: AppTheme.tinyGap),
                 child: Text(
                   _loginError!,
                   style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.fontMediumRed),
@@ -122,60 +189,60 @@ class _LoginPopupState extends State<LoginPopup> {
 
   Widget _buildHeader() {
     return Container(
-      height: 48, 
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap), 
+      height: 48,
+      padding: const EdgeInsets.fromLTRB(AppTheme.mediumGap, 0, AppTheme.smallGap, 0), // 8px horizontal padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 216, // Figma
+          // Wrap Title&Description in Expanded to push logo
+          Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 24, // Figma
-                  alignment: Alignment.centerLeft, // Figma: text aliniat la stânga în container
+                // Container for Title Text (ensure consistent height/alignment)
+                SizedBox(
+                  height: 24, // Figma height
                   child: Text(
                     "E timpul sa facem cifre!",
                     style: AppTheme.primaryTitleStyle.copyWith(
-                      fontSize: AppTheme.fontSizeLarge, 
-                      fontWeight: FontWeight.w600, 
-                      color: AppTheme.fontMediumPurple, 
+                      fontSize: AppTheme.fontSizeLarge,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.fontMediumPurple,
                     ),
-                    textAlign: TextAlign.center, // Figma: Text centrat în text box
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  height: 21, // Figma: 21px (markdown zice 24px pentru container, 21px pentru text)
-                  alignment: Alignment.centerLeft,
-                  child: Text(
+                // Container for Description Text (ensure consistent height/alignment)
+                SizedBox(
+                  height: 24, // Figma height
+                   child: Text(
                     "Clientii asteapta...",
                     style: AppTheme.subHeaderStyle.copyWith(
-                      fontSize: AppTheme.fontSizeMedium, 
-                      fontWeight: FontWeight.w500, 
-                      color: const Color(0xFF927B9D), 
-                      height: 21/17, // line-height (21px) / font-size (17px)
+                      fontSize: AppTheme.fontSizeMedium,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.fontLightPurple,
                     ),
-                     textAlign: TextAlign.center, // Figma: Text centrat în text box
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            width: 48, 
-            height: 48, 
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 13), // Figma
-            decoration: BoxDecoration( 
-            ),
+          // Logo container - Ensure fixed 48x48 size
+          SizedBox(
+            width: 48,
+            height: 48,
             child: SvgPicture.asset(
               'assets/Logo.svg',
-              width: 26.58, // Dimensiuni interne vector din Figma
-              height: 22.4,
-              colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn), // Aplicăm culoarea specificată pentru vector dacă e necesar
-            ), 
+              // Ensure the color is applied correctly if needed
+              colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
+              // Fit might not be needed if SVG viewport is correct
+              // fit: BoxFit.contain,
+            ),
           ),
         ],
       ),
@@ -207,7 +274,7 @@ class _LoginPopupState extends State<LoginPopup> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: AppTheme.smallGap, right: AppTheme.smallGap, bottom: 0),
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
           child: Container(
              height: 24, // Figma: Titlu Câmp height
              alignment: Alignment.centerLeft,
@@ -226,6 +293,9 @@ class _LoginPopupState extends State<LoginPopup> {
           decoration: BoxDecoration(
             color: AppTheme.backgroundDarkPurple, 
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            border: _isConsultantInvalid 
+                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                : null,
           ),
           child: DropdownButtonFormField<String>(
             value: _selectedConsultant,
@@ -234,37 +304,37 @@ class _LoginPopupState extends State<LoginPopup> {
                 : _consultantNames.map((name) {
                     return DropdownMenuItem(
                       value: name,
-                      child: Text(name, style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium)), 
+                      child: Text(name, style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600)), 
                     );
                   }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedConsultant = value;
+                if (value != null) {
+                  _isConsultantInvalid = false;
+                }
               });
             },
             hint: _isLoadingConsultants 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF7C568F))) 
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color:AppTheme.fontDarkPurple)) 
                 : Text(
                     "Selecteaza consultant", 
-                    style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium)
+                    style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
                   ),
             isExpanded: true,
-            icon: Padding(
-              padding: const EdgeInsets.only(right: AppTheme.smallGap), // Adăugăm padding pentru iconiță
-              child: SvgPicture.asset(
-                'assets/DropdownIcon.svg',
-                width: AppTheme.iconSizeMedium, 
-                height: AppTheme.iconSizeMedium,
-                colorFilter: const ColorFilter.mode(Color(0xFF7C568F), BlendMode.srcIn),
-              ),
+            icon: SvgPicture.asset(
+              'assets/DropdownIcon.svg',
+              width: AppTheme.iconSizeMedium, 
+              height: AppTheme.iconSizeMedium,
+              colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
             ),
-            decoration: const InputDecoration(
-              border: InputBorder.none, 
-              contentPadding: EdgeInsets.symmetric(horizontal: AppTheme.smallGap, vertical: (48-21)/2), // Vertical padding pentru aliniere text (48 total - 21 text height / 2)
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
             ),
-            style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
             dropdownColor: AppTheme.backgroundDarkPurple,
-            validator: (value) => value == null ? 'Selectează un consultant' : null,
+            validator: null, // Eliminăm validatorul standard
           ),
         ),
       ],
@@ -275,8 +345,9 @@ class _LoginPopupState extends State<LoginPopup> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // --- Labelul pentru câmpul de parolă (rămâne la fel) ---
         Padding(
-          padding: const EdgeInsets.only(left: AppTheme.smallGap, right: AppTheme.smallGap, bottom: 0),
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
           child: Container(
             height: 24, // Figma: Titlu Câmp height
             alignment: Alignment.centerLeft,
@@ -290,41 +361,65 @@ class _LoginPopupState extends State<LoginPopup> {
             ),
           )
         ),
+        // --- Câmpul de introducere a parolei (modificat) ---
         Container(
-          height: 48, // Figma: Input height
+          height: 48, // Figma: Input height - păstrăm înălțimea
           decoration: BoxDecoration(
-            color: AppTheme.backgroundDarkPurple, 
+            color: AppTheme.backgroundDarkPurple,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            border: _isPasswordInvalid 
+                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                : null,
           ),
           child: TextFormField(
             controller: _passwordController,
             obscureText: true,
-            style: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
-            textAlignVertical: TextAlignVertical.center, // Pentru aliniere verticală mai bună
+            textAlignVertical: TextAlignVertical.center,
+            style: AppTheme.smallTextStyle.copyWith(
+              color: AppTheme.fontDarkPurple,
+              fontSize: AppTheme.fontSizeMedium,
+              fontWeight: FontWeight.w500,
+            ),
+            onChanged: (value) {
+              if (_isPasswordInvalid && value.isNotEmpty) {
+                setState(() {
+                  _isPasswordInvalid = false;
+                });
+              }
+            },
             decoration: InputDecoration(
               hintText: "Introdu parola",
-              hintStyle: AppTheme.smallTextStyle.copyWith(color: const Color(0xFF7C568F), fontSize: AppTheme.fontSizeMedium, height: 21/17),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap), // Figma: padding: 0px 8px
-              suffixIcon: IconButton(
-                icon: SvgPicture.asset(
-                  'assets/HelpIcon.svg',
-                  width: AppTheme.iconSizeMedium, 
-                  height: AppTheme.iconSizeMedium,
-                  colorFilter: const ColorFilter.mode(Color(0xFF7C568F), BlendMode.srcIn), 
-                ),
-                iconSize: AppTheme.iconSizeMedium,
-                onPressed: widget.onForgotPassword, 
-                tooltip: "Am uitat parola",
-                 padding: EdgeInsets.zero, // Elimină padding-ul default al IconButton
+              hintStyle: AppTheme.smallTextStyle.copyWith(
+                color: AppTheme.fontDarkPurple,
+                fontSize: AppTheme.fontSizeMedium,
+                fontWeight: FontWeight.w500,
               ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: AppTheme.smallGap),
+                child: IconButton(
+                  tooltip: "Am uitat parola",
+                  icon: SvgPicture.asset(
+                    'assets/HelpIcon.svg',
+                    width: AppTheme.iconSizeMedium,
+                    height: AppTheme.iconSizeMedium,
+                    colorFilter: const ColorFilter.mode(
+                        AppTheme.fontDarkPurple,
+                        BlendMode.srcIn
+                    ),
+                  ),
+                  iconSize: AppTheme.iconSizeMedium,
+                  onPressed: widget.onForgotPassword,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+              suffixIconConstraints: const BoxConstraints(
+                 minHeight: AppTheme.iconSizeMedium + 16,
+                 minWidth: AppTheme.iconSizeMedium + 16,
+               ),
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Introdu parola';
-              }
-              return null;
-            },
+            validator: null, // Eliminăm validatorul standard
           ),
         ),
       ],
@@ -344,7 +439,7 @@ class _LoginPopupState extends State<LoginPopup> {
             style: AppTheme.smallTextStyle.copyWith(
               color: AppTheme.fontMediumPurple, 
               fontWeight: FontWeight.w500,
-              fontSize: AppTheme.fontSizeMedium, // 17px
+              fontSize: AppTheme.fontSizeMedium,
             ),
           ),
           TextButton(
@@ -372,29 +467,10 @@ class _LoginPopupState extends State<LoginPopup> {
   }
 
   Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity, 
-      height: 48, 
-      child: ElevatedButton(
-        onPressed: _attemptLogin,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.backgroundLightPurple, 
-          foregroundColor: AppTheme.fontMediumPurple, 
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap), 
-          elevation: 0, 
-        ),
-        child: Text(
-          "Conectare",
-          style: AppTheme.primaryTitleStyle.copyWith(
-            fontSize: AppTheme.fontSizeMedium, // 17px
-            fontWeight: FontWeight.w500, // Figma: medium weight (500)
-            color: AppTheme.fontMediumPurple, 
-          ),
-        ),
-      ),
+    // Use the new custom button
+    return AuthPopupButton(
+      onPressed: _attemptLogin,
+      text: "Conectare",
     );
   }
 }

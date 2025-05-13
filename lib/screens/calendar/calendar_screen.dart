@@ -9,8 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../theme/app_theme.dart';
 import '../../sidebar/navigation_config.dart';
-import '../../sidebar/user_widget.dart';
-import '../../sidebar/navigation_widget.dart';
+import '../../sidebar/sidebar_widget.dart';
 import '../../widgets/common/panel_container.dart';
 import '../../services/reservation_service.dart';
 import 'create_reservation_popup.dart';
@@ -178,20 +177,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           const SizedBox(height: AppTheme.largeGap),
           SizedBox(
             width: 224,
-            child: Column(
-              children: [
-                UserWidget(
-                  consultantName: widget.consultantName,
-                  teamName: widget.teamName,
-                  progress: 0.0,
-                  callCount: 0,
-                ),
-                const SizedBox(height: AppTheme.mediumGap),
-                NavigationWidget(
-                  currentScreen: NavigationScreen.calendar,
-                  onScreenChanged: widget.onScreenChanged,
-                ),
-              ],
+            child: SidebarWidget(
+              consultantName: widget.consultantName,
+              teamName: widget.teamName,
+              currentScreen: NavigationScreen.calendar,
+              onScreenChanged: widget.onScreenChanged,
             ),
           ),
         ],
@@ -220,23 +210,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         SizedBox(
           width: 224,
           height: contentHeight,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              UserWidget(
-                consultantName: widget.consultantName,
-                teamName: widget.teamName,
-                progress: 0.0,
-                callCount: 0,
-              ),
-              const SizedBox(height: AppTheme.mediumGap),
-              Expanded(
-                child: NavigationWidget(
-                  currentScreen: NavigationScreen.calendar,
-                  onScreenChanged: widget.onScreenChanged,
-                ),
-              ),
-            ],
+          child: SidebarWidget(
+            consultantName: widget.consultantName,
+            teamName: widget.teamName,
+            currentScreen: NavigationScreen.calendar,
+            onScreenChanged: widget.onScreenChanged,
           ),
         ),
       ],
