@@ -82,6 +82,7 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
   late StreamSubscription _subscription;
   final Map<String, QueryDocumentSnapshot> _allAppointments = {};
   bool _isLoading = true;
+  final ReservationService _reservationService = ReservationService();
 
   @override
   void initState() {
@@ -96,43 +97,37 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
   }
 
   void _subscribeToAppointments() {
-    final now = DateTime.now();
-    final String currentUserId = widget.userId;
-
-    // Get reservations from the unified collection
-    final reservationsStream = FirebaseFirestore.instance
-        .collection('reservations')
-        .where('consultantId', isEqualTo: currentUserId)
-        .where('dateTime', isGreaterThan: Timestamp.fromDate(now))
-        .snapshots();
+    final reservationsStream = _reservationService.getUpcomingReservations();
 
     _subscription = reservationsStream.listen(
       (querySnapshot) {
+        if (!mounted) return;
+        
         bool dataChanged = false;
-        for (var doc in querySnapshot.docs) {
-          if (!_allAppointments.containsKey(doc.id) || 
-              !_areMapsEqual(_allAppointments[doc.id]?.data() as Map<String, dynamic>?, doc.data() as Map<String, dynamic>?)) {
-            _allAppointments[doc.id] = doc;
+        
+        // Use a synchronized block inside setState to update state atomically
+        setState(() {
+          for (var doc in querySnapshot.docs) {
+            if (!_allAppointments.containsKey(doc.id) || 
+                !_areMapsEqual(_allAppointments[doc.id]?.data() as Map<String, dynamic>?, doc.data() as Map<String, dynamic>?)) {
+              _allAppointments[doc.id] = doc;
+              dataChanged = true;
+            }
+          }
+
+          // Handle removed appointments
+          final currentIds = querySnapshot.docs.map((doc) => doc.id).toSet();
+          final idsToRemove = _allAppointments.keys.where((id) => !currentIds.contains(id)).toList();
+          for (var id in idsToRemove) {
+            _allAppointments.remove(id);
             dataChanged = true;
           }
-        }
 
-        // Handle removed appointments
-        final currentIds = querySnapshot.docs.map((doc) => doc.id).toSet();
-        final idsToRemove = _allAppointments.keys.where((id) => !currentIds.contains(id)).toList();
-        for (var id in idsToRemove) {
-          _allAppointments.remove(id);
-          dataChanged = true;
-        }
-
-        // Update state only if data actually changed or if it was the first load
-        if (dataChanged || _isLoading) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
+          // Update loading state if needed
+          if (dataChanged || _isLoading) {
+            _isLoading = false;
           }
-        }
+        });
       },
       onError: (error) {
         print("Error in appointments stream: $error");

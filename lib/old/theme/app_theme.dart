@@ -12,7 +12,7 @@ class AppTheme {
   static const Color appBackgroundStart = Color(0xFFA4B8C2);
   static const Color appBackgroundEnd = Color(0xFFC2A4A4);
   static const Color widgetBackground = Color(0xFFFFFFFF);
-  static const Color popupBackground = Color(0xD9D9D9D9);
+  static const Color popupBackground = Color(0xFFD9D9D9);
   
   // Background-uri pentru panel-uri
   static const Color backgroundLightBlue = Color(0xFFC4CFD4);

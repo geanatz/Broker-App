@@ -181,7 +181,7 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
             ),
           ),
         ),
-        const SizedBox(width: 16), // Gap from design
+        const SizedBox(width: 8), // Gap from design
         Expanded(
           child: _buildFieldWithLabel(
             label: 'Tip venit',
@@ -225,7 +225,7 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
             ),
           ),
         ),
-        const SizedBox(width: 16), // Gap from design
+        const SizedBox(width: 8), // Gap from design
         Expanded(
           child: _buildFieldWithLabel(
             label: 'Vechime',

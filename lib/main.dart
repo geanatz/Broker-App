@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart'; // Nu mai este folosit direct aici pentru fetch consultant data în MainAppWrapper inițial
-// import 'screens/auth/register.dart'; // Eliminat
-// import 'screens/auth/login.dart'; // Eliminat
-// import 'screens/auth/reset_password.dart'; // Eliminat
-// import 'screens/auth/token.dart'; // Eliminat
-import 'screens/calendar/calendar_screen.dart';
-import 'screens/form/form_screen.dart';
-import 'screens/settings/settings_screen.dart';
-import 'screens/dashboard/dashboard_screen.dart';
-import 'sidebar/navigation_config.dart';
+import 'old/screens/calendar/calendar_screen.dart';
+import 'old/screens/form/form_screen.dart';
+import 'old/screens/settings/settings_screen.dart';
+import 'old/screens/dashboard/dashboard_screen.dart';
+import 'old/sidebar/navigation_config.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Necesar pentru MainAppWrapper _fetchConsultantData
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'dart:async';
-import 'auth/authScreen.dart'; // Import noul AuthScreen
+import 'old/auth/authScreen.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'old/auth/authService.dart';
+import 'old/services/consultant_service.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -38,12 +37,73 @@ class DebugOptions {
 }
 
 void main() async { 
+  // Set an error handler for all Flutter errors
+  FlutterError.onError = (FlutterErrorDetails details) {
+    print('Flutter error caught: ${details.exception}');
+    print(details.stack);
+  };
+
+  // Run app in a guarded zone to catch all errors
   await runZonedGuarded(() async {
+    // Initialize Flutter binding as early as possible
     WidgetsFlutterBinding.ensureInitialized(); 
-    await Firebase.initializeApp( 
-      options: DefaultFirebaseOptions.currentPlatform, 
-  );
-  runApp(const MyApp());
+    
+    // Initialize Firebase based on platform
+    if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+      // Mobile-specific initialization
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      
+      // Configure Firestore settings for mobile platforms
+      FirebaseFirestore.instance.settings = Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+      
+      // Add platform-specific error handling for Firebase on mobile platforms
+      if (Platform.isAndroid) {
+        // Use correct approach for enabling Firebase logging
+        FirebaseFirestore.setLoggingEnabled(true);
+      }
+    } else {
+      // Web and desktop platforms
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      
+      // Web-specific settings
+      if (kIsWeb) {
+        try {
+          // Enable multi-tab persistence for web
+          await FirebaseFirestore.instance.enablePersistence(
+            const PersistenceSettings(synchronizeTabs: true),
+          );
+        } catch (e) {
+          print('Error enabling persistence: $e');
+          // Fall back to memory-only mode if persistence fails
+          FirebaseFirestore.instance.settings = Settings(
+            persistenceEnabled: false,
+            cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+          );
+        }
+      } else {
+        // Desktop platforms
+        FirebaseFirestore.instance.settings = Settings(
+          persistenceEnabled: true,
+          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+        );
+      }
+    }
+    
+    // Set up global error handling for platform errors
+    PlatformDispatcher.instance.onError = (error, stack) {
+      print('PlatformDispatcher error: $error');
+      print(stack);
+      return true;
+    };
+    
+    runApp(const MyApp());
   }, (error, stackTrace) {
     print('Caught error in runZonedGuarded: $error');
     print(stackTrace);
@@ -149,16 +209,15 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     }
 
     try {
-      final consultantDoc = await FirebaseFirestore.instance
-          .collection('consultants') // Numele colecției din AuthService
-          .doc(currentUser.uid)
-          .get();
+      // Use ConsultantService instead of direct Firestore access
+      final consultantService = ConsultantService();
+      final consultantData = await consultantService.getCurrentConsultantData();
       
       if (!mounted) return;
 
-      if (consultantDoc.exists) {
+      if (consultantData != null) {
         setState(() {
-          _consultantData = consultantDoc.data() as Map<String, dynamic>?;
+          _consultantData = consultantData;
           _isLoading = false;
         });
       } else {

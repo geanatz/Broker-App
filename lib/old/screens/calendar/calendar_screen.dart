@@ -45,7 +45,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   
   // Firebase references
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   // Formatter pentru date
   late DateFormat dateFormatter = DateFormat('d MMM');
@@ -708,12 +707,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         
         Set<String> reservedTimes = {};
         
-        // Fetch ALL reservations for the day, regardless of type, to determine availability
-        QuerySnapshot reservationsSnapshot = await _firestore
-            .collection('reservations')
-            .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-            .where('dateTime', isLessThan: Timestamp.fromDate(endOfDay))
-            .get();
+        // Use ReservationService instead of direct Firestore access
+        final reservationsStream = _reservationService.getReservationsForWeek(startOfDay, endOfDay);
+        final reservationsSnapshot = await reservationsStream.first;
             
         for (var doc in reservationsSnapshot.docs) {
           if (doc.id == excludeDocId) { // Don't count the current reservation being edited

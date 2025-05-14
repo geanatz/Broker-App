@@ -226,7 +226,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
             ),
           ),
         ),
-        const SizedBox(width: 16), // Gap from design
+        const SizedBox(width: 8), // Gap from design
         // Expanded( // Replace SizedBox with Expanded - Already Expanded, just remove explicit width
         //   child: _buildFieldWithLabel(
         Expanded(

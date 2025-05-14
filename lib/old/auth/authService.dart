@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/material.dart';
+import 'dart:async';
+import '../services/firebase_thread_handler.dart';
 
 /// Enum pentru a defini stările/pașii posibili ai ecranului de autentificare.
 /// Aceasta va controla ce popup este afișat.
@@ -25,9 +28,14 @@ enum AuthStep {
 }
 
 class AuthService {
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+  AuthService._internal();
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final _uuid = const Uuid();
+  final FirebaseThreadHandler _threadHandler = FirebaseThreadHandler.instance;
 
   // Collection names
   final String _consultantsCollection = 'consultants';
@@ -59,10 +67,12 @@ class AuthService {
       }
 
       // Verifică dacă numele consultantului este unic
-      final consultantSnapshot = await _firestore
+      final consultantSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore
           .collection(_consultantsCollection)
           .where('name', isEqualTo: consultantName)
-          .get();
+          .get()
+      );
 
       if (consultantSnapshot.docs.isNotEmpty) {
         return {
@@ -99,13 +109,15 @@ class AuthService {
       final token = _uuid.v4();
 
       // Salvează datele consultantului în Firestore, including token
-      await _firestore.collection(_consultantsCollection).doc(userCredential.user!.uid).set({
-        'name': consultantName,
-        'team': team,
-        'createdAt': FieldValue.serverTimestamp(),
-        'email': userCredential.user!.email,
-        'token': token, // Store token directly in consultant document
-      });
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection).doc(userCredential.user!.uid).set({
+          'name': consultantName,
+          'team': team,
+          'createdAt': FieldValue.serverTimestamp(),
+          'email': userCredential.user!.email,
+          'token': token, // Store token directly in consultant document
+        })
+      );
 
       return {
         'success': true,
@@ -145,10 +157,12 @@ class AuthService {
   }) async {
     try {
       // În primul rând, verificăm dacă există un consultant cu acest nume
-      final consultantsSnapshot = await _firestore
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore
           .collection(_consultantsCollection)
           .where('name', isEqualTo: consultantName)
-          .get();
+          .get()
+      );
       
       if (consultantsSnapshot.docs.isEmpty) {
         return {
@@ -249,10 +263,12 @@ class AuthService {
   Future<Map<String, dynamic>> verifyToken(String token) async {
     try {
       // Caută token-ul în documentele consultant
-      final consultantSnapshot = await _firestore
+      final consultantSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore
           .collection(_consultantsCollection)
           .where('token', isEqualTo: token)
-          .get();
+          .get()
+      );
 
       if (consultantSnapshot.docs.isEmpty) {
         return {
@@ -292,10 +308,12 @@ class AuthService {
 
     try {
       // Obține datele consultantului
-      final consultantDoc = await _firestore
+      final consultantDoc = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore
           .collection(_consultantsCollection)
           .doc(consultantId)
-          .get();
+          .get()
+      );
 
       if (!consultantDoc.exists) {
         return {
@@ -314,33 +332,12 @@ class AuthService {
         };
       }
 
-      // Firebase Auth nu permite direct resetarea parolei cu token custom și email/parola veche.
-      // Abordare: Actualizăm parola direct în Firebase Auth pentru utilizatorul găsit.
-      // ATENȚIE: Această abordare necesită ca admin-ul (sau o funcție cloud) să aibă drepturi de a actualiza parole.
-      // O alternativă mai sigură este folosirea fluxului standard Firebase Auth de resetare parolă (trimite email).
-      // Pentru moment, simulăm actualizarea (presupunând că avem drepturi, ceea ce NU este cazul pe client)
-      // În realitate, acest pas ar trebui făcut printr-un backend securizat sau Cloud Function.
-
-      // Căutăm utilizatorul în Firebase Auth după email
-      // Acest pas poate eșua dacă email-ul nu e unic sau nu corespunde.
-      // String uid = _auth.getUserByEmail(email); // Needs Admin SDK
-
-      // --- ÎNLOCUIRE CU FLUX STANDARD FIREBASE AUTH --- 
-      // Fluxul standard trimite un email utilizatorului cu un link de resetare.
-      // Nu putem actualiza parola direct din aplicația client în acest mod securizat.
-      // await _auth.sendPasswordResetEmail(email: email);
-
-      // --- SOLUȚIE TEMPORARĂ (NESIGURĂ/INCOMPLETĂ PENTRU PRODUCȚIE) ---
-      // Re-autentificăm utilizatorul temporar cu email-ul și o parolă fictivă (dacă am avea-o)
-      // Apoi actualizăm parola.
-      // SAU: stocăm parola direct în Firestore (NESIGUR!) și o actualizăm aici.
-      // Vom alege să actualizăm doar parola stocată în Firestore (DACĂ ar fi stocată acolo)
-      // și să ștergem token-ul.
-      
       // Remove token after use by setting to null or removing field
-      await _firestore.collection(_consultantsCollection).doc(consultantId).update({
-        'token': FieldValue.delete(),
-      });
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection).doc(consultantId).update({
+          'token': FieldValue.delete(),
+        })
+      );
 
       return {
         'success': true,
@@ -358,10 +355,12 @@ class AuthService {
   Future<Map<String, dynamic>> deleteConsultantByName(String consultantName) async {
     try {
       // Pasul 1: Găsește consultantul în Firestore după nume
-      final consultantsSnapshot = await _firestore
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore
           .collection(_consultantsCollection)
           .where('name', isEqualTo: consultantName)
-          .get();
+          .get()
+      );
           
       if (consultantsSnapshot.docs.isEmpty) {
         return {
@@ -392,7 +391,9 @@ class AuthService {
       final consultantDoc = mostRecentDoc;
       
       // Pasul 2: Șterge documentul din Firestore
-      await _firestore.collection(_consultantsCollection).doc(consultantDoc.id).delete();
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection).doc(consultantDoc.id).delete()
+      );
       
       // Pasul 3: Șterge utilizatorul din Firebase Auth dacă avem email-ul
       final consultantData = consultantDoc.data() as Map<String, dynamic>;
@@ -450,7 +451,9 @@ class AuthService {
   // Get consultant names for dropdown
   Future<List<String>> getConsultantNames() async {
     try {
-      final snapshot = await _firestore.collection(_consultantsCollection).get();
+      final snapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection).get()
+      );
       return snapshot.docs.map((doc) => doc['name'] as String).toList();
     } catch (e) {
       print('Error fetching consultant names: $e');

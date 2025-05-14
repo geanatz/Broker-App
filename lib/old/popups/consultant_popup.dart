@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 /// Popup pentru afișarea detaliilor consultantului și opțiunii de deconectare
@@ -37,29 +38,27 @@ class ConsultantPopup extends StatelessWidget {
   Widget build(BuildContext context) {
     // Dimensiuni exacte conform specificațiilor din consultantPopup.md
     const double popupWidth = 320.0;
-    const double popupHeight = 272.0;
+    const double popupHeight = 272.0; // Ajustat pentru a evita overflow
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: Container(
-        width: popupWidth,
-        height: popupHeight,
-        padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
-        decoration: BoxDecoration(
-          color: AppTheme.popupBackground, // #D9D9D9
-          boxShadow: [AppTheme.widgetShadow],
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge), // 32px
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: AppTheme.smallGap), // 8px gap
-            _buildConsultantDetailsForm(),
-            const SizedBox(height: AppTheme.smallGap), // 8px gap
-            _buildLogoutButton(context),
-          ],
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: popupWidth,
+          height: popupHeight,
+          padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
+          decoration: AppTheme.popupDecoration,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: AppTheme.smallGap), // 8px gap
+              _buildConsultantDetailsForm(),
+              const SizedBox(height: AppTheme.smallGap), // 8px gap
+              _buildLogoutButton(context),
+            ],
+          ),
         ),
       ),
     );
@@ -73,11 +72,10 @@ class ConsultantPopup extends StatelessWidget {
         height: 24,
         child: Text(
           "Detalii cont",
-          style: TextStyle(
-            fontFamily: 'Outfit',
+          style: GoogleFonts.outfit(
             fontSize: AppTheme.fontSizeLarge, // 19px
             fontWeight: FontWeight.w600, // large
-            color: const Color(0xFF927B9D), // font_light_purple_variant
+            color: AppTheme.fontLightPurple,
           ),
         ),
       ),
@@ -87,7 +85,6 @@ class ConsultantPopup extends StatelessWidget {
   /// Construiește formularul cu detaliile consultantului
   Widget _buildConsultantDetailsForm() {
     return Container(
-      height: 168,
       padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
       decoration: BoxDecoration(
         color: AppTheme.backgroundLightPurple, // #CFC4D4
@@ -95,6 +92,7 @@ class ConsultantPopup extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildDetailField(
             title: "Consultant",
@@ -114,17 +112,16 @@ class ConsultantPopup extends StatelessWidget {
   Widget _buildDetailField({required String title, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           title,
-          style: TextStyle(
-            fontFamily: 'Outfit',
+          style: GoogleFonts.outfit(
             fontSize: AppTheme.fontSizeMedium, // 17px
             fontWeight: FontWeight.w600, // large
             color: AppTheme.fontMediumPurple, // #886699
           ),
         ),
-        const SizedBox(height: AppTheme.smallGap), // 8px gap
         Container(
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap), // 16px
@@ -135,11 +132,10 @@ class ConsultantPopup extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Text(
             value,
-            style: TextStyle(
-              fontFamily: 'Outfit',
+            style: GoogleFonts.outfit(
               fontSize: AppTheme.fontSizeMedium, // 17px
               fontWeight: FontWeight.w500, // medium
-              color: const Color(0xFF7C568F), // font_dark_purple_variant
+              color: AppTheme.fontDarkPurple,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -166,8 +162,7 @@ class ConsultantPopup extends StatelessWidget {
         ),
         child: Text(
           "Deconectare",
-          style: TextStyle(
-            fontFamily: 'Outfit',
+          style: GoogleFonts.outfit(
             fontSize: AppTheme.fontSizeMedium, // 17px
             fontWeight: FontWeight.w500, // medium
             color: AppTheme.fontMediumPurple, // #886699
