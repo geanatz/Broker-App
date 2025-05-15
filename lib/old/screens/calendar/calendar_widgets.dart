@@ -8,8 +8,8 @@ import 'dart:ui';
 import 'dart:async';
 import 'package:async/async.dart';
 
-import '../../theme/app_theme.dart';
-import '../../services/reservation_service.dart';
+import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/old/services/reservation_service.dart';
 
 /// Widget to build a meeting field in the upcoming list
 Widget buildMeetingFieldWidget(Map<String, dynamic> meetingData, DateFormat dateFormatter) {

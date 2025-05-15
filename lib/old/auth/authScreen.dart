@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:broker_app/theme/app_theme.dart'; // Asigură-te că această cale e corectă
+import 'package:broker_app/old/theme/app_theme.dart'; // Asigură-te că această cale e corectă
 import 'authService.dart';
 import 'loginPopup.dart';
 import 'registerPopup.dart';

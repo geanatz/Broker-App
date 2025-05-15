@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/form_data.dart'; // Import data model
-import '../../theme/app_theme.dart';
-import '../common/dropdown_widget.dart';
-import '../common/input_field_widget.dart';
+import 'package:broker_app/old/models/form_data.dart'; // Import data model
+import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/old/widgets/common/dropdown_widget.dart';
+import 'package:broker_app/old/widgets/common/input_field_widget.dart';
 
 /// Enum pentru diferitele tipuri de venituri
 enum IncomeType {

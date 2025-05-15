@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_theme.dart';
+import 'package:broker_app/old/theme/app_theme.dart';
 
 /// Popup pentru afișarea detaliilor consultantului și opțiunii de deconectare
 class ConsultantPopup extends StatelessWidget {

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../theme/app_theme.dart';
-import '../../sidebar/navigation_config.dart';
-import '../../sidebar/sidebar_widget.dart';
-import '../../sidebar/user_config.dart';
-import '../../models/contact_data.dart';
-import '../../models/form_data.dart';
-import '../../services/contact_form_service.dart';
-import '../../widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
+import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/old/sidebar/navigation_config.dart';
+import 'package:broker_app/old/sidebar/sidebar_widget.dart';
+import 'package:broker_app/old/sidebar/user_config.dart';
+import 'package:broker_app/old/models/contact_data.dart';
+import 'package:broker_app/old/models/form_data.dart';
+import 'package:broker_app/old/services/contact_form_service.dart';
+import 'package:broker_app/old/widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
 
 /// Definirea temei de text pentru a asigura consistența fontului Outfit în întreaga aplicație
 class TextStyles {

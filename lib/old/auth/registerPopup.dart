@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../theme/app_theme.dart';
-import '../auth/authService.dart';
-import 'loginPopup.dart';
+import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/old/auth/authService.dart';
+import 'package:broker_app/old/auth/loginPopup.dart';
 
 class RegisterPopup extends StatefulWidget {
   final Function(String consultantName, String password, String confirmPassword, String team) onRegisterAttempt;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../theme/app_theme.dart';
-import '../popups/consultant_popup.dart';
-import 'navigation_config.dart';
+import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/old/popups/consultant_popup.dart';
+import 'package:broker_app/old/sidebar/navigation_config.dart';
 
 /// Widget care integrează informațiile despre consultant și toate butoanele de navigare
 /// într-un singur widget vertical conform noului design pentru formScreen.

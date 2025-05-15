@@ -7,13 +7,13 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../theme/app_theme.dart';
-import '../../sidebar/navigation_config.dart';
-import '../../sidebar/sidebar_widget.dart';
-import '../../widgets/common/panel_container.dart';
-import '../../services/reservation_service.dart';
-import 'create_reservation_popup.dart';
-import 'edit_reservation_popup.dart';
+import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/old/sidebar/navigation_config.dart';
+import 'package:broker_app/old/sidebar/sidebar_widget.dart';
+import 'package:broker_app/old/widgets/common/panel_container.dart';
+import 'package:broker_app/old/services/reservation_service.dart';
+import 'package:broker_app/old/screens/calendar/create_reservation_popup.dart';
+import 'package:broker_app/old/screens/calendar/edit_reservation_popup.dart';
 import 'calendar_widgets.dart';
 import 'calendar_constants.dart';
 

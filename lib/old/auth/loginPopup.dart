@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import pentru SVG
-import '../../theme/app_theme.dart'; // Ajustează calea dacă e necesar
-import '../auth/authService.dart'; // Pentru getConsultantNames
+import 'package:broker_app/old/theme/app_theme.dart'; // Ajustează calea dacă e necesar
+import 'package:broker_app/old/auth/authService.dart'; // Pentru getConsultantNames
 
 // Custom InkWell Button for consistent styling and hover effects
 class AuthPopupButton extends StatefulWidget {

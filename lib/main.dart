@@ -5,7 +5,7 @@ import 'old/screens/form/form_screen.dart';
 import 'old/screens/settings/settings_screen.dart';
 import 'old/screens/dashboard/dashboard_screen.dart';
 import 'old/sidebar/navigation_config.dart';
-import 'theme/app_theme.dart';
+import 'old/theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

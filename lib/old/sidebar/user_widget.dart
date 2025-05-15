@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../theme/app_theme.dart';
-import 'user_config.dart';
+import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/old/sidebar/user_config.dart';
 import 'dart:async';
 
 /// Displays user information (avatar, name, team), provides access to profile,

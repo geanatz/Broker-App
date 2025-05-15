@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import 'package:broker_app/old/theme/app_theme.dart';
 
 /// Widget reutilizabil pentru campuri de input text in formulare
 class InputFieldWidget extends StatelessWidget {
