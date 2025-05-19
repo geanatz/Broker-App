@@ -518,7 +518,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           child: DropdownButton<String>(
             value: _selectedRateType,
             icon: SvgPicture.asset(
-              'assets/DropdownIcon.svg',
+              'assets/expandIcon.svg',
               width: 24,
               height: 24,
               colorFilter: ColorFilter.mode(const Color(0xFF7C568F), BlendMode.srcIn),

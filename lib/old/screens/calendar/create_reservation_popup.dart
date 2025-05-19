@@ -234,7 +234,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                                 icon: Padding(
                                   padding: const EdgeInsets.only(right: AppTheme.smallGap),
                                   child: SvgPicture.asset(
-                                    'assets/DropdownIcon.svg',
+                                    'assets/expandIcon.svg',
                                     width: 24,
                                     height: 24,
                                     colorFilter: ColorFilter.mode(

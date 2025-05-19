@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:ui';
 import 'dart:async';
-import 'package:async/async.dart';
 
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/old/services/reservation_service.dart';

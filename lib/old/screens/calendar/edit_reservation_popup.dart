@@ -273,7 +273,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                   ),
                                 ),
                                 SvgPicture.asset(
-                                  'assets/CalendarIcon.svg',
+                                  'assets/calendarIcon.svg',
                                   width: AppTheme.iconSizeMedium,
                                   height: AppTheme.iconSizeMedium,
                                   colorFilter: ColorFilter.mode(
@@ -309,7 +309,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                         : (_availableHours.isNotEmpty ? _availableHours.first : null),
                                 dropdownColor: AppTheme.backgroundDarkPurple,
                                 icon: SvgPicture.asset(
-                                    'assets/DropdownIcon.svg',
+                                    'assets/expandIcon.svg',
                                     width: AppTheme.iconSizeMedium,
                                     height: AppTheme.iconSizeMedium,
                                     colorFilter: ColorFilter.mode(
@@ -359,7 +359,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                             value: _selectedType,
                             dropdownColor: AppTheme.backgroundDarkPurple,
                             icon: SvgPicture.asset(
-                                'assets/DropdownIcon.svg',
+                                'assets/expandIcon.svg',
                                 width: AppTheme.iconSizeMedium,
                                 height: AppTheme.iconSizeMedium,
                                 colorFilter: ColorFilter.mode(
@@ -426,7 +426,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                             child: Center(
                               child: SvgPicture.asset(
-                                'assets/DeleteIcon.svg',
+                                'assets/deleteIcon.svg',
                                 width: AppTheme.iconSizeMedium,
                                 height: AppTheme.iconSizeMedium,
                                 colorFilter: ColorFilter.mode(

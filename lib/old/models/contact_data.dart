@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart' as foundation;
-import 'form_data.dart';
 
 /// Enum pentru tipurile de contacte
 enum ContactType {

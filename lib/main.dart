@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'old/screens/calendar/calendar_screen.dart';
-import 'old/screens/form/form_screen.dart';
-import 'old/screens/settings/settings_screen.dart';
-import 'old/screens/dashboard/dashboard_screen.dart';
-import 'old/sidebar/navigation_config.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/screens/authScreen.dart';
+import 'package:broker_app/frontend/screens/mainScreen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/old/services/consultant_service.dart';
@@ -184,7 +180,6 @@ class MainAppWrapper extends StatefulWidget {
 }
 
 class _MainAppWrapperState extends State<MainAppWrapper> {
-  NavigationScreen _currentScreen = NavigationScreen.calendar;
   Map<String, dynamic>? _consultantData;
   bool _isLoading = true;
 
@@ -242,12 +237,6 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     }
   }
 
-  void _handleScreenChange(NavigationScreen screen) {
-    setState(() {
-      _currentScreen = screen;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -272,36 +261,10 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     final String consultantName = _consultantData!['name'] ?? 'Consultant';
     final String teamName = _consultantData!['team'] ?? 'Echipa';
 
-    switch (_currentScreen) {
-      case NavigationScreen.calendar:
-        return CalendarScreen(
-          consultantName: consultantName,
-          teamName: teamName,
-          onScreenChanged: _handleScreenChange,
-        );
-      case NavigationScreen.form:
-        return FormScreen(
-          consultantName: consultantName,
-          teamName: teamName,
-          onScreenChanged: _handleScreenChange,
-        );
-      case NavigationScreen.settings:
-        return SettingsScreen(
-          consultantName: consultantName,
-          teamName: teamName,
-          onScreenChanged: _handleScreenChange,
-        );
-      case NavigationScreen.dashboard:
-        return DashboardScreen(
-          consultantName: consultantName,
-          teamName: teamName,
-          onScreenChanged: _handleScreenChange,
-        );
-      default:
-        return CalendarScreen(
-            consultantName: consultantName,
-            teamName: teamName,
-            onScreenChanged: _handleScreenChange);
-    }
+    // Pass consultant data to MainScreen
+    return MainScreen(
+      consultantName: consultantName,
+      teamName: teamName,
+    );
   }
 }

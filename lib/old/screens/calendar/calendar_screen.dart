@@ -8,7 +8,7 @@ import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/sidebar/navigation_config.dart';
+import 'package:broker_app/old/sidebar/sidebar_service.dart';
 import 'package:broker_app/old/sidebar/sidebar_widget.dart';
 import 'package:broker_app/old/widgets/common/panel_container.dart';
 import 'package:broker_app/old/services/reservation_service.dart';
@@ -176,7 +176,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           const SizedBox(height: AppTheme.largeGap),
           SizedBox(
             width: 224,
-            child: SidebarWidget(
+            child: SidebarWidgetAdapter(
               consultantName: widget.consultantName,
               teamName: widget.teamName,
               currentScreen: NavigationScreen.calendar,
@@ -209,7 +209,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         SizedBox(
           width: 224,
           height: contentHeight,
-          child: SidebarWidget(
+          child: SidebarWidgetAdapter(
             consultantName: widget.consultantName,
             teamName: widget.teamName,
             currentScreen: NavigationScreen.calendar,
@@ -305,7 +305,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
                           child: SvgPicture.asset(
-                            'assets/ArrowLeftIcon.svg',
+                            'assets/leftIcon.svg',
                             width: 24,
                             height: 24,
                             colorFilter: ColorFilter.mode(
@@ -348,7 +348,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
                           child: SvgPicture.asset(
-                            'assets/ArrowRightIcon.svg',
+                            'assets/rightIcon.svg',
                             width: 24,
                             height: 24,
                             colorFilter: ColorFilter.mode(

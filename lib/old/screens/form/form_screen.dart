@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/sidebar/navigation_config.dart';
+import 'package:broker_app/old/sidebar/sidebar_service.dart';
 import 'package:broker_app/old/sidebar/sidebar_widget.dart';
-import 'package:broker_app/old/sidebar/user_config.dart';
 import 'package:broker_app/old/models/contact_data.dart';
-import 'package:broker_app/old/models/form_data.dart';
 import 'package:broker_app/old/services/contact_form_service.dart';
 import 'package:broker_app/old/widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
 
@@ -161,7 +159,7 @@ class _FormScreenState extends State<FormScreen> {
           const SizedBox(height: AppTheme.largeGap),
           Container(
              width: 224,
-             child: SidebarWidget(
+             child: SidebarWidgetAdapter(
                consultantName: widget.consultantName,
                teamName: widget.teamName,
                currentScreen: NavigationScreen.form,
@@ -200,7 +198,7 @@ class _FormScreenState extends State<FormScreen> {
         SizedBox(
            width: 224,
            height: contentHeight,
-           child: SidebarWidget(
+           child: SidebarWidgetAdapter(
              consultantName: widget.consultantName,
              teamName: widget.teamName,
              currentScreen: NavigationScreen.form,
@@ -360,8 +358,8 @@ class _FormScreenState extends State<FormScreen> {
                       : AppTheme.fontLightBlue,
                   buttonColor: AppTheme.backgroundDarkBlue,
                   buttonIconAsset: isSelected 
-                      ? 'assets/DoneIcon.svg'
-                      : 'assets/LookupIcon.svg',
+                      ? 'assets/doneIcon.svg'
+                      : 'assets/viewIcon.svg',
                   buttonIconColor: AppTheme.fontDarkBlue,
                 );
               },
@@ -445,8 +443,8 @@ class _FormScreenState extends State<FormScreen> {
                       : AppTheme.fontLightRed,
                   buttonColor: AppTheme.backgroundDarkRed,
                   buttonIconAsset: isSelected
-                      ? 'assets/DoneIcon.svg'
-                      : 'assets/LookupIcon.svg',
+                      ? 'assets/doneIcon.svg'
+                      : 'assets/viewIcon.svg',
                   buttonIconColor: AppTheme.fontDarkRed,
                 );
               },
@@ -783,7 +781,7 @@ class _FormScreenState extends State<FormScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildToggleButton(
-            iconAsset: 'assets/UserIcon.svg',
+            iconAsset: 'assets/userIcon.svg',
             isSelected: _showingClientLoanForm,
             onTap: () {
               setState(() {
@@ -792,7 +790,7 @@ class _FormScreenState extends State<FormScreen> {
             },
           ),
           _buildToggleButton(
-            iconAsset: 'assets/CodebitorIcon.svg',
+            iconAsset: 'assets/groupIcon.svg',
             isSelected: !_showingClientLoanForm,
             onTap: () {
               setState(() {
@@ -814,7 +812,7 @@ class _FormScreenState extends State<FormScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildToggleButton(
-            iconAsset: 'assets/UserIcon.svg',
+            iconAsset: 'assets/userIcon.svg',
             isSelected: _showingClientIncomeForm,
             onTap: () {
               setState(() {
@@ -823,7 +821,7 @@ class _FormScreenState extends State<FormScreen> {
             },
           ),
           _buildToggleButton(
-            iconAsset: 'assets/CodebitorIcon.svg',
+            iconAsset: 'assets/groupIcon.svg',
             isSelected: !_showingClientIncomeForm,
             onTap: () {
               setState(() {

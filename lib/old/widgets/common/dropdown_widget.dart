@@ -55,7 +55,7 @@ class DropdownWidget extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             icon: SvgPicture.asset(
-              'assets/DropdownIcon.svg',
+              'assets/expandIcon.svg',
               width: 24,
               height: 24,
               colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),

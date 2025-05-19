@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 // import '../../widgets/navigation/sidebar_widget.dart'; // Removed old import
 // import '../../widgets/navigation/navigation_widget.dart'; // Removed old import
-import 'package:broker_app/old/sidebar/navigation_config.dart'; // Added config import
 // import '../../sidebar/user_widget.dart'; // Remove UserWidget import
 // import '../../sidebar/navigation_widget.dart'; // Remove NavigationWidget import
-import 'package:broker_app/old/sidebar/sidebar_widget.dart'; // Add SidebarWidget import
+// import 'package:broker_app/old/sidebar/sidebar_widget.dart'; // Add SidebarWidget import
 import 'package:broker_app/old/widgets/common/panel_container.dart';
+import 'package:broker_app/old/sidebar/sidebar_service.dart';
+import 'package:broker_app/old/sidebar/sidebar_widget.dart';
 
 /// Ecranul principal de dashboard al aplicației
 class DashboardScreen extends StatefulWidget {
@@ -69,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: AppTheme.largeGap),
           Container(
             width: 224,
-            child: SidebarWidget( // Replace with SidebarWidget
+            child: SidebarWidgetAdapter(
               consultantName: widget.consultantName,
               teamName: widget.teamName,
               currentScreen: NavigationScreen.dashboard,
@@ -96,7 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         SizedBox(
            width: 224,
            height: contentHeight,
-           child: SidebarWidget( // Replace with SidebarWidget
+           child: SidebarWidgetAdapter(
              consultantName: widget.consultantName,
              teamName: widget.teamName,
              currentScreen: NavigationScreen.dashboard,
