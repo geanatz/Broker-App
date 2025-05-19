@@ -48,7 +48,7 @@ class AmortizationPopup extends StatelessWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundLightPurple,
+                  color: AppTheme.containerColor1,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
                 padding: const EdgeInsets.all(AppTheme.smallGap),
@@ -104,7 +104,7 @@ class AmortizationPopup extends StatelessWidget {
         text,
         textAlign: TextAlign.center,
         style: AppTheme.smallTextStyle.copyWith(
-          color: AppTheme.fontMediumPurple,
+          color: AppTheme.elementColor2,
         ),
       ),
     );
@@ -142,7 +142,7 @@ class AmortizationPopup extends StatelessWidget {
         text,
         textAlign: TextAlign.center,
         style: AppTheme.secondaryTitleStyle.copyWith(
-          color: AppTheme.fontDarkPurple,
+          color: AppTheme.elementColor3,
         ),
       ),
     );

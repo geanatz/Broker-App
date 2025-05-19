@@ -98,11 +98,14 @@ class _SidebarWidgetState extends State<SidebarWidget> {
   // Construiește secțiunea cu informațiile consultantului
   Widget _buildConsultantSection() {
     return Container(
-      height: 64,
+      height: 63, // Reduce height by 1px to fix overflow
+      // Setting explicit width to match Figma spec (optional, may not be needed)
+      // width: 208,
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple,
+        color: AppTheme.containerColor1,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
+      clipBehavior: Clip.antiAlias, // Add this to prevent overflow from InkWell effect
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -116,13 +119,15 @@ class _SidebarWidgetState extends State<SidebarWidget> {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          // Remove borderRadius from InkWell since parent Container has clipBehavior
+          // borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           child: Padding(
+            // Make sure these values exactly match Figma specs
             padding: const EdgeInsets.fromLTRB(
-              AppTheme.mediumGap, 
-              AppTheme.smallGap, 
-              AppTheme.smallGap, 
-              AppTheme.smallGap
+              16, // Left: Use exact value instead of AppTheme.mediumGap
+              8,  // Top: Use exact value instead of AppTheme.smallGap
+              8,  // Right: Use exact value instead of AppTheme.smallGap
+              7   // Bottom: Reduced by 1px to fix the overflow
             ),
             child: Row(
               children: [
@@ -138,7 +143,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3), // Reduced by 1px from original 4px
                       Text(
                         widget.teamName,
                         style: AppTheme.secondaryTitleStyle,
@@ -148,13 +153,13 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                     ],
                   ),
                 ),
-                const SizedBox(width: AppTheme.mediumGap),
+                const SizedBox(width: 16), // Use exact value instead of AppTheme.mediumGap
                 // Buton consultant
                 Container(
                   width: 48,
-                  height: 48,
+                  height: 47, // Reduced height by 1px (from 48px)
                   decoration: BoxDecoration(
-                    color: AppTheme.backgroundDarkPurple,
+                    color: AppTheme.containerColor2,
                     borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                   ),
                   child: Center(
@@ -162,8 +167,8 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                       'assets/userIcon.svg',
                       width: AppTheme.iconSizeMedium,
                       height: AppTheme.iconSizeMedium,
-                      colorFilter: const ColorFilter.mode(
-                        AppTheme.fontMediumPurple,
+                      colorFilter: ColorFilter.mode(
+                        AppTheme.elementColor2,
                         BlendMode.srcIn,
                       ),
                     ),
@@ -182,7 +187,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple,
+        color: AppTheme.containerColor1,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Material(
@@ -203,7 +208,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                   child: Text(
                     'Clienti Noi',
                     style: AppTheme.navigationButtonTextStyle.copyWith(
-                      color: AppTheme.fontMediumPurple,
+                      color: AppTheme.elementColor2,
                     ),
                   ),
                 ),
@@ -213,8 +218,8 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                     'assets/clientsIcon.svg',
                     width: AppTheme.iconSizeMedium,
                     height: AppTheme.iconSizeMedium,
-                    colorFilter: const ColorFilter.mode(
-                      AppTheme.fontMediumPurple,
+                    colorFilter: ColorFilter.mode(
+                      AppTheme.elementColor2,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -251,8 +256,8 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                   'assets/expandIcon.svg',
                   width: 24,
                   height: 24,
-                  colorFilter: const ColorFilter.mode(
-                    AppTheme.fontLightPurple,
+                  colorFilter: ColorFilter.mode(
+                    AppTheme.elementColor1,
                     BlendMode.srcIn,
                   ),
                 ),
@@ -322,11 +327,17 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     }
     
     final decoration = isActive
-        ? AppTheme.activeNavButtonDecoration
-        : AppTheme.inactiveNavButtonDecoration;
+        ? BoxDecoration(
+            color: AppTheme.containerColor2,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+        )
+        : BoxDecoration(
+            color: AppTheme.containerColor1,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+        );
     
-    final Color iconColor = isActive ? AppTheme.fontDarkPurple : AppTheme.fontMediumPurple;
-    final Color textColor = isActive ? AppTheme.fontDarkPurple : AppTheme.fontMediumPurple;
+    final Color iconColor = isActive ? AppTheme.elementColor3 : AppTheme.elementColor2;
+    final Color textColor = isActive ? AppTheme.elementColor3 : AppTheme.elementColor2;
     
     return Container(
       height: AppTheme.navButtonHeight,

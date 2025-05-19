@@ -42,8 +42,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppTheme.appBackgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppTheme.appBackground,
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppTheme.largeGap),
@@ -112,18 +112,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildDashboardContent() {
     // Assuming AppTheme.headerTitleStyle, primaryTitleStyle, secondaryTitleStyle exist
     // If not, define inline styles using AppTheme constants
-    final TextStyle headerStyle = const TextStyle(
+    final TextStyle headerStyle = TextStyle(
       fontSize: AppTheme.fontSizeLarge, 
       fontWeight: FontWeight.bold, 
-      color: AppTheme.fontDarkPurple
+      color: AppTheme.elementColor3
     );
-    final TextStyle primaryStyle = const TextStyle(
+    final TextStyle primaryStyle = TextStyle(
       fontSize: AppTheme.fontSizeLarge, 
-      color: AppTheme.fontMediumPurple
+      color: AppTheme.elementColor2
     );
-     final TextStyle secondaryStyle = const TextStyle(
+     final TextStyle secondaryStyle = TextStyle(
       fontSize: AppTheme.fontSizeMedium, 
-      color: AppTheme.fontLightPurple
+      color: AppTheme.elementColor1
     );
 
     return Column(
@@ -150,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Icon(
                   Icons.construction,
                   size: 64,
-                  color: AppTheme.fontMediumPurple,
+                  color: AppTheme.elementColor2,
                 ),
                 const SizedBox(height: AppTheme.mediumGap),
                 Text(

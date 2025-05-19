@@ -166,7 +166,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                 height: 408,
                 padding: const EdgeInsets.all(AppTheme.smallGap),
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundLightPurple,
+                  color: AppTheme.containerColor2,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
                 child: Column(
@@ -178,7 +178,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                       child: TextField(
                         controller: widget.clientNameController,
                         style: AppTheme.secondaryTitleStyle.copyWith(
-                          color: AppTheme.fontDarkPurple,
+                          color: AppTheme.elementColor3,
                           fontSize: AppTheme.fontSizeMedium,
                           fontWeight: FontWeight.w500,
                         ),
@@ -196,7 +196,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         style: AppTheme.secondaryTitleStyle.copyWith(
-                          color: AppTheme.fontDarkPurple,
+                          color: AppTheme.elementColor3,
                           fontSize: AppTheme.fontSizeMedium,
                           fontWeight: FontWeight.w500,
                         ),
@@ -222,13 +222,13 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                 return Theme(
                                   data: ThemeData.light().copyWith(
                                     colorScheme: ColorScheme.light(
-                                      primary: AppTheme.fontLightPurple,
+                                      primary: AppTheme.elementColor1,
                                       onPrimary: Colors.white,
                                       surface: Colors.white,
-                                      onSurface: AppTheme.fontMediumPurple,
+                                      onSurface: AppTheme.elementColor2,
                                     ),
                                     datePickerTheme: DatePickerThemeData(
-                                      headerBackgroundColor: AppTheme.fontLightPurple,
+                                      headerBackgroundColor: AppTheme.elementColor1,
                                       headerForegroundColor: Colors.white,
                                       backgroundColor: Colors.white, 
                                       shape: RoundedRectangleBorder(
@@ -257,7 +257,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppTheme.backgroundDarkPurple,
+                              color: AppTheme.containerColor2,
                               borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
@@ -267,7 +267,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                 Text(
                                   DateFormat('dd/MM/yyyy').format(_selectedDate),
                                   style: AppTheme.secondaryTitleStyle.copyWith(
-                                    color: AppTheme.fontDarkPurple,
+                                    color: AppTheme.elementColor3,
                                     fontSize: AppTheme.fontSizeMedium,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -277,7 +277,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                   width: AppTheme.iconSizeMedium,
                                   height: AppTheme.iconSizeMedium,
                                   colorFilter: ColorFilter.mode(
-                                    AppTheme.fontDarkPurple,
+                                    AppTheme.elementColor3,
                                     BlendMode.srcIn
                                   ),
                                 ),
@@ -296,30 +296,30 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          color: AppTheme.backgroundDarkPurple,
+                          color: AppTheme.containerColor2,
                           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                         ),
                         padding: const EdgeInsets.only(left: AppTheme.smallGap, right: AppTheme.smallGap),
                         child: _isLoadingSlots
-                          ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppTheme.fontDarkPurple, strokeWidth: 2.5)))
+                          ? Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppTheme.elementColor3, strokeWidth: 2.5)))
                           : DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _availableHours.contains(_selectedTime) 
                                         ? _selectedTime 
                                         : (_availableHours.isNotEmpty ? _availableHours.first : null),
-                                dropdownColor: AppTheme.backgroundDarkPurple,
+                                dropdownColor: AppTheme.containerColor2,
                                 icon: SvgPicture.asset(
                                     'assets/expandIcon.svg',
                                     width: AppTheme.iconSizeMedium,
                                     height: AppTheme.iconSizeMedium,
                                     colorFilter: ColorFilter.mode(
-                                        AppTheme.fontDarkPurple,
+                                        AppTheme.elementColor3,
                                         BlendMode.srcIn
                                     ),
                                 ),
                                 isExpanded: true,
                                 style: AppTheme.secondaryTitleStyle.copyWith(
-                                  color: AppTheme.fontDarkPurple,
+                                  color: AppTheme.elementColor3,
                                   fontSize: AppTheme.fontSizeMedium,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -350,26 +350,26 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          color: AppTheme.backgroundDarkPurple,
+                          color: AppTheme.containerColor2,
                           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                         ),
                         padding: const EdgeInsets.only(left: AppTheme.smallGap, right: AppTheme.smallGap),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<ReservationType>(
                             value: _selectedType,
-                            dropdownColor: AppTheme.backgroundDarkPurple,
+                            dropdownColor: AppTheme.containerColor2,
                             icon: SvgPicture.asset(
                                 'assets/expandIcon.svg',
                                 width: AppTheme.iconSizeMedium,
                                 height: AppTheme.iconSizeMedium,
                                 colorFilter: ColorFilter.mode(
-                                    AppTheme.fontDarkPurple,
+                                    AppTheme.elementColor3,
                                     BlendMode.srcIn
                                 ),
                             ),
                             isExpanded: true,
                             style: AppTheme.secondaryTitleStyle.copyWith(
-                              color: AppTheme.fontDarkPurple,
+                              color: AppTheme.elementColor3,
                               fontSize: AppTheme.fontSizeMedium,
                               fontWeight: FontWeight.w500,
                             ),
@@ -411,7 +411,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppTheme.backgroundLightPurple,
+                        color: AppTheme.containerColor1,
                         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                       ),
                       child: Material(
@@ -430,7 +430,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                 width: AppTheme.iconSizeMedium,
                                 height: AppTheme.iconSizeMedium,
                                 colorFilter: ColorFilter.mode(
-                                  AppTheme.fontMediumPurple,
+                                  AppTheme.elementColor2,
                                   BlendMode.srcIn
                                 ),
                               ),
@@ -445,7 +445,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          color: AppTheme.backgroundLightPurple,
+                          color: AppTheme.containerColor1,
                           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                         ),
                         child: Material(
@@ -483,7 +483,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                                 child: Text(
                                   'Salveaza',
                                   style: AppTheme.secondaryTitleStyle.copyWith(
-                                    color: AppTheme.fontMediumPurple,
+                                    color: AppTheme.elementColor2,
                                     fontSize: AppTheme.fontSizeMedium,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -521,7 +521,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                 Text(
                   label,
                   style: AppTheme.primaryTitleStyle.copyWith(
-                    color: AppTheme.fontMediumPurple,
+                    color: AppTheme.elementColor2,
                     fontSize: AppTheme.fontSizeMedium,
                     fontWeight: FontWeight.w600,
                   ),
@@ -530,7 +530,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                   Text(
                     optionalText,
                     style: AppTheme.smallTextStyle.copyWith(
-                      color: AppTheme.fontMediumPurple,
+                      color: AppTheme.elementColor2,
                       fontWeight: FontWeight.w500,
                       fontSize: AppTheme.fontSizeSmall,
                     ),
@@ -552,7 +552,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
       border: InputBorder.none,
       hintText: hintText,
       hintStyle: AppTheme.secondaryTitleStyle.copyWith(
-        color: AppTheme.fontDarkPurple.withOpacity(0.7),
+        color: AppTheme.elementColor3.withOpacity(0.7),
         fontSize: AppTheme.fontSizeMedium,
         fontWeight: FontWeight.w500,
       ),

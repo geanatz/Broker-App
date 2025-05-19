@@ -66,7 +66,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                 child: Text(
                   'Creeaza programare',
                   style: AppTheme.primaryTitleStyle.copyWith(
-                    color: AppTheme.fontLightPurple,
+                    color: AppTheme.elementColor1,
                     fontSize: AppTheme.fontSizeLarge,
                     fontWeight: FontWeight.w600,
                   ),
@@ -81,7 +81,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                 height: 248,
                 padding: const EdgeInsets.all(AppTheme.smallGap),
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundLightPurple,
+                  color: AppTheme.containerColor1,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
                 child: Column(
@@ -100,21 +100,21 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                             child: Text(
                               'Client',
                               style: AppTheme.primaryTitleStyle.copyWith(
-                                color: AppTheme.fontMediumPurple,
+                                color: AppTheme.elementColor2,
                               ),
                             ),
                           ),
                           Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppTheme.backgroundDarkPurple,
+                              color: AppTheme.containerColor2,
                               borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                             ),
                             child: TextField(
                               controller: widget.clientNameController,
                               autofocus: true,
                               style: AppTheme.secondaryTitleStyle.copyWith(
-                                color: AppTheme.fontDarkPurple,
+                                color: AppTheme.elementColor3,
                                 fontSize: AppTheme.fontSizeMedium,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -122,7 +122,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                                 border: InputBorder.none,
                                 hintText: 'Introdu numele clientului',
                                 hintStyle: AppTheme.secondaryTitleStyle.copyWith(
-                                  color: AppTheme.fontDarkPurple.withOpacity(0.7),
+                                  color: AppTheme.elementColor3,
                                   fontSize: AppTheme.fontSizeMedium,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -155,13 +155,13 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                                 Text(
                                   'Numar de telefon',
                                   style: AppTheme.primaryTitleStyle.copyWith(
-                                    color: AppTheme.fontMediumPurple,
+                                    color: AppTheme.elementColor2,
                                   ),
                                 ),
                                 Text(
                                   '(optional)',
                                   style: AppTheme.smallTextStyle.copyWith(
-                                    color: AppTheme.fontMediumPurple,
+                                    color: AppTheme.elementColor2,
                                     fontWeight: FontWeight.w500,
                                     fontSize: AppTheme.fontSizeSmall,
                                   ),
@@ -172,14 +172,14 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                           Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppTheme.backgroundDarkPurple,
+                              color: AppTheme.containerColor2,
                               borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                             ),
                             child: TextField(
                               controller: _phoneController,
                               keyboardType: TextInputType.phone,
                               style: AppTheme.secondaryTitleStyle.copyWith(
-                                color: AppTheme.fontDarkPurple,
+                                color: AppTheme.elementColor3,
                                 fontSize: AppTheme.fontSizeMedium,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -187,7 +187,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                                 border: InputBorder.none,
                                 hintText: 'Introdu numarul de telefon',
                                 hintStyle: AppTheme.secondaryTitleStyle.copyWith(
-                                  color: AppTheme.fontDarkPurple.withOpacity(0.7),
+                                  color: AppTheme.elementColor3,
                                   fontSize: AppTheme.fontSizeMedium,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -217,20 +217,20 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                             child: Text(
                               'Tip programare',
                               style: AppTheme.primaryTitleStyle.copyWith(
-                                color: AppTheme.fontMediumPurple,
+                                color: AppTheme.elementColor2,
                               ),
                             ),
                           ),
                           Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              color: AppTheme.backgroundDarkPurple,
+                              color: AppTheme.containerColor2,
                               borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<ReservationType>(
                                 value: _selectedType,
-                                dropdownColor: AppTheme.backgroundDarkPurple,
+                                dropdownColor: AppTheme.containerColor2,
                                 icon: Padding(
                                   padding: const EdgeInsets.only(right: AppTheme.smallGap),
                                   child: SvgPicture.asset(
@@ -238,7 +238,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                                     width: 24,
                                     height: 24,
                                     colorFilter: ColorFilter.mode(
-                                      AppTheme.fontDarkPurple,
+                                      AppTheme.elementColor3,
                                       BlendMode.srcIn
                                     ),
                                   ),
@@ -246,7 +246,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                                 isExpanded: true,
                                 padding: const EdgeInsets.only(left: AppTheme.smallGap),
                                 style: AppTheme.secondaryTitleStyle.copyWith(
-                                  color: AppTheme.fontDarkPurple,
+                                  color: AppTheme.elementColor3,
                                   fontSize: AppTheme.fontSizeMedium,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -284,7 +284,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                 width: 304,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundLightPurple,
+                  color: AppTheme.containerColor1,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
                 child: Material(
@@ -312,7 +312,7 @@ class _CreateReservationDialogState extends State<CreateReservationDialog> {
                         child: Text(
                           'Salveaza',
                           style: AppTheme.secondaryTitleStyle.copyWith(
-                            color: AppTheme.fontMediumPurple,
+                            color: AppTheme.elementColor2,
                             fontSize: AppTheme.fontSizeMedium,
                             fontWeight: FontWeight.w500,
                           ),

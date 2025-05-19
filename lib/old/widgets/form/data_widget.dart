@@ -19,9 +19,7 @@ class _DataWidgetState extends State<DataWidget> {
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(8.0),
       ),
-      child: const Center(
-        child: Text('Data Widget (Placeholder)'),
-      ),
+      child: const Center(child: Text('Data Widget (Placeholder)')),
     );
   }
 }

@@ -32,7 +32,7 @@ class _AuthPopupButtonState extends State<AuthPopupButton> {
           width: double.infinity,
           height: 48,
           decoration: BoxDecoration(
-            color: _isHovering ? AppTheme.backgroundDarkPurple : AppTheme.backgroundLightPurple, // Change color on hover
+            color: _isHovering ? AppTheme.containerColor2 : AppTheme.containerColor1, // Change color on hover
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           ),
           alignment: Alignment.center,
@@ -41,7 +41,7 @@ class _AuthPopupButtonState extends State<AuthPopupButton> {
             style: AppTheme.primaryTitleStyle.copyWith(
               fontSize: AppTheme.fontSizeMedium, // 17px
               fontWeight: FontWeight.w500, // Figma: medium weight (500)
-              color: _isHovering ? AppTheme.fontDarkPurple : AppTheme.fontMediumPurple, // Change text color on hover
+              color: _isHovering ? AppTheme.elementColor3 : AppTheme.elementColor2, // Change text color on hover
             ),
           ),
         ),
@@ -177,7 +177,7 @@ class _LoginPopupState extends State<LoginPopup> {
                 padding: const EdgeInsets.only(top: AppTheme.tinyGap),
                 child: Text(
                   _loginError!,
-                  style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.fontMediumRed),
+                  style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.elementColor2),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -209,7 +209,7 @@ class _LoginPopupState extends State<LoginPopup> {
                     style: AppTheme.primaryTitleStyle.copyWith(
                       fontSize: AppTheme.fontSizeLarge,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.fontMediumPurple,
+                      color: AppTheme.elementColor2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -223,7 +223,7 @@ class _LoginPopupState extends State<LoginPopup> {
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
-                      color: AppTheme.fontLightPurple,
+                      color: AppTheme.elementColor1,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -239,7 +239,7 @@ class _LoginPopupState extends State<LoginPopup> {
             child: SvgPicture.asset(
               'assets/Logo.svg',
               // Ensure the color is applied correctly if needed
-              colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
               // Fit might not be needed if SVG viewport is correct
               // fit: BoxFit.contain,
             ),
@@ -253,7 +253,7 @@ class _LoginPopupState extends State<LoginPopup> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple, 
+        color: AppTheme.containerColor1, 
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Form(
@@ -283,7 +283,7 @@ class _LoginPopupState extends State<LoginPopup> {
               style: AppTheme.primaryTitleStyle.copyWith(
                 fontSize: AppTheme.fontSizeMedium,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.fontMediumPurple,
+                color: AppTheme.elementColor2,
               ),
             ),
           )
@@ -291,10 +291,10 @@ class _LoginPopupState extends State<LoginPopup> {
         Container(
           height: 48, // Figma: Dropdown height
           decoration: BoxDecoration(
-            color: AppTheme.backgroundDarkPurple, 
+            color: AppTheme.containerColor2, 
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: _isConsultantInvalid 
-                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                ? Border.all(color: AppTheme.elementColor2, width: 2.0)
                 : null,
           ),
           child: DropdownButtonFormField<String>(
@@ -304,7 +304,7 @@ class _LoginPopupState extends State<LoginPopup> {
                 : _consultantNames.map((name) {
                     return DropdownMenuItem(
                       value: name,
-                      child: Text(name, style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600)), 
+                      child: Text(name, style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600)), 
                     );
                   }).toList(),
             onChanged: (value) {
@@ -316,24 +316,24 @@ class _LoginPopupState extends State<LoginPopup> {
               });
             },
             hint: _isLoadingConsultants 
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color:AppTheme.fontDarkPurple)) 
+                ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color:AppTheme.elementColor3)) 
                 : Text(
                     "Selecteaza consultant", 
-                    style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
+                    style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
                   ),
             isExpanded: true,
             icon: SvgPicture.asset(
-              'assets/DropdownIcon.svg',
+              'assets/expandIcon.svg',
               width: AppTheme.iconSizeMedium, 
               height: AppTheme.iconSizeMedium,
-              colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
             ),
             decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
             ),
-            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
-            dropdownColor: AppTheme.backgroundDarkPurple,
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
+            dropdownColor: AppTheme.containerColor2,
             validator: null, // Eliminăm validatorul standard
           ),
         ),
@@ -356,7 +356,7 @@ class _LoginPopupState extends State<LoginPopup> {
               style: AppTheme.primaryTitleStyle.copyWith(
                 fontSize: AppTheme.fontSizeMedium,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.fontMediumPurple,
+                color: AppTheme.elementColor2,
               ),
             ),
           )
@@ -365,10 +365,10 @@ class _LoginPopupState extends State<LoginPopup> {
         Container(
           height: 48, // Figma: Input height - păstrăm înălțimea
           decoration: BoxDecoration(
-            color: AppTheme.backgroundDarkPurple,
+            color: AppTheme.containerColor2,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: _isPasswordInvalid 
-                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                ? Border.all(color: AppTheme.elementColor2, width: 2.0)
                 : null,
           ),
           child: TextFormField(
@@ -376,7 +376,7 @@ class _LoginPopupState extends State<LoginPopup> {
             obscureText: true,
             textAlignVertical: TextAlignVertical.center,
             style: AppTheme.smallTextStyle.copyWith(
-              color: AppTheme.fontDarkPurple,
+              color: AppTheme.elementColor3,
               fontSize: AppTheme.fontSizeMedium,
               fontWeight: FontWeight.w500,
             ),
@@ -390,7 +390,7 @@ class _LoginPopupState extends State<LoginPopup> {
             decoration: InputDecoration(
               hintText: "Introdu parola",
               hintStyle: AppTheme.smallTextStyle.copyWith(
-                color: AppTheme.fontDarkPurple,
+                color: AppTheme.elementColor3,
                 fontSize: AppTheme.fontSizeMedium,
                 fontWeight: FontWeight.w500,
               ),
@@ -401,11 +401,11 @@ class _LoginPopupState extends State<LoginPopup> {
                 child: IconButton(
                   tooltip: "Am uitat parola",
                   icon: SvgPicture.asset(
-                    'assets/HelpIcon.svg',
+                    'assets/infoIcon.svg',
                     width: AppTheme.iconSizeMedium,
                     height: AppTheme.iconSizeMedium,
-                    colorFilter: const ColorFilter.mode(
-                        AppTheme.fontDarkPurple,
+                    colorFilter: ColorFilter.mode(
+                        AppTheme.elementColor3,
                         BlendMode.srcIn
                     ),
                   ),
@@ -437,7 +437,7 @@ class _LoginPopupState extends State<LoginPopup> {
           Text(
             "Nu ai cont de consultant?", // Text actualizat conform ultimului MD
             style: AppTheme.smallTextStyle.copyWith(
-              color: AppTheme.fontMediumPurple, 
+              color: AppTheme.elementColor2, 
               fontWeight: FontWeight.w500,
               fontSize: AppTheme.fontSizeMedium,
             ),
@@ -453,11 +453,11 @@ class _LoginPopupState extends State<LoginPopup> {
             child: Text(
               "Creaza unul!", // Text actualizat conform ultimului MD
               style: AppTheme.smallTextStyle.copyWith(
-                color: AppTheme.fontMediumPurple, 
+                color: AppTheme.elementColor2, 
                 fontWeight: FontWeight.w600, 
                 fontSize: AppTheme.fontSizeMedium, // 17px
                 decoration: TextDecoration.underline,
-                decorationColor: AppTheme.fontMediumPurple,
+                decorationColor: AppTheme.elementColor2,
               ),
             ),
           ),

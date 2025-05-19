@@ -7,10 +7,7 @@ import 'package:broker_app/old/widgets/form/credit_form_widget.dart';
 import 'package:broker_app/old/widgets/form/income_form_widget.dart';
 
 /// Enum pentru a diferentia tipurile de containere
-enum FormContainerType {
-  credit,
-  income
-}
+enum FormContainerType { credit, income }
 
 /// Widget care gestioneaza multiple formulare de credit sau venit
 class FormsContainerWidget extends StatefulWidget {
@@ -19,7 +16,7 @@ class FormsContainerWidget extends StatefulWidget {
 
   /// Daca se afiseaza formulare pentru client sau codebitor
   final bool isClientForm;
-  
+
   /// ID-ul contactului asociat cu aceste formulare
   final String? contactId;
 
@@ -53,7 +50,7 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
     super.initState();
     _loadFormsForContact();
   }
-  
+
   /// Încarcă formularele pentru contactul curent
   void _loadFormsForContact() {
     if (widget.contactId != null) {
@@ -65,16 +62,17 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
       }
     } else {
       // Dacă nu există un contact selectat, folosim un formular gol
-      _formDataList = widget.type == FormContainerType.credit
-          ? [CreditFormData.empty()]
-          : [IncomeFormData.empty()];
+      _formDataList =
+          widget.type == FormContainerType.credit
+              ? [CreditFormData.empty()]
+              : [IncomeFormData.empty()];
     }
   }
-  
+
   @override
   void didUpdateWidget(FormsContainerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Verifică dacă s-a schimbat contactul și adaptează formularele corespunzător
     if (widget.contactId != oldWidget.contactId) {
       _loadFormsForContact();
@@ -91,26 +89,32 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
 
   // Show context menu at the stored GLOBAL position
   void _showContextMenu(BuildContext context, int index) async {
-    final RenderObject? overlay = Overlay.of(context).context.findRenderObject();
+    final RenderObject? overlay =
+        Overlay.of(context).context.findRenderObject();
     if (overlay == null) return; // Guard against null overlay
 
-    final String deleteLabel = widget.type == FormContainerType.credit ? 'Sterge credit' : 'Sterge venit';
+    final String deleteLabel =
+        widget.type == FormContainerType.credit
+            ? 'Sterge credit'
+            : 'Sterge venit';
 
     await showMenu(
       context: context,
       // Use the stored global position to create the RelativeRect
       position: RelativeRect.fromLTRB(
-        _globalTapPosition.dx, 
-        _globalTapPosition.dy, 
-        overlay.paintBounds.size.width - _globalTapPosition.dx, 
-        overlay.paintBounds.size.height - _globalTapPosition.dy
+        _globalTapPosition.dx,
+        _globalTapPosition.dy,
+        overlay.paintBounds.size.width - _globalTapPosition.dx,
+        overlay.paintBounds.size.height - _globalTapPosition.dy,
       ),
       items: [
         PopupMenuItem(
           value: 'delete',
           child: Text(
             deleteLabel,
-            style: AppTheme.secondaryTitleStyle.copyWith(color: AppTheme.fontDarkPurple),
+            style: AppTheme.secondaryTitleStyle.copyWith(
+              color: AppTheme.elementColor3,
+            ),
           ),
         ),
       ],
@@ -137,22 +141,25 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
           onTapDown: _getTapPosition, // Store tap position for context menu
           onLongPress: () => _showContextMenu(context, index),
           child: Container(
-            margin: const EdgeInsets.only(bottom: AppTheme.mediumGap),
-            child: widget.type == FormContainerType.credit
-                ? CreditFormWidget(
-                    formData: _formDataList[index] as CreditFormData,
-                    onChanged: (updatedData) {
-                      _handleFormChanged(index, updatedData);
-                    },
-                    contactId: widget.contactId, // Pass contactId
-                  )
-                : IncomeFormWidget(
-                    formData: _formDataList[index] as IncomeFormData,
-                    onChanged: (updatedData) {
-                      _handleFormChanged(index, updatedData);
-                    },
-                    contactId: widget.contactId, // Pass contactId
-                  ),
+            margin: const EdgeInsets.only(
+              bottom: 8,
+            ), // Changed from mediumGap (16) to smallGap (8) to match design
+            child:
+                widget.type == FormContainerType.credit
+                    ? CreditFormWidget(
+                      formData: _formDataList[index] as CreditFormData,
+                      onChanged: (updatedData) {
+                        _handleFormChanged(index, updatedData);
+                      },
+                      contactId: widget.contactId, // Pass contactId
+                    )
+                    : IncomeFormWidget(
+                      formData: _formDataList[index] as IncomeFormData,
+                      onChanged: (updatedData) {
+                        _handleFormChanged(index, updatedData);
+                      },
+                      contactId: widget.contactId, // Pass contactId
+                    ),
           ),
         );
       },
@@ -164,22 +171,22 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
     // Verificam starea curenta a formularului inainte de update
     final bool isLastForm = index == _formDataList.length - 1;
     final bool wasEmpty = _formDataList[index].isEmpty;
-    
+
     // Actualizam formularul existent, pastrand referinta obiectului
-    if (widget.type == FormContainerType.credit && 
-        updatedData is CreditFormData && 
+    if (widget.type == FormContainerType.credit &&
+        updatedData is CreditFormData &&
         _formDataList[index] is CreditFormData) {
       ((_formDataList[index] as CreditFormData)).updateFrom(updatedData);
-      
+
       // Salvează formularul actualizat în service dacă avem un contact selectat
       if (widget.contactId != null) {
         _contactService.updateCreditForm(widget.contactId!, updatedData);
       }
-    } else if (widget.type == FormContainerType.income && 
-               updatedData is IncomeFormData && 
-               _formDataList[index] is IncomeFormData) {
+    } else if (widget.type == FormContainerType.income &&
+        updatedData is IncomeFormData &&
+        _formDataList[index] is IncomeFormData) {
       ((_formDataList[index] as IncomeFormData)).updateFrom(updatedData);
-      
+
       // Salvează formularul actualizat în service dacă avem un contact selectat
       if (widget.contactId != null) {
         _contactService.updateIncomeForm(widget.contactId!, updatedData);
@@ -188,14 +195,16 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
       // Fallback in cazul in care tipurile nu se potrivesc (nu ar trebui sa se intample)
       _formDataList[index] = updatedData;
     }
-    
+
     // Verificam daca formularul nu mai este gol dupa update
     final bool isNowFilled = !_formDataList[index].isEmpty;
-    
+
     // Debugging
-    print("Form at index $index: wasEmpty=$wasEmpty, isNowFilled=$isNowFilled, isLastForm=$isLastForm");
+    print(
+      "Form at index $index: wasEmpty=$wasEmpty, isNowFilled=$isNowFilled, isLastForm=$isLastForm",
+    );
     print("Form data: ${_formDataList[index]}");
-    
+
     // Daca este ultimul formular si acum contine date (banca si tip credit/venit), adaugam un nou formular
     if (isLastForm && isNowFilled) {
       print("Adding new form because the last one is now filled.");
@@ -220,9 +229,9 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
             'Nu se poate șterge ultimul formular gol.',
             style: AppTheme.secondaryTitleStyle.copyWith(color: Colors.white),
           ),
-          backgroundColor: AppTheme.fontLightRed,
+          backgroundColor: AppTheme.elementColor1,
           duration: const Duration(seconds: 2),
-        ), 
+        ),
       );
       return;
     }
@@ -252,4 +261,4 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
       }
     }
   }
-} 
+}

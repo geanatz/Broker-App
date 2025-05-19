@@ -189,8 +189,8 @@ class _AuthScreenState extends State<AuthScreen> {
       // Folosim un Stack pentru a putea afișa popup-urile peste un fundal comun
       // Fundalul este gradientul definit în AppTheme
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.appBackgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppTheme.appBackground,
         ),
         child: Center( // Centrează dialogul/popup-ul în Stack
           child: SingleChildScrollView( // Permite scroll dacă popup-ul e prea înalt (deși au înălțimi fixe)
@@ -203,7 +203,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     padding: const EdgeInsets.only(bottom: AppTheme.mediumGap),
                     child: Text(
                       _successMessage!,
-                      style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontMediumBlue), // O culoare pentru succes
+                      style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor2), // O culoare pentru succes
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -213,7 +213,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     padding: const EdgeInsets.only(bottom: AppTheme.mediumGap),
                     child: Text(
                       _errorMessage!,
-                      style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontMediumRed), // Error color
+                      style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor2), // Error color
                       textAlign: TextAlign.center,
                     ),
                   ),

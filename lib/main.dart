@@ -115,9 +115,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppTheme.fontLightPurple,
-          primary: AppTheme.fontMediumPurple,
-          secondary: AppTheme.fontLightPurple,
+          seedColor: AppTheme.elementColor1,
+          primary: AppTheme.elementColor2,
+          secondary: AppTheme.elementColor1,
           background: Colors.white,
         ),
         useMaterial3: true,
@@ -128,12 +128,12 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           centerTitle: true,
           titleTextStyle: GoogleFonts.outfit(
-            color: AppTheme.fontMediumPurple,
+            color: AppTheme.elementColor2,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
           iconTheme: IconThemeData(
-            color: AppTheme.fontLightPurple,
+            color: AppTheme.elementColor1,
           ),
         ),
       ),
@@ -250,10 +250,10 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
       // și dacă _fetchConsultantData deconectează user-ul dacă nu are date.
       // Ca fallback, afișăm un mesaj și AuthWrapper ar trebui să intervină.
       print("MainAppWrapper: _consultantData is null, user should be redirected to AuthScreen by AuthWrapper.");
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Text("Date consultant indisponibile. Redirecționare...",
-             style: TextStyle(color: AppTheme.fontMediumRed)),
+             style: TextStyle(color: AppTheme.elementColor2)),
         ),
       );
     }

@@ -93,8 +93,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppTheme.appBackgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppTheme.appBackground,
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppTheme.largeGap),
@@ -160,14 +160,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSettingsContent() {
     // Assuming AppTheme.headerTitleStyle, secondaryTitleStyle exist
     // If not, define inline styles using AppTheme constants
-    final TextStyle headerStyle = const TextStyle(
+    final TextStyle headerStyle = TextStyle(
       fontSize: AppTheme.fontSizeLarge,
       fontWeight: FontWeight.bold,
-      color: AppTheme.fontDarkPurple
+      color: AppTheme.elementColor3
     );
-    final TextStyle secondaryStyle = const TextStyle(
+    final TextStyle secondaryStyle = TextStyle(
       fontSize: AppTheme.fontSizeMedium,
-      color: AppTheme.fontMediumPurple
+      color: AppTheme.elementColor2
     );
 
     return SingleChildScrollView(
@@ -233,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _deleteConsultant,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.fontMediumRed,
+                          backgroundColor: AppTheme.elementColor2,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),

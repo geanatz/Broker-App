@@ -6,7 +6,7 @@ import 'package:broker_app/old/sidebar/sidebar_service.dart';
 import 'package:broker_app/old/sidebar/sidebar_widget.dart';
 import 'package:broker_app/old/models/contact_data.dart';
 import 'package:broker_app/old/services/contact_form_service.dart';
-import 'package:broker_app/old/widgets/form/forms_container_widget.dart' show FormsContainerWidget, FormContainerType;
+import 'package:broker_app/old/widgets/form/forms_container_widget.dart.dart' show FormsContainerWidget, FormContainerType;
 
 /// Definirea temei de text pentru a asigura consistența fontului Outfit în întreaga aplicație
 class TextStyles {
@@ -131,8 +131,8 @@ class _FormScreenState extends State<FormScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppTheme.appBackgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppTheme.appBackground,
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppTheme.largeGap),
@@ -306,8 +306,8 @@ class _FormScreenState extends State<FormScreen> {
             child: _buildWidgetHeader(
               title: 'Clienti', // Changed from "Apeluri" to "Clienti"
               count: upcomingContacts.length,
-              color: AppTheme.fontLightBlue, // #8A9EA8
-              countColor: AppTheme.fontLightBlue,
+              color: AppTheme.elementColor1, // #8A9EA8
+              countColor: AppTheme.elementColor1,
             ),
           ),
           const SizedBox(height: AppTheme.smallGap), // 8px gap
@@ -348,19 +348,19 @@ class _FormScreenState extends State<FormScreen> {
                     _saveDataForContact();
                   },
                   backgroundColor: isSelected || isHovered 
-                      ? AppTheme.backgroundDarkBlue
-                      : AppTheme.backgroundLightBlue,
+                      ? AppTheme.containerColor2
+                      : AppTheme.containerColor1,
                   nameColor: isSelected || isHovered 
-                      ? AppTheme.fontDarkBlue
-                      : AppTheme.fontMediumBlue,
+                      ? AppTheme.elementColor3
+                      : AppTheme.elementColor2,
                   phoneColor: isSelected || isHovered 
-                      ? AppTheme.fontMediumBlue
-                      : AppTheme.fontLightBlue,
-                  buttonColor: AppTheme.backgroundDarkBlue,
+                      ? AppTheme.elementColor2
+                      : AppTheme.elementColor1,
+                  buttonColor: AppTheme.containerColor2,
                   buttonIconAsset: isSelected 
                       ? 'assets/doneIcon.svg'
                       : 'assets/viewIcon.svg',
-                  buttonIconColor: AppTheme.fontDarkBlue,
+                  buttonIconColor: AppTheme.elementColor3,
                 );
               },
             ),
@@ -391,8 +391,8 @@ class _FormScreenState extends State<FormScreen> {
             child: _buildWidgetHeader(
               title: 'Recente',
               count: recentContacts.length,
-              color: AppTheme.fontLightRed, // #A88A8A
-              countColor: AppTheme.fontLightRed,
+              color: AppTheme.elementColor1, // #A88A8A
+              countColor: AppTheme.elementColor1,
             ),
           ),
           const SizedBox(height: AppTheme.smallGap), // 8px gap
@@ -433,19 +433,19 @@ class _FormScreenState extends State<FormScreen> {
                     _saveDataForContact();
                   },
                   backgroundColor: isSelected || isHovered 
-                      ? AppTheme.backgroundDarkRed
-                      : AppTheme.backgroundLightRed,
+                      ? AppTheme.containerColor2
+                      : AppTheme.containerColor1,
                   nameColor: isSelected || isHovered 
-                      ? AppTheme.fontDarkRed
-                      : AppTheme.fontMediumRed,
+                      ? AppTheme.elementColor3
+                      : AppTheme.elementColor2,
                   phoneColor: isSelected || isHovered 
-                      ? AppTheme.fontMediumRed
-                      : AppTheme.fontLightRed,
-                  buttonColor: AppTheme.backgroundDarkRed,
+                      ? AppTheme.elementColor2
+                      : AppTheme.elementColor1,
+                  buttonColor: AppTheme.containerColor2,
                   buttonIconAsset: isSelected
                       ? 'assets/doneIcon.svg'
                       : 'assets/viewIcon.svg',
-                  buttonIconColor: AppTheme.fontDarkRed,
+                  buttonIconColor: AppTheme.elementColor3,
                 );
               },
             ),

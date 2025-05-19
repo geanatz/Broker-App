@@ -64,7 +64,7 @@ class AccountCreatedPopup extends StatelessWidget {
                     style: AppTheme.primaryTitleStyle.copyWith(
                       fontSize: AppTheme.fontSizeLarge,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.fontMediumPurple,
+                      color: AppTheme.elementColor2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -91,7 +91,7 @@ class AccountCreatedPopup extends StatelessWidget {
             height: 48,
             child: SvgPicture.asset(
               'assets/Logo.svg',
-              colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
             ),
           ),
         ],
@@ -103,7 +103,7 @@ class AccountCreatedPopup extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple,
+        color: AppTheme.containerColor1,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Column(
@@ -116,7 +116,7 @@ class AccountCreatedPopup extends StatelessWidget {
               style: AppTheme.primaryTitleStyle.copyWith(
                 fontSize: AppTheme.fontSizeMedium,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.fontMediumPurple,
+                color: AppTheme.elementColor2,
               ),
             ),
           ),
@@ -124,7 +124,7 @@ class AccountCreatedPopup extends StatelessWidget {
           Container(
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.backgroundDarkPurple,
+              color: AppTheme.containerColor2,
               borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             ),
             child: Row(
@@ -136,7 +136,7 @@ class AccountCreatedPopup extends StatelessWidget {
                     child: Text(
                       token,
                       style: AppTheme.smallTextStyle.copyWith(
-                        color: AppTheme.fontDarkPurple,
+                        color: AppTheme.elementColor3,
                         fontSize: AppTheme.fontSizeMedium,
                         fontWeight: FontWeight.w500,
                       ),
@@ -146,10 +146,10 @@ class AccountCreatedPopup extends StatelessWidget {
                 ),
                 IconButton(
                   icon: SvgPicture.asset(
-                    'assets/CopyIcon.svg',
+                    'assets/copyIcon.svg',
                     width: 24,
                     height: 24,
-                    colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
+                    colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
                   ),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: token));
@@ -176,7 +176,7 @@ class AccountCreatedPopup extends StatelessWidget {
       width: double.infinity,
       height: 48,
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple,
+        color: AppTheme.containerColor1,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: TextButton(
@@ -189,7 +189,7 @@ class AccountCreatedPopup extends StatelessWidget {
         child: Text(
           "Continua",
           style: AppTheme.smallTextStyle.copyWith(
-            color: AppTheme.fontMediumPurple,
+            color: AppTheme.elementColor2,
             fontSize: AppTheme.fontSizeMedium,
             fontWeight: FontWeight.w500,
           ),

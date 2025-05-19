@@ -6,13 +6,7 @@ import 'package:broker_app/old/widgets/common/input_field_widget.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Enum pentru diferitele tipuri de credite
-enum CreditType {
-  cardCumparaturi,
-  nevoi,
-  overdraft,
-  ipotecar,
-  primaCasa
-}
+enum CreditType { cardCumparaturi, nevoi, overdraft, ipotecar, primaCasa }
 
 /// Extinde String pentru a obtine titluri pentru dropdown
 extension CreditTypeExtension on CreditType {
@@ -75,10 +69,17 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
   ];
 
   // Lista tipuri de credite pentru dropdown
-  final List<String> creditTypes = CreditType.values.map((type) => type.displayTitle).toList();
+  final List<String> creditTypes =
+      CreditType.values.map((type) => type.displayTitle).toList();
 
   // Lista tipuri de rate pentru dropdown
-  final List<String> rateTypes = ['Fixa', 'Variabila', 'Euribor', 'IRCC', 'ROBOR'];
+  final List<String> rateTypes = [
+    'Fixa',
+    'Variabila',
+    'Euribor',
+    'IRCC',
+    'ROBOR',
+  ];
 
   @override
   void initState() {
@@ -118,7 +119,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
     if (_soldController.text != widget.formData.sold) {
       _soldController.text = widget.formData.sold;
     }
-     if (_consumatController.text != widget.formData.consumat) {
+    if (_consumatController.text != widget.formData.consumat) {
       _consumatController.text = widget.formData.consumat;
     }
     if (_rataController.text != widget.formData.rata) {
@@ -128,7 +129,6 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
       _perioadaController.text = widget.formData.perioada;
     }
   }
-
 
   @override
   void dispose() {
@@ -160,12 +160,13 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
     widget.formData.isEmpty = !widget.formData.isFilled();
 
     // Debug
-    print("Credit form updated: wasEmpty=$wasEmpty, isEmpty=${widget.formData.isEmpty}, bank=${widget.formData.selectedBank}, type=${widget.formData.selectedCreditType}");
+    print(
+      "Credit form updated: wasEmpty=$wasEmpty, isEmpty=${widget.formData.isEmpty}, bank=${widget.formData.selectedBank}, type=${widget.formData.selectedCreditType}",
+    );
 
     // Notify parent widget
     widget.onChanged(widget.formData);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +175,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
       // width: 624, // REMOVED Fixed width from Figma - Let parent decide width
       padding: const EdgeInsets.all(8), // Changed from 16 to 8
       decoration: BoxDecoration(
-        color: const Color(0xFFCFC4D4), // Background from design
+        color: AppTheme.containerColor1, // Background from design
         borderRadius: BorderRadius.circular(24), // Radius from design
       ),
       child: Column(
@@ -187,13 +188,13 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           _buildFirstRow(), // Use Row directly
           // Only show the second row if the form is not empty (bank and type selected)
           if (!widget.formData.isEmpty)
-             Padding(
-                padding: const EdgeInsets.only(top: 16), // Gap from design
-                // child: SizedBox( // REMOVED fixed width SizedBox
-                //   width: 592, // Inner width from Figma spec
-                //   child: _buildSecondRow(),
-                // ),
-                child: _buildSecondRow(), // Use Row directly
+            Padding(
+              padding: const EdgeInsets.only(top: 16), // Gap from design
+              // child: SizedBox( // REMOVED fixed width SizedBox
+              //   width: 592, // Inner width from Figma spec
+              //   child: _buildSecondRow(),
+              // ),
+              child: _buildSecondRow(), // Use Row directly
             ),
         ],
       ),
@@ -221,8 +222,8 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                 });
                 _handleFieldChange(); // Update formData
               },
-              backgroundColor: const Color(0xFFC6ACD3), // Color from design
-              textColor: const Color(0xFF7C568F), // Color from design
+              backgroundColor: AppTheme.containerColor2, // Color from design
+              textColor: AppTheme.elementColor2, // Color from design
             ),
           ),
         ),
@@ -244,10 +245,10 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
                     orElse: () => CreditType.cardCumparaturi,
                   );
                 });
-                 _handleFieldChange(); // Update formData
+                _handleFieldChange(); // Update formData
               },
-              backgroundColor: const Color(0xFFC6ACD3), // Color from design
-              textColor: const Color(0xFF7C568F), // Color from design
+              backgroundColor: AppTheme.containerColor2, // Color from design
+              textColor: AppTheme.elementColor2, // Color from design
             ),
           ),
         ),
@@ -294,29 +295,29 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           //   width: 288, // From Figma (592px - 16px) / 2
           //   child:
           _buildFieldWithLabel(
-              label: 'Sold',
-              field: InputFieldWidget(
-                controller: _soldController,
-                hintText: '0',
-                keyboardType: TextInputType.number,
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+            label: 'Sold',
+            field: InputFieldWidget(
+              controller: _soldController,
+              hintText: '0',
+              keyboardType: TextInputType.number,
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
+          ),
           // ),
           // SizedBox(
           //   width: 288, // From Figma (592px - 16px) / 2
           //   child:
           _buildFieldWithLabel(
-              label: 'Consumat',
-              field: InputFieldWidget(
-                controller: _consumatController,
-                hintText: '0',
-                keyboardType: TextInputType.number,
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+            label: 'Consumat',
+            field: InputFieldWidget(
+              controller: _consumatController,
+              hintText: '0',
+              keyboardType: TextInputType.number,
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
+          ),
           // ),
         ];
       case CreditType.nevoi:
@@ -327,29 +328,29 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           //   width: fieldWidth,
           //   child:
           _buildFieldWithLabel(
-              label: 'Sold',
-              field: InputFieldWidget(
-                controller: _soldController,
-                hintText: '0',
-                keyboardType: TextInputType.number,
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+            label: 'Sold',
+            field: InputFieldWidget(
+              controller: _soldController,
+              hintText: '0',
+              keyboardType: TextInputType.number,
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
+          ),
           // ),
           // SizedBox(
           //   width: fieldWidth,
           //   child:
           _buildFieldWithLabel(
-              label: 'Rata',
-              field: InputFieldWidget(
-                controller: _rataController,
-                hintText: '0',
-                keyboardType: TextInputType.number,
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+            label: 'Rata',
+            field: InputFieldWidget(
+              controller: _rataController,
+              hintText: '0',
+              keyboardType: TextInputType.number,
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
+          ),
           // ),
           // SizedBox(
           //   width: fieldWidth,
@@ -360,8 +361,8 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
             field: InputFieldWidget(
               controller: _perioadaController,
               hintText: '0 ani',
-              backgroundColor: const Color(0xFFC6ACD3),
-              textColor: const Color(0xFF7C568F),
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
           ),
           // ),
@@ -375,29 +376,29 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           //   width: fieldWidth, // Adjusted width to prevent overflow
           //   child:
           _buildFieldWithLabel(
-              label: 'Sold',
-              field: InputFieldWidget(
-                controller: _soldController,
-                hintText: '0',
-                keyboardType: TextInputType.number,
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+            label: 'Sold',
+            field: InputFieldWidget(
+              controller: _soldController,
+              hintText: '0',
+              keyboardType: TextInputType.number,
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
+          ),
           // ),
           // SizedBox(
           //   width: fieldWidth, // Adjusted width to prevent overflow
           //   child:
           _buildFieldWithLabel(
-              label: 'Rata',
-              field: InputFieldWidget(
-                controller: _rataController,
-                hintText: '0',
-                keyboardType: TextInputType.number,
-                backgroundColor: const Color(0xFFC6ACD3),
-                textColor: const Color(0xFF7C568F),
-              ),
+            label: 'Rata',
+            field: InputFieldWidget(
+              controller: _rataController,
+              hintText: '0',
+              keyboardType: TextInputType.number,
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
+          ),
           // ),
           // SizedBox(
           //   width: fieldWidth, // Adjusted width to prevent overflow
@@ -410,13 +411,13 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
               value: _selectedRateType,
               hintText: 'Tip',
               onChanged: (value) {
-                 setState(() {
+                setState(() {
                   _selectedRateType = value;
                 });
                 _handleFieldChange();
               },
-              backgroundColor: const Color(0xFFC6ACD3),
-              textColor: const Color(0xFF7C568F),
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
           ),
           // ),
@@ -428,8 +429,8 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
             field: InputFieldWidget(
               controller: _perioadaController,
               hintText: '0 ani',
-              backgroundColor: const Color(0xFFC6ACD3),
-              textColor: const Color(0xFF7C568F),
+              backgroundColor: AppTheme.containerColor2,
+              textColor: AppTheme.elementColor2,
             ),
           ),
           // ),
@@ -439,11 +440,11 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
     }
   }
 
-
-  // Helper pentru layout consistent camp+eticheta
+  // Widget pentru etichetă și câmp
   Widget _buildFieldWithLabel({
     required String label,
     required Widget field,
+    String? altText,
   }) {
     // Field styling from design
     return Column(
@@ -451,18 +452,36 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8.0, bottom: 8.0), // Padding from design
-          child: Text(
-            label,
-            style: AppTheme.primaryTitleStyle.copyWith(
-              color: const Color(0xFF886699), // Color from design
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppTheme.elementColor2,
+                  fontSize: 17,
+                  fontFamily: 'Outfit',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (altText != null)
+                Text(
+                  altText,
+                  style: TextStyle(
+                    color: AppTheme.elementColor2,
+                    fontSize: 15,
+                    fontFamily: 'Outfit',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
           ),
         ),
-        SizedBox(
-          height: 48, // Explicit height for the field container
-          child: field,
-        ),
+        const SizedBox(
+          height: 4,
+        ), // Changed from default 8 to 4 to match design
+        field,
       ],
     );
   }
@@ -475,7 +494,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
         height: 48,
         width: width ?? 136, // Use provided width or default to 136
         decoration: BoxDecoration(
-          color: const Color(0xFFC6ACD3),
+          color: AppTheme.containerColor1,
           borderRadius: BorderRadius.circular(16),
           // Removed box shadow as requested
         ),
@@ -484,13 +503,13 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
         child: TextField(
           controller: _perioadaController,
           style: AppTheme.primaryTitleStyle.copyWith(
-            color: const Color(0xFF7C568F),
+            color: AppTheme.elementColor2,
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: '0 ani',
             hintStyle: AppTheme.primaryTitleStyle.copyWith(
-              color: const Color(0xFF7C568F), // Full opacity
+              color: AppTheme.elementColor2, // Full opacity
               fontWeight: FontWeight.w500,
             ),
             border: InputBorder.none,
@@ -509,7 +528,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
         height: 48,
         width: width ?? 136, // Use provided width or default to 136
         decoration: BoxDecoration(
-          color: const Color(0xFFC6ACD3),
+          color: AppTheme.containerColor2,
           borderRadius: BorderRadius.circular(16),
           // Removed box shadow as requested
         ),
@@ -518,34 +537,35 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
           child: DropdownButton<String>(
             value: _selectedRateType,
             icon: SvgPicture.asset(
-              'assets/expandIcon.svg',
+              'assets/DropdownIcon.svg',
               width: 24,
               height: 24,
-              colorFilter: ColorFilter.mode(const Color(0xFF7C568F), BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(
+                AppTheme.elementColor2,
+                BlendMode.srcIn,
+              ),
             ),
             isExpanded: true,
-            dropdownColor: const Color(0xFFC6ACD3),
+            dropdownColor: AppTheme.containerColor2,
             hint: Text(
               'Tip',
               style: AppTheme.primaryTitleStyle.copyWith(
-                color: const Color(0xFF7C568F), // Full opacity
+                color: AppTheme.elementColor2, // Full opacity
                 fontWeight: FontWeight.w500,
               ),
               overflow: TextOverflow.ellipsis,
             ),
             style: AppTheme.primaryTitleStyle.copyWith(
-              color: const Color(0xFF7C568F),
+              color: AppTheme.elementColor2,
               fontWeight: FontWeight.w500,
             ),
-            items: rateTypes.map<DropdownMenuItem<String>>((String item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(
-                  item,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }).toList(),
+            items:
+                rateTypes.map<DropdownMenuItem<String>>((String item) {
+                  return DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(item, overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedRateType = value;
@@ -557,4 +577,4 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
       ),
     );
   }
-} 
+}

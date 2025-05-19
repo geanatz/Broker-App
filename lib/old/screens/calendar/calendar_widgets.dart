@@ -18,7 +18,7 @@ Widget buildMeetingFieldWidget(Map<String, dynamic> meetingData, DateFormat date
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
     decoration: BoxDecoration(
-      color: AppTheme.backgroundLightPurple,
+      color: AppTheme.containerColor1,
       borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
     ),
     child: Column(

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/old/sidebar/sidebar_widget.dart';
 import 'package:broker_app/old/sidebar/sidebar_service.dart';
+import 'package:broker_app/frontend/areas/dashboardArea.dart';
+import 'package:broker_app/frontend/areas/formArea.dart';
+import 'package:broker_app/frontend/areas/calendarArea.dart';
+import 'package:broker_app/frontend/areas/settingsArea.dart';
+import 'package:broker_app/frontend/panes/meetingsPane.dart';
+import 'package:broker_app/frontend/panes/calculatorPane.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:
 /// - pane (stânga, lățime 312)
@@ -37,18 +43,18 @@ class _MainScreenState extends State<MainScreen> {
     _teamName = widget.teamName ?? 'Echipa';
   }
   
-  // Placeholder widgets pentru area și pane
+  // Widgets pentru area
   final Map<AreaType, Widget> _areaWidgets = {
-    AreaType.dashboard: const PlaceholderWidget('Dashboard Area', Colors.blue),
-    AreaType.form: const PlaceholderWidget('Form Area', Colors.green),
-    AreaType.calendar: const PlaceholderWidget('Calendar Area', Colors.orange),
-    AreaType.settings: const PlaceholderWidget('Settings Area', Colors.purple),
+    AreaType.dashboard: const DashboardArea(),
+    AreaType.form: const FormArea(),
+    AreaType.calendar: const CalendarArea(),
+    AreaType.settings: const SettingsArea(),
   };
   
   final Map<PaneType, Widget> _paneWidgets = {
     PaneType.clients: const PlaceholderWidget('Clients Pane', Colors.red),
-    PaneType.meetings: const PlaceholderWidget('Meetings Pane', Colors.yellow),
-    PaneType.calculator: const PlaceholderWidget('Calculator Pane', Colors.teal),
+    PaneType.meetings: const MeetingsPane(),
+    PaneType.calculator: const CalculatorPane(),
     PaneType.matches: const PlaceholderWidget('Matches Pane', Colors.pink),
   };
 
@@ -56,8 +62,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.appBackgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppTheme.appBackground,
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppTheme.mediumGap),

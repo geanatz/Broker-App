@@ -140,7 +140,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
                 padding: const EdgeInsets.only(top: AppTheme.tinyGap),
                 child: Text(
                   _registerError!,
-                  style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.fontMediumRed),
+                  style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.elementColor2),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -170,7 +170,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
                     style: AppTheme.primaryTitleStyle.copyWith(
                       fontSize: AppTheme.fontSizeLarge,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.fontMediumPurple,
+                      color: AppTheme.elementColor2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -197,7 +197,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
             height: 48,
             child: SvgPicture.asset(
               'assets/Logo.svg',
-              colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
             ),
           ),
         ],
@@ -209,7 +209,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple,
+        color: AppTheme.containerColor1,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Form(
@@ -285,28 +285,28 @@ class _RegisterPopupState extends State<RegisterPopup> {
           child: Container(
             height: 24,
             alignment: Alignment.centerLeft,
-            child: Text(title, style: AppTheme.primaryTitleStyle.copyWith(fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600, color: AppTheme.fontMediumPurple)),
+            child: Text(title, style: AppTheme.primaryTitleStyle.copyWith(fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600, color: AppTheme.elementColor2)),
           )
         ),
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.backgroundDarkPurple,
+            color: AppTheme.containerColor2,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: isInvalid 
-                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                ? Border.all(color: AppTheme.elementColor2, width: 2.0)
                 : null,
           ),
           child: TextFormField(
             controller: controller,
             obscureText: obscureText,
             keyboardType: keyboardType,
-            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
             textAlignVertical: TextAlignVertical.center,
             onChanged: onChanged,
             decoration: InputDecoration(
               hintText: hintText,
-              hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
+              hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
               suffixIcon: suffixIcon,
@@ -349,10 +349,10 @@ class _RegisterPopupState extends State<RegisterPopup> {
         padding: const EdgeInsets.only(right: AppTheme.smallGap),
         child: IconButton(
           icon: SvgPicture.asset(
-            obscureText ? 'assets/ShowIcon.svg' : 'assets/HideIcon.svg',
+            obscureText ? 'assets/showIcon.svg' : 'assets/hideIcon.svg',
             width: AppTheme.iconSizeMedium, 
             height: AppTheme.iconSizeMedium,
-            colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
+            colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
           ),
           iconSize: AppTheme.iconSizeMedium,
           onPressed: onToggleObscure,
@@ -376,7 +376,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
               style: AppTheme.primaryTitleStyle.copyWith(
                 fontSize: AppTheme.fontSizeMedium,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.fontMediumPurple,
+                color: AppTheme.elementColor2,
               ),
             ),
           )
@@ -384,10 +384,10 @@ class _RegisterPopupState extends State<RegisterPopup> {
         Container(
           height: 48, 
           decoration: BoxDecoration(
-            color: AppTheme.backgroundDarkPurple, 
+            color: AppTheme.containerColor2, 
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: _isTeamInvalid 
-                ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                ? Border.all(color: AppTheme.elementColor2, width: 2.0)
                 : null,
           ),
           child: DropdownButtonFormField<String>(
@@ -395,7 +395,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
             items: _teamOptions.map((team) {
                     return DropdownMenuItem(
                       value: team,
-                      child: Text(team, style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600)),
+                      child: Text(team, style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600)),
                     );
                   }).toList(),
             onChanged: (value) {
@@ -408,21 +408,21 @@ class _RegisterPopupState extends State<RegisterPopup> {
             },
             hint: Text(
                     "Selecteaza echipa",
-                    style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
+                    style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
                   ),
             isExpanded: true,
             icon: SvgPicture.asset(
-              'assets/DropdownIcon.svg',
+              'assets/expandIcon.svg',
               width: AppTheme.iconSizeMedium, 
               height: AppTheme.iconSizeMedium,
-              colorFilter: const ColorFilter.mode(AppTheme.fontDarkPurple, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
             ),
             decoration: const InputDecoration(
               border: InputBorder.none, 
               contentPadding: EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
             ),
-            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
-            dropdownColor: AppTheme.backgroundDarkPurple,
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
+            dropdownColor: AppTheme.containerColor2,
             validator: null, // Eliminăm validatorul standard
           ),
         ),
@@ -440,7 +440,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
         children: [
           Text(
             "Ai cont de consultant?",
-            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontMediumPurple, fontWeight: FontWeight.w500, fontSize: AppTheme.fontSizeMedium),
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor2, fontWeight: FontWeight.w500, fontSize: AppTheme.fontSizeMedium),
           ),
           TextButton(
             onPressed: widget.onGoToLogin,
@@ -453,11 +453,11 @@ class _RegisterPopupState extends State<RegisterPopup> {
             child: Text(
               "Conecteaza-te!",
               style: AppTheme.smallTextStyle.copyWith(
-                color: AppTheme.fontMediumPurple, 
+                color: AppTheme.elementColor2, 
                 fontWeight: FontWeight.w600,
                  fontSize: AppTheme.fontSizeMedium,
                 decoration: TextDecoration.underline,
-                decorationColor: AppTheme.fontMediumPurple,
+                decorationColor: AppTheme.elementColor2,
               ),
             ),
           ),

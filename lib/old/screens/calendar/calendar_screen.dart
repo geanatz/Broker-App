@@ -145,8 +145,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppTheme.appBackgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppTheme.appBackground,
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppTheme.largeGap),
@@ -225,9 +225,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final TextStyle headerStyle = GoogleFonts.outfit(
       fontSize: AppTheme.fontSizeLarge,
       fontWeight: FontWeight.w600,
-      color: AppTheme.fontLightPurple,
+      color: AppTheme.elementColor1,
     );
-    final TextStyle secondaryStyle = const TextStyle(fontSize: AppTheme.fontSizeMedium, color: AppTheme.fontMediumPurple);
+    final TextStyle secondaryStyle = TextStyle(fontSize: AppTheme.fontSizeMedium, color: AppTheme.elementColor2);
 
     final currentUserId = _auth.currentUser?.uid;
 
@@ -291,7 +291,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     style: GoogleFonts.outfit(
                       fontWeight: FontWeight.w600,
                       fontSize: AppTheme.fontSizeLarge,
-                      color: AppTheme.fontLightPurple,
+                      color: AppTheme.elementColor1,
                     ),
                   ),
                 ),
@@ -309,7 +309,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             width: 24,
                             height: 24,
                             colorFilter: ColorFilter.mode(
-                              AppTheme.fontLightPurple,
+                              AppTheme.elementColor1,
                               BlendMode.srcIn,
                             ),
                           ),
@@ -329,8 +329,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 fontWeight: FontWeight.w500,
                                 fontSize: AppTheme.fontSizeSmall,
                                 color: _currentWeekOffset != 0 
-                                    ? AppTheme.fontMediumPurple 
-                                    : AppTheme.fontLightPurple,
+                                    ? AppTheme.elementColor2 
+                                    : AppTheme.elementColor1,
                                 decoration: _currentWeekOffset != 0 
                                     ? TextDecoration.underline 
                                     : TextDecoration.none,
@@ -352,7 +352,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             width: 24,
                             height: 24,
                             colorFilter: ColorFilter.mode(
-                              AppTheme.fontLightPurple,
+                              AppTheme.elementColor1,
                               BlendMode.srcIn,
                             ),
                           ),
@@ -370,7 +370,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           child: Container(
             padding: const EdgeInsets.all(AppTheme.mediumGap),
             decoration: BoxDecoration(
-              color: AppTheme.backgroundLightPurple,
+              color: AppTheme.containerColor1,
               borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
             ),
             child: Column(
@@ -391,7 +391,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             style: GoogleFonts.outfit(
                               fontWeight: FontWeight.w500,
                               fontSize: AppTheme.fontSizeSmall,
-                              color: AppTheme.fontMediumPurple,
+                              color: AppTheme.elementColor2,
                             ),
                           textAlign: TextAlign.center,
                         ),
@@ -456,7 +456,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                           style: GoogleFonts.outfit(
                                             fontWeight: FontWeight.w500,
                                             fontSize: AppTheme.fontSizeSmall,
-                                            color: AppTheme.fontMediumPurple,
+                                            color: AppTheme.elementColor2,
                                           ),
                                           textAlign: TextAlign.center,
                                         ),
@@ -541,7 +541,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             vertical: CalendarConstants.slotPaddingVertical
           ),
           decoration: BoxDecoration(
-            color: AppTheme.backgroundDarkPurple, // Default color
+            color: AppTheme.containerColor2, // Default color
             // You might want to change color based on reservationType if needed
             // color: reservationType == ReservationType.bureauDelete ? Colors.lightBlueAccent : AppTheme.backgroundDarkPurple,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
@@ -556,7 +556,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 style: GoogleFonts.outfit(
                   fontWeight: FontWeight.w600,
                   fontSize: AppTheme.fontSizeMedium,
-                  color: AppTheme.fontDarkPurple,
+                  color: AppTheme.elementColor3,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -566,7 +566,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 style: GoogleFonts.outfit(
                   fontWeight: FontWeight.w500,
                   fontSize: AppTheme.fontSizeSmall,
-                  color: AppTheme.fontMediumPurple,
+                  color: AppTheme.elementColor2,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -599,7 +599,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           decoration: BoxDecoration(
             border: Border.all(
-              color: AppTheme.backgroundDarkPurple,
+              color: AppTheme.containerColor2,
               width: AppTheme.slotBorderThickness,
             ),
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
@@ -610,7 +610,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               style: GoogleFonts.outfit(
                 fontWeight: FontWeight.w600,
                 fontSize: AppTheme.fontSizeMedium,
-                color: AppTheme.fontMediumPurple,
+                color: AppTheme.elementColor2,
               ),
               textAlign: TextAlign.center,
             ),

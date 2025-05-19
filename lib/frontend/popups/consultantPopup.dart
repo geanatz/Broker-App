@@ -75,7 +75,7 @@ class ConsultantPopup extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: AppTheme.fontSizeLarge, // 19px
             fontWeight: FontWeight.w600, // large
-            color: AppTheme.fontLightPurple,
+            color: AppTheme.elementColor1,
           ),
         ),
       ),
@@ -87,7 +87,7 @@ class ConsultantPopup extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple, // #CFC4D4
+        color: AppTheme.containerColor1, // #CFC4D4
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium), // 24px
       ),
       child: Column(
@@ -119,14 +119,14 @@ class ConsultantPopup extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: AppTheme.fontSizeMedium, // 17px
             fontWeight: FontWeight.w600, // large
-            color: AppTheme.fontMediumPurple, // #886699
+            color: AppTheme.elementColor2, // #886699
           ),
         ),
         Container(
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap), // 16px
           decoration: BoxDecoration(
-            color: AppTheme.backgroundDarkPurple, // #C6ACD3
+            color: AppTheme.containerColor2, // #C6ACD3
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall), // 16px
           ),
           alignment: Alignment.centerLeft,
@@ -135,7 +135,7 @@ class ConsultantPopup extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: AppTheme.fontSizeMedium, // 17px
               fontWeight: FontWeight.w500, // medium
-              color: AppTheme.fontDarkPurple,
+              color: AppTheme.elementColor3,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -151,7 +151,7 @@ class ConsultantPopup extends StatelessWidget {
       child: TextButton(
         onPressed: () => _signOut(context),
         style: TextButton.styleFrom(
-          backgroundColor: AppTheme.backgroundLightPurple, // #CFC4D4
+          backgroundColor: AppTheme.containerColor1, // #CFC4D4
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.mediumGap, // 16px
             vertical: 12, // Conform documentației
@@ -165,7 +165,7 @@ class ConsultantPopup extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: AppTheme.fontSizeMedium, // 17px
             fontWeight: FontWeight.w500, // medium
-            color: AppTheme.fontMediumPurple, // #886699
+            color: AppTheme.elementColor2, // #886699
           ),
           textAlign: TextAlign.center,
         ),

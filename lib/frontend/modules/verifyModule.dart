@@ -82,7 +82,7 @@ class _TokenPopupState extends State<TokenPopup> {
                 padding: const EdgeInsets.only(top: AppTheme.tinyGap),
                 child: Text(
                   _tokenError!,
-                  style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.fontMediumRed),
+                  style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.elementColor2),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -112,7 +112,7 @@ class _TokenPopupState extends State<TokenPopup> {
                     style: AppTheme.primaryTitleStyle.copyWith(
                       fontSize: AppTheme.fontSizeLarge,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.fontMediumPurple,
+                      color: AppTheme.elementColor2,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -139,7 +139,7 @@ class _TokenPopupState extends State<TokenPopup> {
             height: 48,
             child: SvgPicture.asset(
               'assets/Logo.svg',
-              colorFilter: const ColorFilter.mode(AppTheme.fontMediumPurple, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
             ),
           ),
         ],
@@ -152,7 +152,7 @@ class _TokenPopupState extends State<TokenPopup> {
       height: 88,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLightPurple,
+        color: AppTheme.containerColor1,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Form(
@@ -171,7 +171,7 @@ class _TokenPopupState extends State<TokenPopup> {
                   style: AppTheme.primaryTitleStyle.copyWith(
                     fontSize: AppTheme.fontSizeMedium,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.fontMediumPurple,
+                    color: AppTheme.elementColor2,
                   ),
                 ),
               )
@@ -179,15 +179,15 @@ class _TokenPopupState extends State<TokenPopup> {
             Container(
               height: 48,
               decoration: BoxDecoration(
-                color: AppTheme.backgroundDarkPurple,
+                color: AppTheme.containerColor2,
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                 border: _isTokenInvalid 
-                    ? Border.all(color: AppTheme.fontMediumRed, width: 2.0)
+                    ? Border.all(color: AppTheme.elementColor2, width: 2.0)
                     : null,
               ),
               child: TextFormField(
                 controller: _tokenController,
-                style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
+                style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
                 textAlignVertical: TextAlignVertical.center,
                 onChanged: (value) {
                   if (_isTokenInvalid && value.isNotEmpty) {
@@ -198,7 +198,7 @@ class _TokenPopupState extends State<TokenPopup> {
                 },
                 decoration: InputDecoration(
                   hintText: "Introdu token-ul tau",
-                  hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontDarkPurple, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
+                  hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
                 ),
@@ -221,7 +221,7 @@ class _TokenPopupState extends State<TokenPopup> {
         children: [
           Text(
             "Ti-a revenit memoria?",
-            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.fontMediumPurple, fontWeight: FontWeight.w500, fontSize: AppTheme.fontSizeMedium),
+            style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor2, fontWeight: FontWeight.w500, fontSize: AppTheme.fontSizeMedium),
           ),
           TextButton(
             onPressed: widget.onGoToLogin,
@@ -234,11 +234,11 @@ class _TokenPopupState extends State<TokenPopup> {
             child: Text(
               "Conecteaza-te!",
               style: AppTheme.smallTextStyle.copyWith(
-                color: AppTheme.fontMediumPurple, 
+                color: AppTheme.elementColor2, 
                 fontWeight: FontWeight.w600,
                  fontSize: AppTheme.fontSizeMedium,
                 decoration: TextDecoration.underline,
-                decorationColor: AppTheme.fontMediumPurple,
+                decorationColor: AppTheme.elementColor2,
               ),
             ),
           ),
