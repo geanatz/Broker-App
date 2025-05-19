@@ -21,7 +21,7 @@ The application will help financial brokers who assist clients in refinancing or
 - **Firebase**: For authentication and data storage
 - **Google Drive API**: For document integration
 
-### Project Structure
+### Project Structure (you can find it at markdown/code_structure.md)
 ```
 main.dart
 /frontend

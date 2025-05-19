@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/popups/consultant_popup.dart';
+import 'package:broker_app/frontend/popups/consultantPopup.dart';
 import 'package:broker_app/old/sidebar/navigation_config.dart';
 
 /// Widget care integrează informațiile despre consultant și toate butoanele de navigare
