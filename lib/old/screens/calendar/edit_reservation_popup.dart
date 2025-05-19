@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:ui';
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/old/services/reservation_service.dart';
 
 /// Dialog pentru editarea unei rezervari existente

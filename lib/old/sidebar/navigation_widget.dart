@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 // Removed UserWidget import as it's no longer part of this widget
 import 'package:broker_app/old/sidebar/navigation_config.dart'; // Import the renamed configuration
 

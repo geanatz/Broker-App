@@ -7,7 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/old/sidebar/navigation_config.dart';
 import 'package:broker_app/old/sidebar/sidebar_widget.dart';
 import 'package:broker_app/old/widgets/common/panel_container.dart';

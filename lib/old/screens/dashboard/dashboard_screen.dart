@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 // import '../../widgets/navigation/sidebar_widget.dart'; // Removed old import
 // import '../../widgets/navigation/navigation_widget.dart'; // Removed old import
 import 'package:broker_app/old/sidebar/navigation_config.dart'; // Added config import

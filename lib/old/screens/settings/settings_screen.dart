@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 // import '../../widgets/navigation/sidebar_widget.dart'; // Removed old import
 // import '../../widgets/navigation/navigation_widget.dart'; // Removed old import
 import 'package:broker_app/old/sidebar/navigation_config.dart'; // Added config import
@@ -7,7 +7,7 @@ import 'package:broker_app/old/sidebar/navigation_config.dart'; // Added config 
 // import '../../sidebar/navigation_widget.dart'; // Remove NavigationWidget import
 import 'package:broker_app/old/sidebar/sidebar_widget.dart'; // Add SidebarWidget import
 import 'package:broker_app/old/widgets/common/panel_container.dart';
-import 'package:broker_app/old/auth/authService.dart'; // Import pentru AuthService
+import 'package:broker_app/backend/services/authService.dart'; // Import pentru AuthService
 
 /// Ecranul pentru setările aplicației
 class SettingsScreen extends StatefulWidget {

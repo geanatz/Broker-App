@@ -1,216 +1,290 @@
-# Financial Consulting Application Reference Guide
+# Financial Consulting App Development Guide
 
 ## Project Overview
 
-This document serves as a comprehensive reference for developing a multi-platform financial consulting application using Flutter. The application will facilitate financial brokers in managing client information, handling calls, calculating loans, and optimizing their workflow.
+This document serves as a comprehensive development guide for a multi-platform financial consulting application using Flutter. The application is designed for financial brokers to manage client information, handle calls, calculate loans, and optimize their workflow.
 
 ### Application Purpose
-The application is designed for financial brokers who help clients refinance or obtain new loans. Brokers contact potential clients from a database and offer them options to increase their credit (up to 40% or beyond of their monthly income). The application will automate and streamline this process.
+The application will help financial brokers who assist clients in refinancing or obtaining new loans. Brokers contact potential clients from a database and offer them options to increase their credit (up to 40% or beyond of their monthly income).
 
-### Development Approach
-- **Incremental Development**: The application will be developed in versions, with each version adding new features and improvements.
-- **Feedback-Driven**: Initial versions will be used by a single broker to gather feedback for improvements.
-- **Scalable Architecture**: Although initially used by one broker, the application will be designed to accommodate multiple brokers and teams.
-- **Flutter Framework**: Using Flutter for cross-platform compatibility (Windows, macOS, Android, iOS).
-- **Dart Language**: Will be learning Dart throughout the development process.
+### Development Philosophy
+- **Design First**: Each feature begins with a Figma design that must be strictly followed
+- **Structured Development**: Clean architecture with organized file structure and separation of concerns
+- **Incremental Approach**: The application is developed in versions, with each adding new features based on user feedback
+- **Cross-Platform**: Using Flutter for deployment on Windows, macOS, Android, and iOS
 
-## Technical Requirements
+## Technical Framework
 
-### Development Background
-- Previous experience with Python, JavaScript, HTML/CSS, C++, and React Native
-- Learning Dart during the development process
-- UI/UX design created in Figma that must be strictly followed
+### Development Stack
+- **Flutter Framework**: For cross-platform compatibility
+- **Dart Language**: Primary programming language
+- **Firebase**: For authentication and data storage
+- **Google Drive API**: For document integration
 
-### Code Quality Requirements
-- Well-structured, optimized, and stable code
-- Organized into logical file structures
-- Clean architecture with separation of concerns
-- Properly documented for future maintenance
+### Project Structure
+```
+main.dart
+/frontend
+  /screens
+    - authScreen.dart     # Authentication screen with all auth modules
+    - mainScreen.dart     # Main application screen with sidebar and areas
+  /areas
+    - formArea.dart       # Credit and income information forms
+    - calendarArea.dart   # Meeting calendar display
+    - settingsArea.dart   # Application settings
+  /panes
+    - sidebarPane.dart    # Navigation and user information
+    - clientsPane.dart    # Next and recent clients
+    - meetingsPane.dart   # Future meetings
+    - returnsPane.dart    # Callbacks management
+    - matcherPane.dart    # Bank recommendation engine
+  /modules
+    - loginModule.dart    # Consultant login functionality
+    - registerModule.dart # Account creation
+    - tokenModule.dart    # Token generation after registration
+    - verifyModule.dart   # Account verification
+    - recoveryModule.dart # Password reset functionality
+  /popups
+    - calculatorPopup.dart # Loan calculator
+    - clientsPopup.dart   # Client management with OCR capability
+    - meetingPopup.dart   # Meeting creation and editing
+/backend
+  /services
+    - authService.dart      # Authentication logic
+    - dashboardService.dart # Dashboard functionality
+    - formService.dart      # Form handling logic
+    - calendarService.dart  # Calendar management
+    - clientsService.dart   # Client data handling
+    - calculatorService.dart # Loan calculation logic
+    - matcherService.dart   # Bank recommendation logic
+    - callService.dart      # Phone integration services
+  /vision
+    - visionService.dart    # Google Vision AI API integration
+    - documentProcessor.dart # Document analysis and processing
+    - contactExtractor.dart # Extract contact info from OCR results
+    - dataValidator.dart    # Validate and correct extracted data
+    - visionConfig.dart     # Configuration for Vision AI
+    - nameRecognition.dart  # Romanian name recognition helpers
+```
 
 ## Core Features
 
 ### 1. Authentication System
-- User selection from a list of agents
-- Password protection for each account
-- Secure login process
-- Different access levels (regular agents, supervisors)
+- **User Selection**: Dropdown of consultants
+- **Security**: Password protection for each account
+- **Account Management**: Registration, login, password recovery
+- **Access Levels**: Regular agents, supervisors
+- **Implementation**: Firebase authentication
 
-### 2. Image to Contacts (OCR System)
-- **Functionality**: Extract client information from images of tables/documents
-- **Data to Extract**: Names, phone numbers, CNPs (Romanian personal identification numbers)
-- **Process Requirements**:
-  - Image preprocessing to enhance character recognition
-  - Text extraction from images
-  - Text post-processing to correct extraction errors
-  - Contact creation from extracted data
-- **Visual Feedback**: Display all extraction steps and results to the agent
-- **Accuracy Requirements**: High precision even with poor-quality images (low resolution, glare, etc.)
-- **Privacy**: Consider local AI implementation to avoid sending sensitive data externally
+### 2. Google Vision AI Integration for Contact Extraction
+- **Cloud-Based OCR**: Integration with Google Vision AI for superior text recognition
+- **Document Analysis Pipeline**:
+  1. Image submission to Vision API (visionService.dart)
+  2. Document structure analysis (documentProcessor.dart)
+  3. Contact information extraction (contactExtractor.dart)
+  4. Data validation and correction (dataValidator.dart)
+- **Capabilities**:
+  - Table structure recognition
+  - Form field detection
+  - Multi-language support (Romanian/English)
+  - Handwriting recognition
+  - Layout analysis for structured documents
+- **Features**:
+  - Batch processing of multiple images
+  - Progress visualization
+  - Confidence scoring for extracted data
+  - Manual correction interface
+  - Data categorization (names, phone numbers, CNPs)
+- **Implementation**:
+  - Google Cloud Vision API integration
+  - Secure credential handling
+  - Optimized API usage for cost efficiency
+  - Offline queue for processing during connectivity issues
 
 ### 3. One-Click Calling
-- Integration with the agent's phone for direct calling
-- Call status tracking (in progress, started, ended)
-- Call duration monitoring (minutes and seconds)
-- Call outcome recording (rejected, no answer, completed)
+- **Phone Integration**: Direct calling from app
+- **Call Tracking**:
+  - Status (in progress/started/ended)
+  - Duration (minutes:seconds)
+  - Outcome (rejected/no answer/completed)
+- **UI**: Call popup interface similar to Phone Link
 
-### 4. One-Click Speech
-- Automated introduction speech (approximately 30 seconds)
-- Integration with calling system
-- Custom name insertion using AI voice synthesis
-- Voice recording by the agent with dynamic name replacement
+### 4. Automated Speech Playback
+- **Functionality**: Pre-recorded introduction (30 seconds)
+- **Personalization**: Dynamic name insertion
+- **Voice Synthesis**: Match consultant's voice
+- **Integration**: Seamless transition to live consultant
 
 ### 5. Loan and Income Forms
-- Separate forms for client and co-borrower information
-- Switch functionality between client and co-borrower data
-- Dynamic form fields based on selections:
+- **Dual Forms**: Client and co-borrower information
+- **Dynamic Fields**:
   - Bank selection dropdown
-  - Credit type dropdown (Card de cumparaturi, Nevoi personale, Overdraft, Ipotecar, Prima casa)
-  - Conditional input fields based on credit type
+  - Credit type options (Card de cumparaturi, Nevoi personale, Overdraft, Ipotecar, Prima casa)
+  - Conditional fields based on selection
+- **Implementation**: Adaptive form that changes based on selections
 
-### 6. Automatic Bank Recommendation
-- Analysis of client data to determine eligible banks
-- Verification criteria including:
-  - Client/co-borrower age
-  - FICO scores
+### 6. Bank Recommendation Engine
+- **Analysis**: Client eligibility determination
+- **Criteria**:
+  - Age verification
+  - FICO score assessment
   - Employment history
   - Income levels
-- Configurable bank parameters in application settings
+- **Configuration**: Adjustable bank parameters in settings
 
 ### 7. Loan Calculator
-- Inputs: loan amount, annual interest rate, loan period (years/months)
-- Outputs: monthly payment, total interest, total payment
-- Amortization table with show/hide functionality
+- **Inputs**: Loan amount, interest rate, term
+- **Outputs**: Monthly payment, total interest, total payment
+- **Visualization**: Amortization table with show/hide function
+- **Implementation**: calculatorPopup.dart with calculatorService.dart
 
 ### 8. Follow-up Call Management
-- Scheduling system for callbacks
-- Categories for:
-  - Clients who requested a later call (with specific time)
-  - Clients who didn't answer (to be called at agent's discretion)
-- Reminder notifications for scheduled callbacks
+- **Scheduling**: System for callbacks
+- **Categories**:
+  - Scheduled callbacks (specific time)
+  - Missed calls (no specific time)
+- **Implementation**: returnsPane.dart with integrated notifications
 
-### 9. Meeting Calendar for Teams
-- Shared calendar visible to all agents across 3 teams
-- Office availability tracking (3 meeting rooms)
-- Appointment scheduling to avoid conflicts
-- Permission control (agents can only modify their own appointments)
+### 9. Meeting Calendar
+- **Multi-team System**: Visibility across 3 teams
+- **Resource Management**: 3 meeting rooms
+- **Meeting Types**: Bureau meetings, credit meetings
+- **Permissions**: Edit restricted to meeting creators
+- **Implementation**: calendarArea.dart with calendarService.dart
 
 ### 10. Duty Agent Rotation
-- Tracking system for cleaning duty rotation
-- Display of current duty agent
-- Fair distribution of responsibilities across all agents
+- **Tracking**: Cleaning duty rotation
+- **Display**: Current duty agent
+- **Distribution**: Equal responsibility assignment
+- **Implementation**: Integrated in dashboard
 
-### 11. Statistics and Information Dashboard
-- Performance metrics tracking:
+### 11. Performance Analytics
+- **Metrics**:
   - Calls per day/week/month
-  - Approved/rejected clients per week/month
-  - Revenue generated per month/year
-- Visual representation of statistics
-- Time period filtering options
+  - Client approval/rejection rates
+  - Revenue generation
+- **Visualization**: Charts and graphs
+- **Filtering**: Time period selection
 
-### 12. Home Screen/Dashboard
-- Overview of important information
-- Quick access to key features
-- Display of upcoming calls
-- Current duty agent information
-- Key performance indicators
+### 12. Dashboard/Home Screen
+- **Overview**: Key information at a glance
+- **Quick Access**: Essential features
+- **Display**:
+  - Performance statistics
+  - Upcoming calls
+  - Current duty agent
 
 ### 13. Client Status Tracking
-- End-of-call status recording (accepted/rejected/postponed)
-- Notes on conversation outcomes
-- Follow-up action items
+- **Post-call Documentation**: Outcome recording
+- **Categories**: Accepted/rejected/postponed
+- **Notes**: Discussion summary and action items
+- **Implementation**: Integrated in clientsPane.dart
 
-### 14. Client Recommendation System
-- Tracking of client referrals
-- Association between referrer and referred clients
-- Commission calculation for successful referrals
+### 14. Client Referral System
+- **Tracking**: Referrer-referred association
+- **Commission**: Calculation for successful referrals
+- **Storage**: Referrer contact information
+- **Implementation**: Integrated in clientsService.dart
 
 ### 15. Google Drive & Sheets Integration
-- Automatic data transfer to Google Sheets
-- Information to sync:
-  - Client/co-borrower personal details
+- **Data Export**: Automatic synchronization
+- **Information**:
+  - Personal details
   - Credit information
-  - Income information
+  - Income data
   - Status updates
-  - Recommendations
+  - Referrals
 
 ### 16. Supervisor Oversight
-- Comprehensive view of all agent activities
-- Agent performance statistics
-  - Calls per day/week/month
-  - Meetings per day/week/month
-- Duty agent tracking
-- Performance rankings for agents by different time periods
+- **Monitoring**: Comprehensive agent activity view
+- **Statistics**:
+  - Performance metrics
+  - Meeting frequency
+  - Duty agent schedule
+- **Rankings**: Agent performance by time period
 
-## Development Guidelines
+## Development Process
 
-### UI/UX Implementation
-- Strictly follow the Figma designs provided
-- Consult before making any design changes
-- CSS code and Figma images will be provided as needed
+### Step 1: Design
+- Create UI/UX design in Figma
+- Export CSS and place in Markdown file in project
+- Reference this file when implementing UI components
 
-### Improvement Suggestions
-- Although designs should be followed, better implementation solutions are welcome
-- Consider multiple approaches for each feature, prioritizing:
-  - Performance
-  - Stability
-  - User experience
-  - Maintainability
-  - Compatibility with project requirements
+### Step 2: Structure Planning
+- Define file and folder organization
+- Plan component interactions
+- Document service responsibilities
 
-### Version Management
-- Develop the application incrementally
-- Release usable versions for testing by a single broker
-- Incorporate feedback into subsequent versions
-- Plan for eventual deployment to the entire company
+### Step 3: Implementation
+- Develop incrementally, feature by feature
+- Strictly follow Figma designs
+- Maintain clean code structure
+- Document as you go
 
-### Scaling Considerations
-- Single user during development
-- Multi-user, multi-team design from the start
-- Future-proof architecture to accommodate company-wide adoption
+### Step 4: Testing
+- Test each feature as it's developed
+- Gather feedback from broker
+- Iterate based on real-world usage
 
-## Implementation Priorities
+## UI Implementation Guidelines
 
-The development should follow these priorities:
+- **Strict Adherence**: Follow Figma designs exactly
+- **CSS Reference**: Use exported CSS from Figma placed in Markdown files
+- **Responsiveness**: Ensure proper functioning across platforms
+- **Consistency**: Maintain design language throughout the application
 
-1. Core infrastructure and authentication
-2. Basic client data management
-3. Call handling and speech features
-4. Loan calculation and bank recommendations
-5. Meeting and duty management
-6. Statistics and reporting
-7. Google integration
-8. Supervisor features
+## Code Quality Requirements
+
+- **Architecture**: Clean architecture with separation of concerns
+- **Organization**: Logical file structure following the project outline
+- **Documentation**: Clear comments and documentation
+- **Performance**: Optimized for speed and resource usage
+- **Maintainability**: Structured for future enhancements
 
 ## Technical Integration Points
 
-### Mobile Device Integration
-- Communication protocol between app and phone
-- Call status API integration
-- Voice synthesis for speech feature
+### Mobile Integration
+- **Call Handling**: Integration with device phone system
+- **Speech Synthesis**: Voice processing for name insertion
+- **Notifications**: Call and meeting reminders
 
-### Google Services
-- Authentication and authorization
-- Document creation and editing
-- Data synchronization
+### Google Cloud Services
+- **Authentication**: Firebase integration
+- **Storage**: Cloud synchronization
+- **Sheets**: Data export and import
+- **Vision AI**: Document analysis and OCR
+  - Service account authentication
+  - API usage monitoring
+  - Rate limiting and quota management
+  - Error handling and retry logic
+  - Batch processing optimization
 
-### OCR Implementation
-- Image processing libraries
-- Text extraction algorithms
-- Potential local AI models for improved accuracy
+### OCR Implementation with Google Vision AI
+- **API Integration**: Secure connection to Google Cloud Vision API
+- **Document Analysis**: Advanced document structure understanding
+- **Data Processing Flow**:
+  1. Submit images to Vision API via visionService.dart
+  2. Process document structure with documentProcessor.dart
+  3. Extract contacts using contactExtractor.dart
+  4. Validate and clean data with dataValidator.dart
+- **Setup Requirements**:
+  - Google Cloud project configuration
+  - API key or service account setup
+  - Quota management
+  - Cost optimization strategies
+- **Features**:
+  - Full-page document analysis
+  - Table structure recognition
+  - Field detection and labeling
+  - High accuracy even with poor image quality
+  - Romanian language support
 
-### Data Storage
-- Local database structure
-- Cloud synchronization
-- Security and privacy considerations
+## Testing and Quality Assurance
 
-## Testing Requirements
+- **Unit Testing**: Core functionality verification
+- **Integration Testing**: Component interaction validation
+- **User Testing**: Real-world usage by broker
+- **Performance Testing**: Cross-platform efficiency
+- **Security**: Data protection measures
 
-- Unit tests for core functionality
-- Integration tests for feature combinations
-- User acceptance testing with actual broker
-- Performance testing across different platforms
-- Security testing for sensitive financial data
-
-## Conclusion
-
-This financial consulting application aims to streamline the workflow of financial brokers by automating repetitive tasks, organizing client information, and providing valuable insights through statistics. The development approach focuses on iterative improvement based on real-world feedback, with a scalable architecture that can grow from a single-user tool to a company-wide system.
+This system prompt serves as your comprehensive guide for developing the financial consulting application. Follow the structure and requirements outlined here, referencing the Figma designs for UI implementation, and developing with clean architecture principles to create a robust, efficient, and user-friendly application.

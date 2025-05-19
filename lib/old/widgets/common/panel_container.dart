@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 
 /// A container widget with standardized styling for the application panels
 class PanelContainer extends StatelessWidget {

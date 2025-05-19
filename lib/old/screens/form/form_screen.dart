@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/old/sidebar/navigation_config.dart';
 import 'package:broker_app/old/sidebar/sidebar_widget.dart';
 import 'package:broker_app/old/sidebar/user_config.dart';
@@ -24,7 +24,7 @@ class TextStyles {
 
   static final TextStyle headerStyle = GoogleFonts.outfit(
     fontSize: 18,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w600,  
   );
 }
 

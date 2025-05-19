@@ -8,7 +8,7 @@ import 'dart:ui';
 import 'dart:async';
 import 'package:async/async.dart';
 
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/old/services/reservation_service.dart';
 
 /// Widget to build a meeting field in the upcoming list

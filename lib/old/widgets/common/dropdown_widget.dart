@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:broker_app/old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 
 /// Widget reutilizabil pentru dropdown-uri in formulare
 class DropdownWidget extends StatelessWidget {

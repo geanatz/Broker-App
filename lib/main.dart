@@ -5,17 +5,16 @@ import 'old/screens/form/form_screen.dart';
 import 'old/screens/settings/settings_screen.dart';
 import 'old/screens/dashboard/dashboard_screen.dart';
 import 'old/sidebar/navigation_config.dart';
-import 'old/theme/app_theme.dart';
+import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'dart:async';
-import 'old/auth/authScreen.dart';
+import 'package:broker_app/frontend/screens/authScreen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'old/auth/authService.dart';
-import 'old/services/consultant_service.dart';
+import 'package:broker_app/old/services/consultant_service.dart';
 
 // For DevTools inspection
 class DebugOptions {
