@@ -197,7 +197,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          SizedBox(
             width: double.infinity,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -362,7 +362,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
           ),
           
           // Butoane de actiune
-          Container(
+          SizedBox(
             width: double.infinity,
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -471,7 +471,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     List<TextInputFormatter>? inputFormatters,
     bool isError = false,
   }) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -574,7 +574,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     required String title,
     required String value,
   }) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -53,8 +53,8 @@ class AppTheme {
   // ======== CULORI GENERALE ========
 
   static Color get widgetBackground => currentThemeMode == AppThemeMode.light 
-      ? const Color(0xFFFFFFFF).withOpacity(0.5) 
-      : const Color(0xFF000000).withOpacity(0.5);
+      ? const Color(0xFFD9D9D9) 
+      : const Color(0xFF262626);
       
   static Color get popupBackground => currentThemeMode == AppThemeMode.light 
       ? const Color(0xFFD9D9D9) 
@@ -307,18 +307,18 @@ class AppTheme {
 
   // ======== UMBRELE ========
   static BoxShadow get widgetShadow => BoxShadow(
-    color: Colors.black.withOpacity(0.1),
+    color: Colors.black.withValues(alpha: 0.1),
     blurRadius: 15,
   );
   
   static BoxShadow get buttonShadow => BoxShadow(
-    color: Colors.black.withOpacity(0.2),
+    color: Colors.black.withValues(alpha: 0.2),
     blurRadius: 4,
     offset: const Offset(0, 2),
   );
   
   static BoxShadow get slotShadow => BoxShadow(
-    color: Colors.black.withOpacity(0.2),
+    color: Colors.black.withValues(alpha: 0.2),
     blurRadius: 4,
     offset: const Offset(0, 2),
   );

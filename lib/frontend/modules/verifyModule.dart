@@ -63,7 +63,7 @@ class _TokenPopupState extends State<TokenPopup> {
         height: popupHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: AppTheme.popupDecoration.copyWith(
-          color: AppTheme.widgetBackground.withOpacity(0.5),
+          color: AppTheme.widgetBackground.withValues(alpha: 0.5),
           boxShadow: [AppTheme.widgetShadow],
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),

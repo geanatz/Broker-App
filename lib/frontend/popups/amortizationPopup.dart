@@ -125,10 +125,10 @@ class AmortizationPopup extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildEntryText('${entry.paymentNumber}', flex: 1),
-          _buildEntryText('${entry.payment.toStringAsFixed(2)}', flex: 2),
-          _buildEntryText('${entry.interestPayment.toStringAsFixed(2)}', flex: 2),
-          _buildEntryText('${entry.principalPayment.toStringAsFixed(2)}', flex: 2),
-          _buildEntryText('${entry.remainingBalance.toStringAsFixed(2)}', flex: 2),
+          _buildEntryText(entry.payment.toStringAsFixed(2), flex: 2),
+          _buildEntryText(entry.interestPayment.toStringAsFixed(2), flex: 2),
+          _buildEntryText(entry.principalPayment.toStringAsFixed(2), flex: 2),
+          _buildEntryText(entry.remainingBalance.toStringAsFixed(2), flex: 2),
         ],
       ),
     );

@@ -33,7 +33,7 @@ class FirebaseThreadHandler {
           completer.complete(result);
         }
       } catch (e) {
-        print('Error in Firebase operation: $e');
+        debugPrint('Error in Firebase operation: $e');
         if (!completer.isCompleted) {
           completer.completeError(e);
         }
@@ -85,7 +85,7 @@ class FirebaseThreadHandler {
             }
           },
           onError: (error) {
-            print("Error in Firestore query: $error");
+            debugPrint("Error in Firestore query: $error");
             if (!controller.isClosed) {
               controller.addError(error);
             }
@@ -97,7 +97,7 @@ class FirebaseThreadHandler {
           },
         );
       } catch (e) {
-        print("Error setting up Firestore query: $e");
+        debugPrint("Error setting up Firestore query: $e");
         if (!controller.isClosed) {
           controller.addError(e);
           controller.close();

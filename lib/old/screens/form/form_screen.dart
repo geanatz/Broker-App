@@ -157,7 +157,7 @@ class _FormScreenState extends State<FormScreen> {
           const SizedBox(height: AppTheme.largeGap),
           _buildFormPanelContent(),
           const SizedBox(height: AppTheme.largeGap),
-          Container(
+          SizedBox(
              width: 224,
              child: SidebarWidgetAdapter(
                consultantName: widget.consultantName,
@@ -294,7 +294,7 @@ class _FormScreenState extends State<FormScreen> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
       decoration: BoxDecoration(
-        color: AppTheme.widgetBackground.withOpacity(0.5),
+        color: AppTheme.widgetBackground.withValues(alpha: 0.5),
         boxShadow: [AppTheme.widgetShadow],
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge), // 32px
       ),
@@ -379,7 +379,7 @@ class _FormScreenState extends State<FormScreen> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
       decoration: BoxDecoration(
-        color: AppTheme.widgetBackground.withOpacity(0.5),
+        color: AppTheme.widgetBackground.withValues(alpha: 0.5),
         boxShadow: [AppTheme.widgetShadow],
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge), // 32px
       ),
@@ -609,7 +609,7 @@ class _FormScreenState extends State<FormScreen> {
     return Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-         color: const Color(0xFFFFFFFF).withOpacity(0.5),
+         color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
          borderRadius: BorderRadius.circular(32),
          boxShadow: [AppTheme.widgetShadow],
       ),
@@ -628,7 +628,7 @@ class _FormScreenState extends State<FormScreen> {
      return Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-         color: const Color(0xFFFFFFFF).withOpacity(0.5),
+         color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
          borderRadius: BorderRadius.circular(32),
          boxShadow: [AppTheme.widgetShadow],
       ),
@@ -647,7 +647,7 @@ class _FormScreenState extends State<FormScreen> {
      return Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-         color: const Color(0xFFFFFFFF).withOpacity(0.5),
+         color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
          borderRadius: BorderRadius.circular(32),
          boxShadow: [AppTheme.widgetShadow],
       ),
@@ -668,7 +668,7 @@ class _FormScreenState extends State<FormScreen> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF).withOpacity(0.5),
+        color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(32),
          boxShadow: [AppTheme.widgetShadow],
       ),
@@ -723,7 +723,7 @@ class _FormScreenState extends State<FormScreen> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF).withOpacity(0.5),
+        color: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(32),
          boxShadow: [AppTheme.widgetShadow],
       ),
@@ -903,7 +903,7 @@ class _FormScreenState extends State<FormScreen> {
         ),
       );
       
-      print('Salvat date pentru contactul: ${_selectedContact!.id}');
+      debugPrint('Salvat date pentru contactul: ${_selectedContact!.id}');
     } catch (e) {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -916,7 +916,7 @@ class _FormScreenState extends State<FormScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
-      print('Eroare la salvarea datelor: $e');
+      debugPrint('Eroare la salvarea datelor: $e');
     }
   }
 

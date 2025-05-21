@@ -160,7 +160,7 @@ class _CreditFormWidgetState extends State<CreditFormWidget> {
     widget.formData.isEmpty = !widget.formData.isFilled();
 
     // Debug
-    print(
+    debugPrint(
       "Credit form updated: wasEmpty=$wasEmpty, isEmpty=${widget.formData.isEmpty}, bank=${widget.formData.selectedBank}, type=${widget.formData.selectedCreditType}",
     );
 

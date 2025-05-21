@@ -126,7 +126,7 @@ class _UpcomingAppointmentsListState extends State<UpcomingAppointmentsList> {
         });
       },
       onError: (error) {
-        print("Error in appointments stream: $error");
+        debugPrint("Error in appointments stream: $error");
         if (mounted) {
           setState(() {
             _isLoading = false;

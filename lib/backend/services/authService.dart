@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'package:broker_app/old/services/firebase_thread_handler.dart';
@@ -95,7 +96,7 @@ class AuthService {
         }
       } catch (e) {
         // Ignorăm eroarea, presupunem că email-ul nu există
-        print('Error checking email existence: $e');
+        debugPrint('Error checking email existence: $e');
       }
 
       // Creează utilizator în Firebase Auth
@@ -185,7 +186,7 @@ class AuthService {
           }
         } else {
             // Fallback if createdAt is missing, just take the first one
-            if (mostRecentDoc == null) mostRecentDoc = doc;
+            mostRecentDoc ??= doc;
         }
       }
       
@@ -205,7 +206,7 @@ class AuthService {
         emailToUse = storedEmail;
       } else {
         // Generăm email-ul standard (fallback if email wasn't stored during registration)
-        print("Warning: Email not found in consultant document, generating from name.");
+        debugPrint("Warning: Email not found in consultant document, generating from name.");
         emailToUse = _createEmailFromConsultantName(consultantName);
       }
       
@@ -242,7 +243,7 @@ class AuthService {
           }
         }
         
-        print("Firebase Auth Error during login: ${authError is FirebaseAuthException ? authError.message : authError}");
+        debugPrint("Firebase Auth Error during login: ${authError is FirebaseAuthException ? authError.message : authError}");
         return {
           'success': false,
           'message': 'Eroare la autentificare. Verificați email-ul ($emailToUse) și parola.',
@@ -250,7 +251,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      print("General Error during login: $e");
+      debugPrint("General Error during login: $e");
       return {
         'success': false,
         'message': 'Eroare la autentificare: $e',
@@ -382,7 +383,7 @@ class AuthService {
             mostRecentDoc = doc;
           }
         } else {
-          if (mostRecentDoc == null) mostRecentDoc = doc;
+          mostRecentDoc ??= doc;
         }
       }
       
@@ -415,7 +416,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      print("Error deleting consultant: $e");
+      debugPrint("Error deleting consultant: $e");
       return {
         'success': false,
         'message': 'Eroare la ștergerea consultantului: $e',
@@ -433,15 +434,15 @@ class AuthService {
       // Verificăm doar dacă există contul
       final methods = await _auth.fetchSignInMethodsForEmail(email);
       if (methods.isNotEmpty) {
-        print('Auth user exists, but cannot be deleted from client app. Email: $email');
-        print('Available sign-in methods: $methods');
+        debugPrint('Auth user exists, but cannot be deleted from client app. Email: $email');
+        debugPrint('Available sign-in methods: $methods');
         
         // În realitate, aici ar trebui să apelăm un endpoint backend securizat sau Cloud Function
         // Exemplu pseudocod pentru Cloud Function (implementat în backend):
         // await cloudFunctions.httpsCallable('deleteUserByEmail')({'email': email});
       }
     } catch (e) {
-      print('Error checking/deleting auth user: $e');
+      debugPrint('Error checking/deleting auth user: $e');
       // Transmitem eroarea mai departe pentru a fi gestionată de apelant
       rethrow;
     }
@@ -455,7 +456,7 @@ class AuthService {
       );
       return snapshot.docs.map((doc) => doc['name'] as String).toList();
     } catch (e) {
-      print('Error fetching consultant names: $e');
+      debugPrint('Error fetching consultant names: $e');
       return [];
     }
   }

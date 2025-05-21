@@ -409,7 +409,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError) {
-                        print("Calendar Stream Error: ${snapshot.error}");
+                        debugPrint("Calendar Stream Error: ${snapshot.error}");
                         return const Center(child: Text('Eroare la incarcare calendar'));
                       }
 
@@ -463,7 +463,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       ),
                                       if (!isLastHour) const SizedBox(height: 56.0),
                                     ];
-                                  }).toList(),
+                                  }),
                                 ],
                               ),
                               const SizedBox(width: AppTheme.mediumGap),
@@ -637,7 +637,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.25), // Standard blur
+      barrierColor: Colors.black.withValues(alpha: 0.25), // Standard blur
       builder: (BuildContext context) {
         return CreateReservationDialog(
           clientNameController: _clientNameController,
@@ -679,7 +679,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     } catch (e) {
       Navigator.of(context).pop(); // Dismiss loading indicator
-      print("Error creating reservation: $e");
+      debugPrint("Error creating reservation: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Eroare la crearea rezervarii: $e"), backgroundColor: Colors.red)
@@ -730,7 +730,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           availableHoursList.sort(); // Keep the list sorted
         }
       } catch (e) {
-        print("Error during fetchAvailableTimeSlots query/processing: $e");
+        debugPrint("Error during fetchAvailableTimeSlots query/processing: $e");
         // Fallback: return all hours, or the original slot if an error occurs
         availableHoursList = [...hours]; 
         String originalTimeSlot = DateFormat('HH:mm').format(initialDateTime);
@@ -745,7 +745,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.25),
+      barrierColor: Colors.black.withValues(alpha: 0.25),
       builder: (BuildContext dialogContext) {
         return EditReservationDialog(
           reservationData: reservationData,
@@ -816,7 +816,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     } catch (e) {
       Navigator.of(context).pop(); // Dismiss loading indicator
-      print("Error updating reservation: $e");
+      debugPrint("Error updating reservation: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Eroare la actualizarea rezervării: $e"), backgroundColor: Colors.red)
@@ -847,7 +847,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     } catch (e) {
       Navigator.of(context).pop(); // Dismiss loading
-      print('Error deleting reservation: $e');
+      debugPrint('Error deleting reservation: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

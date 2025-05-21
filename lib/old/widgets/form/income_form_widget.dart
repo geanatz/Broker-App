@@ -123,7 +123,7 @@ class _IncomeFormWidgetState extends State<IncomeFormWidget> {
     widget.formData.isEmpty = !widget.formData.isFilled();
 
     // Debug
-    print(
+    debugPrint(
       "Income form updated: wasEmpty=$wasEmpty, isEmpty=${widget.formData.isEmpty}, bank=${widget.formData.selectedBank}, type=${widget.formData.selectedIncomeType}",
     );
 

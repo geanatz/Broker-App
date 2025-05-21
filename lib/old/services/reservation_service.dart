@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'dart:async';
 import 'firebase_thread_handler.dart';
 
@@ -64,7 +65,7 @@ class ReservationService {
       
       return {'success': true, 'message': 'Rezervare creata cu succes'};
     } catch (e) {
-      print("Eroare createReservation: $e");
+      debugPrint("Eroare createReservation: $e");
       return {'success': false, 'message': 'Eroare la crearea rezervarii: $e'};
     }
   }
@@ -81,7 +82,7 @@ class ReservationService {
       }
       return null;
     } catch (e) {
-      print("Error fetching consultant data: $e");
+      debugPrint("Error fetching consultant data: $e");
       return null;
     }
   }
@@ -125,7 +126,7 @@ class ReservationService {
         }
       },
       onError: (error) {
-        print("Error in getReservationsForWeek: $error");
+        debugPrint("Error in getReservationsForWeek: $error");
         if (!controller.isClosed) {
           controller.addError(error);
         }
@@ -180,7 +181,7 @@ class ReservationService {
         }
       },
       onError: (error) {
-        print("Error in getUpcomingReservations: $error");
+        debugPrint("Error in getUpcomingReservations: $error");
         if (!controller.isClosed) {
           controller.addError(error);
         }
@@ -238,7 +239,7 @@ class ReservationService {
       
       return {'success': true, 'message': 'Rezervarea a fost actualizată cu succes'};
     } catch (e) {
-      print("Eroare updateReservation: $e");
+      debugPrint("Eroare updateReservation: $e");
       return {'success': false, 'message': 'Eroare la actualizarea rezervării: $e'};
     }
   }
@@ -274,7 +275,7 @@ class ReservationService {
       
       return {'success': true, 'message': 'Rezervarea a fost ștearsă cu succes'};
     } catch (e) {
-      print("Eroare deleteReservation: $e");
+      debugPrint("Eroare deleteReservation: $e");
       return {'success': false, 'message': 'Eroare la ștergerea rezervării: $e'};
     }
   }
@@ -301,7 +302,7 @@ class ReservationService {
 
       return false; // Slot occupied
     } catch (e) {
-      print('Eroare la verificarea disponibilitatii slotului: $e');
+      debugPrint('Eroare la verificarea disponibilitatii slotului: $e');
       return false; // Consider slot occupied in case of error
     }
   }

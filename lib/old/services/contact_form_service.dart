@@ -1,4 +1,6 @@
 import 'dart:collection';
+import 'package:flutter/material.dart';
+
 import '../models/contact_data.dart';
 import '../models/form_data.dart';
 
@@ -157,16 +159,16 @@ class ContactFormService {
     // This would be implemented with a package like 'excel' to create XLSX files
     // For now, we'll just print the data
     final data = prepareDataForExport();
-    print('Exportăm date pentru ${data.length} contacte:');
+    debugPrint('Exportăm date pentru ${data.length} contacte:');
     
     data.forEach((contactId, contactData) {
-      print('Contact: ${contactData['name']} (${contactData['phone']})');
+      debugPrint('Contact: ${contactData['name']} (${contactData['phone']})');
       
       final credits = contactData['credits'] as List;
-      print('  Credite: ${credits.length}');
+      debugPrint('  Credite: ${credits.length}');
       
       final incomes = contactData['incomes'] as List;
-      print('  Venituri: ${incomes.length}');
+      debugPrint('  Venituri: ${incomes.length}');
     });
     
     return true;

@@ -34,8 +34,8 @@ class DebugOptions {
 void main() async { 
   // Set an error handler for all Flutter errors
   FlutterError.onError = (FlutterErrorDetails details) {
-    print('Flutter error caught: ${details.exception}');
-    print(details.stack);
+    debugPrint('Flutter error caught: ${details.exception}');
+    debugPrint('${details.stack}');
   };
 
   // Run app in a guarded zone to catch all errors
@@ -70,12 +70,12 @@ void main() async {
       // Web-specific settings
       if (kIsWeb) {
         try {
-          // Enable multi-tab persistence for web
-          await FirebaseFirestore.instance.enablePersistence(
-            const PersistenceSettings(synchronizeTabs: true),
+          FirebaseFirestore.instance.settings = Settings(
+            persistenceEnabled: true,
+            cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
           );
         } catch (e) {
-          print('Error enabling persistence: $e');
+          debugPrint('Error enabling persistence: $e');
           // Fall back to memory-only mode if persistence fails
           FirebaseFirestore.instance.settings = Settings(
             persistenceEnabled: false,
@@ -93,15 +93,15 @@ void main() async {
     
     // Set up global error handling for platform errors
     PlatformDispatcher.instance.onError = (error, stack) {
-      print('PlatformDispatcher error: $error');
-      print(stack);
+      debugPrint('PlatformDispatcher error: $error');
+      debugPrint('$stack');
       return true;
     };
     
     runApp(const MyApp());
   }, (error, stackTrace) {
-    print('Caught error in runZonedGuarded: $error');
-    print(stackTrace);
+    debugPrint('Caught error in runZonedGuarded: $error');
+    debugPrint('$stackTrace');
   });
 }
 
@@ -118,7 +118,7 @@ class MyApp extends StatelessWidget {
           seedColor: AppTheme.elementColor1,
           primary: AppTheme.elementColor2,
           secondary: AppTheme.elementColor1,
-          background: Colors.white,
+          surface: Colors.white,
         ),
         useMaterial3: true,
         textTheme: GoogleFonts.outfitTextTheme(),
@@ -225,7 +225,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         });
       }
     } catch (e) {
-      print("Error fetching consultant data: $e");
+      debugPrint("Error fetching consultant data: $e");
       if (mounted) {
         setState(() {
           _consultantData = null;
@@ -249,7 +249,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
       // Această stare nu ar trebui atinsă dacă AuthWrapper funcționează corect
       // și dacă _fetchConsultantData deconectează user-ul dacă nu are date.
       // Ca fallback, afișăm un mesaj și AuthWrapper ar trebui să intervină.
-      print("MainAppWrapper: _consultantData is null, user should be redirected to AuthScreen by AuthWrapper.");
+      debugPrint("MainAppWrapper: _consultantData is null, user should be redirected to AuthScreen by AuthWrapper.");
       return Scaffold(
         body: Center(
           child: Text("Date consultant indisponibile. Redirecționare...",

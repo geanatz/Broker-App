@@ -68,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: _buildDashboardContent(),
           ),
           const SizedBox(height: AppTheme.largeGap),
-          Container(
+          SizedBox(
             width: 224,
             child: SidebarWidgetAdapter(
               consultantName: widget.consultantName,

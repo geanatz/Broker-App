@@ -39,9 +39,6 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
   // Service pentru gestionarea contactelor și formularelor
   final ContactFormService _contactService = ContactFormService();
 
-  // GlobalKey to access ScaffoldMessenger for SnackBar or other context needs
-  final GlobalKey _containerKey = GlobalKey();
-
   // Store the GLOBAL tap position for the context menu
   Offset _globalTapPosition = Offset.zero;
 
@@ -119,7 +116,7 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
         ),
       ],
       elevation: 8.0,
-      color: AppTheme.popupBackground.withOpacity(0.9), // Use popup background
+      color: AppTheme.popupBackground, // Use popup background
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
       ),
@@ -200,14 +197,14 @@ class _FormsContainerWidgetState extends State<FormsContainerWidget> {
     final bool isNowFilled = !_formDataList[index].isEmpty;
 
     // Debugging
-    print(
+    debugPrint(
       "Form at index $index: wasEmpty=$wasEmpty, isNowFilled=$isNowFilled, isLastForm=$isLastForm",
     );
-    print("Form data: ${_formDataList[index]}");
+    debugPrint("Form data: ${_formDataList[index]}");
 
     // Daca este ultimul formular si acum contine date (banca si tip credit/venit), adaugam un nou formular
     if (isLastForm && isNowFilled) {
-      print("Adding new form because the last one is now filled.");
+      debugPrint("Adding new form because the last one is now filled.");
       setState(() {
         if (widget.type == FormContainerType.credit) {
           _formDataList.add(CreditFormData.empty());

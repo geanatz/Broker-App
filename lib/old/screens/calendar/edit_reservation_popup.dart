@@ -166,7 +166,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
                 height: 408,
                 padding: const EdgeInsets.all(AppTheme.smallGap),
                 decoration: BoxDecoration(
-                  color: AppTheme.containerColor2,
+                  color: AppTheme.containerColor1,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
                 child: Column(
@@ -552,7 +552,7 @@ class _EditReservationDialogState extends State<EditReservationDialog> {
       border: InputBorder.none,
       hintText: hintText,
       hintStyle: AppTheme.secondaryTitleStyle.copyWith(
-        color: AppTheme.elementColor3.withOpacity(0.7),
+        color: AppTheme.elementColor3.withValues(alpha: 0.75),
         fontSize: AppTheme.fontSizeMedium,
         fontWeight: FontWeight.w500,
       ),

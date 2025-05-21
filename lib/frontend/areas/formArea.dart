@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/sidebar/sidebar_service.dart';
 import 'package:broker_app/old/models/contact_data.dart';
 import 'package:broker_app/old/services/contact_form_service.dart';
 import 'package:broker_app/old/widgets/form/forms_container_widget.dart.dart' show FormsContainerWidget, FormContainerType;
-import 'package:broker_app/old/widgets/common/panel_container.dart';
 
 /// Definirea temei de text pentru a asigura consistența fontului Outfit în întreaga aplicație
 class TextStyles {

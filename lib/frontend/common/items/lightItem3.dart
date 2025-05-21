@@ -1,0 +1,131 @@
+// lib/components/items/light_item3.dart
+
+import 'package:flutter/material.dart';
+// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+
+/// A customizable light-themed item component with a primary title on the left
+/// and a secondary description text on the right.
+class LightItem3 extends StatelessWidget {
+  /// The primary title text displayed on the left.
+  final String title;
+
+  /// The secondary description text displayed on the right.
+  final String description;
+
+  /// Optional callback when the item is tapped.
+  final VoidCallback? onTap;
+
+  /// Optional custom background color for the container.
+  /// Defaults to AppTheme.containerColor1 (0xFFC4C4D4) if not provided.
+  final Color? backgroundColor;
+
+  /// Optional custom color for the title text.
+  /// Defaults to AppTheme.elementColor2 (0xFF666699) if not provided.
+  final Color? titleColor;
+
+  /// Optional custom color for the description text.
+  /// Defaults to AppTheme.elementColor1 (0xFF8A8AA8) if not provided.
+  final Color? descriptionColor;
+
+  /// Optional custom border radius for the container.
+  /// Defaults to 24.0 if not provided.
+  final double? borderRadius;
+
+  /// Optional width for the container holding the description text.
+  /// Defaults to 104.0.
+  final double? descriptionContainerWidth;
+
+  const LightItem3({
+    Key? key,
+    required this.title,
+    required this.description,
+    this.onTap,
+    this.backgroundColor,
+    this.titleColor,
+    this.descriptionColor,
+    this.borderRadius,
+    this.descriptionContainerWidth,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // --- Placeholder Values / Hardcoded Defaults ---
+    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
+    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
+    final Color effectiveDescriptionColor = descriptionColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
+    final double effectiveBorderRadius = borderRadius ?? 24.0; // AppTheme.borderRadiusLarge
+    final double itemHeight = 48.0; // AppTheme.itemHeightMedium
+    final double horizontalPadding = 16.0; // AppTheme.paddingMedium
+    final double effectiveDescriptionContainerWidth = descriptionContainerWidth ?? 104.0;
+    final double internalSpacing = 16.0; // AppTheme.mediumGap (original spacing: 16 on Row)
+
+    final TextStyle titleStyle = TextStyle(
+      color: effectiveTitleColor,
+      fontSize: 17, // AppTheme.fontSizeMedium
+      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
+      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+    );
+    final TextStyle descriptionStyle = TextStyle(
+      color: effectiveDescriptionColor,
+      fontSize: 15, // AppTheme.fontSizeSmall
+      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
+      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+    );
+
+    Widget content = Container(
+      width: double.infinity,
+      height: itemHeight,
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      decoration: ShapeDecoration(
+        color: effectiveBackgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(effectiveBorderRadius),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: titleStyle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: internalSpacing),
+          SizedBox(
+            width: effectiveDescriptionContainerWidth,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  description,
+                  textAlign: TextAlign.right,
+                  style: descriptionStyle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap != null) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(effectiveBorderRadius),
+          child: content,
+        ),
+      );
+    }
+    return content;
+  }
+}

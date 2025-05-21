@@ -24,7 +24,7 @@ class ConsultantPopup extends StatelessWidget {
       Navigator.of(context).pop(); // Închide popup-ul
       // Nu este nevoie de navigare specifică, AuthWrapper din main.dart va redirectiona automat
     } catch (e) {
-      print("Error signing out: $e");
+      debugPrint("Error signing out: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Eroare la deconectare: $e'),

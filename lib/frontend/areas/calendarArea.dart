@@ -4,16 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/sidebar/sidebar_service.dart';
 import 'package:broker_app/old/widgets/common/panel_container.dart';
 import 'package:broker_app/old/services/reservation_service.dart';
 import 'package:broker_app/old/screens/calendar/create_reservation_popup.dart';
 import 'package:broker_app/old/screens/calendar/edit_reservation_popup.dart';
-import 'package:broker_app/old/screens/calendar/calendar_widgets.dart';
 import 'package:broker_app/old/screens/calendar/calendar_constants.dart';
 
 /// Area pentru calendar care va fi afișată în cadrul ecranului principal.
@@ -277,7 +274,7 @@ class _CalendarAreaState extends State<CalendarArea> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError) {
-                        print("Calendar Stream Error: ${snapshot.error}");
+                        debugPrint("Calendar Stream Error: ${snapshot.error}");
                         return const Center(child: Text('Eroare la incarcare calendar'));
                       }
 
@@ -331,7 +328,7 @@ class _CalendarAreaState extends State<CalendarArea> {
                                       ),
                                       if (!isLastHour) const SizedBox(height: 56.0),
                                     ];
-                                  }).toList(),
+                                  }),
                                 ],
                               ),
                               const SizedBox(width: AppTheme.mediumGap),
@@ -505,7 +502,7 @@ class _CalendarAreaState extends State<CalendarArea> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.25), // Standard blur
+      barrierColor: Colors.black.withValues(alpha: 0.25), // Standard blur
       builder: (BuildContext context) {
         return CreateReservationDialog(
           clientNameController: _clientNameController,
@@ -547,7 +544,7 @@ class _CalendarAreaState extends State<CalendarArea> {
       }
     } catch (e) {
       Navigator.of(context).pop(); // Dismiss loading indicator
-      print("Error creating reservation: $e");
+      debugPrint("Error creating reservation: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Eroare la crearea rezervarii: $e"), backgroundColor: Colors.red)
@@ -593,7 +590,7 @@ class _CalendarAreaState extends State<CalendarArea> {
           availableHoursList.sort(); // Keep the list sorted
         }
       } catch (e) {
-        print("Error during fetchAvailableTimeSlots query/processing: $e");
+        debugPrint("Error during fetchAvailableTimeSlots query/processing: $e");
         // Fallback: return all hours, or the original slot if an error occurs
         availableHoursList = [...hours]; 
         String originalTimeSlot = DateFormat('HH:mm').format(initialDateTime);
@@ -608,7 +605,7 @@ class _CalendarAreaState extends State<CalendarArea> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.25),
+      barrierColor: Colors.black.withValues(alpha: 0.25),
       builder: (BuildContext dialogContext) {
         return EditReservationDialog(
           reservationData: reservationData,
@@ -676,7 +673,7 @@ class _CalendarAreaState extends State<CalendarArea> {
       }
     } catch (e) {
       Navigator.of(context).pop(); // Dismiss loading indicator
-      print("Error updating reservation: $e");
+      debugPrint("Error updating reservation: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Eroare la actualizarea rezervării: $e"), backgroundColor: Colors.red)
@@ -707,7 +704,7 @@ class _CalendarAreaState extends State<CalendarArea> {
       }
     } catch (e) {
       Navigator.of(context).pop(); // Dismiss loading
-      print('Error deleting reservation: $e');
+      debugPrint('Error deleting reservation: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

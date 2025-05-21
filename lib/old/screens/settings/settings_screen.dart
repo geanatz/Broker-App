@@ -117,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: _buildSettingsContent(),
           ),
           const SizedBox(height: AppTheme.largeGap),
-          Container(
+          SizedBox(
             width: 224,
             child: SidebarWidgetAdapter(
               consultantName: widget.consultantName,

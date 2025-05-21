@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'firebase_thread_handler.dart';
 
@@ -33,7 +34,7 @@ class ConsultantService {
       }
       return null;
     } catch (e) {
-      print("Error fetching consultant data: $e");
+      debugPrint("Error fetching consultant data: $e");
       return null;
     }
   }
@@ -50,7 +51,7 @@ class ConsultantService {
       }
       return null;
     } catch (e) {
-      print("Error fetching consultant data: $e");
+      debugPrint("Error fetching consultant data: $e");
       return null;
     }
   }

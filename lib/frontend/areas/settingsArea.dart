@@ -346,7 +346,7 @@ class _SettingsAreaState extends State<SettingsArea> {
       onTap: () => _changeThemeColor(color),
       child: Container(
         decoration: BoxDecoration(
-          color: mainColor.withOpacity(0.2),
+          color: mainColor.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           border: Border.all(
             color: isSelected ? mainColor : Colors.transparent,
@@ -364,7 +364,7 @@ class _SettingsAreaState extends State<SettingsArea> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: mainColor.withOpacity(0.3),
+                    color: mainColor.withValues(alpha: 0.25),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),

@@ -136,7 +136,7 @@ class PlaceholderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.3),
+        color: color.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
       ),
       child: Center(
