@@ -1,6 +1,7 @@
 // lib/components/fields/input_field1.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A display component for a simple input field with a title and a text value.
@@ -66,17 +67,15 @@ class InputField1 extends StatelessWidget {
     final double effectiveInputBorderRadius = inputBorderRadius ?? 16.0; // AppTheme.inputFieldBorderRadius
 
     // Text Styles (Consider moving to AppTheme)
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
     );
-    final TextStyle inputTextStyle = TextStyle(
+    final TextStyle inputTextStyle = GoogleFonts.outfit(
       color: effectiveInputTextColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+      fontSize: 17,
+      fontWeight: FontWeight.w500,
     );
 
     // Paddings (Consider moving to AppTheme)

@@ -35,6 +35,14 @@ class LightItem3 extends StatelessWidget {
   /// Defaults to 104.0.
   final double? descriptionContainerWidth;
 
+  /// Optional custom text style for the title.
+  /// If provided, this overrides the default title style.
+  final TextStyle? titleStyle;
+
+  /// Optional custom text style for the description.
+  /// If provided, this overrides the default description style.
+  final TextStyle? descriptionStyle;
+
   const LightItem3({
     Key? key,
     required this.title,
@@ -45,6 +53,8 @@ class LightItem3 extends StatelessWidget {
     this.descriptionColor,
     this.borderRadius,
     this.descriptionContainerWidth,
+    this.titleStyle,
+    this.descriptionStyle,
   }) : super(key: key);
 
   @override
@@ -59,18 +69,23 @@ class LightItem3 extends StatelessWidget {
     final double effectiveDescriptionContainerWidth = descriptionContainerWidth ?? 104.0;
     final double internalSpacing = 16.0; // AppTheme.mediumGap (original spacing: 16 on Row)
 
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle defaultTitleStyle = TextStyle(
       color: effectiveTitleColor,
       fontSize: 17, // AppTheme.fontSizeMedium
       fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
-    final TextStyle descriptionStyle = TextStyle(
+    
+    final TextStyle defaultDescriptionStyle = TextStyle(
       color: effectiveDescriptionColor,
       fontSize: 15, // AppTheme.fontSizeSmall
       fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
+
+    // Use provided styles or defaults
+    final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;
+    final TextStyle effectiveDescriptionStyle = descriptionStyle ?? defaultDescriptionStyle;
 
     Widget content = Container(
       width: double.infinity,
@@ -90,7 +105,7 @@ class LightItem3 extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: titleStyle,
+                  style: effectiveTitleStyle,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -106,7 +121,7 @@ class LightItem3 extends StatelessWidget {
                 Text(
                   description,
                   textAlign: TextAlign.right,
-                  style: descriptionStyle,
+                  style: effectiveDescriptionStyle,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

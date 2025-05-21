@@ -77,7 +77,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               
               // Spacing
-              const SizedBox(width: AppTheme.mediumGap),
+              const SizedBox(width: AppTheme.largeGap),
               
               // Area Column (centru) - lățime flexibilă
               Expanded(
@@ -85,7 +85,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               
               // Spacing
-              const SizedBox(width: AppTheme.mediumGap),
+              const SizedBox(width: AppTheme.largeGap),
               
               // Sidebar Column (dreapta) - lățime fixă 224
               SidebarWidget(

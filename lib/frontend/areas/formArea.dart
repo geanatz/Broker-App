@@ -122,7 +122,7 @@ class _FormAreaState extends State<FormArea> {
           flex: 1,
           child: _buildLoanWidget(),
         ),
-        const SizedBox(width: AppTheme.largeGap),
+        const SizedBox(width: AppTheme.mediumGap),
         Expanded(
           flex: 1,
           child: _buildIncomeWidget(),

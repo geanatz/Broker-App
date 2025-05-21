@@ -1,6 +1,7 @@
 // lib/components/headers/widget_header1.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A simple widget header displaying a single title.
@@ -44,11 +45,10 @@ class WidgetHeader1 extends StatelessWidget {
     final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16); // AppTheme.paddingMedium
     final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0; // AppTheme.headerTitleHeight
 
-    final TextStyle defaultTitleStyle = TextStyle(
+    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 19, // AppTheme.fontSizeLarge
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
+      fontSize: 19,
+      fontWeight: FontWeight.w600,
     );
 
     final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;
