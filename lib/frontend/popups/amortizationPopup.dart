@@ -30,11 +30,11 @@ class AmortizationPopup extends StatelessWidget {
         child: Container(
           width: 520,
           height: 432,
-          padding: const EdgeInsets.all(AppTheme.smallGap),
+          padding: const EdgeInsets.all(8),
           decoration: ShapeDecoration(
             color: AppTheme.popupBackground,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+              borderRadius: BorderRadius.circular(32),
             ),
           ),
           child: Column(
@@ -43,17 +43,24 @@ class AmortizationPopup extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              WidgetHeader1(
-                title: 'Amortizare',
-                titleColor: const Color(0xFF8A8AA8), // elementColor1
+              Container(
+                width: double.infinity,
+                height: 24,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: WidgetHeader1(
+                  title: 'Amortizare',
+                  titleColor: const Color(0xFF8A8AA8), // elementColor1
+                  padding: EdgeInsets.zero,
+                ),
               ),
-              SizedBox(height: AppTheme.smallGap),
+              
+              const SizedBox(height: 8),
               
               // Main content
               Expanded(
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(AppTheme.smallGap),
+                  padding: const EdgeInsets.all(8),
                   decoration: ShapeDecoration(
                     color: const Color(0xFFC4C4D4), // containerColor1
                     shape: RoundedRectangleBorder(
@@ -65,59 +72,206 @@ class AmortizationPopup extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header row
-                      DynamicTextHeaderRow(
-                        titles: ['Nr.', 'Rata', 'Dobândă', 'Principal', 'Sold'],
-                        textColor: const Color(0xFF666699), // elementColor2
-                        textAlign: TextAlign.left,
-                        titleStyle: GoogleFonts.outfit(
-                          color: Color(0xFF666699), // elementColor2
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
+                      // Header row - using a custom row that matches the Figma design
+                      Container(
+                        width: double.infinity,
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: ShapeDecoration(
+                          color: const Color(0xFFACACD2), // containerColor2 - lighter purple for header
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                        rowPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 21,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Luna',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFF666699), // elementColor2
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 21,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Suma',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFF666699), // elementColor2
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 21,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Dobanda',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFF666699), // elementColor2
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 21,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Principal',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFF666699), // elementColor2
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 21,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Sold',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFF666699), // elementColor2
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      
+                      const SizedBox(height: 8),
                       
                       // Table content
                       Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          clipBehavior: Clip.antiAlias,
-                          decoration: ShapeDecoration(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: ListView.separated(
-                            itemCount: schedule.length,
-                            separatorBuilder: (context, index) => 
-                              const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final entry = schedule[index];
-                              return DynamicTextDataRow(
-                                values: [
-                                  '${entry.paymentNumber}',
-                                  entry.payment.toStringAsFixed(2),
-                                  entry.interestPayment.toStringAsFixed(2),
-                                  entry.principalPayment.toStringAsFixed(2),
-                                  entry.remainingBalance.toStringAsFixed(2),
+                        child: ListView.separated(
+                          padding: EdgeInsets.zero,
+                          itemCount: schedule.length,
+                          separatorBuilder: (context, index) => 
+                            const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final entry = schedule[index];
+                            return Container(
+                              width: double.infinity,
+                              height: 40,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFFACACD2), // containerColor2
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 21,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '${entry.paymentNumber}',
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      height: 21,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        entry.payment.toStringAsFixed(2),
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      height: 21,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        entry.interestPayment.toStringAsFixed(2),
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      height: 21,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        entry.principalPayment.toStringAsFixed(2),
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      height: 21,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        entry.remainingBalance.toStringAsFixed(2),
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ],
-                                rowBackgroundColor: const Color(0xFFACACD2), // containerColor2
-                                rowBorderRadius: 16,
-                                rowPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                textColor: const Color(0xFF4D4D80), // elementColor3
-                                textAlign: TextAlign.left,
-                                valueStyle: GoogleFonts.outfit(
-                                  color: Color(0xFF4D4D80), // elementColor3
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],

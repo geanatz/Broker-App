@@ -255,7 +255,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                 ),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15 ),
                   border: InputBorder.none,
                   hintText: placeholderText,
                   hintStyle: GoogleFonts.outfit(
