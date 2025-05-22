@@ -43,13 +43,14 @@ class _CalculatorPaneState extends State<CalculatorPane> {
   // Flag pentru a verifica daca calculul poate fi efectuat
   bool get _canCalculate {
     return _principalController.text.isNotEmpty && 
-           _interestRateController.text.isNotEmpty &&
-           (_loanYearsController.text.isNotEmpty || _loanMonthsController.text.isNotEmpty);
+           _interestRateController.text.isNotEmpty;
   }
   
   @override
   void initState() {
     super.initState();
+    _loanYearsController.text = '5';
+    _loanMonthsController.text = '0';
     
     // Add listeners to all controllers to trigger automatic calculation
     _principalController.addListener(_calculateLoan);
@@ -75,13 +76,21 @@ class _CalculatorPaneState extends State<CalculatorPane> {
       final double interestRate = double.parse(_interestRateController.text.replaceAll(',', ''));
       
       // Calculeaza perioada totala in luni
-      int loanTerm = 0;
+      int years = 0;
       if (_loanYearsController.text.isNotEmpty) {
-        loanTerm += int.parse(_loanYearsController.text) * 12;
+        years = int.tryParse(_loanYearsController.text) ?? 5;
+      } else {
+        years = 5; // Default to 5 years if empty
       }
+      
+      int months = 0;
       if (_loanMonthsController.text.isNotEmpty) {
-        loanTerm += int.parse(_loanMonthsController.text);
+        months = int.tryParse(_loanMonthsController.text) ?? 0;
+      } else {
+        months = 0; // Default to 0 months if empty
       }
+      
+      int loanTerm = (years * 12) + months;
 
       if (principal <= 0 || interestRate < 0 || loanTerm <= 0) {
         // Input-urile trebuie sa fie pozitive
@@ -136,13 +145,21 @@ class _CalculatorPaneState extends State<CalculatorPane> {
       final double interestRate = double.parse(_interestRateController.text.replaceAll(',', ''));
       
       // Calculeaza perioada totala in luni
-      int loanTerm = 0;
+      int years = 0;
       if (_loanYearsController.text.isNotEmpty) {
-        loanTerm += int.parse(_loanYearsController.text) * 12;
+        years = int.tryParse(_loanYearsController.text) ?? 5;
+      } else {
+        years = 5; // Default to 5 years if empty
       }
+      
+      int months = 0;
       if (_loanMonthsController.text.isNotEmpty) {
-        loanTerm += int.parse(_loanMonthsController.text);
+        months = int.tryParse(_loanMonthsController.text) ?? 0;
+      } else {
+        months = 0; // Default to 0 months if empty
       }
+      
+      int loanTerm = (years * 12) + months;
 
       // Genereaza graficul de amortizare
       final schedule = CalculatorService.generateAmortizationSchedule(
@@ -168,8 +185,8 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     setState(() {
       _principalController.clear();
       _interestRateController.clear();
-      _loanYearsController.clear();
-      _loanMonthsController.clear();
+      _loanYearsController.text = '5';
+      _loanMonthsController.text = '0';
       _monthlyPayment = 0;
       _totalCost = 0;
       _totalInterest = 0;
