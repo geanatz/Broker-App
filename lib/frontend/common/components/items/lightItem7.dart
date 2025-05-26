@@ -1,6 +1,8 @@
 // lib/components/items/light_item7.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A customizable light-themed item with title, description, and an
@@ -14,6 +16,9 @@ class LightItem7 extends StatelessWidget {
 
   /// Optional icon data to display on the right.
   final IconData? icon;
+
+  /// Optional SVG asset path to display on the right (takes precedence over icon).
+  final String? svgAsset;
 
   /// Optional callback when the item is tapped.
   final VoidCallback? onTap;
@@ -55,6 +60,7 @@ class LightItem7 extends StatelessWidget {
     required this.title,
     required this.description,
     this.icon,
+    this.svgAsset,
     this.onTap,
     this.backgroundColor,
     this.titleColor,
@@ -77,26 +83,27 @@ class LightItem7 extends StatelessWidget {
 
     final double effectiveMainBorderRadius = mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
     final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
-    final double itemHeight = 64.0; // AppTheme.itemHeightLarge
+    final double itemHeight = 64.0; // Increased from 64.0 to fix overflow
     final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
-    final double textColumnSpacing = 4.0; // AppTheme.tinyGap
+    final double textColumnSpacing = 3.0; // AppTheme.tinyGap
     final double internalRowSpacing = 16.0; // AppTheme.mediumGap
     final double iconContainerSize = 48.0;
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
 
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
     );
-    final TextStyle descriptionStyle = TextStyle(
+    final TextStyle descriptionStyle = GoogleFonts.outfit(
       color: effectiveDescriptionColor,
       fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
+
+    // Determine if we should show an icon (either SVG or IconData)
+    final bool hasIcon = svgAsset != null || icon != null;
 
     Widget content = Container(
       width: double.infinity,
@@ -111,8 +118,7 @@ class LightItem7 extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: SizedBox( // Original snippet has this inner container with height: 48
-              height: 48,
+            child: Container( // Changed from SizedBox to Container for better flexibility
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -122,33 +128,52 @@ class LightItem7 extends StatelessWidget {
                     title,
                     style: titleStyle,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                   SizedBox(height: textColumnSpacing),
                   Text(
                     description,
                     style: descriptionStyle,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ],
               ),
             ),
           ),
-          if (icon != null) ...[
+          if (hasIcon) ...[
             SizedBox(width: internalRowSpacing),
-            Container(
-              width: iconContainerSize,
-              height: iconContainerSize,
-              decoration: ShapeDecoration(
-                color: effectiveIconContainerColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  icon,
-                  size: effectiveIconSize,
-                  color: effectiveIconColor,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
+                child: Container(
+                  width: iconContainerSize,
+                  height: iconContainerSize,
+                  decoration: ShapeDecoration(
+                    color: effectiveIconContainerColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
+                    ),
+                  ),
+                  child: Center(
+                    child: svgAsset != null
+                      ? SvgPicture.asset(
+                          svgAsset!,
+                          width: effectiveIconSize,
+                          height: effectiveIconSize,
+                          colorFilter: ColorFilter.mode(
+                            effectiveIconColor,
+                            BlendMode.srcIn,
+                          ),
+                        )
+                      : Icon(
+                          icon,
+                          size: effectiveIconSize,
+                          color: effectiveIconColor,
+                        ),
+                  ),
                 ),
               ),
             ),
@@ -157,16 +182,6 @@ class LightItem7 extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
-          child: content,
-        ),
-      );
-    }
     return content;
   }
 }

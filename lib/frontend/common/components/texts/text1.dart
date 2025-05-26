@@ -1,74 +1,69 @@
-// lib/components/text/left_aligned_text_display.dart
+// lib/components/texts/text1.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
-/// A simple component to display a single line of text, left-aligned.
-///
-/// The text is housed in a container with configurable padding and height.
-class LeftAlignedTextDisplay extends StatelessWidget {
-  /// The text to display.
+/// A simple text component with customizable styling.
+/// 
+/// This component provides a consistent way to display text throughout the app
+/// with predefined styling that follows the design system.
+class Text1 extends StatelessWidget {
+  /// The text content to display.
   final String text;
 
-  /// Optional custom color for the text.
+  /// Optional custom text color.
   /// Defaults to AppTheme.elementColor2 (0xFF666699).
-  final Color? textColor;
+  final Color? color;
 
-  /// Optional custom text style.
-  /// If null, a default style with AppTheme.elementColor2, fontSize 15,
-  /// and fontWeight w500 will be used.
-  final TextStyle? textStyle;
+  /// Optional custom font size.
+  /// Defaults to 17.0 (AppTheme.fontSizeMedium).
+  final double? fontSize;
 
-  /// Optional padding for the container.
-  /// Defaults to EdgeInsets.symmetric(horizontal: 8).
-  final EdgeInsetsGeometry? padding;
+  /// Optional custom font weight.
+  /// Defaults to FontWeight.w500 (AppTheme.fontWeightMedium).
+  final FontWeight? fontWeight;
 
-  /// Optional height for the container.
-  /// Defaults to 21.0.
-  final double? height;
+  /// Optional text alignment.
+  /// Defaults to TextAlign.left.
+  final TextAlign? textAlign;
 
-  const LeftAlignedTextDisplay({
+  /// Optional maximum number of lines.
+  /// If null, text can wrap to unlimited lines.
+  final int? maxLines;
+
+  /// Optional text overflow behavior.
+  /// Defaults to TextOverflow.visible.
+  final TextOverflow? overflow;
+
+  const Text1({
     Key? key,
     required this.text,
-    this.textColor,
-    this.textStyle,
-    this.padding,
-    this.height,
+    this.color,
+    this.fontSize,
+    this.fontWeight,
+    this.textAlign,
+    this.maxLines,
+    this.overflow,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveTextColor = textColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 8); // AppTheme.smallPadding
-    final double effectiveHeight = height ?? 21.0; // AppTheme.textDisplayHeightSmall (or similar)
+    // Default values based on AppTheme
+    final Color effectiveColor = color ?? const Color(0xFF666699); // AppTheme.elementColor2
+    final double effectiveFontSize = fontSize ?? 17.0; // AppTheme.fontSizeMedium
+    final FontWeight effectiveFontWeight = fontWeight ?? FontWeight.w500; // AppTheme.fontWeightMedium
 
-    final TextStyle defaultStyle = TextStyle(
-      color: effectiveTextColor,
-      fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
-    );
-    final TextStyle effectiveStyle = textStyle ?? defaultStyle;
-
-    return Container(
-      width: double.infinity, // Takes full width from parent
-      height: effectiveHeight,
-      padding: effectivePadding,
-      child: Row(
-        mainAxisSize: MainAxisSize.min, // Outer Row is min width
-        mainAxisAlignment: MainAxisAlignment.start, // Aligns its content (the Text) to the start
-        crossAxisAlignment: CrossAxisAlignment.center,
-        // spacing: 8, // Ineffective, only one direct child conceptually (after simplification)
-        children: [
-          // Original: Container > Row > Text. Simplified to just Text.
-          Text(
-            text,
-            style: effectiveStyle,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+    return Text(
+      text,
+      style: GoogleFonts.outfit(
+        color: effectiveColor,
+        fontSize: effectiveFontSize,
+        fontWeight: effectiveFontWeight,
       ),
+      textAlign: textAlign,
+      maxLines: maxLines,
+      overflow: overflow,
     );
   }
 }

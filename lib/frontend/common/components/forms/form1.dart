@@ -1,6 +1,8 @@
 // lib/components/forms/form_container1.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/appTheme.dart'; // Import AppTheme instead of placeholder
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder
 
 // --- PASTE THE CORRECTED _FormFieldContainer class definition here ---
@@ -42,20 +44,22 @@ class _FormFieldContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveHeaderTextColor = headerTextColor ?? const Color(0xFF666699); 
-    final Color effectiveValueTextColor = fieldValueTextColor ?? const Color(0xFF4D4D80); 
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); 
-    final Color effectiveContentContainerColor = contentContainerColor ?? const Color(0xFFACACD2); 
+    final Color effectiveHeaderTextColor = headerTextColor ?? AppTheme.elementColor1; 
+    final Color effectiveValueTextColor = fieldValueTextColor ?? AppTheme.elementColor2; 
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2; 
+    final Color effectiveContentContainerColor = contentContainerColor ?? AppTheme.containerColor2; 
     final double effectiveContentBorderRadius = contentBorderRadius ?? 16.0; 
 
 
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveHeaderTextColor,
-      fontSize: 17, fontFamily: 'Outfit', fontWeight: FontWeight.w600,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
     );
-    final TextStyle valueStyle = TextStyle(
+    final TextStyle valueStyle = GoogleFonts.outfit(
       color: effectiveValueTextColor,
-      fontSize: 17, fontFamily: 'Outfit', fontWeight: FontWeight.w500,
+      fontSize: 17,
+      fontWeight: FontWeight.w500,
     );
 
     Widget fieldContentArea = Container(
@@ -154,6 +158,12 @@ class FormContainer1 extends StatelessWidget {
   final Color? fieldIconColor;
   final Color? fieldContentContainerColor;
   final double? fieldContentBorderRadius;
+  
+  // Child widget parameters
+  final Widget? child1TL; // Child widget for top-left dropdown field
+  final Widget? child1TR; // Child widget for top-right dropdown field
+  final Widget? child1; // Child widget for bottom-left field
+  final Widget? child2; // Child widget for bottom-right field
 
   const FormContainer1({
     super.key, // Corrected
@@ -181,15 +191,71 @@ class FormContainer1 extends StatelessWidget {
     this.fieldIconColor,
     this.fieldContentContainerColor,
     this.fieldContentBorderRadius,
+    this.child1, // Child widget for bottom-left field
+    this.child2, // Child widget for bottom-right field
+    this.child1TL, // Child widget for top-left dropdown field
+    this.child1TR, // Child widget for top-right dropdown field
   });
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveOuterContainerColor = outerContainerColor ?? const Color(0xFFC4C4D4);
+    final Color effectiveOuterContainerColor = outerContainerColor ?? AppTheme.containerColor1;
     final double effectiveOuterBorderRadius = outerBorderRadius ?? 24.0;
     final EdgeInsetsGeometry effectiveOuterPadding = outerPadding ?? const EdgeInsets.all(8);
     final double effectiveRowSpacing = rowSpacing ?? 8.0;
     final double effectiveColumnSpacing = columnSpacing ?? 8.0;
+    
+    // Helper function to create a custom input field
+    Widget _buildCustomField(String title, String defaultText, Widget? child, VoidCallback? onTap, {IconData? icon}) {
+      if (child != null) {
+        // We have a custom child widget to use instead of the standard field
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              height: 21.0, // Standard header height
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                title,
+                style: GoogleFonts.outfit(
+                  color: fieldHeaderTextColor ?? AppTheme.elementColor1,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 4), // Standard spacing
+            Container(
+              width: double.infinity,
+              height: 48.0, // Standard content height
+              decoration: ShapeDecoration(
+                color: fieldContentContainerColor ?? AppTheme.containerColor2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(fieldContentBorderRadius ?? 16.0),
+                ),
+              ),
+              child: child,
+            ),
+          ],
+        );
+      } else {
+        // Use the standard field
+        return _FormFieldContainer(
+          title: title,
+          mainText: defaultText,
+          icon: icon,
+          onTap: onTap,
+          headerTextColor: fieldHeaderTextColor,
+          fieldValueTextColor: fieldValueTextColor,
+          iconColor: fieldIconColor,
+          contentContainerColor: fieldContentContainerColor,
+          contentBorderRadius: fieldContentBorderRadius,
+        );
+      }
+    }
 
     return Container(
       width: double.infinity,
@@ -211,31 +277,47 @@ class FormContainer1 extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: _FormFieldContainer(
-                  title: titleTL,
-                  mainText: optionTL,
-                  icon: iconTL,
-                  onTap: onTapTL,
-                  headerTextColor: fieldHeaderTextColor,
-                  fieldValueTextColor: fieldValueTextColor, // Pass it here
-                  iconColor: fieldIconColor,
-                  contentContainerColor: fieldContentContainerColor,
-                  contentBorderRadius: fieldContentBorderRadius,
-                ),
+                child: child1TL != null 
+                  ? _buildCustomField(
+                      titleTL,
+                      optionTL,
+                      child1TL,
+                      onTapTL,
+                      icon: iconTL,
+                    )
+                  : _FormFieldContainer(
+                      title: titleTL,
+                      mainText: optionTL,
+                      icon: iconTL,
+                      onTap: onTapTL,
+                      headerTextColor: fieldHeaderTextColor,
+                      fieldValueTextColor: fieldValueTextColor,
+                      iconColor: fieldIconColor,
+                      contentContainerColor: fieldContentContainerColor,
+                      contentBorderRadius: fieldContentBorderRadius,
+                    ),
               ),
               SizedBox(width: effectiveColumnSpacing),
               Expanded(
-                child: _FormFieldContainer(
-                  title: titleTR,
-                  mainText: optionTR,
-                  icon: iconTR,
-                  onTap: onTapTR,
-                  headerTextColor: fieldHeaderTextColor,
-                  fieldValueTextColor: fieldValueTextColor, // Pass it here
-                  iconColor: fieldIconColor,
-                  contentContainerColor: fieldContentContainerColor,
-                  contentBorderRadius: fieldContentBorderRadius,
-                ),
+                child: child1TR != null 
+                  ? _buildCustomField(
+                      titleTR,
+                      optionTR,
+                      child1TR,
+                      onTapTR,
+                      icon: iconTR,
+                    )
+                  : _FormFieldContainer(
+                      title: titleTR,
+                      mainText: optionTR,
+                      icon: iconTR,
+                      onTap: onTapTR,
+                      headerTextColor: fieldHeaderTextColor,
+                      fieldValueTextColor: fieldValueTextColor,
+                      iconColor: fieldIconColor,
+                      contentContainerColor: fieldContentContainerColor,
+                      contentBorderRadius: fieldContentBorderRadius,
+                    ),
               ),
             ],
           ),
@@ -246,26 +328,20 @@ class FormContainer1 extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: _FormFieldContainer(
-                  title: titleBL,
-                  mainText: textBL,
-                  onTap: onTapBL,
-                  headerTextColor: fieldHeaderTextColor,
-                  fieldValueTextColor: fieldValueTextColor, // Pass it here
-                  contentContainerColor: fieldContentContainerColor,
-                  contentBorderRadius: fieldContentBorderRadius,
+                child: _buildCustomField(
+                  titleBL,
+                  textBL,
+                  child1,
+                  onTapBL,
                 ),
               ),
               SizedBox(width: effectiveColumnSpacing),
               Expanded(
-                child: _FormFieldContainer(
-                  title: titleBR,
-                  mainText: textBR,
-                  onTap: onTapBR,
-                  headerTextColor: fieldHeaderTextColor,
-                  fieldValueTextColor: fieldValueTextColor, // Pass it here
-                  contentContainerColor: fieldContentContainerColor,
-                  contentBorderRadius: fieldContentBorderRadius,
+                child: _buildCustomField(
+                  titleBR,
+                  textBR,
+                  child2,
+                  onTapBR,
                 ),
               ),
             ],

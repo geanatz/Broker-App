@@ -200,31 +200,16 @@ class _SidebarWidgetState extends State<SidebarWidget> {
               vertical: 12, 
               horizontal: AppTheme.mediumGap,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-                  child: Text(
-                    'Clienti Noi',
-                    style: AppTheme.navigationButtonTextStyle.copyWith(
-                      color: AppTheme.elementColor2,
-                    ),
-                  ),
+            child: Center(
+              child: SvgPicture.asset(
+                'assets/clientsIcon.svg',
+                width: AppTheme.iconSizeMedium,
+                height: AppTheme.iconSizeMedium,
+                colorFilter: ColorFilter.mode(
+                  AppTheme.elementColor2,
+                  BlendMode.srcIn,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-                  child: SvgPicture.asset(
-                    'assets/clientsIcon.svg',
-                    width: AppTheme.iconSizeMedium,
-                    height: AppTheme.iconSizeMedium,
-                    colorFilter: ColorFilter.mode(
-                      AppTheme.elementColor2,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

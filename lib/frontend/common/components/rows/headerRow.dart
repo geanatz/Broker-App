@@ -103,12 +103,11 @@ class DynamicTextHeaderRow extends StatelessWidget {
             alignment: effectiveTextAlign == TextAlign.start ? Alignment.centerLeft :
                        effectiveTextAlign == TextAlign.center ? Alignment.center :
                        Alignment.centerRight, // Align text within its cell
-            child: LeftAlignedTextDisplay(
+            child: Text1(
               text: titles[i],
-              textStyle: effectiveTitleStyle,
-              textColor: effectiveTextColor,
-              padding: EdgeInsets.zero, // The container already has padding
-              height: effectiveCellHeight,
+              color: effectiveTextColor,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),

@@ -114,12 +114,11 @@ class DynamicTextDataRow extends StatelessWidget {
             alignment: effectiveTextAlign == TextAlign.start ? Alignment.centerLeft :
                        effectiveTextAlign == TextAlign.center ? Alignment.center :
                        Alignment.centerRight,
-            child: LeftAlignedTextDisplay(
+            child: Text1(
               text: values[i],
-              textStyle: effectiveValueStyle,
-              textColor: effectiveTextColor,
-              padding: EdgeInsets.zero, // The container already has padding
-              height: effectiveCellHeight,
+              color: effectiveTextColor,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),

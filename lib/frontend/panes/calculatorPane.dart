@@ -244,7 +244,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
               child: Text(
                 title,
                 style: GoogleFonts.outfit(
-                  color: const Color(0xFF666699), // elementColor2
+                  color: AppTheme.elementColor2,
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
                 ),
@@ -256,7 +256,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
               width: double.infinity,
               height: 48,
               decoration: ShapeDecoration(
-                color: const Color(0xFFACACD2), // containerColor2
+                color: AppTheme.containerColor2,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -266,7 +266,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                 keyboardType: keyboardType,
                 inputFormatters: formatters,
                 style: GoogleFonts.outfit(
-                  color: const Color(0xFF4D4D80), // elementColor3
+                  color: AppTheme.elementColor3,
                   fontSize: 17,
                   fontWeight: FontWeight.w500,
                 ),
@@ -276,7 +276,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                   border: InputBorder.none,
                   hintText: placeholderText,
                   hintStyle: GoogleFonts.outfit(
-                    color: const Color(0xFF4D4D80), // elementColor3
+                    color: AppTheme.elementColor3,
                     fontSize: 17,
                     fontWeight: FontWeight.w500,
                   ),
@@ -349,7 +349,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                 // Header using WidgetHeader1 component
                 WidgetHeader1(
                   title: 'Calculator',
-                  titleColor: const Color(0xFF8A8AA8), // elementColor1
+                  titleColor: AppTheme.elementColor1,
                 ),
                 const SizedBox(height: AppTheme.smallGap),
                 SizedBox(
@@ -364,7 +364,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                         width: 296,
                         padding: const EdgeInsets.all(8),
                         decoration: ShapeDecoration(
-                          color: const Color(0xFFC4C4D4), // containerColor1
+                          color: AppTheme.containerColor1,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
@@ -454,16 +454,16 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: 'Rata lunara',
                               description: _monthlyPayment > 0 ? _monthlyPayment.toStringAsFixed(1) : '0.0',
-                              backgroundColor: const Color(0xFFC4C4D4), // containerColor1
-                              titleColor: const Color(0xFF666699), // elementColor2
-                              descriptionColor: const Color(0xFF8A8AA8), // elementColor1
+                              backgroundColor: AppTheme.containerColor1,
+                              titleColor: AppTheme.elementColor2,
+                              descriptionColor: AppTheme.elementColor1,
                               titleStyle: GoogleFonts.outfit(
-                                color: const Color(0xFF666699), // elementColor2
+                                color: AppTheme.elementColor2,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w500,
                               ),
                               descriptionStyle: GoogleFonts.outfit(
-                                color: const Color(0xFF8A8AA8), // elementColor1
+                                color: AppTheme.elementColor1,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -475,16 +475,16 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: 'Dobanda totala',
                               description: _totalInterest > 0 ? _totalInterest.toStringAsFixed(1) : '0.0',
-                              backgroundColor: const Color(0xFFC4C4D4), // containerColor1
-                              titleColor: const Color(0xFF666699), // elementColor2
-                              descriptionColor: const Color(0xFF8A8AA8), // elementColor1
+                              backgroundColor: AppTheme.containerColor1,
+                              titleColor: AppTheme.elementColor2,
+                              descriptionColor: AppTheme.elementColor1,
                               titleStyle: GoogleFonts.outfit(
-                                color: const Color(0xFF666699), // elementColor2
+                                color: AppTheme.elementColor2,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w500,
                               ),
                               descriptionStyle: GoogleFonts.outfit(
-                                color: const Color(0xFF8A8AA8), // elementColor1
+                                color: AppTheme.elementColor1,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -496,16 +496,16 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: 'Plata totala',
                               description: _totalCost > 0 ? _totalCost.toStringAsFixed(1) : '0.0',
-                              backgroundColor: const Color(0xFFC4C4D4), // containerColor1
-                              titleColor: const Color(0xFF666699), // elementColor2
-                              descriptionColor: const Color(0xFF8A8AA8), // elementColor1
+                              backgroundColor: AppTheme.containerColor1,
+                              titleColor: AppTheme.elementColor2,
+                              descriptionColor: AppTheme.elementColor1,
                               titleStyle: GoogleFonts.outfit(
-                                color: const Color(0xFF666699), // elementColor2
+                                color: AppTheme.elementColor2,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w500,
                               ),
                               descriptionStyle: GoogleFonts.outfit(
-                                color: const Color(0xFF8A8AA8), // elementColor1
+                                color: AppTheme.elementColor1,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -536,7 +536,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                       height: 48,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: ShapeDecoration(
-                        color: const Color(0xFFC4C4D4), // containerColor1
+                        color: AppTheme.containerColor1,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
@@ -549,7 +549,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                           Text(
                             'Amortizare',
                             style: GoogleFonts.outfit(
-                              color: const Color(0xFF666699), // elementColor2
+                              color: AppTheme.elementColor2,
                               fontSize: 17,
                               fontWeight: FontWeight.w500,
                             ),
@@ -560,7 +560,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             width: 24,
                             height: 24,
                             colorFilter: ColorFilter.mode(
-                              const Color(0xFF666699), // elementColor2
+                              AppTheme.elementColor2,
                               BlendMode.srcIn,
                             ),
                           ),
@@ -575,7 +575,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                   height: 48,
                   padding: const EdgeInsets.all(12),
                   decoration: ShapeDecoration(
-                    color: const Color(0xFFC4C4D4), // containerColor1
+                    color: AppTheme.containerColor1,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -587,7 +587,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                       width: 24,
                       height: 24,
                       colorFilter: ColorFilter.mode(
-                        const Color(0xFF666699), // elementColor2
+                        AppTheme.elementColor2,
                         BlendMode.srcIn,
                       ),
                     ),

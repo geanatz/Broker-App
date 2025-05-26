@@ -20,10 +20,10 @@ class CalendarArea extends StatefulWidget {
   const CalendarArea({Key? key}) : super(key: key);
 
   @override
-  State<CalendarArea> createState() => _CalendarAreaState();
+  State<CalendarArea> createState() => CalendarAreaState();
 }
 
-class _CalendarAreaState extends State<CalendarArea> {
+class CalendarAreaState extends State<CalendarArea> with TickerProviderStateMixin {
   // Service pentru rezervări
   final ReservationService _reservationService = ReservationService();
   
@@ -46,10 +46,28 @@ class _CalendarAreaState extends State<CalendarArea> {
   
   // Current week offset (0 = current week, -1 = previous week, 1 = next week)
   int _currentWeekOffset = 0;
+  
+  // Highlighted meeting functionality
+  String? _highlightedMeetingId;
+  late AnimationController _highlightAnimationController;
+  late Animation<double> _highlightAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize highlight animation
+    _highlightAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _highlightAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.1,
+    ).animate(CurvedAnimation(
+      parent: _highlightAnimationController,
+      curve: Curves.easeInOut,
+    ));
     
     // Initializeaza formatarea datelor pentru limba romana
     initializeDateFormatting('ro_RO', null).then((_) {
@@ -64,6 +82,7 @@ class _CalendarAreaState extends State<CalendarArea> {
   @override
   void dispose() {
     _clientNameController.dispose();
+    _highlightAnimationController.dispose();
     super.dispose();
   }
 
@@ -389,6 +408,9 @@ class _CalendarAreaState extends State<CalendarArea> {
     final currentUserId = _auth.currentUser?.uid;
     final bool isOwner = consultantId != null && currentUserId == consultantId;
     
+    // Check if this meeting should be highlighted
+    final bool isHighlighted = _highlightedMeetingId == docId;
+    
     // Determine the type from the reservation data itself
     final String? typeString = reservationData['type'] as String?;
     final ReservationType reservationType = typeString == 'bureauDelete' 
@@ -399,53 +421,54 @@ class _CalendarAreaState extends State<CalendarArea> {
       cursor: isOwner ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: isOwner ? () => _showEditReservationDialog(reservationData, docId) : null,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: CalendarConstants.slotPaddingHorizontal, 
-            vertical: CalendarConstants.slotPaddingVertical
-          ),
-          decoration: BoxDecoration(
-            color: AppTheme.containerColor2, // Default color
-            // You might want to change color based on reservationType if needed
-            // color: reservationType == ReservationType.bureauDelete ? Colors.lightBlueAccent : AppTheme.containerColor2,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-            boxShadow: [AppTheme.slotShadow],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                consultantName,
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppTheme.fontSizeMedium,
-                  color: AppTheme.elementColor3,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        child: AnimatedBuilder(
+          animation: _highlightAnimation,
+          builder: (context, child) {
+            // Calculate highlight color
+            Color baseColor = AppTheme.containerColor2;
+            Color highlightColor = isHighlighted 
+                ? Color.lerp(baseColor, Colors.white, _highlightAnimation.value) ?? baseColor
+                : baseColor;
+            
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: CalendarConstants.slotPaddingHorizontal, 
+                vertical: CalendarConstants.slotPaddingVertical
               ),
-              Text(
-                clientName,
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.w500,
-                  fontSize: AppTheme.fontSizeSmall,
-                  color: AppTheme.elementColor2,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              decoration: BoxDecoration(
+                color: highlightColor,
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                boxShadow: [AppTheme.slotShadow],
               ),
-              // Optionally, display the type if it's important for visual distinction
-              // Text(
-              //   reservationType == ReservationType.meeting ? 'Întâlnire' : 'Ștergere Birou',
-              //   style: GoogleFonts.outfit(
-              //     fontSize: AppTheme.fontSizeTiny,
-              //     color: AppTheme.elementColor3.withOpacity(0.7),
-              //   ),
-              // ),
-            ],
-          ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    consultantName,
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w600,
+                      fontSize: AppTheme.fontSizeMedium,
+                      color: AppTheme.elementColor3,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    clientName,
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w500,
+                      fontSize: AppTheme.fontSizeSmall,
+                      color: AppTheme.elementColor2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -714,5 +737,69 @@ class _CalendarAreaState extends State<CalendarArea> {
         );
       }
     }
+  }
+
+  /// Navigates to a specific meeting and highlights it
+  void navigateToMeeting(String meetingId) async {
+    try {
+      // Get meeting data from Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection('reservations')
+          .doc(meetingId)
+          .get();
+      
+      if (!doc.exists) {
+        debugPrint('Meeting not found: $meetingId');
+        return;
+      }
+      
+      final meetingData = doc.data() as Map<String, dynamic>;
+      final meetingDateTime = (meetingData['dateTime'] as Timestamp).toDate();
+      
+      // Calculate which week the meeting is in
+      final meetingWeekStart = _getStartOfWeekForDate(meetingDateTime);
+      final currentWeekStart = _getStartOfWeekToDisplay();
+      final weekDifference = meetingWeekStart.difference(currentWeekStart).inDays ~/ 7;
+      
+      // Navigate to the correct week
+      setState(() {
+        _currentWeekOffset += weekDifference;
+        _highlightedMeetingId = meetingId;
+      });
+      
+      // Start highlight animation
+      _highlightAnimationController.forward().then((_) {
+        // After animation completes, reverse it and clear highlight
+        _highlightAnimationController.reverse().then((_) {
+          if (mounted) {
+            setState(() {
+              _highlightedMeetingId = null;
+            });
+          }
+        });
+      });
+      
+    } catch (e) {
+      debugPrint('Error navigating to meeting: $e');
+    }
+  }
+  
+  /// Helper function to get the start of week for a specific date
+  DateTime _getStartOfWeekForDate(DateTime date) {
+    final weekday = date.weekday; // Monday = 1, Sunday = 7
+    DateTime monday;
+    
+    if (weekday >= DateTime.saturday) {
+      // If it's Saturday or Sunday, get next Monday
+      final daysUntilNextMonday = 8 - weekday;
+      final nextMonday = date.add(Duration(days: daysUntilNextMonday));
+      monday = DateTime(nextMonday.year, nextMonday.month, nextMonday.day);
+    } else {
+      // If it's Monday to Friday, get current week's Monday
+      final currentMonday = date.subtract(Duration(days: weekday - 1));
+      monday = DateTime(currentMonday.year, currentMonday.month, currentMonday.day);
+    }
+    
+    return monday;
   }
 }

@@ -1,7 +1,8 @@
 // lib/components/forms/form_container3.dart
 
 import 'package:flutter/material.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder
+import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/appTheme.dart'; // Import AppTheme instead of placeholder
 
 // --- PASTE THE CORRECTED _FormFieldContainer class definition here ---
 // Helper widget to render a single field (dropdown or input type)
@@ -42,20 +43,22 @@ class _FormFieldContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveHeaderTextColor = headerTextColor ?? const Color(0xFF666699); 
-    final Color effectiveValueTextColor = fieldValueTextColor ?? const Color(0xFF4D4D80); 
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); 
-    final Color effectiveContentContainerColor = contentContainerColor ?? const Color(0xFFACACD2); 
+    final Color effectiveHeaderTextColor = headerTextColor ?? AppTheme.elementColor1; 
+    final Color effectiveValueTextColor = fieldValueTextColor ?? AppTheme.elementColor2; 
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2; 
+    final Color effectiveContentContainerColor = contentContainerColor ?? AppTheme.containerColor2; 
     final double effectiveContentBorderRadius = contentBorderRadius ?? 16.0; 
 
 
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveHeaderTextColor,
-      fontSize: 17, fontFamily: 'Outfit', fontWeight: FontWeight.w600,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
     );
-    final TextStyle valueStyle = TextStyle(
+    final TextStyle valueStyle = GoogleFonts.outfit(
       color: effectiveValueTextColor,
-      fontSize: 17, fontFamily: 'Outfit', fontWeight: FontWeight.w500,
+      fontSize: 17,
+      fontWeight: FontWeight.w500,
     );
 
     Widget fieldContentArea = Container(
@@ -167,7 +170,7 @@ class FormContainer3 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveOuterContainerColor = outerContainerColor ?? const Color(0xFFC4C4D4);
+    final Color effectiveOuterContainerColor = outerContainerColor ?? AppTheme.containerColor1;
     final double effectiveOuterBorderRadius = outerBorderRadius ?? 24.0;
     final EdgeInsetsGeometry effectiveOuterPadding = outerPadding ?? const EdgeInsets.all(8);
     final double effectiveRowSpacing = rowSpacing ?? 8.0;

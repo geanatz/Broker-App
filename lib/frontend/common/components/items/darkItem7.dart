@@ -1,6 +1,8 @@
 // lib/components/items/dark_item7.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A customizable item component with a primary title, a secondary description
@@ -17,6 +19,9 @@ class DarkItem7 extends StatelessWidget {
 
   /// Optional icon data to display on the right.
   final IconData? icon;
+
+  /// Optional SVG asset path to display on the right (takes precedence over icon).
+  final String? svgAsset;
 
   /// Optional callback when the item is tapped.
   final VoidCallback? onTap;
@@ -58,6 +63,7 @@ class DarkItem7 extends StatelessWidget {
     required this.title,
     required this.description,
     this.icon,
+    this.svgAsset,
     this.onTap,
     this.backgroundColor,
     this.titleColor,
@@ -79,9 +85,9 @@ class DarkItem7 extends StatelessWidget {
     final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent;
     final double effectiveMainBorderRadius = mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
     final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
-    final double itemHeight = 64.0; // AppTheme.itemHeightLarge
+    final double itemHeight = 64.0; // Increased from 64.0 to fix overflow
     final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
-    final double textColumnSpacing = 4.0; // AppTheme.tinyGap
+    final double textColumnSpacing = 3.0; // AppTheme.tinyGap
     final double internalRowSpacing = 16.0; // AppTheme.mediumGap (original spacing: 16 on Row)
     final double iconContainerSize = 48.0;
 
@@ -89,18 +95,19 @@ class DarkItem7 extends StatelessWidget {
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
 
     // Text Styles (Consider moving to AppTheme)
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
     );
-    final TextStyle descriptionStyle = TextStyle(
+    final TextStyle descriptionStyle = GoogleFonts.outfit(
       color: effectiveDescriptionColor,
       fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
+
+    // Determine if we should show an icon (either SVG or IconData)
+    final bool hasIcon = svgAsset != null || icon != null;
 
     Widget content = Container(
       width: double.infinity,
@@ -118,9 +125,6 @@ class DarkItem7 extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              // height: 48, // Inner container height from original
-              // clipBehavior: Clip.antiAlias, // Not needed
-              // decoration: BoxDecoration(), // Not needed
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -130,33 +134,52 @@ class DarkItem7 extends StatelessWidget {
                     title,
                     style: titleStyle,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                   SizedBox(height: textColumnSpacing),
                   Text(
                     description,
                     style: descriptionStyle,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ],
               ),
             ),
           ),
-          if (icon != null) ...[
+          if (hasIcon) ...[
             SizedBox(width: internalRowSpacing), // Original spacing: 16
-            Container(
-              width: iconContainerSize,
-              height: iconContainerSize,
-              decoration: ShapeDecoration(
-                color: effectiveIconContainerColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  icon,
-                  size: effectiveIconSize,
-                  color: effectiveIconColor,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
+                child: Container(
+                  width: iconContainerSize,
+                  height: iconContainerSize,
+                  decoration: ShapeDecoration(
+                    color: effectiveIconContainerColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
+                    ),
+                  ),
+                  child: Center(
+                    child: svgAsset != null
+                      ? SvgPicture.asset(
+                          svgAsset!,
+                          width: effectiveIconSize,
+                          height: effectiveIconSize,
+                          colorFilter: ColorFilter.mode(
+                            effectiveIconColor,
+                            BlendMode.srcIn,
+                          ),
+                        )
+                      : Icon(
+                          icon,
+                          size: effectiveIconSize,
+                          color: effectiveIconColor,
+                        ),
+                  ),
                 ),
               ),
             ),
@@ -165,16 +188,6 @@ class DarkItem7 extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
-          child: content,
-        ),
-      );
-    }
     return content;
   }
 }

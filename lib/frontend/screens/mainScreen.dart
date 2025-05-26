@@ -8,6 +8,7 @@ import 'package:broker_app/frontend/areas/calendarArea.dart';
 import 'package:broker_app/frontend/areas/settingsArea.dart';
 import 'package:broker_app/frontend/panes/meetingsPane.dart';
 import 'package:broker_app/frontend/panes/calculatorPane.dart';
+import 'package:broker_app/frontend/panes/clientsPane.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:
 /// - pane (stânga, lățime 312)
@@ -36,6 +37,9 @@ class _MainScreenState extends State<MainScreen> {
   late String _consultantName;
   late String _teamName;
   
+  // GlobalKey pentru CalendarArea
+  final GlobalKey<CalendarAreaState> _calendarKey = GlobalKey<CalendarAreaState>();
+  
   @override
   void initState() {
     super.initState();
@@ -44,19 +48,34 @@ class _MainScreenState extends State<MainScreen> {
   }
   
   // Widgets pentru area
-  final Map<AreaType, Widget> _areaWidgets = {
+  late final Map<AreaType, Widget> _areaWidgets = {
     AreaType.dashboard: const DashboardArea(),
     AreaType.form: const FormArea(),
-    AreaType.calendar: const CalendarArea(),
+    AreaType.calendar: CalendarArea(key: _calendarKey),
     AreaType.settings: const SettingsArea(),
   };
   
-  final Map<PaneType, Widget> _paneWidgets = {
-    PaneType.clients: const PlaceholderWidget('Clients Pane', Colors.red),
-    PaneType.meetings: const MeetingsPane(),
+  late final Map<PaneType, Widget> _paneWidgets = {
+    PaneType.clients: const ClientsPane(),
+    PaneType.meetings: MeetingsPane(onNavigateToMeeting: _navigateToMeeting),
     PaneType.calculator: const CalculatorPane(),
     PaneType.matches: const PlaceholderWidget('Matches Pane', Colors.pink),
   };
+  
+  /// Navigates to a specific meeting in the calendar
+  void _navigateToMeeting(String meetingId) {
+    // Switch to calendar area if not already there
+    if (_currentArea != AreaType.calendar) {
+      setState(() {
+        _currentArea = AreaType.calendar;
+      });
+    }
+    
+    // Navigate to the meeting in calendar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calendarKey.currentState?.navigateToMeeting(meetingId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
