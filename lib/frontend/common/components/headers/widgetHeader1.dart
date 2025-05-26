@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import '../../appTheme.dart';
 
 /// A simple widget header displaying a single title.
 ///
@@ -13,7 +13,7 @@ class WidgetHeader1 extends StatelessWidget {
   final String title;
 
   /// Optional custom color for the title text.
-  /// Defaults to AppTheme.elementColor1 (0xFF8A8AA8).
+  /// Defaults to AppTheme.elementColor1.
   final Color? titleColor;
 
   /// Optional custom text style for the title.
@@ -40,14 +40,13 @@ class WidgetHeader1 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16); // AppTheme.paddingMedium
-    final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0; // AppTheme.headerTitleHeight
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor1;
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
 
     final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 19,
+      fontSize: AppTheme.fontSizeLarge,
       fontWeight: FontWeight.w600,
     );
 
@@ -57,25 +56,23 @@ class WidgetHeader1 extends StatelessWidget {
       width: double.infinity,
       padding: effectivePadding,
       child: Row(
-        // mainAxisSize: MainAxisSize.min, // Not needed with Expanded child
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: SizedBox(
+            child: Container(
               height: effectiveTitleContainerHeight,
-              // clipBehavior: Clip.antiAlias, // Not needed for simple text
-              // decoration: BoxDecoration(), // Not needed
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(),
               child: Row(
-                // mainAxisSize: MainAxisSize.min, // Not needed in Expanded
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                // spacing: 10, // Ineffective for single Text child
                 children: [
                   Text(
                     title,
                     style: effectiveTitleStyle,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

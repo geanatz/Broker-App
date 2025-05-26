@@ -8,28 +8,36 @@ import 'package:broker_app/frontend/common/components/forms/form1.dart';
 import 'package:broker_app/frontend/common/components/forms/form2.dart';
 import 'package:broker_app/frontend/common/components/forms/form3.dart';
 import 'package:broker_app/frontend/common/components/forms/formNew.dart';
+import 'package:broker_app/frontend/common/services/client_service.dart';
+import 'package:broker_app/frontend/common/models/client_model.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 /// Definirea temei de text pentru a asigura consistenta fontului Outfit in intreaga aplicatie
 class TextStyles {
   static final TextStyle titleStyle = GoogleFonts.outfit(
-    fontSize: 19,
+    fontSize: AppTheme.fontSizeLarge,
     fontWeight: FontWeight.w600,
+    color: AppTheme.elementColor2,
   );
   
   static final TextStyle subtitleStyle = GoogleFonts.outfit(
-    fontSize: 17,
+    fontSize: AppTheme.fontSizeMedium,
     fontWeight: FontWeight.w500,
+    color: AppTheme.elementColor1,
   );
 
   static final TextStyle headerStyle = GoogleFonts.outfit(
-    fontSize: 19,
-    fontWeight: FontWeight.w600,  
+    fontSize: AppTheme.fontSizeLarge,
+    fontWeight: FontWeight.w600,
+    color: AppTheme.elementColor2,
   );
   
   static final TextStyle toggleStyle = GoogleFonts.outfit(
-    fontSize: 17,
+    fontSize: AppTheme.fontSizeMedium,
     fontWeight: FontWeight.w500,
+    color: AppTheme.elementColor2,
   );
 }
 
@@ -94,18 +102,15 @@ class FormArea extends StatefulWidget {
 }
 
 class _FormAreaState extends State<FormArea> {
+  // Serviciul pentru gestionarea clienților
+  final ClientService _clientService = ClientService();
+  
   // Controleaza daca se afiseaza formularul pentru client sau pentru codebitor
   bool _showingClientLoanForm = true;
   bool _showingClientIncomeForm = true;
   
-  // Serviciul pentru gestionarea contactelor si formularelor
+  // Serviciul pentru gestionarea contactelor si formularelor (păstrat pentru compatibilitate)
   final ContactFormService _contactService = ContactFormService();
-  
-  // Contactul selectat curent (pentru completarea formularelor)
-  ContactData? _selectedContact;
-  
-  // Hover state for contacts
-  String? _hoveredContactId;
   
   // Flag pentru a arata daca procesul de export este in desfasurare
   bool _isExporting = false;
@@ -149,12 +154,9 @@ class _FormAreaState extends State<FormArea> {
   ];
 
   final List<String> _incomeTypes = [
+    'Indemnizatie',
     'Salariu',
-    'PFA',
-    'Dividende',
-    'Chirie',
     'Pensie',
-    'Alte venituri',
   ];
 
   // Store the GLOBAL tap position for the context menu
@@ -172,14 +174,340 @@ class _FormAreaState extends State<FormArea> {
     super.initState();
     // Initialize demo data using the service
     _contactService.initializeDemoData();
+    // Ascultă schimbările în ClientService
+    _clientService.addListener(_onClientServiceChanged);
+    // Load saved form data
+    _loadFormData();
   }
 
   @override
   void dispose() {
+    // Save form data before disposing
+    _saveFormData();
+    // Remove listener
+    _clientService.removeListener(_onClientServiceChanged);
     // Dispose all text controllers
     _creditTextControllers.forEach((_, controller) => controller.dispose());
     _incomeTextControllers.forEach((_, controller) => controller.dispose());
     super.dispose();
+  }
+
+  void _onClientServiceChanged() {
+    // Salvează datele clientului anterior înainte de a comuta
+    _saveClientFormData();
+    setState(() {});
+    // Încarcă datele formularului pentru clientul focusat
+    _loadClientFormData();
+  }
+
+  /// Încarcă datele formularului pentru clientul curent focusat
+  void _loadClientFormData() {
+    final focusedClient = _clientService.focusedClient;
+    if (focusedClient != null) {
+      // Încarcă datele de credit pentru client
+      final clientCreditData = focusedClient.getFormValue<List>('clientCreditForms');
+      if (clientCreditData != null) {
+        _clientCreditForms.clear();
+        for (var data in clientCreditData) {
+          _clientCreditForms.add(CreditFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            creditType: data['creditType'] ?? 'Selecteaza tipul',
+            sold: data['sold'] ?? '',
+            consumat: data['consumat'] ?? '',
+            rata: data['rata'] ?? '',
+            perioada: data['perioada'] ?? '',
+            rateType: data['rateType'] ?? 'Selecteaza tipul',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă datele de credit pentru codebitor
+      final coborrowerCreditData = focusedClient.getFormValue<List>('coborrowerCreditForms');
+      if (coborrowerCreditData != null) {
+        _coborrowerCreditForms.clear();
+        for (var data in coborrowerCreditData) {
+          _coborrowerCreditForms.add(CreditFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            creditType: data['creditType'] ?? 'Selecteaza tipul',
+            sold: data['sold'] ?? '',
+            consumat: data['consumat'] ?? '',
+            rata: data['rata'] ?? '',
+            perioada: data['perioada'] ?? '',
+            rateType: data['rateType'] ?? 'Selecteaza tipul',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă datele de venit pentru client
+      final clientIncomeData = focusedClient.getFormValue<List>('clientIncomeForms');
+      if (clientIncomeData != null) {
+        _clientIncomeForms.clear();
+        for (var data in clientIncomeData) {
+          _clientIncomeForms.add(IncomeFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
+            incomeAmount: data['incomeAmount'] ?? '',
+            vechime: data['vechime'] ?? '',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă datele de venit pentru codebitor
+      final coborrowerIncomeData = focusedClient.getFormValue<List>('coborrowerIncomeForms');
+      if (coborrowerIncomeData != null) {
+        _coborrowerIncomeForms.clear();
+        for (var data in coborrowerIncomeData) {
+          _coborrowerIncomeForms.add(IncomeFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
+            incomeAmount: data['incomeAmount'] ?? '',
+            vechime: data['vechime'] ?? '',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă starea toggle-urilor
+      _showingClientLoanForm = focusedClient.getFormValue<bool>('showingClientLoanForm') ?? true;
+      _showingClientIncomeForm = focusedClient.getFormValue<bool>('showingClientIncomeForm') ?? true;
+      
+      // Asigură-te că există cel puțin un formular în fiecare listă
+      if (_clientCreditForms.isEmpty) {
+        _clientCreditForms.add(CreditFormModel());
+      }
+      if (_coborrowerCreditForms.isEmpty) {
+        _coborrowerCreditForms.add(CreditFormModel());
+      }
+      if (_clientIncomeForms.isEmpty) {
+        _clientIncomeForms.add(IncomeFormModel());
+      }
+      if (_coborrowerIncomeForms.isEmpty) {
+        _coborrowerIncomeForms.add(IncomeFormModel());
+      }
+      
+      setState(() {});
+    }
+  }
+
+  /// Salvează datele formularului în clientul focusat
+  void _saveClientFormData() {
+    final focusedClient = _clientService.focusedClient;
+    if (focusedClient != null) {
+      // Salvează datele de credit pentru client
+      final clientCreditData = _clientCreditForms.map((form) => {
+        'bank': form.bank,
+        'creditType': form.creditType,
+        'sold': form.sold,
+        'consumat': form.consumat,
+        'rata': form.rata,
+        'perioada': form.perioada,
+        'rateType': form.rateType,
+        'isNew': form.isNew,
+      }).toList();
+      _clientService.updateFocusedClientFormDataSilent('clientCreditForms', clientCreditData);
+      
+      // Salvează datele de credit pentru codebitor
+      final coborrowerCreditData = _coborrowerCreditForms.map((form) => {
+        'bank': form.bank,
+        'creditType': form.creditType,
+        'sold': form.sold,
+        'consumat': form.consumat,
+        'rata': form.rata,
+        'perioada': form.perioada,
+        'rateType': form.rateType,
+        'isNew': form.isNew,
+      }).toList();
+      _clientService.updateFocusedClientFormDataSilent('coborrowerCreditForms', coborrowerCreditData);
+      
+      // Salvează datele de venit pentru client
+      final clientIncomeData = _clientIncomeForms.map((form) => {
+        'bank': form.bank,
+        'incomeType': form.incomeType,
+        'incomeAmount': form.incomeAmount,
+        'vechime': form.vechime,
+        'isNew': form.isNew,
+      }).toList();
+      _clientService.updateFocusedClientFormDataSilent('clientIncomeForms', clientIncomeData);
+      
+      // Salvează datele de venit pentru codebitor
+      final coborrowerIncomeData = _coborrowerIncomeForms.map((form) => {
+        'bank': form.bank,
+        'incomeType': form.incomeType,
+        'incomeAmount': form.incomeAmount,
+        'vechime': form.vechime,
+        'isNew': form.isNew,
+      }).toList();
+      _clientService.updateFocusedClientFormDataSilent('coborrowerIncomeForms', coborrowerIncomeData);
+      
+      // Salvează starea toggle-urilor
+      _clientService.updateFocusedClientFormDataSilent('showingClientLoanForm', _showingClientLoanForm);
+      _clientService.updateFocusedClientFormDataSilent('showingClientIncomeForm', _showingClientIncomeForm);
+    }
+  }
+
+  /// Salvează datele formularelor în SharedPreferences
+  Future<void> _saveFormData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Salvează datele de credit pentru client
+      final clientCreditData = _clientCreditForms.map((form) => {
+        'bank': form.bank,
+        'creditType': form.creditType,
+        'sold': form.sold,
+        'consumat': form.consumat,
+        'rata': form.rata,
+        'perioada': form.perioada,
+        'rateType': form.rateType,
+        'isNew': form.isNew,
+      }).toList();
+      await prefs.setString('clientCreditForms', jsonEncode(clientCreditData));
+      
+      // Salvează datele de credit pentru codebitor
+      final coborrowerCreditData = _coborrowerCreditForms.map((form) => {
+        'bank': form.bank,
+        'creditType': form.creditType,
+        'sold': form.sold,
+        'consumat': form.consumat,
+        'rata': form.rata,
+        'perioada': form.perioada,
+        'rateType': form.rateType,
+        'isNew': form.isNew,
+      }).toList();
+      await prefs.setString('coborrowerCreditForms', jsonEncode(coborrowerCreditData));
+      
+      // Salvează datele de venit pentru client
+      final clientIncomeData = _clientIncomeForms.map((form) => {
+        'bank': form.bank,
+        'incomeType': form.incomeType,
+        'incomeAmount': form.incomeAmount,
+        'vechime': form.vechime,
+        'isNew': form.isNew,
+      }).toList();
+      await prefs.setString('clientIncomeForms', jsonEncode(clientIncomeData));
+      
+      // Salvează datele de venit pentru codebitor
+      final coborrowerIncomeData = _coborrowerIncomeForms.map((form) => {
+        'bank': form.bank,
+        'incomeType': form.incomeType,
+        'incomeAmount': form.incomeAmount,
+        'vechime': form.vechime,
+        'isNew': form.isNew,
+      }).toList();
+      await prefs.setString('coborrowerIncomeForms', jsonEncode(coborrowerIncomeData));
+      
+      // Salvează starea toggle-urilor
+      await prefs.setBool('showingClientLoanForm', _showingClientLoanForm);
+      await prefs.setBool('showingClientIncomeForm', _showingClientIncomeForm);
+      
+    } catch (e) {
+      debugPrint('Error saving form data: $e');
+    }
+  }
+
+  /// Încarcă datele formularelor din SharedPreferences
+  Future<void> _loadFormData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Încarcă datele de credit pentru client
+      final clientCreditString = prefs.getString('clientCreditForms');
+      if (clientCreditString != null) {
+        final clientCreditData = jsonDecode(clientCreditString) as List;
+        _clientCreditForms.clear();
+        for (var data in clientCreditData) {
+          _clientCreditForms.add(CreditFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            creditType: data['creditType'] ?? 'Selecteaza tipul',
+            sold: data['sold'] ?? '',
+            consumat: data['consumat'] ?? '',
+            rata: data['rata'] ?? '',
+            perioada: data['perioada'] ?? '',
+            rateType: data['rateType'] ?? 'Selecteaza tipul',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă datele de credit pentru codebitor
+      final coborrowerCreditString = prefs.getString('coborrowerCreditForms');
+      if (coborrowerCreditString != null) {
+        final coborrowerCreditData = jsonDecode(coborrowerCreditString) as List;
+        _coborrowerCreditForms.clear();
+        for (var data in coborrowerCreditData) {
+          _coborrowerCreditForms.add(CreditFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            creditType: data['creditType'] ?? 'Selecteaza tipul',
+            sold: data['sold'] ?? '',
+            consumat: data['consumat'] ?? '',
+            rata: data['rata'] ?? '',
+            perioada: data['perioada'] ?? '',
+            rateType: data['rateType'] ?? 'Selecteaza tipul',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă datele de venit pentru client
+      final clientIncomeString = prefs.getString('clientIncomeForms');
+      if (clientIncomeString != null) {
+        final clientIncomeData = jsonDecode(clientIncomeString) as List;
+        _clientIncomeForms.clear();
+        for (var data in clientIncomeData) {
+          _clientIncomeForms.add(IncomeFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
+            incomeAmount: data['incomeAmount'] ?? '',
+            vechime: data['vechime'] ?? '',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă datele de venit pentru codebitor
+      final coborrowerIncomeString = prefs.getString('coborrowerIncomeForms');
+      if (coborrowerIncomeString != null) {
+        final coborrowerIncomeData = jsonDecode(coborrowerIncomeString) as List;
+        _coborrowerIncomeForms.clear();
+        for (var data in coborrowerIncomeData) {
+          _coborrowerIncomeForms.add(IncomeFormModel(
+            bank: data['bank'] ?? 'Selecteaza banca',
+            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
+            incomeAmount: data['incomeAmount'] ?? '',
+            vechime: data['vechime'] ?? '',
+            isNew: data['isNew'] ?? true,
+          ));
+        }
+      }
+      
+      // Încarcă starea toggle-urilor
+      _showingClientLoanForm = prefs.getBool('showingClientLoanForm') ?? true;
+      _showingClientIncomeForm = prefs.getBool('showingClientIncomeForm') ?? true;
+      
+      // Asigură-te că există cel puțin un formular în fiecare listă
+      if (_clientCreditForms.isEmpty) {
+        _clientCreditForms.add(CreditFormModel());
+      }
+      if (_coborrowerCreditForms.isEmpty) {
+        _coborrowerCreditForms.add(CreditFormModel());
+      }
+      if (_clientIncomeForms.isEmpty) {
+        _clientIncomeForms.add(IncomeFormModel());
+      }
+      if (_coborrowerIncomeForms.isEmpty) {
+        _coborrowerIncomeForms.add(IncomeFormModel());
+      }
+      
+      if (mounted) {
+        setState(() {});
+      }
+      
+    } catch (e) {
+      debugPrint('Error loading form data: $e');
+    }
   }
 
   /// Helper function to format numbers with commas automatically
@@ -272,6 +600,14 @@ class _FormAreaState extends State<FormArea> {
 
   /// Construieste continutul panoului de formulare
   Widget _buildFormPanelContent() {
+    final focusedClient = _clientService.focusedClient;
+    
+    // Dacă nu există client focusat, afișează un placeholder
+    if (focusedClient == null) {
+      return _buildNoClientSelectedPlaceholder();
+    }
+    
+    // Afișează formularele pentru client
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -286,6 +622,119 @@ class _FormAreaState extends State<FormArea> {
         ),
       ],
     );
+  }
+
+  /// Construiește header-ul cu informațiile clientului focusat
+  Widget _buildClientHeader(ClientModel client) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.widgetBackground,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+        boxShadow: [AppTheme.widgetShadow],
+      ),
+      child: Row(
+        children: [
+          // Informații client
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Client focusat',
+                  style: TextStyles.subtitleStyle.copyWith(
+                    color: AppTheme.elementColor1,
+                    fontSize: AppTheme.fontSizeSmall,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  client.name,
+                  style: TextStyles.titleStyle.copyWith(
+                    color: AppTheme.elementColor2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  client.phoneNumber,
+                  style: TextStyles.subtitleStyle.copyWith(
+                    color: AppTheme.elementColor1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Categoria clientului
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.containerColor2,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            ),
+            child: Text(
+              _getCategoryDisplayName(client.category),
+              style: TextStyles.subtitleStyle.copyWith(
+                color: AppTheme.elementColor2,
+                fontSize: AppTheme.fontSizeSmall,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Construiește placeholder-ul când nu există client selectat
+  Widget _buildNoClientSelectedPlaceholder() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: AppTheme.widgetBackground,
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          boxShadow: [AppTheme.widgetShadow],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.person_outline,
+              size: 64,
+              color: AppTheme.elementColor1,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Niciun client selectat',
+              style: TextStyles.titleStyle.copyWith(
+                color: AppTheme.elementColor2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Selectați un client din panoul din stânga pentru a vedea formularul său',
+              textAlign: TextAlign.center,
+              style: TextStyles.subtitleStyle.copyWith(
+                color: AppTheme.elementColor1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Obține numele de afișare pentru o categorie
+  String _getCategoryDisplayName(ClientCategory category) {
+    switch (category) {
+      case ClientCategory.apeluri:
+        return 'Apeluri';
+      case ClientCategory.reveniri:
+        return 'Reveniri';
+      case ClientCategory.recente:
+        return 'Recente';
+    }
   }
 
   /// Construieste widget-ul pentru credite
@@ -307,22 +756,25 @@ class _FormAreaState extends State<FormArea> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Credit',
+                        'Credite',
                         style: TextStyles.titleStyle.copyWith(
                           color: AppTheme.elementColor1,
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _showingClientLoanForm = !_showingClientLoanForm;
-                        });
-                      },
-                      child: Text(
-                        _showingClientLoanForm ? 'Vezi codebitor' : 'Vezi client',
-                        style: TextStyles.toggleStyle.copyWith(
-                          color: AppTheme.elementColor1,
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _showingClientLoanForm = !_showingClientLoanForm;
+                          });
+                        },
+                        child: Text(
+                          _showingClientLoanForm ? 'Vezi codebitor' : 'Vezi client',
+                          style: TextStyles.toggleStyle.copyWith(
+                            color: AppTheme.elementColor1,
+                          ),
                         ),
                       ),
                     ),
@@ -953,16 +1405,19 @@ class _FormAreaState extends State<FormArea> {
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _showingClientIncomeForm = !_showingClientIncomeForm;
-                        });
-                      },
-                      child: Text(
-                        _showingClientIncomeForm ? 'Vezi codebitor' : 'Vezi client',
-                        style: TextStyles.toggleStyle.copyWith(
-                          color: AppTheme.elementColor1,
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _showingClientIncomeForm = !_showingClientIncomeForm;
+                          });
+                        },
+                        child: Text(
+                          _showingClientIncomeForm ? 'Vezi codebitor' : 'Vezi client',
+                          style: TextStyles.toggleStyle.copyWith(
+                            color: AppTheme.elementColor1,
+                          ),
                         ),
                       ),
                     ),
@@ -1054,91 +1509,123 @@ class _FormAreaState extends State<FormArea> {
     final form = formsList[index];
     final formPrefix = _showingClientIncomeForm ? 'client' : 'codebitor';
     
-    return FormContainer1(
-      titleTL: 'Banca',
-      optionTL: form.bank,
-      iconTL: Icons.expand_more,
-      onTapTL: null,
-      child1TL: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: _buildBankDropdownForIncome(index, formsList),
-      ),
-      
-      titleTR: 'Tip venit',
-      optionTR: form.incomeType,
-      iconTR: Icons.expand_more,
-      onTapTR: null,
-      child1TR: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: _buildIncomeTypeDropdown(index, formsList),
-      ),
-      
-      titleBL: 'Venit',
-      textBL: form.incomeAmount,
-      onTapBL: null,
-      child1: TextField(
-        controller: _getIncomeTextController(index, formPrefix, 'amount', form.incomeAmount),
-        keyboardType: TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[\d,\.]')),
-        ],
-        style: GoogleFonts.outfit(
-          fontSize: 17,
-          fontWeight: FontWeight.w500,
-          color: AppTheme.elementColor3,
+    // Verifică dacă formularul are informații minime pentru a afișa al doilea rând
+    final bool showSecondRow = form.hasMinimumInfo();
+    
+    if (showSecondRow) {
+      // Afișează formularul complet cu ambele rânduri
+      return FormContainer1(
+        titleTL: 'Banca',
+        optionTL: form.bank,
+        iconTL: Icons.expand_more,
+        onTapTL: null,
+        child1TL: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: _buildBankDropdownForIncome(index, formsList),
         ),
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          hintText: 'Introduceti venitul',
-          hintStyle: GoogleFonts.outfit(
+        
+        titleTR: 'Tip venit',
+        optionTR: form.incomeType,
+        iconTR: Icons.expand_more,
+        onTapTR: null,
+        child1TR: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: _buildIncomeTypeDropdown(index, formsList),
+        ),
+        
+        titleBL: 'Venit',
+        textBL: form.incomeAmount,
+        onTapBL: null,
+        child1: TextField(
+          controller: _getIncomeTextController(index, formPrefix, 'amount', form.incomeAmount),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d,\.]')),
+          ],
+          style: GoogleFonts.outfit(
             fontSize: 17,
             fontWeight: FontWeight.w500,
             color: AppTheme.elementColor3,
           ),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            hintText: 'Introduceti venitul',
+            hintStyle: GoogleFonts.outfit(
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.elementColor3,
+            ),
+          ),
+          onChanged: (value) {
+            final controller = _getIncomeTextController(index, formPrefix, 'amount', form.incomeAmount);
+            _formatNumberWithCommas(controller, value);
+            setState(() {
+              form.incomeAmount = controller.text;
+            });
+          },
         ),
-        onChanged: (value) {
-          final controller = _getIncomeTextController(index, formPrefix, 'amount', form.incomeAmount);
-          _formatNumberWithCommas(controller, value);
-          setState(() {
-            form.incomeAmount = controller.text;
-          });
-        },
-      ),
-      
-      titleBR: 'Vechime',
-      textBR: form.vechime,
-      onTapBR: null,
-      child2: TextField(
-        controller: _getIncomeTextController(index, formPrefix, 'vechime', form.vechime),
-        style: GoogleFonts.outfit(
-          fontSize: 17,
-          fontWeight: FontWeight.w500,
-          color: AppTheme.elementColor3,
-        ),
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          hintText: 'Introduceti vechimea',
-          hintStyle: GoogleFonts.outfit(
+        
+        titleBR: 'Vechime',
+        textBR: form.vechime,
+        onTapBR: null,
+        child2: TextField(
+          controller: _getIncomeTextController(index, formPrefix, 'vechime', form.vechime),
+          style: GoogleFonts.outfit(
             fontSize: 17,
             fontWeight: FontWeight.w500,
             color: AppTheme.elementColor3,
           ),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            hintText: 'Introduceti vechimea',
+            hintStyle: GoogleFonts.outfit(
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.elementColor3,
+            ),
+          ),
+          onChanged: (value) {
+            setState(() {
+              form.vechime = value;
+              _checkAndAddNewIncomeForm();
+            });
+          },
         ),
-        onChanged: (value) {
-          setState(() {
-            form.vechime = value;
-            _checkAndAddNewIncomeForm();
-          });
-        },
-      ),
-      
-      fieldHeaderTextColor: AppTheme.elementColor2,
-      fieldValueTextColor: AppTheme.elementColor3,
-      fieldIconColor: AppTheme.elementColor1,
-      fieldContentContainerColor: AppTheme.containerColor2,
-    );
+        
+        fieldHeaderTextColor: AppTheme.elementColor2,
+        fieldValueTextColor: AppTheme.elementColor3,
+        fieldIconColor: AppTheme.elementColor1,
+        fieldContentContainerColor: AppTheme.containerColor2,
+      );
+    } else {
+      // Afișează doar primul rând (Banca și Tip venit)
+      return FormContainerNew(
+        titleF1: 'Banca',
+        optionF1: form.bank,
+        iconF1: Icons.expand_more,
+        onTapF1: null,
+        child1F1: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: _buildBankDropdownForIncome(index, formsList),
+        ),
+        
+        titleF2: 'Tip venit',
+        optionF2: form.incomeType,
+        iconF2: Icons.expand_more,
+        onTapF2: null,
+        child1F2: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: _buildIncomeTypeDropdown(index, formsList),
+        ),
+        
+        fieldHeaderTextColor: AppTheme.elementColor2,
+        fieldValueTextColor: AppTheme.elementColor3,
+        fieldIconColor: AppTheme.elementColor1,
+        fieldContentContainerColor: AppTheme.containerColor2,
+      );
+    }
   }
 
   /// Afiseaza un dialog pentru selectarea bancii
@@ -1241,7 +1728,8 @@ class _FormAreaState extends State<FormArea> {
 
   /// Obtine sau creeaza un TextEditingController pentru un camp specific
   TextEditingController _getCreditTextController(int index, String formType, String fieldName, String initialValue) {
-    final String key = 'credit_${formType}_${index}_$fieldName';
+    final clientId = _clientService.focusedClient?.id ?? 'default';
+    final String key = 'credit_${clientId}_${formType}_${index}_$fieldName';
     if (!_creditTextControllers.containsKey(key)) {
       _creditTextControllers[key] = TextEditingController(text: initialValue);
     } else if (_creditTextControllers[key]!.text != initialValue) {
@@ -1252,7 +1740,8 @@ class _FormAreaState extends State<FormArea> {
 
   /// Obtine sau creeaza un TextEditingController pentru un camp de venit specific
   TextEditingController _getIncomeTextController(int index, String formType, String fieldName, String initialValue) {
-    final String key = 'income_${formType}_${index}_$fieldName';
+    final clientId = _clientService.focusedClient?.id ?? 'default';
+    final String key = 'income_${clientId}_${formType}_${index}_$fieldName';
     if (!_incomeTextControllers.containsKey(key)) {
       _incomeTextControllers[key] = TextEditingController(text: initialValue);
     } else if (_incomeTextControllers[key]!.text != initialValue) {
@@ -1323,6 +1812,8 @@ class _FormAreaState extends State<FormArea> {
               formsList[index].bank = value;
               _checkAndAddNewCreditForm();
             });
+            _saveFormData(); // Salvează datele automat
+            _saveClientFormData(); // Salvează datele în clientul focusat
           }
         },
       ),
@@ -1365,6 +1856,8 @@ class _FormAreaState extends State<FormArea> {
               formsList[index].bank = value;
               _checkAndAddNewIncomeForm();
             });
+            _saveFormData(); // Salvează datele automat
+            _saveClientFormData(); // Salvează datele în clientul focusat
           }
         },
       ),
@@ -1407,6 +1900,8 @@ class _FormAreaState extends State<FormArea> {
               formsList[index].creditType = value;
               _checkAndAddNewCreditForm();
             });
+            _saveFormData(); // Salvează datele automat
+            _saveClientFormData(); // Salvează datele în clientul focusat
           }
         },
       ),
@@ -1449,6 +1944,7 @@ class _FormAreaState extends State<FormArea> {
               formsList[index].incomeType = value;
               _checkAndAddNewIncomeForm();
             });
+            _saveFormData(); // Salvează datele automat
           }
         },
       ),

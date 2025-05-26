@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import '../../appTheme.dart';
 
 /// A customizable light-themed item with title, description, and an
 /// optional icon in a styled trailing container.
@@ -24,23 +24,23 @@ class LightItem7 extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Optional custom background color for the main container.
-  /// Defaults to AppTheme.containerColor1 (0xFFC4C4D4).
+  /// Defaults to AppTheme.containerColor1.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
-  /// Defaults to AppTheme.elementColor2 (0xFF666699).
+  /// Defaults to AppTheme.elementColor2.
   final Color? titleColor;
 
   /// Optional custom color for the description text.
-  /// Defaults to AppTheme.elementColor1 (0xFF8A8AA8).
+  /// Defaults to AppTheme.elementColor1.
   final Color? descriptionColor;
 
   /// Optional custom color for the icon.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80) for contrast.
+  /// Defaults to AppTheme.elementColor3 for contrast.
   final Color? iconColor;
 
   /// Optional custom background color for the icon's immediate container.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2).
+  /// Defaults to AppTheme.containerColor2.
   final Color? iconContainerColor;
 
   /// Optional custom border radius for the main container.
@@ -74,36 +74,72 @@ class LightItem7 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveDescriptionColor = descriptionColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final Color effectiveIconContainerColor = iconContainerColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3 (for contrast)
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
+    final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor1;
+    final Color effectiveIconContainerColor = iconContainerColor ?? AppTheme.containerColor2;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
 
-    final double effectiveMainBorderRadius = mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
-    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
-    final double itemHeight = 64.0; // Increased from 64.0 to fix overflow
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
-    final double textColumnSpacing = 3.0; // AppTheme.tinyGap
-    final double internalRowSpacing = 16.0; // AppTheme.mediumGap
+    final double effectiveMainBorderRadius = mainBorderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double itemHeight = 64.0;
+    final double effectiveIconSize = iconSize ?? 24.0;
+    final double textColumnSpacing = AppTheme.tinyGap-1;
+    final double internalRowSpacing = AppTheme.mediumGap;
     final double iconContainerSize = 48.0;
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
 
     final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w600,
     );
     final TextStyle descriptionStyle = GoogleFonts.outfit(
       color: effectiveDescriptionColor,
-      fontSize: 15, // AppTheme.fontSizeSmall
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+      fontSize: AppTheme.fontSizeSmall,
+      fontWeight: FontWeight.w500,
     );
 
     // Determine if we should show an icon (either SVG or IconData)
     final bool hasIcon = svgAsset != null || icon != null;
+
+    Widget iconButton = hasIcon ? InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
+      child: Container(
+        width: iconContainerSize,
+        height: iconContainerSize,
+        padding: const EdgeInsets.all(12),
+        decoration: ShapeDecoration(
+          color: effectiveIconContainerColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
+          ),
+        ),
+        child: Center(
+          child: SizedBox(
+            width: 24.0,
+            height: 24.0,
+            child: svgAsset != null
+                ? SvgPicture.asset(
+                    svgAsset!,
+                    width: 24.0,
+                    height: 24.0,
+                    colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                    fit: BoxFit.contain,
+                  )
+                : icon != null
+                    ? Icon(
+                        icon,
+                        size: 24.0,
+                        color: effectiveIconColor,
+                      )
+                    : Container(),
+          ),
+        ),
+      ),
+    ) : Container();
 
     Widget content = Container(
       width: double.infinity,
@@ -118,66 +154,28 @@ class LightItem7 extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Container( // Changed from SizedBox to Container for better flexibility
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: titleStyle,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  SizedBox(height: textColumnSpacing),
-                  Text(
-                    description,
-                    style: descriptionStyle,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ],
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: titleStyle,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                SizedBox(height: textColumnSpacing),
+                Text(
+                  description,
+                  style: descriptionStyle,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ],
             ),
           ),
-          if (hasIcon) ...[
-            SizedBox(width: internalRowSpacing),
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-                child: Container(
-                  width: iconContainerSize,
-                  height: iconContainerSize,
-                  decoration: ShapeDecoration(
-                    color: effectiveIconContainerColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-                    ),
-                  ),
-                  child: Center(
-                    child: svgAsset != null
-                      ? SvgPicture.asset(
-                          svgAsset!,
-                          width: effectiveIconSize,
-                          height: effectiveIconSize,
-                          colorFilter: ColorFilter.mode(
-                            effectiveIconColor,
-                            BlendMode.srcIn,
-                          ),
-                        )
-                      : Icon(
-                          icon,
-                          size: effectiveIconSize,
-                          color: effectiveIconColor,
-                        ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          if (hasIcon) SizedBox(width: internalRowSpacing),
+          if (hasIcon) iconButton,
         ],
       ),
     );

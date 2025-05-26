@@ -3,6 +3,8 @@ import '../common/appTheme.dart';
 import '../common/components/headers/widgetHeader1.dart';
 import '../common/components/items/darkItem7.dart';
 import '../common/components/items/lightItem7.dart';
+import '../common/models/client_model.dart';
+import '../common/services/client_service.dart';
 
 /// ClientsPane - Interfața pentru gestionarea apelurilor clienților
 /// 
@@ -14,8 +16,126 @@ import '../common/components/items/lightItem7.dart';
 /// Logica de focus:
 /// - LightItem7: starea normală (viewIcon)
 /// - DarkItem7: starea focusată (doneIcon)
-class ClientsPane extends StatelessWidget {
+class ClientsPane extends StatefulWidget {
   const ClientsPane({Key? key}) : super(key: key);
+
+  @override
+  State<ClientsPane> createState() => _ClientsPaneState();
+}
+
+class _ClientsPaneState extends State<ClientsPane> {
+  final ClientService _clientService = ClientService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Inițializează datele demo dacă nu există clienți
+    if (_clientService.clients.isEmpty) {
+      _clientService.initializeDemoData();
+    }
+    _clientService.addListener(_onClientServiceChanged);
+  }
+
+  @override
+  void dispose() {
+    _clientService.removeListener(_onClientServiceChanged);
+    super.dispose();
+  }
+
+  void _onClientServiceChanged() {
+    setState(() {});
+  }
+
+  /// Construiește lista de clienți pentru o anumită categorie
+  Widget _buildClientsList(ClientCategory category) {
+    final clients = _clientService.getClientsByCategory(category);
+    
+    if (clients.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Text(
+            'Nu există clienți',
+            style: TextStyle(
+              color: AppTheme.elementColor1,
+              fontSize: AppTheme.fontSizeSmall,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Expanded(
+      child: Container(
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (int i = 0; i < clients.length; i++) ...[
+              _buildClientItem(clients[i]),
+              if (i < clients.length - 1) SizedBox(height: AppTheme.smallGap),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Construiește un item pentru un client
+  Widget _buildClientItem(ClientModel client) {
+    final bool isFocused = client.status == ClientStatus.focused;
+    
+    if (isFocused) {
+      return DarkItem7(
+        title: client.name,
+        description: client.phoneNumber,
+        svgAsset: 'assets/doneIcon.svg',
+        // Nu facem nimic când se apasă pe darkItem7 (client deja focusat)
+      );
+    } else {
+      return LightItem7(
+        title: client.name,
+        description: client.phoneNumber,
+        svgAsset: 'assets/viewIcon.svg',
+        onTap: () => _clientService.focusClient(client.id),
+      );
+    }
+  }
+
+  /// Construiește o secțiune (Apeluri, Reveniri, Recente)
+  Widget _buildSection(String title, ClientCategory category) {
+    return Expanded(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(8),
+        clipBehavior: Clip.antiAlias,
+        decoration: ShapeDecoration(
+          color: AppTheme.widgetBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          ),
+          shadows: [AppTheme.widgetShadow],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Header pentru secțiune
+            WidgetHeader1(title: title),
+            
+            SizedBox(height: AppTheme.smallGap),
+            
+            // Lista de clienți pentru această categorie
+            _buildClientsList(category),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,208 +148,17 @@ class ClientsPane extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Secțiunea Apeluri
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              clipBehavior: Clip.antiAlias,
-              decoration: ShapeDecoration(
-                color: AppTheme.widgetBackground,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                ),
-                shadows: [AppTheme.widgetShadow],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Header pentru Apeluri
-                  WidgetHeader1(title: 'Apeluri'),
-                  
-                  SizedBox(height: AppTheme.smallGap),
-                  
-                  // Lista de apeluri
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Primul apel (DarkItem7 - focusat)
-                          DarkItem7(
-                            title: 'Nume client',
-                            description: 'Numar client',
-                            svgAsset: 'assets/doneIcon.svg',
-                            onTap: () {
-                              // TODO: Implementare funcționalitate apel
-                            },
-                          ),
-                          
-                          SizedBox(height: AppTheme.smallGap),
-                          
-                          // Al doilea apel (LightItem7 - normal)
-                          LightItem7(
-                            title: 'Nume client',
-                            description: 'Numar client',
-                            svgAsset: 'assets/viewIcon.svg',
-                            onTap: () {
-                              // TODO: Implementare funcționalitate apel
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildSection('Apeluri', ClientCategory.apeluri),
           
           SizedBox(height: AppTheme.mediumGap),
           
           // Secțiunea Reveniri
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              clipBehavior: Clip.antiAlias,
-              decoration: ShapeDecoration(
-                color: AppTheme.widgetBackground,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                ),
-                shadows: [AppTheme.widgetShadow],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Header pentru Reveniri
-                  WidgetHeader1(title: 'Reveniri'),
-                  
-                  SizedBox(height: AppTheme.smallGap),
-                  
-                  // Lista de reveniri
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: ShapeDecoration(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Prima revenire (DarkItem7 - focusat)
-                          DarkItem7(
-                            title: 'Nume client',
-                            description: 'Numar client',
-                            svgAsset: 'assets/doneIcon.svg',
-                            onTap: () {
-                              // TODO: Implementare funcționalitate revenire
-                            },
-                          ),
-                          
-                          SizedBox(height: AppTheme.smallGap),
-                          
-                          // A doua revenire (LightItem7 - normal)
-                          LightItem7(
-                            title: 'Nume client',
-                            description: 'Numar client',
-                            svgAsset: 'assets/viewIcon.svg',
-                            onTap: () {
-                              // TODO: Implementare funcționalitate revenire
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildSection('Reveniri', ClientCategory.reveniri),
           
           SizedBox(height: AppTheme.mediumGap),
           
           // Secțiunea Recente
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8),
-              clipBehavior: Clip.antiAlias,
-              decoration: ShapeDecoration(
-                color: AppTheme.widgetBackground,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                ),
-                shadows: [AppTheme.widgetShadow],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Header pentru Recente
-                  WidgetHeader1(title: 'Recente'),
-                  
-                  SizedBox(height: AppTheme.smallGap),
-                  
-                  // Lista de recente
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: ShapeDecoration(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Primul recent (DarkItem7 - focusat)
-                          DarkItem7(
-                            title: 'Nume client',
-                            description: 'Numar client',
-                            svgAsset: 'assets/doneIcon.svg',
-                            onTap: () {
-                              // TODO: Implementare funcționalitate istoric
-                            },
-                          ),
-                          
-                          SizedBox(height: AppTheme.smallGap),
-                          
-                          // Al doilea recent (LightItem7 - normal)
-                          LightItem7(
-                            title: 'Nume client',
-                            description: 'Numar client',
-                            svgAsset: 'assets/viewIcon.svg',
-                            onTap: () {
-                              // TODO: Implementare funcționalitate istoric
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildSection('Recente', ClientCategory.recente),
         ],
       ),
     );
