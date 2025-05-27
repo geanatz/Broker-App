@@ -1,6 +1,7 @@
 // lib/components/items/dark_item2.dart
-
+import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A customizable item component with a pill shape, larger height,
@@ -52,13 +53,13 @@ class DarkItem2 extends StatelessWidget {
     // Text Style (Consider moving to AppTheme)
     final TextStyle titleStyle = TextStyle(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
+      fontSize: AppTheme.fontSizeMedium,
+      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
     );
 
     // Padding (Consider moving to AppTheme)
-    final EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8); // AppTheme.paddingMediumWithVerticalSmall
+    final EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12); // AppTheme.paddingMediumWithVerticalSmall
 
     Widget content = Container(
       width: double.infinity,

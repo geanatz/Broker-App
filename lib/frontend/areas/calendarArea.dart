@@ -13,6 +13,7 @@ import 'package:broker_app/frontend/common/components/texts/text2.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader6.dart';
 import 'package:broker_app/frontend/common/components/items/outlinedItem6.dart';
 import 'package:broker_app/frontend/common/components/items/darkItem4.dart';
+import 'package:broker_app/frontend/common/components/items/darkItem2.dart';
 
 /// Area pentru calendar care va fi afișată în cadrul ecranului principal.
 /// Această componentă respectă strict designul din Figma și folosește o abordare simplă pentru stabilitate.
@@ -410,7 +411,7 @@ class CalendarAreaState extends State<CalendarArea> {
     });
   }
 
-  /// Construiește un slot rezervat conform designului folosind DarkItem4
+  /// Construiește un slot rezervat conform designului folosind DarkItem4 sau DarkItem2
   Widget _buildMeetingSlot(Map<String, dynamic> meetingData, String docId) {
     final consultantName = meetingData['consultantName'] ?? 'N/A';
     final clientName = meetingData['clientName'] ?? 'N/A';
@@ -418,6 +419,9 @@ class CalendarAreaState extends State<CalendarArea> {
     final currentUserId = _auth.currentUser?.uid;
     final bool isOwner = consultantId != null && currentUserId == consultantId;
     final bool isHighlighted = _highlightedMeetingId == docId;
+    
+    // Check if client name is the default value (meeting without real client name)
+    final bool hasRealClientName = clientName != 'Client nedefinit' && clientName != 'N/A';
 
     // Calculate background color with highlight effect
     Color backgroundColor = AppTheme.containerColor2;
@@ -428,14 +432,21 @@ class CalendarAreaState extends State<CalendarArea> {
 
     return MouseRegion(
       cursor: isOwner ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: DarkItem4(
-        title: consultantName,
-        description: clientName,
-        onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
-        backgroundColor: backgroundColor,
-        titleColor: AppTheme.elementColor3,
-        descriptionColor: AppTheme.elementColor2,
-      ),
+      child: hasRealClientName 
+        ? DarkItem4(
+            title: consultantName,
+            description: clientName,
+            onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
+            backgroundColor: backgroundColor,
+            titleColor: AppTheme.elementColor3,
+            descriptionColor: AppTheme.elementColor2,
+          )
+        : DarkItem2(
+            title: consultantName,
+            onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
+            backgroundColor: backgroundColor,
+            titleColor: AppTheme.elementColor3,
+          ),
     );
   }
 
