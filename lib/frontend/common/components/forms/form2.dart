@@ -130,7 +130,7 @@ class _FormFieldContainer extends StatelessWidget {
 // --- END OF _FormFieldContainer DEFINITION ---
 
 /// A form container with two rows of fields.
-class FormContainer2 extends StatelessWidget {
+class FormContainer2 extends StatefulWidget {
   // ... (rest of the parameters as before) ...
   final String titleR1F1;
   final String optionR1F1;
@@ -166,6 +166,9 @@ class FormContainer2 extends StatelessWidget {
   final Widget? child1; // Child widget for R2F1 field
   final Widget? child2; // Child widget for R2F2 field
   final Widget? child3; // Child widget for R2F3 field
+  
+  // Close button callback
+  final VoidCallback? onClose;
 
   const FormContainer2({
     super.key, // Corrected
@@ -189,15 +192,23 @@ class FormContainer2 extends StatelessWidget {
     this.child3,
     this.child1R1F1,
     this.child1R1F2,
+    this.onClose, // Close button callback
   });
 
   @override
+  State<FormContainer2> createState() => _FormContainer2State();
+}
+
+class _FormContainer2State extends State<FormContainer2> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final Color effectiveOuterContainerColor = outerContainerColor ?? AppTheme.containerColor1;
-    final double effectiveOuterBorderRadius = outerBorderRadius ?? 24.0;
-    final EdgeInsetsGeometry effectiveOuterPadding = outerPadding ?? const EdgeInsets.all(8);
-    final double effectiveRowSpacing = rowSpacing ?? 8.0;
-    final double effectiveColumnSpacing = columnSpacing ?? 8.0;
+    final Color effectiveOuterContainerColor = widget.outerContainerColor ?? AppTheme.containerColor1;
+    final double effectiveOuterBorderRadius = widget.outerBorderRadius ?? 24.0;
+    final EdgeInsetsGeometry effectiveOuterPadding = widget.outerPadding ?? const EdgeInsets.all(8);
+    final double effectiveRowSpacing = widget.rowSpacing ?? 8.0;
+    final double effectiveColumnSpacing = widget.columnSpacing ?? 8.0;
     
     // Helper function to create a custom input field
     Widget _buildCustomField(String title, String defaultText, Widget? child, VoidCallback? onTap, {IconData? icon}) {
@@ -214,7 +225,7 @@ class FormContainer2 extends StatelessWidget {
               child: Text(
                 title,
                 style: GoogleFonts.outfit(
-                  color: fieldHeaderTextColor ?? AppTheme.elementColor1,
+                  color: widget.fieldHeaderTextColor ?? AppTheme.elementColor1,
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
                 ),
@@ -226,9 +237,9 @@ class FormContainer2 extends StatelessWidget {
               width: double.infinity,
               height: 48.0, // Standard content height
               decoration: ShapeDecoration(
-                color: fieldContentContainerColor ?? AppTheme.containerColor2,
+                color: widget.fieldContentContainerColor ?? AppTheme.containerColor2,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(fieldContentBorderRadius ?? 16.0),
+                  borderRadius: BorderRadius.circular(widget.fieldContentBorderRadius ?? 16.0),
                 ),
               ),
               child: child,
@@ -242,93 +253,127 @@ class FormContainer2 extends StatelessWidget {
           mainText: defaultText,
           icon: icon,
           onTap: onTap,
-          headerTextColor: fieldHeaderTextColor,
-          fieldValueTextColor: fieldValueTextColor,
-          iconColor: fieldIconColor,
-          contentContainerColor: fieldContentContainerColor,
-          contentBorderRadius: fieldContentBorderRadius,
+          headerTextColor: widget.fieldHeaderTextColor,
+          fieldValueTextColor: widget.fieldValueTextColor,
+          iconColor: widget.fieldIconColor,
+          contentContainerColor: widget.fieldContentContainerColor,
+          contentBorderRadius: widget.fieldContentBorderRadius,
         );
       }
     }
 
-    return Container(
-      width: double.infinity,
-      padding: effectiveOuterPadding,
-      decoration: ShapeDecoration(
-        color: effectiveOuterContainerColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(effectiveOuterBorderRadius),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: child1R1F1 != null 
-                  ? _buildCustomField(
-                      titleR1F1, 
-                      optionR1F1, 
-                      child1R1F1, 
-                      onTapR1F1,
-                      icon: iconR1F1,
-                    )
-                  : _FormFieldContainer(
-                      title: titleR1F1, mainText: optionR1F1, icon: iconR1F1, onTap: onTapR1F1,
-                      headerTextColor: fieldHeaderTextColor, fieldValueTextColor: fieldValueTextColor, iconColor: fieldIconColor,
-                      contentContainerColor: fieldContentContainerColor, contentBorderRadius: fieldContentBorderRadius,
+          Container(
+            width: double.infinity,
+            padding: effectiveOuterPadding,
+            decoration: ShapeDecoration(
+              color: effectiveOuterContainerColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(effectiveOuterBorderRadius),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: widget.child1R1F1 != null 
+                        ? _buildCustomField(
+                            widget.titleR1F1, 
+                            widget.optionR1F1, 
+                            widget.child1R1F1, 
+                            widget.onTapR1F1,
+                            icon: widget.iconR1F1,
+                          )
+                        : _FormFieldContainer(
+                            title: widget.titleR1F1, mainText: widget.optionR1F1, icon: widget.iconR1F1, onTap: widget.onTapR1F1,
+                            headerTextColor: widget.fieldHeaderTextColor, fieldValueTextColor: widget.fieldValueTextColor, iconColor: widget.fieldIconColor,
+                            contentContainerColor: widget.fieldContentContainerColor, contentBorderRadius: widget.fieldContentBorderRadius,
+                          ),
                     ),
-              ),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(
-                child: child1R1F2 != null 
-                  ? _buildCustomField(
-                      titleR1F2, 
-                      optionR1F2, 
-                      child1R1F2, 
-                      onTapR1F2,
-                      icon: iconR1F2,
-                    )
-                  : _FormFieldContainer(
-                      title: titleR1F2, mainText: optionR1F2, icon: iconR1F2, onTap: onTapR1F2,
-                      headerTextColor: fieldHeaderTextColor, fieldValueTextColor: fieldValueTextColor, iconColor: fieldIconColor,
-                      contentContainerColor: fieldContentContainerColor, contentBorderRadius: fieldContentBorderRadius,
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(
+                      child: widget.child1R1F2 != null 
+                        ? _buildCustomField(
+                            widget.titleR1F2, 
+                            widget.optionR1F2, 
+                            widget.child1R1F2, 
+                            widget.onTapR1F2,
+                            icon: widget.iconR1F2,
+                          )
+                        : _FormFieldContainer(
+                            title: widget.titleR1F2, mainText: widget.optionR1F2, icon: widget.iconR1F2, onTap: widget.onTapR1F2,
+                            headerTextColor: widget.fieldHeaderTextColor, fieldValueTextColor: widget.fieldValueTextColor, iconColor: widget.fieldIconColor,
+                            contentContainerColor: widget.fieldContentContainerColor, contentBorderRadius: widget.fieldContentBorderRadius,
+                          ),
                     ),
-              ),
-            ],
+                  ],
+                ),
+                SizedBox(height: effectiveRowSpacing),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildCustomField(
+                        widget.titleR2F1, 
+                        widget.textR2F1, 
+                        widget.child1, 
+                        widget.onTapR2F1,
+                      ),
+                    ),
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(
+                      child: _buildCustomField(
+                        widget.titleR2F2, 
+                        widget.textR2F2, 
+                        widget.child2, 
+                        widget.onTapR2F2,
+                      ),
+                    ),
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(
+                      child: _buildCustomField(
+                        widget.titleR2F3, 
+                        widget.textR2F3, 
+                        widget.child3, 
+                        widget.onTapR2F3,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          SizedBox(height: effectiveRowSpacing),
-          Row(
-            children: [
-              Expanded(
-                child: _buildCustomField(
-                  titleR2F1, 
-                  textR2F1, 
-                  child1, 
-                  onTapR2F1,
+          // Close button positioned in top-right corner
+          if (_isHovered && widget.onClose != null)
+            Positioned(
+              top: -8,
+              right: -8,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: ShapeDecoration(
+                  color: AppTheme.elementColor2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: InkWell(
+                  onTap: widget.onClose,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(
-                child: _buildCustomField(
-                  titleR2F2, 
-                  textR2F2, 
-                  child2, 
-                  onTapR2F2,
-                ),
-              ),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(
-                child: _buildCustomField(
-                  titleR2F3, 
-                  textR2F3, 
-                  child3, 
-                  onTapR2F3,
-                ),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );

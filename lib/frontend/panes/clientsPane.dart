@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common/appTheme.dart';
 import '../common/components/headers/widgetHeader1.dart';
+import '../common/components/headers/widgetHeader3.dart';
 import '../common/components/items/darkItem7.dart';
 import '../common/components/items/lightItem7.dart';
 import '../common/models/client_model.dart';
@@ -9,9 +10,9 @@ import '../common/services/client_service.dart';
 /// ClientsPane - Interfața pentru gestionarea apelurilor clienților
 /// 
 /// Această interfață este împărțită în 3 secțiuni:
-/// 1. Apeluri - toate apelurile active
-/// 2. Reveniri - apelurile care sună ocupat sau sunt amânate
-/// 3. Recente - apelurile respinse sau finalizate cu succes
+/// 1. Apeluri - toate apelurile active (FILL - nu se poate collapse)
+/// 2. Reveniri - apelurile care sună ocupat sau sunt amânate (HUG - se poate collapse)
+/// 3. Recente - apelurile respinse sau finalizate cu succes (HUG - se poate collapse)
 /// 
 /// Logica de focus:
 /// - LightItem7: starea normală (viewIcon)
@@ -25,6 +26,10 @@ class ClientsPane extends StatefulWidget {
 
 class _ClientsPaneState extends State<ClientsPane> {
   final ClientService _clientService = ClientService();
+  
+  // Stări pentru collapse/expand secțiuni (doar pentru Reveniri și Recente)
+  bool _isReveniriCollapsed = false;
+  bool _isRecenteCollapsed = false;
 
   @override
   void initState() {
@@ -51,7 +56,8 @@ class _ClientsPaneState extends State<ClientsPane> {
     final clients = _clientService.getClientsByCategory(category);
     
     if (clients.isEmpty) {
-      return Expanded(
+      return Container(
+        height: 60, // Înălțime fixă pentru mesajul de empty state
         child: Center(
           child: Text(
             'Nu există clienți',
@@ -64,22 +70,20 @@ class _ClientsPaneState extends State<ClientsPane> {
       );
     }
 
-    return Expanded(
-      child: Container(
-        width: double.infinity,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (int i = 0; i < clients.length; i++) ...[
-              _buildClientItem(clients[i]),
-              if (i < clients.length - 1) SizedBox(height: AppTheme.smallGap),
-            ],
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < clients.length; i++) ...[
+            _buildClientItem(clients[i]),
+            if (i < clients.length - 1) SizedBox(height: AppTheme.smallGap),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -106,33 +110,62 @@ class _ClientsPaneState extends State<ClientsPane> {
   }
 
   /// Construiește o secțiune (Apeluri, Reveniri, Recente)
-  Widget _buildSection(String title, ClientCategory category) {
-    return Expanded(
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(8),
-        clipBehavior: Clip.antiAlias,
-        decoration: ShapeDecoration(
-          color: AppTheme.widgetBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-          ),
-          shadows: [AppTheme.widgetShadow],
+  Widget _buildSection(String title, ClientCategory category, {bool canCollapse = true}) {
+    // Determină starea de collapse pentru această secțiune
+    bool isCollapsed = false;
+    VoidCallback? toggleCallback;
+    
+    if (canCollapse) {
+      switch (category) {
+        case ClientCategory.reveniri:
+          isCollapsed = _isReveniriCollapsed;
+          toggleCallback = () => setState(() => _isReveniriCollapsed = !_isReveniriCollapsed);
+          break;
+        case ClientCategory.recente:
+          isCollapsed = _isRecenteCollapsed;
+          toggleCallback = () => setState(() => _isRecenteCollapsed = !_isRecenteCollapsed);
+          break;
+        case ClientCategory.apeluri:
+          // Apeluri nu se poate collapse
+          break;
+      }
+    }
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: AppTheme.widgetBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Header pentru secțiune
-            WidgetHeader1(title: title),
-            
+        shadows: [AppTheme.widgetShadow],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Header pentru secțiune
+          if (category == ClientCategory.apeluri)
+            // Folosim WidgetHeader1 pentru Apeluri (fără collapse)
+            WidgetHeader1(title: title)
+          else
+            // Folosim WidgetHeader3 pentru Reveniri și Recente (cu collapse)
+            WidgetHeader3(
+              title: title,
+              trailingIcon: isCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              onTrailingIconTap: toggleCallback,
+            ),
+          
+          if (!isCollapsed) ...[
             SizedBox(height: AppTheme.smallGap),
             
             // Lista de clienți pentru această categorie
             _buildClientsList(category),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -147,17 +180,19 @@ class _ClientsPaneState extends State<ClientsPane> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Secțiunea Apeluri
-          _buildSection('Apeluri', ClientCategory.apeluri),
+          // Secțiunea Apeluri - FILL (expandează să ocupe tot spațiul disponibil)
+          Expanded(
+            child: _buildSection('Apeluri', ClientCategory.apeluri, canCollapse: false),
+          ),
           
           SizedBox(height: AppTheme.mediumGap),
           
-          // Secțiunea Reveniri
+          // Secțiunea Reveniri - HUG (doar cât îi trebuie)
           _buildSection('Reveniri', ClientCategory.reveniri),
           
           SizedBox(height: AppTheme.mediumGap),
           
-          // Secțiunea Recente
+          // Secțiunea Recente - HUG (doar cât îi trebuie)
           _buildSection('Recente', ClientCategory.recente),
         ],
       ),

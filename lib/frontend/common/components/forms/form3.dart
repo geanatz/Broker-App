@@ -130,7 +130,7 @@ class _FormFieldContainer extends StatelessWidget {
 // --- END OF _FormFieldContainer DEFINITION ---
 
 /// A form container with three rows of fields.
-class FormContainer3 extends StatelessWidget {
+class FormContainer3 extends StatefulWidget {
   // ... (rest of the parameters as before) ...
   final String titleR1F1, optionR1F1; final IconData? iconR1F1; final VoidCallback? onTapR1F1;
   final String titleR1F2, optionR1F2; final IconData? iconR1F2; final VoidCallback? onTapR1F2;
@@ -150,6 +150,9 @@ class FormContainer3 extends StatelessWidget {
   final Color? fieldIconColor;
   final Color? fieldContentContainerColor;
   final double? fieldContentBorderRadius;
+  
+  // Close button callback
+  final VoidCallback? onClose;
 
   const FormContainer3({
     super.key, // Corrected
@@ -166,66 +169,108 @@ class FormContainer3 extends StatelessWidget {
     this.fieldValueTextColor, // Public parameter
     this.fieldIconColor, this.fieldContentContainerColor,
     this.fieldContentBorderRadius,
+    this.onClose, // Close button callback
   });
 
   @override
+  State<FormContainer3> createState() => _FormContainer3State();
+}
+
+class _FormContainer3State extends State<FormContainer3> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final Color effectiveOuterContainerColor = outerContainerColor ?? AppTheme.containerColor1;
-    final double effectiveOuterBorderRadius = outerBorderRadius ?? 24.0;
-    final EdgeInsetsGeometry effectiveOuterPadding = outerPadding ?? const EdgeInsets.all(8);
-    final double effectiveRowSpacing = rowSpacing ?? 8.0;
-    final double effectiveColumnSpacing = columnSpacing ?? 8.0;
+    final Color effectiveOuterContainerColor = widget.outerContainerColor ?? AppTheme.containerColor1;
+    final double effectiveOuterBorderRadius = widget.outerBorderRadius ?? 24.0;
+    final EdgeInsetsGeometry effectiveOuterPadding = widget.outerPadding ?? const EdgeInsets.all(8);
+    final double effectiveRowSpacing = widget.rowSpacing ?? 8.0;
+    final double effectiveColumnSpacing = widget.columnSpacing ?? 8.0;
 
     Widget buildField(String title, String mainText, {IconData? icon, VoidCallback? onTap}) {
         return _FormFieldContainer(
             title: title, mainText: mainText, icon: icon, onTap: onTap,
-            headerTextColor: fieldHeaderTextColor, 
-            fieldValueTextColor: fieldValueTextColor, // Pass it here
-            iconColor: fieldIconColor,
-            contentContainerColor: fieldContentContainerColor, 
-            contentBorderRadius: fieldContentBorderRadius,
+            headerTextColor: widget.fieldHeaderTextColor, 
+            fieldValueTextColor: widget.fieldValueTextColor, // Pass it here
+            iconColor: widget.fieldIconColor,
+            contentContainerColor: widget.fieldContentContainerColor, 
+            contentBorderRadius: widget.fieldContentBorderRadius,
         );
     }
 
-    return Container(
-      width: double.infinity,
-      padding: effectiveOuterPadding,
-      decoration: ShapeDecoration(
-        color: effectiveOuterContainerColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(effectiveOuterBorderRadius),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Row( // Row 1
-            children: [
-              Expanded(child: buildField(titleR1F1, optionR1F1, icon: iconR1F1, onTap: onTapR1F1)),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(child: buildField(titleR1F2, optionR1F2, icon: iconR1F2, onTap: onTapR1F2)),
-            ],
+          Container(
+            width: double.infinity,
+            padding: effectiveOuterPadding,
+            decoration: ShapeDecoration(
+              color: effectiveOuterContainerColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(effectiveOuterBorderRadius),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row( // Row 1
+                  children: [
+                    Expanded(child: buildField(widget.titleR1F1, widget.optionR1F1, icon: widget.iconR1F1, onTap: widget.onTapR1F1)),
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(child: buildField(widget.titleR1F2, widget.optionR1F2, icon: widget.iconR1F2, onTap: widget.onTapR1F2)),
+                  ],
+                ),
+                SizedBox(height: effectiveRowSpacing),
+                Row( // Row 2
+                  children: [
+                    Expanded(child: buildField(widget.titleR2F1, widget.textR2F1, onTap: widget.onTapR2F1)),
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(child: buildField(widget.titleR2F2, widget.textR2F2, onTap: widget.onTapR2F2)),
+                  ],
+                ),
+                SizedBox(height: effectiveRowSpacing),
+                Row( // Row 3
+                  children: [
+                    Expanded(child: buildField(widget.titleR3F1, widget.textR3F1, onTap: widget.onTapR3F1)),
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(child: buildField(widget.titleR3F2, widget.textR3F2, onTap: widget.onTapR3F2)),
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(child: buildField(widget.titleR3F3, widget.textR3F3, onTap: widget.onTapR3F3)),
+                    SizedBox(width: effectiveColumnSpacing),
+                    Expanded(child: buildField(widget.titleR3F4, widget.textR3F4, onTap: widget.onTapR3F4)),
+                  ],
+                ),
+              ],
+            ),
           ),
-          SizedBox(height: effectiveRowSpacing),
-          Row( // Row 2
-            children: [
-              Expanded(child: buildField(titleR2F1, textR2F1, onTap: onTapR2F1)),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(child: buildField(titleR2F2, textR2F2, onTap: onTapR2F2)),
-            ],
-          ),
-          SizedBox(height: effectiveRowSpacing),
-          Row( // Row 3
-            children: [
-              Expanded(child: buildField(titleR3F1, textR3F1, onTap: onTapR3F1)),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(child: buildField(titleR3F2, textR3F2, onTap: onTapR3F2)),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(child: buildField(titleR3F3, textR3F3, onTap: onTapR3F3)),
-              SizedBox(width: effectiveColumnSpacing),
-              Expanded(child: buildField(titleR3F4, textR3F4, onTap: onTapR3F4)),
-            ],
-          ),
+          // Close button positioned in top-right corner
+          if (_isHovered && widget.onClose != null)
+            Positioned(
+              top: -8,
+              right: -8,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: ShapeDecoration(
+                  color: AppTheme.elementColor2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: InkWell(
+                  onTap: widget.onClose,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/popups/consultantPopup.dart';
 import 'package:broker_app/old/sidebar/sidebar_service.dart';
+import 'package:broker_app/frontend/common/components/headers/widgetHeader3.dart';
 
 /// Widget care implementează sidebar-ul conform noului design
 /// Conține secțiuni pentru informatii consultant, funcții rapide, 
@@ -65,28 +66,30 @@ class _SidebarWidgetState extends State<SidebarWidget> {
           const SizedBox(height: AppTheme.mediumGap),
           
           // Area Section
-          _buildSectionHeader(
-            'Areas', 
-            isCollapsed: _isAreaSectionCollapsed,
-            onToggle: () {
+          WidgetHeader3(
+            title: 'Areas',
+            trailingIcon: _isAreaSectionCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+            onTrailingIconTap: () {
               setState(() {
                 _isAreaSectionCollapsed = !_isAreaSectionCollapsed;
               });
             },
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
           ),
           const SizedBox(height: AppTheme.smallGap),
           _buildAreaButtons(),
           const SizedBox(height: AppTheme.mediumGap),
           
           // Pane Section
-          _buildSectionHeader(
-            'Panes', 
-            isCollapsed: _isPaneSectionCollapsed,
-            onToggle: () {
+          WidgetHeader3(
+            title: 'Panes',
+            trailingIcon: _isPaneSectionCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+            onTrailingIconTap: () {
               setState(() {
                 _isPaneSectionCollapsed = !_isPaneSectionCollapsed;
               });
             },
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
           ),
           const SizedBox(height: AppTheme.smallGap),
           _buildPaneButtons(),
@@ -213,43 +216,6 @@ class _SidebarWidgetState extends State<SidebarWidget> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // Construiește header-ul pentru secțiuni (Area, Pane)
-  Widget _buildSectionHeader(String title, {required bool isCollapsed, required VoidCallback onToggle}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-            child: Text(
-              title,
-              style: AppTheme.navigationHeaderStyle,
-            ),
-          ),
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: onToggle,
-              child: Transform.rotate(
-                angle: isCollapsed ? 3.14159 : 0, // 180 degrees when collapsed
-                child: SvgPicture.asset(
-                  'assets/expandIcon.svg',
-                  width: 24,
-                  height: 24,
-                  colorFilter: ColorFilter.mode(
-                    AppTheme.elementColor1,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

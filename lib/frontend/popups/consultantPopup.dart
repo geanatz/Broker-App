@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
+import '../common/components/headers/widgetHeader1.dart';
 
 /// Popup pentru afișarea detaliilor consultantului și opțiunii de deconectare
 class ConsultantPopup extends StatelessWidget {
@@ -66,19 +67,9 @@ class ConsultantPopup extends StatelessWidget {
 
   /// Construiește antetul popup-ului
   Widget _buildHeader() {
-    return Padding(
+    return WidgetHeader1(
+      title: "Detalii cont",
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-      child: SizedBox(
-        height: 24,
-        child: Text(
-          "Detalii cont",
-          style: GoogleFonts.outfit(
-            fontSize: AppTheme.fontSizeLarge, // 19px
-            fontWeight: FontWeight.w600, // large
-            color: AppTheme.elementColor1,
-          ),
-        ),
-      ),
     );
   }
 
@@ -114,12 +105,15 @@ class ConsultantPopup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          title,
-          style: GoogleFonts.outfit(
-            fontSize: AppTheme.fontSizeMedium, // 17px
-            fontWeight: FontWeight.w600, // large
-            color: AppTheme.elementColor2, // #886699
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0), // 8px horizontal padding
+          child: Text(
+            title,
+            style: GoogleFonts.outfit(
+              fontSize: AppTheme.fontSizeMedium, // 17px
+              fontWeight: FontWeight.w600, // large
+              color: AppTheme.elementColor2, // #886699
+            ),
           ),
         ),
         Container(

@@ -10,9 +10,8 @@ import 'package:broker_app/frontend/common/components/forms/form3.dart';
 import 'package:broker_app/frontend/common/components/forms/formNew.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
 import 'package:broker_app/frontend/common/models/client_model.dart';
+import 'package:broker_app/frontend/common/services/firebase_form_service.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 /// Definirea temei de text pentru a asigura consistenta fontului Outfit in intreaga aplicatie
 class TextStyles {
@@ -105,6 +104,9 @@ class _FormAreaState extends State<FormArea> {
   // Serviciul pentru gestionarea clienților
   final ClientService _clientService = ClientService();
   
+  // Serviciul Firebase pentru gestionarea formularelor
+  final FirebaseFormService _firebaseFormService = FirebaseFormService();
+  
   // Controleaza daca se afiseaza formularul pentru client sau pentru codebitor
   bool _showingClientLoanForm = true;
   bool _showingClientIncomeForm = true;
@@ -174,6 +176,8 @@ class _FormAreaState extends State<FormArea> {
     super.initState();
     // Initialize demo data using the service
     _contactService.initializeDemoData();
+    // Setează clientul inițial
+    _previousClient = _clientService.focusedClient;
     // Ascultă schimbările în ClientService
     _clientService.addListener(_onClientServiceChanged);
     // Load saved form data
@@ -192,322 +196,368 @@ class _FormAreaState extends State<FormArea> {
     super.dispose();
   }
 
+  // Add a variable to track the previous client to save data before switching
+  ClientModel? _previousClient;
+
   void _onClientServiceChanged() {
-    // Salvează datele clientului anterior înainte de a comuta
-    _saveClientFormData();
+    // Gestionează schimbarea clientului focusat
+    _handleClientChange();
+  }
+
+  /// Gestionează schimbarea clientului focusat
+  Future<void> _handleClientChange() async {
+    final currentClient = _clientService.focusedClient;
+    
+    // Primul pas: salvează datele clientului anterior dacă există
+    if (_previousClient != null && currentClient?.phoneNumber != _previousClient?.phoneNumber) {
+      print('Saving data for previous client: ${_previousClient!.name} (${_previousClient!.phoneNumber})');
+      await _saveDataForSpecificClient(_previousClient!);
+    }
+    
+    // Al doilea pas: curăță formularul pentru a evita transmiterea datelor între clienți
+    _clearCurrentForms();
+    
+    // Al treilea pas: încarcă datele formularului pentru noul client focusat
+    await _loadClientFormData();
+    
+    // Actualizează referința clientului anterior
+    _previousClient = currentClient;
+    
+    // Actualizează UI-ul
     setState(() {});
-    // Încarcă datele formularului pentru clientul focusat
-    _loadClientFormData();
   }
 
-  /// Încarcă datele formularului pentru clientul curent focusat
-  void _loadClientFormData() {
+  /// Salvează datele pentru un client specific
+  Future<void> _saveDataForSpecificClient(ClientModel client) async {
+    if (_clientCreditForms.isEmpty && _coborrowerCreditForms.isEmpty && 
+        _clientIncomeForms.isEmpty && _coborrowerIncomeForms.isEmpty) {
+      // Nu salvăm date goale
+      return;
+    }
+
+    // Preparează datele pentru salvare
+    final clientCreditData = _clientCreditForms.map((form) => {
+      'bank': form.bank,
+      'creditType': form.creditType,
+      'sold': form.sold,
+      'consumat': form.consumat,
+      'rata': form.rata,
+      'perioada': form.perioada,
+      'rateType': form.rateType,
+      'isNew': form.isNew,
+    }).toList();
+    
+    final coborrowerCreditData = _coborrowerCreditForms.map((form) => {
+      'bank': form.bank,
+      'creditType': form.creditType,
+      'sold': form.sold,
+      'consumat': form.consumat,
+      'rata': form.rata,
+      'perioada': form.perioada,
+      'rateType': form.rateType,
+      'isNew': form.isNew,
+    }).toList();
+    
+    final clientIncomeData = _clientIncomeForms.map((form) => {
+      'bank': form.bank,
+      'incomeType': form.incomeType,
+      'incomeAmount': form.incomeAmount,
+      'vechime': form.vechime,
+      'isNew': form.isNew,
+    }).toList();
+    
+    final coborrowerIncomeData = _coborrowerIncomeForms.map((form) => {
+      'bank': form.bank,
+      'incomeType': form.incomeType,
+      'incomeAmount': form.incomeAmount,
+      'vechime': form.vechime,
+      'isNew': form.isNew,
+    }).toList();
+
+    // Salvează în Firebase pentru clientul specific
+    final success = await _firebaseFormService.saveAllFormData(
+      phoneNumber: client.phoneNumber,
+      clientName: client.name,
+      clientCreditForms: clientCreditData,
+      coborrowerCreditForms: coborrowerCreditData,
+      clientIncomeForms: clientIncomeData,
+      coborrowerIncomeForms: coborrowerIncomeData,
+      showingClientLoanForm: _showingClientLoanForm,
+      showingClientIncomeForm: _showingClientIncomeForm,
+    );
+
+    if (!success) {
+      print('Failed to save form data to Firebase for client: ${client.name}');
+    } else {
+      print('Successfully saved data for client: ${client.name} (${client.phoneNumber})');
+    }
+  }
+
+  /// Curăță toate formularele curente pentru a evita transmiterea datelor între clienți
+  void _clearCurrentForms() {
+    _clientCreditForms.clear();
+    _clientCreditForms.add(CreditFormModel());
+    
+    _coborrowerCreditForms.clear();
+    _coborrowerCreditForms.add(CreditFormModel());
+    
+    _clientIncomeForms.clear();
+    _clientIncomeForms.add(IncomeFormModel());
+    
+    _coborrowerIncomeForms.clear();
+    _coborrowerIncomeForms.add(IncomeFormModel());
+    
+    // Resetează și starea UI
+    _showingClientLoanForm = true;
+    _showingClientIncomeForm = true;
+    
+    // Curăță toate controller-ele de text pentru a evita păstrarea valorilor în memorie
+    _clearAllTextControllers();
+  }
+
+  /// Curăță toate controller-ele de text
+  void _clearAllTextControllers() {
+    // Dispose existing controllers to avoid memory leaks
+    _creditTextControllers.forEach((_, controller) => controller.dispose());
+    _incomeTextControllers.forEach((_, controller) => controller.dispose());
+    
+    // Clear the maps
+    _creditTextControllers.clear();
+    _incomeTextControllers.clear();
+  }
+
+  /// Încarcă datele formularului pentru clientul curent focusat din Firebase
+  Future<void> _loadClientFormData() async {
     final focusedClient = _clientService.focusedClient;
     if (focusedClient != null) {
-      // Încarcă datele de credit pentru client
-      final clientCreditData = focusedClient.getFormValue<List>('clientCreditForms');
-      if (clientCreditData != null) {
-        _clientCreditForms.clear();
-        for (var data in clientCreditData) {
-          _clientCreditForms.add(CreditFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            creditType: data['creditType'] ?? 'Selecteaza tipul',
-            sold: data['sold'] ?? '',
-            consumat: data['consumat'] ?? '',
-            rata: data['rata'] ?? '',
-            perioada: data['perioada'] ?? '',
-            rateType: data['rateType'] ?? 'Selecteaza tipul',
-            isNew: data['isNew'] ?? true,
-          ));
+      try {
+        // Încarcă datele specifice acestui client din Firebase
+        final formData = await _firebaseFormService.loadAllFormData(focusedClient.phoneNumber);
+        
+        if (formData != null) {
+          // Am găsit date salvate pentru acest client - le încărcăm
+          // Încarcă datele de credit pentru client
+          final creditForms = formData['creditForms'];
+          if (creditForms != null) {
+            final clientCreditData = creditForms['client'] as List?;
+            if (clientCreditData != null) {
+              _clientCreditForms.clear();
+              for (var data in clientCreditData) {
+                _clientCreditForms.add(CreditFormModel(
+                  bank: data['bank'] ?? 'Selecteaza banca',
+                  creditType: data['creditType'] ?? 'Selecteaza tipul',
+                  sold: data['sold'] ?? '',
+                  consumat: data['consumat'] ?? '',
+                  rata: data['rata'] ?? '',
+                  perioada: data['perioada'] ?? '',
+                  rateType: data['rateType'] ?? 'Selecteaza tipul',
+                  isNew: data['isNew'] ?? true,
+                ));
+              }
+            }
+            
+            // Încarcă datele de credit pentru codebitor
+            final coborrowerCreditData = creditForms['coborrower'] as List?;
+            if (coborrowerCreditData != null) {
+              _coborrowerCreditForms.clear();
+              for (var data in coborrowerCreditData) {
+                _coborrowerCreditForms.add(CreditFormModel(
+                  bank: data['bank'] ?? 'Selecteaza banca',
+                  creditType: data['creditType'] ?? 'Selecteaza tipul',
+                  sold: data['sold'] ?? '',
+                  consumat: data['consumat'] ?? '',
+                  rata: data['rata'] ?? '',
+                  perioada: data['perioada'] ?? '',
+                  rateType: data['rateType'] ?? 'Selecteaza tipul',
+                  isNew: data['isNew'] ?? true,
+                ));
+              }
+            }
+          }
+          
+          // Încarcă datele de venit
+          final incomeForms = formData['incomeForms'];
+          if (incomeForms != null) {
+            final clientIncomeData = incomeForms['client'] as List?;
+            if (clientIncomeData != null) {
+              _clientIncomeForms.clear();
+              for (var data in clientIncomeData) {
+                _clientIncomeForms.add(IncomeFormModel(
+                  bank: data['bank'] ?? 'Selecteaza banca',
+                  incomeType: data['incomeType'] ?? 'Selecteaza tipul',
+                  incomeAmount: data['incomeAmount'] ?? '',
+                  vechime: data['vechime'] ?? '',
+                  isNew: data['isNew'] ?? true,
+                ));
+              }
+            }
+            
+            // Încarcă datele de venit pentru codebitor
+            final coborrowerIncomeData = incomeForms['coborrower'] as List?;
+            if (coborrowerIncomeData != null) {
+              _coborrowerIncomeForms.clear();
+              for (var data in coborrowerIncomeData) {
+                _coborrowerIncomeForms.add(IncomeFormModel(
+                  bank: data['bank'] ?? 'Selecteaza banca',
+                  incomeType: data['incomeType'] ?? 'Selecteaza tipul',
+                  incomeAmount: data['incomeAmount'] ?? '',
+                  vechime: data['vechime'] ?? '',
+                  isNew: data['isNew'] ?? true,
+                ));
+              }
+            }
+          }
+          
+          // Încarcă starea UI
+          final uiState = formData['uiState'];
+          if (uiState != null) {
+            _showingClientLoanForm = uiState['showingClientLoanForm'] ?? true;
+            _showingClientIncomeForm = uiState['showingClientIncomeForm'] ?? true;
+          }
+        } else {
+          // Nu există date salvate pentru acest client - inițializează cu formulare goale
+          print('No saved data found for client ${focusedClient.phoneNumber}, initializing with empty forms');
+          _ensureMinimumForms();
         }
-      }
-      
-      // Încarcă datele de credit pentru codebitor
-      final coborrowerCreditData = focusedClient.getFormValue<List>('coborrowerCreditForms');
-      if (coborrowerCreditData != null) {
-        _coborrowerCreditForms.clear();
-        for (var data in coborrowerCreditData) {
-          _coborrowerCreditForms.add(CreditFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            creditType: data['creditType'] ?? 'Selecteaza tipul',
-            sold: data['sold'] ?? '',
-            consumat: data['consumat'] ?? '',
-            rata: data['rata'] ?? '',
-            perioada: data['perioada'] ?? '',
-            rateType: data['rateType'] ?? 'Selecteaza tipul',
-            isNew: data['isNew'] ?? true,
-          ));
-        }
-      }
-      
-      // Încarcă datele de venit pentru client
-      final clientIncomeData = focusedClient.getFormValue<List>('clientIncomeForms');
-      if (clientIncomeData != null) {
-        _clientIncomeForms.clear();
-        for (var data in clientIncomeData) {
-          _clientIncomeForms.add(IncomeFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
-            incomeAmount: data['incomeAmount'] ?? '',
-            vechime: data['vechime'] ?? '',
-            isNew: data['isNew'] ?? true,
-          ));
-        }
-      }
-      
-      // Încarcă datele de venit pentru codebitor
-      final coborrowerIncomeData = focusedClient.getFormValue<List>('coborrowerIncomeForms');
-      if (coborrowerIncomeData != null) {
-        _coborrowerIncomeForms.clear();
-        for (var data in coborrowerIncomeData) {
-          _coborrowerIncomeForms.add(IncomeFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
-            incomeAmount: data['incomeAmount'] ?? '',
-            vechime: data['vechime'] ?? '',
-            isNew: data['isNew'] ?? true,
-          ));
-        }
-      }
-      
-      // Încarcă starea toggle-urilor
-      _showingClientLoanForm = focusedClient.getFormValue<bool>('showingClientLoanForm') ?? true;
-      _showingClientIncomeForm = focusedClient.getFormValue<bool>('showingClientIncomeForm') ?? true;
-      
-      // Asigură-te că există cel puțin un formular în fiecare listă
-      if (_clientCreditForms.isEmpty) {
-        _clientCreditForms.add(CreditFormModel());
-      }
-      if (_coborrowerCreditForms.isEmpty) {
-        _coborrowerCreditForms.add(CreditFormModel());
-      }
-      if (_clientIncomeForms.isEmpty) {
-        _clientIncomeForms.add(IncomeFormModel());
-      }
-      if (_coborrowerIncomeForms.isEmpty) {
-        _coborrowerIncomeForms.add(IncomeFormModel());
-      }
-      
-      setState(() {});
-    }
-  }
-
-  /// Salvează datele formularului în clientul focusat
-  void _saveClientFormData() {
-    final focusedClient = _clientService.focusedClient;
-    if (focusedClient != null) {
-      // Salvează datele de credit pentru client
-      final clientCreditData = _clientCreditForms.map((form) => {
-        'bank': form.bank,
-        'creditType': form.creditType,
-        'sold': form.sold,
-        'consumat': form.consumat,
-        'rata': form.rata,
-        'perioada': form.perioada,
-        'rateType': form.rateType,
-        'isNew': form.isNew,
-      }).toList();
-      _clientService.updateFocusedClientFormDataSilent('clientCreditForms', clientCreditData);
-      
-      // Salvează datele de credit pentru codebitor
-      final coborrowerCreditData = _coborrowerCreditForms.map((form) => {
-        'bank': form.bank,
-        'creditType': form.creditType,
-        'sold': form.sold,
-        'consumat': form.consumat,
-        'rata': form.rata,
-        'perioada': form.perioada,
-        'rateType': form.rateType,
-        'isNew': form.isNew,
-      }).toList();
-      _clientService.updateFocusedClientFormDataSilent('coborrowerCreditForms', coborrowerCreditData);
-      
-      // Salvează datele de venit pentru client
-      final clientIncomeData = _clientIncomeForms.map((form) => {
-        'bank': form.bank,
-        'incomeType': form.incomeType,
-        'incomeAmount': form.incomeAmount,
-        'vechime': form.vechime,
-        'isNew': form.isNew,
-      }).toList();
-      _clientService.updateFocusedClientFormDataSilent('clientIncomeForms', clientIncomeData);
-      
-      // Salvează datele de venit pentru codebitor
-      final coborrowerIncomeData = _coborrowerIncomeForms.map((form) => {
-        'bank': form.bank,
-        'incomeType': form.incomeType,
-        'incomeAmount': form.incomeAmount,
-        'vechime': form.vechime,
-        'isNew': form.isNew,
-      }).toList();
-      _clientService.updateFocusedClientFormDataSilent('coborrowerIncomeForms', coborrowerIncomeData);
-      
-      // Salvează starea toggle-urilor
-      _clientService.updateFocusedClientFormDataSilent('showingClientLoanForm', _showingClientLoanForm);
-      _clientService.updateFocusedClientFormDataSilent('showingClientIncomeForm', _showingClientIncomeForm);
-    }
-  }
-
-  /// Salvează datele formularelor în SharedPreferences
-  Future<void> _saveFormData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Salvează datele de credit pentru client
-      final clientCreditData = _clientCreditForms.map((form) => {
-        'bank': form.bank,
-        'creditType': form.creditType,
-        'sold': form.sold,
-        'consumat': form.consumat,
-        'rata': form.rata,
-        'perioada': form.perioada,
-        'rateType': form.rateType,
-        'isNew': form.isNew,
-      }).toList();
-      await prefs.setString('clientCreditForms', jsonEncode(clientCreditData));
-      
-      // Salvează datele de credit pentru codebitor
-      final coborrowerCreditData = _coborrowerCreditForms.map((form) => {
-        'bank': form.bank,
-        'creditType': form.creditType,
-        'sold': form.sold,
-        'consumat': form.consumat,
-        'rata': form.rata,
-        'perioada': form.perioada,
-        'rateType': form.rateType,
-        'isNew': form.isNew,
-      }).toList();
-      await prefs.setString('coborrowerCreditForms', jsonEncode(coborrowerCreditData));
-      
-      // Salvează datele de venit pentru client
-      final clientIncomeData = _clientIncomeForms.map((form) => {
-        'bank': form.bank,
-        'incomeType': form.incomeType,
-        'incomeAmount': form.incomeAmount,
-        'vechime': form.vechime,
-        'isNew': form.isNew,
-      }).toList();
-      await prefs.setString('clientIncomeForms', jsonEncode(clientIncomeData));
-      
-      // Salvează datele de venit pentru codebitor
-      final coborrowerIncomeData = _coborrowerIncomeForms.map((form) => {
-        'bank': form.bank,
-        'incomeType': form.incomeType,
-        'incomeAmount': form.incomeAmount,
-        'vechime': form.vechime,
-        'isNew': form.isNew,
-      }).toList();
-      await prefs.setString('coborrowerIncomeForms', jsonEncode(coborrowerIncomeData));
-      
-      // Salvează starea toggle-urilor
-      await prefs.setBool('showingClientLoanForm', _showingClientLoanForm);
-      await prefs.setBool('showingClientIncomeForm', _showingClientIncomeForm);
-      
-    } catch (e) {
-      debugPrint('Error saving form data: $e');
-    }
-  }
-
-  /// Încarcă datele formularelor din SharedPreferences
-  Future<void> _loadFormData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Încarcă datele de credit pentru client
-      final clientCreditString = prefs.getString('clientCreditForms');
-      if (clientCreditString != null) {
-        final clientCreditData = jsonDecode(clientCreditString) as List;
-        _clientCreditForms.clear();
-        for (var data in clientCreditData) {
-          _clientCreditForms.add(CreditFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            creditType: data['creditType'] ?? 'Selecteaza tipul',
-            sold: data['sold'] ?? '',
-            consumat: data['consumat'] ?? '',
-            rata: data['rata'] ?? '',
-            perioada: data['perioada'] ?? '',
-            rateType: data['rateType'] ?? 'Selecteaza tipul',
-            isNew: data['isNew'] ?? true,
-          ));
-        }
-      }
-      
-      // Încarcă datele de credit pentru codebitor
-      final coborrowerCreditString = prefs.getString('coborrowerCreditForms');
-      if (coborrowerCreditString != null) {
-        final coborrowerCreditData = jsonDecode(coborrowerCreditString) as List;
-        _coborrowerCreditForms.clear();
-        for (var data in coborrowerCreditData) {
-          _coborrowerCreditForms.add(CreditFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            creditType: data['creditType'] ?? 'Selecteaza tipul',
-            sold: data['sold'] ?? '',
-            consumat: data['consumat'] ?? '',
-            rata: data['rata'] ?? '',
-            perioada: data['perioada'] ?? '',
-            rateType: data['rateType'] ?? 'Selecteaza tipul',
-            isNew: data['isNew'] ?? true,
-          ));
-        }
-      }
-      
-      // Încarcă datele de venit pentru client
-      final clientIncomeString = prefs.getString('clientIncomeForms');
-      if (clientIncomeString != null) {
-        final clientIncomeData = jsonDecode(clientIncomeString) as List;
-        _clientIncomeForms.clear();
-        for (var data in clientIncomeData) {
-          _clientIncomeForms.add(IncomeFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
-            incomeAmount: data['incomeAmount'] ?? '',
-            vechime: data['vechime'] ?? '',
-            isNew: data['isNew'] ?? true,
-          ));
-        }
-      }
-      
-      // Încarcă datele de venit pentru codebitor
-      final coborrowerIncomeString = prefs.getString('coborrowerIncomeForms');
-      if (coborrowerIncomeString != null) {
-        final coborrowerIncomeData = jsonDecode(coborrowerIncomeString) as List;
-        _coborrowerIncomeForms.clear();
-        for (var data in coborrowerIncomeData) {
-          _coborrowerIncomeForms.add(IncomeFormModel(
-            bank: data['bank'] ?? 'Selecteaza banca',
-            incomeType: data['incomeType'] ?? 'Selecteaza tipul',
-            incomeAmount: data['incomeAmount'] ?? '',
-            vechime: data['vechime'] ?? '',
-            isNew: data['isNew'] ?? true,
-          ));
-        }
-      }
-      
-      // Încarcă starea toggle-urilor
-      _showingClientLoanForm = prefs.getBool('showingClientLoanForm') ?? true;
-      _showingClientIncomeForm = prefs.getBool('showingClientIncomeForm') ?? true;
-      
-      // Asigură-te că există cel puțin un formular în fiecare listă
-      if (_clientCreditForms.isEmpty) {
-        _clientCreditForms.add(CreditFormModel());
-      }
-      if (_coborrowerCreditForms.isEmpty) {
-        _coborrowerCreditForms.add(CreditFormModel());
-      }
-      if (_clientIncomeForms.isEmpty) {
-        _clientIncomeForms.add(IncomeFormModel());
-      }
-      if (_coborrowerIncomeForms.isEmpty) {
-        _coborrowerIncomeForms.add(IncomeFormModel());
-      }
-      
-      if (mounted) {
+        
+        // Asigură-te că există cel puțin un formular în fiecare listă
+        _ensureMinimumForms();
+        
         setState(() {});
+        
+      } catch (e) {
+        print('Error loading form data from Firebase for client ${focusedClient.phoneNumber}: $e');
+        // În caz de eroare, inițializează cu formulare goale specifice pentru acest client
+        _initializeEmptyFormsForClient();
       }
-      
-    } catch (e) {
-      debugPrint('Error loading form data: $e');
+    } else {
+      // Dacă nu există client focusat, curăță formularul
+      _clearCurrentForms();
     }
+  }
+
+  /// Asigură-te că există cel puțin un formular în fiecare listă
+  void _ensureMinimumForms() {
+    if (_clientCreditForms.isEmpty) {
+      _clientCreditForms.add(CreditFormModel());
+    }
+    if (_coborrowerCreditForms.isEmpty) {
+      _coborrowerCreditForms.add(CreditFormModel());
+    }
+    if (_clientIncomeForms.isEmpty) {
+      _clientIncomeForms.add(IncomeFormModel());
+    }
+    if (_coborrowerIncomeForms.isEmpty) {
+      _coborrowerIncomeForms.add(IncomeFormModel());
+    }
+  }
+
+  /// Inițializează formulare goale specifice pentru clientul curent
+  void _initializeEmptyFormsForClient() {
+    final focusedClient = _clientService.focusedClient;
+    if (focusedClient != null) {
+      print('Initializing empty forms for client: ${focusedClient.name} (${focusedClient.phoneNumber})');
+    }
+    
+    _clearCurrentForms();
+    setState(() {});
+  }
+
+  /// Inițializează formulare goale
+  void _initializeEmptyForms() {
+    _clientCreditForms.clear();
+    _clientCreditForms.add(CreditFormModel());
+    
+    _coborrowerCreditForms.clear();
+    _coborrowerCreditForms.add(CreditFormModel());
+    
+    _clientIncomeForms.clear();
+    _clientIncomeForms.add(IncomeFormModel());
+    
+    _coborrowerIncomeForms.clear();
+    _coborrowerIncomeForms.add(IncomeFormModel());
+    
+    _showingClientLoanForm = true;
+    _showingClientIncomeForm = true;
+    
+    setState(() {});
+  }
+
+  /// Salvează datele formularului în Firebase
+  Future<void> _saveClientFormData() async {
+    final focusedClient = _clientService.focusedClient;
+    if (focusedClient != null) {
+      // Preparează datele de credit pentru client
+      final clientCreditData = _clientCreditForms.map((form) => {
+        'bank': form.bank,
+        'creditType': form.creditType,
+        'sold': form.sold,
+        'consumat': form.consumat,
+        'rata': form.rata,
+        'perioada': form.perioada,
+        'rateType': form.rateType,
+        'isNew': form.isNew,
+      }).toList();
+      
+      // Preparează datele de credit pentru codebitor
+      final coborrowerCreditData = _coborrowerCreditForms.map((form) => {
+        'bank': form.bank,
+        'creditType': form.creditType,
+        'sold': form.sold,
+        'consumat': form.consumat,
+        'rata': form.rata,
+        'perioada': form.perioada,
+        'rateType': form.rateType,
+        'isNew': form.isNew,
+      }).toList();
+      
+      // Preparează datele de venit pentru client
+      final clientIncomeData = _clientIncomeForms.map((form) => {
+        'bank': form.bank,
+        'incomeType': form.incomeType,
+        'incomeAmount': form.incomeAmount,
+        'vechime': form.vechime,
+        'isNew': form.isNew,
+      }).toList();
+      
+      // Preparează datele de venit pentru codebitor
+      final coborrowerIncomeData = _coborrowerIncomeForms.map((form) => {
+        'bank': form.bank,
+        'incomeType': form.incomeType,
+        'incomeAmount': form.incomeAmount,
+        'vechime': form.vechime,
+        'isNew': form.isNew,
+      }).toList();
+
+      // Salvează în Firebase
+      final success = await _firebaseFormService.saveAllFormData(
+        phoneNumber: focusedClient.phoneNumber,
+        clientName: focusedClient.name,
+        clientCreditForms: clientCreditData,
+        coborrowerCreditForms: coborrowerCreditData,
+        clientIncomeForms: clientIncomeData,
+        coborrowerIncomeForms: coborrowerIncomeData,
+        showingClientLoanForm: _showingClientLoanForm,
+        showingClientIncomeForm: _showingClientIncomeForm,
+      );
+
+      if (!success) {
+        print('Failed to save form data to Firebase');
+      }
+    }
+  }
+
+  /// Salvează datele în Firebase (înlocuiește vechea salvare cu SharedPreferences)
+  Future<void> _saveFormData() async {
+    // Datele sunt acum salvate în Firebase prin _saveClientFormData()
+    await _saveClientFormData();
+  }
+
+  /// Încarcă datele din Firebase (înlocuiește vechea încărcare cu SharedPreferences)
+  Future<void> _loadFormData() async {
+    // Datele sunt acum încărcate din Firebase prin _loadClientFormData()
+    // Nu mai avem nevoie să încărcăm date globale, fiecare client își are datele sale
+    _initializeEmptyForms();
   }
 
   /// Helper function to format numbers with commas automatically
@@ -815,12 +865,16 @@ class _FormAreaState extends State<FormArea> {
 
   /// Afiseaza meniul contextual pentru un formular de credit
   void _showCreditFormContextMenu(BuildContext context, int index, List<CreditFormModel> formsList) {
-    if (formsList.length <= 1) {
-      // Nu permitem stergerea ultimului formular
+    final form = formsList[index];
+    
+    // Nu permitem stergerea ultimului formular sau a formularelor noi (FormNew)
+    if (formsList.length <= 1 || !form.hasMinimumInfo()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Nu se poate sterge ultimul formular.',
+            !form.hasMinimumInfo() 
+              ? 'Nu se poate sterge un formular nou (FormNew).'
+              : 'Nu se poate sterge ultimul formular.',
             style: TextStyle(color: Colors.white),
           ),
           backgroundColor: AppTheme.elementColor1,
@@ -926,6 +980,10 @@ class _FormAreaState extends State<FormArea> {
         onTapBR: null,
         child2: TextField(
           controller: _getCreditTextController(index, formPrefix, 'consumat', form.consumat),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d,\.]')),
+          ],
           style: GoogleFonts.outfit(
             fontSize: 17,
             fontWeight: FontWeight.w500,
@@ -942,8 +1000,10 @@ class _FormAreaState extends State<FormArea> {
             ),
           ),
           onChanged: (value) {
+            final controller = _getCreditTextController(index, formPrefix, 'consumat', form.consumat);
+            _formatNumberWithCommas(controller, value);
             setState(() {
-              form.consumat = value;
+              form.consumat = controller.text;
               _checkAndAddNewCreditForm();
             });
           },
@@ -953,6 +1013,11 @@ class _FormAreaState extends State<FormArea> {
         fieldValueTextColor: AppTheme.elementColor3,
         fieldIconColor: AppTheme.elementColor1,
         fieldContentContainerColor: AppTheme.containerColor2,
+        onClose: formsList.length > 1 ? () {
+          setState(() {
+            formsList.removeAt(index);
+          });
+        } : null,
       );
     } else if (form.creditType == 'Nevoi personale') {
       // For personal needs loans, show Form2
@@ -1073,6 +1138,11 @@ class _FormAreaState extends State<FormArea> {
         fieldValueTextColor: AppTheme.elementColor3,
         fieldIconColor: AppTheme.elementColor1,
         fieldContentContainerColor: AppTheme.containerColor2,
+        onClose: formsList.length > 1 ? () {
+          setState(() {
+            formsList.removeAt(index);
+          });
+        } : null,
       );
     } else if (form.creditType == 'Ipotecar' || form.creditType == 'Prima casa') {
       // For mortgage loans, create a custom layout that matches the Figma design
@@ -1376,6 +1446,8 @@ class _FormAreaState extends State<FormArea> {
         fieldValueTextColor: AppTheme.elementColor3,
         fieldIconColor: AppTheme.elementColor1,
         fieldContentContainerColor: AppTheme.containerColor2,
+        // FormNew doesn't have close button - it should always be available
+        onClose: null,
       );
     }
   }
@@ -1458,12 +1530,16 @@ class _FormAreaState extends State<FormArea> {
 
   /// Afiseaza meniul contextual pentru un formular de venit
   void _showIncomeFormContextMenu(BuildContext context, int index, List<IncomeFormModel> formsList) {
-    if (formsList.length <= 1) {
-      // Nu permitem stergerea ultimului formular
+    final form = formsList[index];
+    
+    // Nu permitem stergerea ultimului formular sau a formularelor noi (FormNew)
+    if (formsList.length <= 1 || !form.hasMinimumInfo()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Nu se poate sterge ultimul formular.',
+            !form.hasMinimumInfo() 
+              ? 'Nu se poate sterge un formular nou (FormNew).'
+              : 'Nu se poate sterge ultimul formular.',
             style: TextStyle(color: Colors.white),
           ),
           backgroundColor: AppTheme.elementColor1,
@@ -1598,6 +1674,11 @@ class _FormAreaState extends State<FormArea> {
         fieldValueTextColor: AppTheme.elementColor3,
         fieldIconColor: AppTheme.elementColor1,
         fieldContentContainerColor: AppTheme.containerColor2,
+        onClose: formsList.length > 1 ? () {
+          setState(() {
+            formsList.removeAt(index);
+          });
+        } : null,
       );
     } else {
       // Afișează doar primul rând (Banca și Tip venit)
@@ -1624,6 +1705,8 @@ class _FormAreaState extends State<FormArea> {
         fieldValueTextColor: AppTheme.elementColor3,
         fieldIconColor: AppTheme.elementColor1,
         fieldContentContainerColor: AppTheme.containerColor2,
+        // FormNew doesn't have close button - it should always be available
+        onClose: null,
       );
     }
   }
@@ -1812,8 +1895,7 @@ class _FormAreaState extends State<FormArea> {
               formsList[index].bank = value;
               _checkAndAddNewCreditForm();
             });
-            _saveFormData(); // Salvează datele automat
-            _saveClientFormData(); // Salvează datele în clientul focusat
+            _saveFormData(); // Salvează datele automat în Firebase
           }
         },
       ),
@@ -1856,8 +1938,7 @@ class _FormAreaState extends State<FormArea> {
               formsList[index].bank = value;
               _checkAndAddNewIncomeForm();
             });
-            _saveFormData(); // Salvează datele automat
-            _saveClientFormData(); // Salvează datele în clientul focusat
+            _saveFormData(); // Salvează datele automat în Firebase
           }
         },
       ),
@@ -1900,8 +1981,7 @@ class _FormAreaState extends State<FormArea> {
               formsList[index].creditType = value;
               _checkAndAddNewCreditForm();
             });
-            _saveFormData(); // Salvează datele automat
-            _saveClientFormData(); // Salvează datele în clientul focusat
+            _saveFormData(); // Salvează datele automat în Firebase
           }
         },
       ),
@@ -1993,4 +2073,3 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 }
-

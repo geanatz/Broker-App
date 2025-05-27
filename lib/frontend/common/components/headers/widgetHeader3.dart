@@ -1,7 +1,8 @@
 // lib/components/headers/widget_header3.dart
 
 import 'package:flutter/material.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import 'package:google_fonts/google_fonts.dart';
+import '../../appTheme.dart';
 
 /// A widget header displaying a title on the left and a trailing icon on the right.
 class WidgetHeader3 extends StatelessWidget {
@@ -15,22 +16,22 @@ class WidgetHeader3 extends StatelessWidget {
   final VoidCallback? onTrailingIconTap;
 
   /// Optional custom color for the title text.
-  /// Defaults to AppTheme.elementColor1 (0xFF8A8AA8).
+  /// Defaults to AppTheme.elementColor1.
   final Color? titleColor;
 
   /// Optional custom text style for the title.
   final TextStyle? titleStyle;
 
   /// Optional custom color for the icon.
-  /// Defaults to AppTheme.elementColor1 (0xFF8A8AA8).
+  /// Defaults to AppTheme.elementColor1.
   final Color? iconColor;
 
   /// Optional padding for the header container.
-  /// Defaults to EdgeInsets.symmetric(horizontal: 16).
+  /// Defaults to EdgeInsets.symmetric(horizontal: AppTheme.mediumGap).
   final EdgeInsetsGeometry? padding;
 
   /// Optional spacing between the title and the icon.
-  /// Defaults to 16.0.
+  /// Defaults to AppTheme.mediumGap.
   final double? spacing;
 
   /// Optional height for the container holding the title text.
@@ -38,7 +39,7 @@ class WidgetHeader3 extends StatelessWidget {
   final double? titleContainerHeight;
 
   /// Optional size for the icon.
-  /// Defaults to 24.0.
+  /// Defaults to AppTheme.iconSizeMedium.
   final double? iconSize;
 
   const WidgetHeader3({
@@ -57,17 +58,18 @@ class WidgetHeader3 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16); // AppTheme.paddingMedium
-    final double effectiveSpacing = spacing ?? 16.0; // AppTheme.mediumGap
-    final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0; // AppTheme.headerTitleHeight
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
+    // Use AppTheme colors and dimensions instead of hardcoded values
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor1;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor1;
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final double effectiveSpacing = spacing ?? AppTheme.mediumGap;
+    final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
+    final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
 
-    final TextStyle defaultTitleStyle = TextStyle(
+    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 19, fontWeight: FontWeight.w600, fontFamily: 'Outfit',
+      fontSize: AppTheme.fontSizeLarge,
+      fontWeight: FontWeight.w600,
     );
     final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;
 
@@ -123,7 +125,7 @@ class WidgetHeader3 extends StatelessWidget {
             ),
           ),
           if (iconWidget != null) ...[
-            SizedBox(width: effectiveSpacing), // Replaces Row's spacing: 16
+            SizedBox(width: effectiveSpacing),
             iconWidget,
           ],
         ],
