@@ -1,7 +1,8 @@
 // lib/components/items/dark_item4.dart
 
 import 'package:flutter/material.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import 'package:google_fonts/google_fonts.dart';
+import '../../appTheme.dart';
 
 /// A customizable item component with a primary title and a secondary
 /// description text displayed below it.
@@ -52,30 +53,26 @@ class DarkItem4 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveDescriptionColor = descriptionColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final double effectiveBorderRadius = borderRadius ?? 24.0; // AppTheme.borderRadiusLarge
-    final double effectiveItemHeight = itemHeight ?? 64.0; // AppTheme.itemHeightLarge
-    final double textSpacing = 4.0; // AppTheme.tinyGap (original spacing: 4 in Column)
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor2;
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor3;
+    final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor2;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveItemHeight = itemHeight ?? 64.0;
+    final double textSpacing = AppTheme.tinyGap-1;
 
-    // Text Styles (Consider moving to AppTheme)
-    final TextStyle titleStyle = TextStyle(
+    // Text Styles using Google Fonts
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w600,
     );
-    final TextStyle descriptionStyle = TextStyle(
+    final TextStyle descriptionStyle = GoogleFonts.outfit(
       color: effectiveDescriptionColor,
-      fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+      fontSize: AppTheme.fontSizeSmall,
+      fontWeight: FontWeight.w500,
     );
 
-    // Padding (Consider moving to AppTheme)
-    final EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8); // AppTheme.paddingMediumWithVerticalSmall
+    final EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: AppTheme.smallGap);
 
     Widget content = Container(
       width: double.infinity,

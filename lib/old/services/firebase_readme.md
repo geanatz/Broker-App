@@ -45,7 +45,7 @@ class FirebaseThreadHandler {
 
 All service classes now use the FirebaseThreadHandler:
 
-- **ReservationService**: Handles reservation CRUD operations
+- **MeetingService**: Handles meeting CRUD operations (replaces ReservationService)
 - **ConsultantService**: Handles consultant data operations
 - **AuthService**: Handles authentication and user management
 

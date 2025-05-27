@@ -37,8 +37,9 @@ class _MainScreenState extends State<MainScreen> {
   late String _consultantName;
   late String _teamName;
   
-  // GlobalKey pentru CalendarArea
+  // GlobalKeys pentru componente
   final GlobalKey<CalendarAreaState> _calendarKey = GlobalKey<CalendarAreaState>();
+  final GlobalKey<MeetingsPaneState> _meetingsPaneKey = GlobalKey<MeetingsPaneState>();
   
   @override
   void initState() {
@@ -51,13 +52,19 @@ class _MainScreenState extends State<MainScreen> {
   late final Map<AreaType, Widget> _areaWidgets = {
     AreaType.dashboard: const DashboardArea(),
     AreaType.form: const FormArea(),
-    AreaType.calendar: CalendarArea(key: _calendarKey),
+    AreaType.calendar: CalendarArea(
+      key: _calendarKey,
+      onMeetingSaved: _refreshMeetingsPane,
+    ),
     AreaType.settings: const SettingsArea(),
   };
   
   late final Map<PaneType, Widget> _paneWidgets = {
     PaneType.clients: const ClientsPane(),
-    PaneType.meetings: MeetingsPane(onNavigateToMeeting: _navigateToMeeting),
+    PaneType.meetings: MeetingsPane(
+      key: _meetingsPaneKey,
+      onNavigateToMeeting: _navigateToMeeting,
+    ),
     PaneType.calculator: const CalculatorPane(),
     PaneType.matches: const PlaceholderWidget('Matches Pane', Colors.pink),
   };
@@ -71,10 +78,15 @@ class _MainScreenState extends State<MainScreen> {
       });
     }
     
-    // Navigate to the meeting in calendar
+    // Navigate to the meeting in calendar with highlight
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calendarKey.currentState?.navigateToMeeting(meetingId);
     });
+  }
+  
+  /// Refreshes meetings pane when meetings are saved
+  void _refreshMeetingsPane() {
+    _meetingsPaneKey.currentState?.refreshMeetings();
   }
 
   @override
@@ -133,6 +145,13 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _currentPane = pane;
     });
+    
+    // Refresh meetings when switching to meetings pane
+    if (pane == PaneType.meetings) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _meetingsPaneKey.currentState?.refreshMeetings();
+      });
+    }
   }
   
   void _handleClientsPopupRequested() {

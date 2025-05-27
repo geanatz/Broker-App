@@ -1,7 +1,9 @@
 // lib/components/items/outlined_item6.dart
 
 import 'package:flutter/material.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../appTheme.dart';
 
 /// A customizable outlined item component with a primary title on the left
 /// and an optional icon on the right, housed within a transparent rounded container.
@@ -14,6 +16,9 @@ class OutlinedItem6 extends StatelessWidget {
 
   /// Optional icon data to display on the right.
   final IconData? icon;
+
+  /// Optional SVG asset path to display on the right (takes precedence over icon).
+  final String? svgAsset;
 
   /// Optional callback when the item is tapped.
   final VoidCallback? onTap;
@@ -58,6 +63,7 @@ class OutlinedItem6 extends StatelessWidget {
     Key? key,
     required this.title,
     this.icon,
+    this.svgAsset,
     this.onTap,
     this.mainBackgroundColor,
     this.mainBorderColor,
@@ -72,29 +78,30 @@ class OutlinedItem6 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
     final Color effectiveMainBackgroundColor = mainBackgroundColor ?? Colors.transparent;
-    final Color effectiveMainBorderColor = mainBorderColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
-    final double effectiveMainBorderWidth = mainBorderWidth ?? 4.0; // AppTheme.borderWidthThick
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent; // Snippet shows no color
+    final Color effectiveMainBorderColor = mainBorderColor ?? AppTheme.containerColor2;
+    final double effectiveMainBorderWidth = mainBorderWidth ?? 4.0;
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
+    final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent;
 
-    final double effectiveMainBorderRadius = mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
-    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
-    final double itemHeight = 64.0; // AppTheme.itemHeightLarge
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
-    final double internalSpacing = 16.0; // AppTheme.mediumGap
+    final double effectiveMainBorderRadius = mainBorderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double itemHeight = 64.0;
+    final double effectiveIconSize = iconSize ?? 24.0;
+    final double internalSpacing = AppTheme.mediumGap;
     final double iconContainerSize = 48.0;
 
-    final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
+    final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: AppTheme.smallGap, left: AppTheme.mediumGap, right: AppTheme.smallGap, bottom: AppTheme.smallGap);
 
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w600,
     );
+
+    // Determine if we should show an icon (either SVG or IconData)
+    final bool hasIcon = svgAsset != null || icon != null;
 
     Widget content = Container(
       width: double.infinity,
@@ -129,23 +136,36 @@ class OutlinedItem6 extends StatelessWidget {
               ),
             ),
           ),
-          if (icon != null) ...[
+          if (hasIcon) ...[
             SizedBox(width: internalSpacing),
             Container(
               width: iconContainerSize,
               height: iconContainerSize,
               decoration: ShapeDecoration(
-                color: effectiveIconContainerColor, // Transparent by default
+                color: effectiveIconContainerColor,
                 shape: RoundedRectangleBorder(
-                  // No border for icon container as per snippet
                   borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
                 ),
               ),
               child: Center(
-                child: Icon(
-                  icon,
-                  size: effectiveIconSize,
-                  color: effectiveIconColor,
+                child: SizedBox(
+                  width: 24.0,
+                  height: 24.0,
+                  child: svgAsset != null
+                      ? SvgPicture.asset(
+                          svgAsset!,
+                          width: 24.0,
+                          height: 24.0,
+                          colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                          fit: BoxFit.contain,
+                        )
+                      : icon != null
+                          ? Icon(
+                              icon,
+                              size: 24.0,
+                              color: effectiveIconColor,
+                            )
+                          : Container(),
                 ),
               ),
             ),

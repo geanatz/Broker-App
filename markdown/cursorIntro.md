@@ -1,6 +1,6 @@
 # Financial Consulting App Development Guide
 
-Înainte de a începe, te rog să citești și să analizezi fișierele informaționale `@about_app.md` și `@about_company.md` pentru a înțelege scopul și cerințele aplicației pe care o dezvoltăm. De asemenea, analizează toate fișierele din folderul curent pentru a evalua stadiul actual al dezvoltării.
+Înainte de a începe, te rog să citești și să analizezi fișierele informaționale `@aboutApp.md` și `@aboutCompany.md` pentru a înțelege scopul și cerințele aplicației pe care o dezvoltăm. De asemenea, analizează toate fișierele din folderul curent pentru a evalua stadiul actual al dezvoltării.
 
 ## Procesul meu de dezvoltare
 

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader1.dart';
@@ -40,13 +42,12 @@ class _MeetingPopupState extends State<MeetingPopup> {
   DateTime? _selectedDate;
   String? _selectedTime;
   List<String> _availableTimeSlots = [];
-  bool _isLoadingSlots = false;
   bool _isLoading = false;
 
   // Pentru a ști dacă suntem în modul editare
   bool get isEditMode => widget.meetingId != null;
   
-  String get popupTitle => isEditMode ? 'Editează întâlnire' : 'Creează întâlnire';
+  String get popupTitle => isEditMode ? 'Editeaza intalnire' : 'Creaza intalnire';
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
       // Modul creare - folosește data inițială dacă este furnizată
       if (widget.initialDateTime != null) {
         _selectedDate = widget.initialDateTime;
+        _selectedTime = DateFormat('HH:mm').format(widget.initialDateTime!);
         await _loadAvailableTimeSlots();
       }
     }
@@ -101,8 +103,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
   Future<void> _loadAvailableTimeSlots() async {
     if (_selectedDate == null) return;
 
-    setState(() => _isLoadingSlots = true);
-
     try {
       final slots = await _meetingService.getAvailableTimeSlots(
         _selectedDate!, 
@@ -125,8 +125,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
     } catch (e) {
       debugPrint("Eroare la încărcarea sloturilor: $e");
       _showError("Eroare la încărcarea orelor disponibile");
-    } finally {
-      setState(() => _isLoadingSlots = false);
     }
   }
 
@@ -149,18 +147,13 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
   Future<void> _saveMeeting() async {
     // Validare
-    if (_clientNameController.text.trim().isEmpty) {
-      _showError("Numele clientului este obligatoriu");
-      return;
-    }
-
     if (_selectedDate == null) {
-      _showError("Selectează o dată");
+      _showError("Selecteaza o data");
       return;
     }
 
     if (_selectedTime == null) {
-      _showError("Selectează o oră");
+      _showError("Selecteaza o ora");
       return;
     }
 
@@ -179,7 +172,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
       // Creează obiectul MeetingData
       final meetingData = MeetingData(
-        clientName: _clientNameController.text.trim(),
+        clientName: _clientNameController.text.trim().isEmpty ? 'Client nedefinit' : _clientNameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         dateTime: finalDateTime,
         type: _selectedType,
@@ -230,18 +223,11 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   String get _selectedDateText {
-    if (_selectedDate == null) return "Selectează data";
+    if (_selectedDate == null) return "Selecteaza data";
     return DateFormat('dd/MM/yyyy').format(_selectedDate!);
   }
 
-  String get _selectedTypeText {
-    switch (_selectedType) {
-      case MeetingType.meeting:
-        return "Întâlnire";
-      case MeetingType.bureauDelete:
-        return "Ștergere birou credit";
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -283,55 +269,59 @@ class _MeetingPopupState extends State<MeetingPopup> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Nume client (optional)
+                        // Nume client
                         InputField1(
                           title: "Nume client",
-                          inputText: _clientNameController.text.isEmpty 
-                              ? "Introduceți numele" 
-                              : _clientNameController.text,
-                          onTap: () => _showTextInputDialog(
-                            title: "Nume client",
-                            controller: _clientNameController,
-                            hintText: "Introduceți numele clientului",
-                          ),
+                          subtitle: "(optional)",
+                          controller: _clientNameController,
+                          hintText: "Introduceti numele",
                         ),
                         
                         const SizedBox(height: AppTheme.smallGap),
                         
-                        // Telefon (optional) - cu indicator "optional"
-                        _buildOptionalInputField(
+                        // Telefon (optional)
+                        InputField1(
                           title: "Telefon",
-                          optionalText: "(optional)",
-                          inputText: _phoneController.text.isEmpty 
-                              ? "Introduceți telefonul" 
-                              : _phoneController.text,
-                          onTap: () => _showTextInputDialog(
-                            title: "Număr telefon",
-                            controller: _phoneController,
-                            hintText: "Introduceți numărul de telefon",
-                            keyboardType: TextInputType.phone,
-                          ),
+                          subtitle: "(optional)",
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          hintText: "Introduceti telefonul",
                         ),
                         
                         const SizedBox(height: AppTheme.smallGap),
                         
-                        // Tip întâlnire (dropdown)
-                        DropdownField1(
-                          title: "Tip întâlnire",
-                          selectedOption: _selectedTypeText,
-                          onTap: _showTypeSelection,
+                        // Tip intalnire (dropdown)
+                        DropdownField1<MeetingType>(
+                          title: "Tip intalnire",
+                          value: _selectedType,
+                          items: MeetingType.values.map((type) {
+                            return DropdownMenuItem<MeetingType>(
+                              value: type,
+                              child: Text(
+                                type == MeetingType.meeting ? "Intalnire" : "Stergere birou credit",
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedType = value;
+                              });
+                            }
+                          },
                         ),
                         
                         const SizedBox(height: AppTheme.smallGap),
                         
-                        // Row cu Data și Ora
+                        // Row cu Data si Ora
                         Row(
                           children: [
                             // Data
                             Expanded(
                               child: InputField1(
                                 title: "Data",
-                                inputText: _selectedDateText,
+                                controller: TextEditingController(text: _selectedDateText),
+                                readOnly: true,
                                 onTap: _selectDate,
                               ),
                             ),
@@ -340,10 +330,24 @@ class _MeetingPopupState extends State<MeetingPopup> {
                             
                             // Ora
                             Expanded(
-                              child: DropdownField1(
+                              child: DropdownField1<String>(
                                 title: "Ora",
-                                selectedOption: _selectedTime ?? "Selectează ora",
-                                onTap: _selectedDate != null ? _showTimeSelection : null,
+                                value: _selectedTime,
+                                items: _availableTimeSlots.map((timeSlot) {
+                                  return DropdownMenuItem<String>(
+                                    value: timeSlot,
+                                    child: Text(timeSlot),
+                                  );
+                                }).toList(),
+                                onChanged: _selectedDate != null ? (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _selectedTime = value;
+                                    });
+                                  }
+                                } : null,
+                                hintText: "Selecteaza ora",
+                                enabled: _selectedDate != null,
                               ),
                             ),
                           ],
@@ -375,19 +379,19 @@ class _MeetingPopupState extends State<MeetingPopup> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          isEditMode ? "Actualizează" : "Salvează",
-                          style: TextStyle(
+                          "Salveaza",
+                          style: GoogleFonts.outfit(
                             color: AppTheme.elementColor2,
                             fontSize: AppTheme.fontSizeMedium,
                             fontWeight: FontWeight.w500,
-                            fontFamily: 'Outfit',
                           ),
                         ),
                         const SizedBox(width: AppTheme.smallGap),
-                        Icon(
-                          Icons.save,
-                          color: AppTheme.elementColor2,
-                          size: 24,
+                        SvgPicture.asset(
+                          'assets/saveIcon.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
                         ),
                       ],
                     ),
@@ -401,91 +405,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
     );
   }
 
-  Widget _buildOptionalInputField({
-    required String title,
-    required String optionalText,
-    required String inputText,
-    required VoidCallback onTap,
-  }) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 128),
-      child: SizedBox(
-        width: double.infinity,
-        height: 72,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              height: 21,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        color: AppTheme.elementColor2,
-                        fontSize: AppTheme.fontSizeMedium,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Outfit',
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.smallGap),
-                  Text(
-                    optionalText,
-                    style: TextStyle(
-                      color: AppTheme.elementColor1,
-                      fontSize: AppTheme.fontSizeSmall,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Outfit',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-              child: Container(
-                width: double.infinity,
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
-                decoration: BoxDecoration(
-                  color: AppTheme.containerColor2,
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        inputText,
-                        style: TextStyle(
-                          color: AppTheme.elementColor3,
-                          fontSize: AppTheme.fontSizeMedium,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Outfit',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildLoadingDialog() {
     return Center(
@@ -501,7 +421,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: AppTheme.smallGap),
-              Text("Se încarcă..."),
+              Text("Se incarca..."),
             ],
           ),
         ),
@@ -509,99 +429,5 @@ class _MeetingPopupState extends State<MeetingPopup> {
     );
   }
 
-  void _showTextInputDialog({
-    required String title,
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    final tempController = TextEditingController(text: controller.text);
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: tempController,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(hintText: hintText),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Anulează"),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                controller.text = tempController.text;
-              });
-              Navigator.pop(context);
-            },
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showTypeSelection() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Selectează tipul întâlnirii"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text("Întâlnire"),
-              onTap: () {
-                setState(() => _selectedType = MeetingType.meeting);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text("Ștergere birou credit"),
-              onTap: () {
-                setState(() => _selectedType = MeetingType.bureauDelete);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showTimeSelection() {
-    if (_availableTimeSlots.isEmpty) {
-      _showError("Nu există ore disponibile pentru această dată");
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Selectează ora"),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _availableTimeSlots.length,
-            itemBuilder: (context, index) {
-              final timeSlot = _availableTimeSlots[index];
-              return ListTile(
-                title: Text(timeSlot),
-                onTap: () {
-                  setState(() => _selectedTime = timeSlot);
-                  Navigator.pop(context);
-                },
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
 }

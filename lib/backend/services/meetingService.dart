@@ -97,7 +97,12 @@ class MeetingService {
         consultantName: consultantData['name'] ?? 'Necunoscut',
       );
 
-      await _firestore.collection(_collectionName).add(updatedMeetingData.toFirestore());
+      debugPrint("Creating meeting with consultantId: ${user.uid}");
+      debugPrint("Meeting dateTime: ${meetingData.dateTime}");
+      debugPrint("Meeting data to save: ${updatedMeetingData.toFirestore()}");
+
+      final docRef = await _firestore.collection(_collectionName).add(updatedMeetingData.toFirestore());
+      debugPrint("Meeting created with ID: ${docRef.id}");
       
       return {'success': true, 'message': 'Întâlnire creată cu succes'};
     } catch (e) {
@@ -175,11 +180,12 @@ class MeetingService {
   /// Obține orele disponibile pentru o anumită dată
   Future<List<String>> getAvailableTimeSlots(DateTime date, {String? excludeId}) async {
     try {
-      // Definește intervalul orelor de lucru (9:00 - 17:00, la fiecare oră)
-      final List<String> allSlots = [];
-      for (int hour = 9; hour <= 17; hour++) {
-        allSlots.add('${hour.toString().padLeft(2, '0')}:00');
-      }
+      // Folosește orele de lucru definite în CalendarService
+      final List<String> allSlots = [
+        '09:30', '10:00', '10:30', '11:00', '11:30', 
+        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+        '15:00', '15:30', '16:00'
+      ];
 
       // Obține întâlnirile existente pentru această dată
       final startOfDay = DateTime(date.year, date.month, date.day);
@@ -210,28 +216,50 @@ class MeetingService {
     }
   }
 
-  /// Obține întâlnirile pentru o săptămână
+  /// Obține întâlnirile pentru o săptămână (versiune simplificată fără orderBy)
   Stream<QuerySnapshot> getMeetingsForWeek(DateTime startOfWeek, DateTime endOfWeek) {
-    return _firestore
-        .collection(_collectionName)
-        .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
-        .where('dateTime', isLessThan: Timestamp.fromDate(endOfWeek))
-        .orderBy('dateTime')
-        .snapshots();
+    try {
+      // Simplificăm query-ul pentru a evita necesitatea unui index compus
+      // Vom sorta datele în client în loc de Firestore
+      return _firestore
+          .collection(_collectionName)
+          .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
+          .where('dateTime', isLessThan: Timestamp.fromDate(endOfWeek))
+          .snapshots()
+          .handleError((error) {
+            debugPrint("Error in getMeetingsForWeek stream: $error");
+            return Stream<QuerySnapshot>.empty();
+          });
+    } catch (e) {
+      debugPrint("Error creating getMeetingsForWeek stream: $e");
+      return Stream<QuerySnapshot>.empty();
+    }
   }
 
-  /// Obține întâlnirile viitoare pentru consultantul curent
+  /// Obține întâlnirile viitoare pentru consultantul curent (versiune simplificată)
   Stream<QuerySnapshot> getUpcomingMeetings({int limit = 10}) {
     final user = currentUser;
-    if (user == null) return Stream<QuerySnapshot>.empty();
+    if (user == null) {
+      debugPrint("No authenticated user for getUpcomingMeetings");
+      return Stream<QuerySnapshot>.empty();
+    }
 
-    return _firestore
-        .collection(_collectionName)
-        .where('consultantId', isEqualTo: user.uid)
-        .where('dateTime', isGreaterThanOrEqualTo: Timestamp.now())
-        .orderBy('dateTime')
-        .limit(limit)
-        .snapshots();
+    try {
+      // Simplificăm și acest query pentru a evita probleme de index
+      return _firestore
+          .collection(_collectionName)
+          .where('consultantId', isEqualTo: user.uid)
+          .where('dateTime', isGreaterThanOrEqualTo: Timestamp.now())
+          .limit(limit)
+          .snapshots()
+          .handleError((error) {
+            debugPrint("Error in getUpcomingMeetings stream: $error");
+            return Stream<QuerySnapshot>.empty();
+          });
+    } catch (e) {
+      debugPrint("Error creating getUpcomingMeetings stream: $e");
+      return Stream<QuerySnapshot>.empty();
+    }
   }
 
   /// Obține o întâlnire specifică

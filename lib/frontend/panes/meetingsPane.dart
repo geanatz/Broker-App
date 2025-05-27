@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/items/lightItem7.dart';
 import 'package:broker_app/frontend/common/components/items/darkItem7.dart';
-import 'package:broker_app/old/services/reservation_service.dart';
+import 'package:broker_app/backend/services/meetingService.dart';
 
 /// Widget pentru panoul de intâlniri
 /// 
@@ -24,33 +24,34 @@ class MeetingsPane extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MeetingsPane> createState() => _MeetingsPaneState();
+  State<MeetingsPane> createState() => MeetingsPaneState();
 }
 
-class _MeetingsPaneState extends State<MeetingsPane> {
+class MeetingsPaneState extends State<MeetingsPane> {
   // Firebase reference
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final ReservationService _reservationService = ReservationService();
+  final MeetingService _meetingService = MeetingService();
   
   // Formatter pentru date
   DateFormat? dateFormatter;
   bool _isInitializing = true;
   
-  // Stream subscription pentru întâlniri
-  late StreamSubscription _subscription;
-  final Map<String, QueryDocumentSnapshot> _allAppointments = {};
+  // Data cache for meetings
+  List<QueryDocumentSnapshot> _allAppointments = [];
   bool _isLoading = true;
+  Timer? _refreshTimer;
   
   @override
   void initState() {
     super.initState();
     _initializeDateFormatting();
-    _subscribeToAppointments();
+    _loadUpcomingMeetings();
+    _startPeriodicRefresh();
   }
   
   @override
   void dispose() {
-    _subscription.cancel();
+    _refreshTimer?.cancel();
     super.dispose();
   }
   
@@ -75,48 +76,81 @@ class _MeetingsPaneState extends State<MeetingsPane> {
     }
   }
   
-  // Abonare la întâlniri
-  void _subscribeToAppointments() {
-    final reservationsStream = _reservationService.getUpcomingReservations();
+  /// Start periodic refresh to keep meetings up to date (disabled - refresh only when needed)
+  void _startPeriodicRefresh() {
+    _refreshTimer?.cancel();
+    // Removed automatic refresh - will only refresh when explicitly needed
+  }
 
-    _subscription = reservationsStream.listen(
-      (querySnapshot) {
-        if (!mounted) return;
-        
-        bool dataChanged = false;
-        
+  /// Public method to refresh meetings data when needed
+  void refreshMeetings() {
+    _loadUpcomingMeetings();
+  }
+
+  /// Load upcoming meetings for the current consultant
+  Future<void> _loadUpcomingMeetings() async {
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) {
+      if (mounted) {
         setState(() {
-          for (var doc in querySnapshot.docs) {
-            if (!_allAppointments.containsKey(doc.id) || 
-                !_areMapsEqual(_allAppointments[doc.id]?.data() as Map<String, dynamic>?, doc.data() as Map<String, dynamic>?)) {
-              _allAppointments[doc.id] = doc;
-              dataChanged = true;
-            }
-          }
-
-          // Handle removed appointments
-          final currentIds = querySnapshot.docs.map((doc) => doc.id).toSet();
-          final idsToRemove = _allAppointments.keys.where((id) => !currentIds.contains(id)).toList();
-          for (var id in idsToRemove) {
-            _allAppointments.remove(id);
-            dataChanged = true;
-          }
-
-          // Update loading state if needed
-          if (dataChanged || _isLoading) {
-            _isLoading = false;
-          }
+          _isLoading = false;
         });
-      },
-      onError: (error) {
-        debugPrint("Error in appointments stream: $error");
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
+      }
+      return;
+    }
+
+    try {
+      // Use the start of today to ensure we get meetings from today onwards
+      final now = DateTime.now();
+      final startOfToday = DateTime(now.year, now.month, now.day);
+      
+      debugPrint("Loading meetings for consultant: $currentUserId");
+      debugPrint("Filtering meetings from: $startOfToday");
+      
+
+      
+      // Use simple query with only consultantId to avoid composite index requirement
+      final QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('meetings')
+          .where('consultantId', isEqualTo: currentUserId)
+          .get()
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              debugPrint('Firestore query timeout for meetings');
+              throw TimeoutException('Query timeout', const Duration(seconds: 5));
+            },
+          );
+
+      debugPrint("Found ${snapshot.docs.length} total meetings for consultant $currentUserId");
+      
+      // Filter for future meetings on client-side
+      final futureAppointments = snapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final meetingDateTime = (data['dateTime'] as Timestamp).toDate();
+        final isPastMeeting = meetingDateTime.isBefore(now);
+        if (isPastMeeting) {
+          debugPrint("Filtering out past meeting: ${doc.id} at $meetingDateTime");
         }
-      },
-    );
+        return !isPastMeeting;
+      }).toList();
+
+      debugPrint("After filtering for future meetings: ${futureAppointments.length} remaining");
+
+      if (mounted) {
+        setState(() {
+          _allAppointments = futureAppointments;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading upcoming meetings: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
   
   // Verifică dacă două map-uri sunt egale
@@ -243,11 +277,8 @@ class _MeetingsPaneState extends State<MeetingsPane> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Get the combined list from the map
-    final sortedAppointments = _allAppointments.values.toList();
-
-    // Sort the combined list
-    sortedAppointments.sort((a, b) {
+    // Sort the appointments list
+    _allAppointments.sort((a, b) {
       final aData = a.data() as Map<String, dynamic>?;
       final bData = b.data() as Map<String, dynamic>?;
       if (aData == null || bData == null || aData['dateTime'] == null || bData['dateTime'] == null) return 0;
@@ -256,7 +287,7 @@ class _MeetingsPaneState extends State<MeetingsPane> {
       return aTime.compareTo(bTime);
     });
 
-    if (sortedAppointments.isEmpty) {
+    if (_allAppointments.isEmpty) {
       return Center(
         child: Text(
           'Nicio programare viitoare',
@@ -267,13 +298,13 @@ class _MeetingsPaneState extends State<MeetingsPane> {
 
     // Build the list view
     return ListView.builder(
-      itemCount: sortedAppointments.length,
+      itemCount: _allAppointments.length,
       itemBuilder: (context, index) {
-        final doc = sortedAppointments[index];
+        final doc = _allAppointments[index];
         final meetingData = doc.data() as Map<String, dynamic>;
         final dateTime = (meetingData['dateTime'] as Timestamp).toDate();
         final clientName = meetingData['clientName'] ?? 'Client necunoscut';
-        final clientPhone = meetingData['clientPhone'] ?? '';
+        final clientPhone = meetingData['phoneNumber'] ?? '';
         final meetingId = doc.id;
         
         final timeUntilMeeting = _getTimeUntilMeeting(dateTime);

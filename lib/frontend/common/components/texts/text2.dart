@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import '../../appTheme.dart';
 
 /// A simple centered text component with customizable styling.
 /// 
@@ -45,9 +45,9 @@ class Text2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Default values based on AppTheme
-    final Color effectiveColor = color ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final double effectiveFontSize = fontSize ?? 15.0; // AppTheme.fontSizeSmall
-    final FontWeight effectiveFontWeight = fontWeight ?? FontWeight.w500; // AppTheme.fontWeightMedium
+    final Color effectiveColor = color ?? AppTheme.elementColor2;
+    final double effectiveFontSize = fontSize ?? AppTheme.fontSizeSmall;
+    final FontWeight effectiveFontWeight = fontWeight ?? FontWeight.w500;
 
     return Text(
       text,

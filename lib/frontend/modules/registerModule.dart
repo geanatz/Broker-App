@@ -121,7 +121,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
         height: popupHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: AppTheme.popupDecoration.copyWith(
-          color: AppTheme.widgetBackground.withValues(alpha: 0.5),
+          color: AppTheme.popupBackground,
           boxShadow: [AppTheme.widgetShadow],
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
