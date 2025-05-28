@@ -1,6 +1,7 @@
 // lib/components/buttons/flex_button_with_trailing_icon.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder
 
 // Assuming _TextIconButton and _IconOnlyButton are defined
@@ -23,7 +24,7 @@ class _TextIconButton extends StatelessWidget { /* ... full definition ... */
     final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16);
     final double effectiveIconSize = iconSize ?? 24.0;
     final double effectiveInternalSpacing = internalSpacing ?? 8.0;
-    final TextStyle defaultTextStyle = TextStyle(color: effectiveTextColor, fontSize: 17, fontFamily: 'Outfit', fontWeight: FontWeight.w500);
+    final TextStyle defaultTextStyle = TextStyle(color: effectiveTextColor, fontSize: 17, fontFamily: GoogleFonts.outfit().fontFamily, fontWeight: FontWeight.w500);
     final TextStyle finalTextStyle = textStyle ?? defaultTextStyle;
     List<Widget> children = [];
     if (text != null && text!.isNotEmpty) {

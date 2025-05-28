@@ -47,7 +47,7 @@ class WidgetHeader1 extends StatelessWidget {
     final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeLarge,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w500,
     );
 
     final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;

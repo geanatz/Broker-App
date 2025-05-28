@@ -1,6 +1,7 @@
 // lib/components/headers/widget_header2.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A widget header displaying a title on the left and an alternative
@@ -66,11 +67,11 @@ class WidgetHeader2 extends StatelessWidget {
 
     final TextStyle defaultTitleStyle = TextStyle(
       color: effectiveTitleColor,
-      fontSize: 19, fontWeight: FontWeight.w600, fontFamily: 'Outfit', // AppTheme.headlineStyle
+      fontSize: 19, fontWeight: FontWeight.w500, fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.headlineStyle
     );
     final TextStyle defaultAltTextStyle = TextStyle(
       color: effectiveAltTextColor,
-      fontSize: 17, fontWeight: FontWeight.w500, fontFamily: 'Outfit', // AppTheme.subheadStyle
+      fontSize: 17, fontWeight: FontWeight.w500, fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.subheadStyle
     );
 
     final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;

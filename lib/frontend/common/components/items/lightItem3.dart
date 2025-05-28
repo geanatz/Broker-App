@@ -1,6 +1,7 @@
 // lib/components/items/light_item3.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A customizable light-themed item component with a primary title on the left
@@ -72,14 +73,14 @@ class LightItem3 extends StatelessWidget {
     final TextStyle defaultTitleStyle = TextStyle(
       color: effectiveTitleColor,
       fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
+      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
     
     final TextStyle defaultDescriptionStyle = TextStyle(
       color: effectiveDescriptionColor,
       fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
+      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
 

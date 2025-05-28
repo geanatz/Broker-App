@@ -9,6 +9,9 @@ import 'package:broker_app/frontend/areas/settingsArea.dart';
 import 'package:broker_app/frontend/panes/meetingsPane.dart';
 import 'package:broker_app/frontend/panes/calculatorPane.dart';
 import 'package:broker_app/frontend/panes/clientsPane.dart';
+import 'package:broker_app/frontend/popups/clientsPopup.dart';
+import 'package:broker_app/frontend/common/services/client_service.dart';
+import 'package:broker_app/frontend/common/models/client_model.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:
 /// - pane (stânga, lățime 312)
@@ -41,11 +44,65 @@ class _MainScreenState extends State<MainScreen> {
   final GlobalKey<CalendarAreaState> _calendarKey = GlobalKey<CalendarAreaState>();
   final GlobalKey<MeetingsPaneState> _meetingsPaneKey = GlobalKey<MeetingsPaneState>();
   
+  // Client service pentru gestionarea popup-urilor
+  final ClientService _clientService = ClientService();
+  
+  // State pentru popup-uri
+  List<Client> _popupClients = [];
+  Client? _selectedPopupClient;
+  bool _isShowingClientListPopup = false;
+  bool _isShowingClientFormPopup = false;
+  Client? _editingClient;
+  
   @override
   void initState() {
     super.initState();
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
+    
+    // Inițializează datele demo dacă nu există clienți
+    if (_clientService.clients.isEmpty) {
+      _clientService.initializeDemoData();
+    }
+    
+    // Sincronizează popup-ul cu datele din service
+    _syncPopupWithService();
+    
+    // Ascultă schimbările din ClientService
+    _clientService.addListener(_onClientServiceChanged);
+  }
+  
+  @override
+  void dispose() {
+    _clientService.removeListener(_onClientServiceChanged);
+    super.dispose();
+  }
+  
+  void _onClientServiceChanged() {
+    setState(() {
+      _syncPopupWithService();
+    });
+  }
+  
+  /// Sincronizează datele popup-ului cu cele din ClientService
+  void _syncPopupWithService() {
+    _popupClients = _clientService.clients.map((clientModel) {
+      return Client(
+        name: clientModel.name,
+        phoneNumber: clientModel.phoneNumber,
+        // Pentru popup, nu folosim co-debtor info din ClientModel
+        // dar o putem extinde în viitor
+      );
+    }).toList();
+    
+    // Păstrează selecția curentă dacă există
+    if (_selectedPopupClient != null) {
+      _selectedPopupClient = _popupClients.firstWhere(
+        (client) => client.name == _selectedPopupClient!.name && 
+                   client.phoneNumber == _selectedPopupClient!.phoneNumber,
+        orElse: () => _popupClients.isNotEmpty ? _popupClients.first : _selectedPopupClient!,
+      );
+    }
   }
   
   // Widgets pentru area
@@ -96,7 +153,10 @@ class _MainScreenState extends State<MainScreen> {
         decoration: BoxDecoration(
           gradient: AppTheme.appBackground,
         ),
-        child: Padding(
+        child: Stack(
+          children: [
+            // Main content
+            Padding(
           padding: const EdgeInsets.all(AppTheme.mediumGap),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -129,6 +189,78 @@ class _MainScreenState extends State<MainScreen> {
                 onClientsPopupRequested: _handleClientsPopupRequested,
               ),
             ],
+              ),
+            ),
+            
+                         // Client Popups overlay
+            if (_isShowingClientListPopup || _isShowingClientFormPopup)
+              _buildDualPopupOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  /// Builds the popup overlay with proper positioning and backdrop
+  Widget _buildPopupOverlay({required Widget child}) {
+    return GestureDetector(
+      onTap: _closeAllPopups, // Închide popup-ul la click pe background
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.5),
+        child: Center(
+          child: GestureDetector(
+            onTap: () {}, // Previne închiderea când se face click pe popup
+            child: Material(
+              color: Colors.transparent,
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  /// Builds dual popup overlay with both popups side by side
+  Widget _buildDualPopupOverlay() {
+    return GestureDetector(
+      onTap: _closeAllPopups, // Închide popup-ul la click pe background
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.5),
+        child: Center(
+          child: GestureDetector(
+            onTap: () {}, // Previne închiderea când se face click pe popup
+            child: Material(
+              color: Colors.transparent,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Client List Popup (întotdeauna vizibil când e deschis)
+                  if (_isShowingClientListPopup)
+                    ClientsPopup1(
+                      clients: _popupClients,
+                      selectedClient: _selectedPopupClient,
+                      onClientSelected: _handleClientSelected,
+                      onEditClient: _handleEditClient,
+                      onAddClient: _handleAddClient,
+                      onExtractClients: _handleExtractClients,
+                      onDeleteAllClients: _handleDeleteAllClients,
+                    ),
+                  
+                  // Spacing între popup-uri
+                  if (_isShowingClientListPopup && _isShowingClientFormPopup)
+                    const SizedBox(width: AppTheme.largeGap),
+                  
+                  // Client Form Popup (vizibil doar când se editează/adaugă)
+                  if (_isShowingClientFormPopup)
+                    ClientsPopup2(
+                      editingClient: _editingClient,
+                      onSaveClient: _handleSaveClient,
+                      onDeleteClient: _editingClient != null ? _handleDeleteClient : null,
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -154,12 +286,214 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
   
+  /// Handles the clients popup request from sidebar
   void _handleClientsPopupRequested() {
-    // Implementarea popup-ului va fi adăugată mai târziu
-    // cum a fost menționat în cerințe
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Clients Popup - not implemented yet')),
+    setState(() {
+      _syncPopupWithService();
+      _isShowingClientListPopup = true;
+      // Setează primul client ca selectat implicit
+      _selectedPopupClient = _popupClients.isNotEmpty ? _popupClients.first : null;
+    });
+  }
+  
+  /// Closes all popups
+  void _closeAllPopups() {
+    setState(() {
+      _isShowingClientListPopup = false;
+      _isShowingClientFormPopup = false;
+      _editingClient = null;
+    });
+  }
+  
+  /// Handles client selection in the popup
+  void _handleClientSelected(Client client) {
+    setState(() {
+      _selectedPopupClient = client;
+    });
+    
+    // Focusează clientul corespunzător în ClientService
+    final correspondingClientModel = _clientService.clients.firstWhere(
+      (clientModel) => clientModel.name == client.name && 
+                      clientModel.phoneNumber == client.phoneNumber,
+      orElse: () => _clientService.clients.first,
     );
+    
+    _clientService.focusClient(correspondingClientModel.id);
+  }
+  
+  /// Handles edit client (double-tap on client)
+  void _handleEditClient(Client client) {
+    setState(() {
+      // Menținem lista deschisă și adăugăm formularul
+      _isShowingClientFormPopup = true;
+      _editingClient = client; // setează clientul pentru editare
+    });
+  }
+  
+  /// Handles add client button press
+  void _handleAddClient() {
+    setState(() {
+      // Menținem lista deschisă și adăugăm formularul
+      _isShowingClientFormPopup = true;
+      _editingClient = null; // null pentru creare client nou
+    });
+  }
+  
+  /// Handles extract clients button press (coming soon)
+  void _handleExtractClients() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Extragerea clientilor din imagini - Coming soon!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+  
+  /// Handles delete all clients button press
+  void _handleDeleteAllClients() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmare stergere'),
+          content: const Text('Esti sigur ca vrei sa stergi toti clientii din lista?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Anuleaza'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _performDeleteAllClients();
+              },
+              child: const Text('Sterge'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  /// Performs the actual deletion of all clients
+  void _performDeleteAllClients() {
+    // Șterge toți clienții din ClientService
+    final clientIds = _clientService.clients.map((client) => client.id).toList();
+    for (final clientId in clientIds) {
+      _clientService.removeClient(clientId);
+    }
+    
+    // Închide popup-ul
+    _closeAllPopups();
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Toti clientii au fost stersi din lista'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+  
+  /// Handles saving a client (create or edit)
+  void _handleSaveClient(Client client) {
+    if (_editingClient == null) {
+      // Creează client nou
+      final newClientModel = ClientModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: client.name,
+        phoneNumber: client.phoneNumber,
+        status: ClientStatus.normal,
+        category: ClientCategory.apeluri, // Clienții noi merg în "Apeluri"
+      );
+      
+      _clientService.addClient(newClientModel);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Clientul ${client.name} a fost adaugat cu succes'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      // Actualizează client existent
+      final existingClientModel = _clientService.clients.firstWhere(
+        (clientModel) => clientModel.name == _editingClient!.name && 
+                        clientModel.phoneNumber == _editingClient!.phoneNumber,
+      );
+      
+      final updatedClientModel = existingClientModel.copyWith(
+        name: client.name,
+        phoneNumber: client.phoneNumber,
+      );
+      
+      _clientService.updateClient(updatedClientModel);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Clientul ${client.name} a fost actualizat cu succes'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+    
+    // Închide doar formularul, lista rămâne deschisă
+    setState(() {
+      _isShowingClientFormPopup = false;
+      _editingClient = null;
+    });
+  }
+  
+  /// Handles deleting a client
+  void _handleDeleteClient() {
+    if (_editingClient == null) return;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmare stergere'),
+          content: Text('Esti sigur ca vrei sa stergi clientul ${_editingClient!.name}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Anuleaza'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _performDeleteClient();
+              },
+              child: const Text('Sterge'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  /// Performs the actual deletion of a client
+  void _performDeleteClient() {
+    if (_editingClient == null) return;
+    
+    final clientToDelete = _clientService.clients.firstWhere(
+      (clientModel) => clientModel.name == _editingClient!.name && 
+                      clientModel.phoneNumber == _editingClient!.phoneNumber,
+    );
+    
+    _clientService.removeClient(clientToDelete.id);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Clientul ${_editingClient!.name} a fost sters cu succes'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    
+    // Închide doar formularul, lista rămâne deschisă
+    setState(() {
+      _isShowingClientFormPopup = false;
+      _editingClient = null;
+    });
   }
 }
 

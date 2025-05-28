@@ -4,6 +4,7 @@ import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/popups/consultantPopup.dart';
 import 'package:broker_app/old/sidebar/sidebar_service.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader3.dart';
+import 'package:broker_app/frontend/common/components/buttons/spacedButtons1.dart';
 
 /// Widget care implementează sidebar-ul conform noului design
 /// Conține secțiuni pentru informatii consultant, funcții rapide, 
@@ -187,36 +188,15 @@ class _SidebarWidgetState extends State<SidebarWidget> {
 
   // Construiește secțiunea pentru butonul de funcție rapidă
   Widget _buildFunctionSection() {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: AppTheme.containerColor1,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onClientsPopupRequested, // Deschide popup-ul clientsPopup
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 12, 
-              horizontal: AppTheme.mediumGap,
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                'assets/clientsIcon.svg',
-                width: AppTheme.iconSizeMedium,
-                height: AppTheme.iconSizeMedium,
-                colorFilter: ColorFilter.mode(
-                  AppTheme.elementColor2,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return SpacedButtonSingleSvg(
+      text: 'Clienti',
+      iconPath: 'assets/clientsIcon.svg',
+      onTap: widget.onClientsPopupRequested,
+      backgroundColor: AppTheme.containerColor1,
+      textColor: AppTheme.elementColor2,
+      iconColor: AppTheme.elementColor2,
+      borderRadius: AppTheme.borderRadiusMedium,
+      buttonHeight: 48.0,
     );
   }
 
@@ -277,58 +257,19 @@ class _SidebarWidgetState extends State<SidebarWidget> {
       isActive = widget.currentPane == button.targetPane;
     }
     
-    final decoration = isActive
-        ? BoxDecoration(
-            color: AppTheme.containerColor2,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        )
-        : BoxDecoration(
-            color: AppTheme.containerColor1,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        );
-    
+    final Color backgroundColor = isActive ? AppTheme.containerColor2 : AppTheme.containerColor1;
     final Color iconColor = isActive ? AppTheme.elementColor3 : AppTheme.elementColor2;
     final Color textColor = isActive ? AppTheme.elementColor3 : AppTheme.elementColor2;
     
-    return Container(
-      height: AppTheme.navButtonHeight,
-      decoration: decoration,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _sidebarService.handleButtonClick(button),
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.mediumGap,
-              vertical: 12,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-                  child: Text(
-                    button.title,
-                    style: AppTheme.navigationButtonTextStyle.copyWith(color: textColor),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-                  child: SvgPicture.asset(
-                    button.iconPath,
-                    width: AppTheme.iconSizeMedium,
-                    height: AppTheme.iconSizeMedium,
-                    colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return SpacedButtonSingleSvg(
+      text: button.title,
+      iconPath: button.iconPath,
+      onTap: () => _sidebarService.handleButtonClick(button),
+      backgroundColor: backgroundColor,
+      textColor: textColor,
+      iconColor: iconColor,
+      borderRadius: AppTheme.borderRadiusMedium,
+      buttonHeight: AppTheme.navButtonHeight,
     );
   }
 }
