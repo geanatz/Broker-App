@@ -14,14 +14,14 @@ class SidebarWidgetAdapter extends StatelessWidget {
   final PanelChangeCallback? onPanelChanged;
 
   const SidebarWidgetAdapter({
-    Key? key,
+    super.key,
     required this.consultantName,
     required this.teamName,
     required this.currentScreen,
     this.activeSecondaryPanel,
     required this.onScreenChanged,
     this.onPanelChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -138,7 +138,7 @@ class _TokenPopupState extends State<TokenPopup> {
             width: 48,
             height: 48,
             child: SvgPicture.asset(
-              'assets/Logo.svg',
+              'assets/logoIcon.svg',
               colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
             ),
           ),

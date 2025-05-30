@@ -58,7 +58,7 @@ class ContactData {
     String? incomeFormId,
   }) {
     return ContactData(
-      id: this.id,
+      id: id,
       name: name ?? this.name,
       phone: phone ?? this.phone,
       type: type ?? this.type,

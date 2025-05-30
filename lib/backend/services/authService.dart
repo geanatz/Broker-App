@@ -246,7 +246,7 @@ class AuthService {
         debugPrint("Firebase Auth Error during login: ${authError is FirebaseAuthException ? authError.message : authError}");
         return {
           'success': false,
-          'message': 'Eroare la autentificare. Verificați email-ul ($emailToUse) și parola.',
+          'message': 'Eroare la autentificare. Parola gresita.',
           'details': authError.toString(),
         };
       }

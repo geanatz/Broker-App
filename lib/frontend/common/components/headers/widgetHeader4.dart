@@ -41,7 +41,7 @@ class WidgetHeader4 extends StatelessWidget {
 
 
   const WidgetHeader4({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     this.titleColor,
@@ -51,7 +51,7 @@ class WidgetHeader4 extends StatelessWidget {
     this.padding,
     this.spacingBetweenTexts,
     this.columnAlignment,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

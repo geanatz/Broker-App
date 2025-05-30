@@ -7,7 +7,6 @@ import '../common/appTheme.dart';
 import '../popups/amortizationPopup.dart';
 // Import components
 import '../common/components/headers/widgetHeader1.dart';
-import '../common/components/fields/inputField1.dart';
 import '../common/components/items/lightItem3.dart';
 import 'package:intl/intl.dart';
 

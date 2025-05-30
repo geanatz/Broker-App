@@ -59,7 +59,7 @@ class DarkItem7 extends StatelessWidget {
   final double? iconSize;
 
   const DarkItem7({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     this.icon,
@@ -73,7 +73,7 @@ class DarkItem7 extends StatelessWidget {
     this.mainBorderRadius,
     this.iconContainerBorderRadius,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

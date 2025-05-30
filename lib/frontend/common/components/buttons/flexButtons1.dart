@@ -61,7 +61,7 @@ class FlexButtonSingle extends StatelessWidget {
   final double? internalSpacing; // Spacing between text and icon
 
   const FlexButtonSingle({
-    Key? key,
+    super.key,
     required this.text,
     required this.icon,
     this.onTap,
@@ -74,7 +74,7 @@ class FlexButtonSingle extends StatelessWidget {
     this.textStyle,
     this.iconSize,
     this.internalSpacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -29,13 +29,13 @@ class DarkItem1 extends StatelessWidget {
   final double? borderRadius;
 
   const DarkItem1({
-    Key? key,
+    super.key,
     required this.title,
     this.onTap,
     this.backgroundColor,
     this.textColor,
     this.borderRadius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

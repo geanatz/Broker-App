@@ -271,7 +271,7 @@ class CalendarAreaState extends State<CalendarArea> {
   Widget _buildWeekDaysHeader() {
     final List<String> weekDates = _calendarService.getWeekDates(_currentWeekOffset);
     
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 21,
       child: Row(
@@ -365,7 +365,7 @@ class CalendarAreaState extends State<CalendarArea> {
       
       return Column(
         children: [
-          Container(
+          SizedBox(
             width: double.infinity,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,7 +397,7 @@ class CalendarAreaState extends State<CalendarArea> {
                     child: Padding(
                       padding: EdgeInsets.only(right: isLastSlot ? 0 : 8),
                       child: isMeeting 
-                          ? _buildMeetingSlot(meetingData!, docId!)
+                          ? _buildMeetingSlot(meetingData, docId!)
                           : _buildAvailableSlot(dayIndex, hourIndex),
                     ),
                   );

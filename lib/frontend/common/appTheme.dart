@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Enumerări pentru teme și culori - definite în afara clasei pentru a fi accesibile din alte părți
-enum AppThemeMode { light, dark }
+enum AppThemeMode { light, dark, auto }
 enum AppThemeColor { red, yellow, green, cyan, blue, pink }
 
 /// Clasa AppTheme conține toate culorile, dimensiunile, stilurile și variabilele de design
 /// folosite în întreaga aplicație, pentru a asigura consistența designului.
 /// 
-/// Suportă schimbarea temei între light/dark și 6 culori diferite:
+/// Suportă schimbarea temei între light/dark/auto și 6 culori diferite:
 /// - red, yellow, green, cyan, blue, pink
 
 class AppTheme {
@@ -17,6 +17,19 @@ class AppTheme {
   // Tema și culoarea curentă (valori implicite)
   static AppThemeMode currentThemeMode = AppThemeMode.light;
   static AppThemeColor currentThemeColor = AppThemeColor.blue;
+
+  /// Obține tema efectivă bazată pe setarea curentă și tema sistemului
+  static AppThemeMode get effectiveThemeMode {
+    if (currentThemeMode == AppThemeMode.auto) {
+      // Pentru modul auto, detectăm tema sistemului
+      final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      return brightness == Brightness.dark ? AppThemeMode.dark : AppThemeMode.light;
+    }
+    return currentThemeMode;
+  }
+
+  /// Verifică dacă tema efectivă este dark
+  static bool get isDarkMode => effectiveThemeMode == AppThemeMode.dark;
 
   // ======== DIMENSIUNI ========
   
@@ -52,34 +65,19 @@ class AppTheme {
 
   // ======== CULORI GENERALE ========
 
-  static Color get widgetBackground => currentThemeMode == AppThemeMode.light 
-      ? const Color(0xFFD9D9D9) 
-      : const Color(0xFF262626);
+  static Color get widgetBackground => isDarkMode
+      ? const Color(0xFF262626)
+      : const Color(0xFFD9D9D9);
       
-  static Color get popupBackground => currentThemeMode == AppThemeMode.light 
-      ? const Color(0xFFD9D9D9) 
-      : const Color(0xFF262626);
+  static Color get popupBackground => isDarkMode
+      ? const Color(0xFF262626)
+      : const Color(0xFFD9D9D9);
 
   // ======== CULORI TEMATICE ========
   
   // Culori pentru background gradient
   static Color get backgroundStart {
-    if (currentThemeMode == AppThemeMode.light) {
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFFC2A4C2);
-        case AppThemeColor.yellow:
-          return const Color(0xFFC2A4A4);
-        case AppThemeColor.green:
-          return const Color(0xFFC2C2A4);
-        case AppThemeColor.cyan:
-          return const Color(0xFFA4C2A4);
-        case AppThemeColor.blue:
-          return const Color(0xFFA4C2C2);
-        case AppThemeColor.pink:
-          return const Color(0xFFA4A4C2);
-      }
-    } else {
+    if (isDarkMode) {
       switch (currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF5C3D5C);
@@ -93,27 +91,27 @@ class AppTheme {
           return const Color(0xFF3D5C5C);
         case AppThemeColor.pink:
           return const Color(0xFF3D3D5C);
+      }
+    } else {
+      switch (currentThemeColor) {
+        case AppThemeColor.red:
+          return const Color(0xFFC2A4C2);
+        case AppThemeColor.yellow:
+          return const Color(0xFFC2A4A4);
+        case AppThemeColor.green:
+          return const Color(0xFFC2C2A4);
+        case AppThemeColor.cyan:
+          return const Color(0xFFA4C2A4);
+        case AppThemeColor.blue:
+          return const Color(0xFFA4C2C2);
+        case AppThemeColor.pink:
+          return const Color(0xFFA4A4C2);
       }
     }
   }
 
   static Color get backgroundEnd {
-    if (currentThemeMode == AppThemeMode.light) {
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFFC2C2A4);
-        case AppThemeColor.yellow:
-          return const Color(0xFFA4C2A4);
-        case AppThemeColor.green:
-          return const Color(0xFFA4C2C2);
-        case AppThemeColor.cyan:
-          return const Color(0xFFA4A4C2);
-        case AppThemeColor.blue:
-          return const Color(0xFFC2A4C2);
-        case AppThemeColor.pink:
-          return const Color(0xFFC2A4A4);
-      }
-    } else {
+    if (isDarkMode) {
       switch (currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF5C5C3D);
@@ -127,28 +125,28 @@ class AppTheme {
           return const Color(0xFF5C3D5C);
         case AppThemeColor.pink:
           return const Color(0xFF5C3D3D);
+      }
+    } else {
+      switch (currentThemeColor) {
+        case AppThemeColor.red:
+          return const Color(0xFFC2C2A4);
+        case AppThemeColor.yellow:
+          return const Color(0xFFA4C2A4);
+        case AppThemeColor.green:
+          return const Color(0xFFA4C2C2);
+        case AppThemeColor.cyan:
+          return const Color(0xFFA4A4C2);
+        case AppThemeColor.blue:
+          return const Color(0xFFC2A4C2);
+        case AppThemeColor.pink:
+          return const Color(0xFFC2A4A4);
       }
     }
   }
 
   // Culori pentru containere
   static Color get containerColor1 {
-    if (currentThemeMode == AppThemeMode.light) {
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFFD4C4C4);
-        case AppThemeColor.yellow:
-          return const Color(0xFFD4D4C4);
-        case AppThemeColor.green:
-          return const Color(0xFFC4D4C4);
-        case AppThemeColor.cyan:
-          return const Color(0xFFC4D4D4);
-        case AppThemeColor.blue:
-          return const Color(0xFFC4C4D4);
-        case AppThemeColor.pink:
-          return const Color(0xFFD4C4D4);
-      }
-    } else {
+    if (isDarkMode) {
       switch (currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF3B2B2B);
@@ -163,26 +161,26 @@ class AppTheme {
         case AppThemeColor.pink:
           return const Color(0xFF3B2B3B);
       }
+    } else {
+      switch (currentThemeColor) {
+        case AppThemeColor.red:
+          return const Color(0xFFD4C4C4);
+        case AppThemeColor.yellow:
+          return const Color(0xFFD4D4C4);
+        case AppThemeColor.green:
+          return const Color(0xFFC4D4C4);
+        case AppThemeColor.cyan:
+          return const Color(0xFFC4D4D4);
+        case AppThemeColor.blue:
+          return const Color(0xFFC4C4D4);
+        case AppThemeColor.pink:
+          return const Color(0xFFD4C4D4);
+      }
     }
   }
 
   static Color get containerColor2 {
-    if (currentThemeMode == AppThemeMode.light) {
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFFD3ACAC);
-        case AppThemeColor.yellow:
-          return const Color(0xFFD3D3AC);
-        case AppThemeColor.green:
-          return const Color(0xFFACD2AC);
-        case AppThemeColor.cyan:
-          return const Color(0xFFACD3D3);
-        case AppThemeColor.blue:
-          return const Color(0xFFACACD3);
-        case AppThemeColor.pink:
-          return const Color(0xFFD3ACD3);
-      }
-    } else {
+    if (isDarkMode) {
       switch (currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF532D2D);
@@ -197,27 +195,27 @@ class AppTheme {
         case AppThemeColor.pink:
           return const Color(0xFF532D53);
       }
+    } else {
+      switch (currentThemeColor) {
+        case AppThemeColor.red:
+          return const Color(0xFFD3ACAC);
+        case AppThemeColor.yellow:
+          return const Color(0xFFD3D3AC);
+        case AppThemeColor.green:
+          return const Color(0xFFACD2AC);
+        case AppThemeColor.cyan:
+          return const Color(0xFFACD3D3);
+        case AppThemeColor.blue:
+          return const Color(0xFFACACD3);
+        case AppThemeColor.pink:
+          return const Color(0xFFD3ACD3);
+      }
     }
   }
 
   // Culori pentru elemente
   static Color get elementColor1 {
-    if (currentThemeMode == AppThemeMode.light) {
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFFA88A8A);
-        case AppThemeColor.yellow:
-          return const Color(0xFFA8A88A);
-        case AppThemeColor.green:
-          return const Color(0xFF8AA88A);
-        case AppThemeColor.cyan:
-          return const Color(0xFF8AA8A8);
-        case AppThemeColor.blue:
-          return const Color(0xFF8A8AA8);
-        case AppThemeColor.pink:
-          return const Color(0xFF9D7B9D);
-      }
-    } else {
+    if (isDarkMode) {
       switch (currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF755757);
@@ -232,62 +230,45 @@ class AppTheme {
         case AppThemeColor.pink:
           return const Color(0xFF755775);
       }
+    } else {
+      switch (currentThemeColor) {
+        case AppThemeColor.red:
+          return const Color(0xFFA88A8A);
+        case AppThemeColor.yellow:
+          return const Color(0xFFA8A88A);
+        case AppThemeColor.green:
+          return const Color(0xFF8AA88A);
+        case AppThemeColor.cyan:
+          return const Color(0xFF8AA8A8);
+        case AppThemeColor.blue:
+          return const Color(0xFF8A8AA8);
+        case AppThemeColor.pink:
+          return const Color(0xFF9D7B9D);
+      }
     }
   }
 
   static Color get elementColor2 {
-    if (currentThemeMode == AppThemeMode.light) {
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFF996666);
-        case AppThemeColor.yellow:
-          return const Color(0xFF999966);
-        case AppThemeColor.green:
-          return const Color(0xFF669966);
-        case AppThemeColor.cyan:
-          return const Color(0xFF669999);
-        case AppThemeColor.blue:
-          return const Color(0xFF666699);
-        case AppThemeColor.pink:
-          return const Color(0xFF996699);
-      }
-    } else {
-      // Pentru tema dark, vom folosi aceleași culori pentru elementColor2
-      // deoarece sunt suficient de vizibile pe fundaluri închise
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFF996666);
-        case AppThemeColor.yellow:
-          return const Color(0xFF999966);
-        case AppThemeColor.green:
-          return const Color(0xFF669966);
-        case AppThemeColor.cyan:
-          return const Color(0xFF669999);
-        case AppThemeColor.blue:
-          return const Color(0xFF666699);
-        case AppThemeColor.pink:
-          return const Color(0xFF996699);
-      }
+    // Pentru elementColor2, folosim aceleași culori pentru ambele teme
+    // deoarece sunt suficient de vizibile pe fundaluri diferite
+    switch (currentThemeColor) {
+      case AppThemeColor.red:
+        return const Color(0xFF996666);
+      case AppThemeColor.yellow:
+        return const Color(0xFF999966);
+      case AppThemeColor.green:
+        return const Color(0xFF669966);
+      case AppThemeColor.cyan:
+        return const Color(0xFF669999);
+      case AppThemeColor.blue:
+        return const Color(0xFF666699);
+      case AppThemeColor.pink:
+        return const Color(0xFF996699);
     }
   }
 
   static Color get elementColor3 {
-    if (currentThemeMode == AppThemeMode.light) {
-      switch (currentThemeColor) {
-        case AppThemeColor.red:
-          return const Color(0xFF804D4D);
-        case AppThemeColor.yellow:
-          return const Color(0xFF80804D);
-        case AppThemeColor.green:
-          return const Color(0xFF4D804D);
-        case AppThemeColor.cyan:
-          return const Color(0xFF4D8080);
-        case AppThemeColor.blue:
-          return const Color(0xFF4D4D80);
-        case AppThemeColor.pink:
-          return const Color(0xFF8F568F);
-      }
-    } else {
+    if (isDarkMode) {
       switch (currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFFB28080);
@@ -301,6 +282,21 @@ class AppTheme {
           return const Color(0xFF8080B2);
         case AppThemeColor.pink:
           return const Color(0xFFB280B2);
+      }
+    } else {
+      switch (currentThemeColor) {
+        case AppThemeColor.red:
+          return const Color(0xFF804D4D);
+        case AppThemeColor.yellow:
+          return const Color(0xFF80804D);
+        case AppThemeColor.green:
+          return const Color(0xFF4D804D);
+        case AppThemeColor.cyan:
+          return const Color(0xFF4D8080);
+        case AppThemeColor.blue:
+          return const Color(0xFF4D4D80);
+        case AppThemeColor.pink:
+          return const Color(0xFF8F568F);
       }
     }
   }
@@ -369,7 +365,7 @@ class AppTheme {
   static TextStyle get navigationButtonTextStyle => GoogleFonts.outfit(
     fontSize: fontSizeMedium,
     fontWeight: FontWeight.w500,
-    color: currentThemeMode == AppThemeMode.light ? elementColor2 : Colors.white70,
+    color: isDarkMode ? Colors.white70 : elementColor2,
   );
 
   // ======== DECORATIUNI ========

@@ -33,14 +33,14 @@ class Text2 extends StatelessWidget {
   final TextOverflow? overflow;
 
   const Text2({
-    Key? key,
+    super.key,
     required this.text,
     this.color,
     this.fontSize,
     this.fontWeight,
     this.maxLines,
     this.overflow,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

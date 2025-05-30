@@ -44,7 +44,7 @@ class LightItem6 extends StatelessWidget {
   final double? iconSize;
 
   const LightItem6({
-    Key? key,
+    super.key,
     required this.title,
     this.icon,
     this.onTap,
@@ -55,7 +55,7 @@ class LightItem6 extends StatelessWidget {
     this.mainBorderRadius,
     this.iconContainerBorderRadius,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

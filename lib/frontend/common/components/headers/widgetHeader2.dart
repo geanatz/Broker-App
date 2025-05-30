@@ -43,7 +43,7 @@ class WidgetHeader2 extends StatelessWidget {
   final double? titleContainerHeight;
 
   const WidgetHeader2({
-    Key? key,
+    super.key,
     required this.title,
     required this.altText,
     this.onAltTextTap,
@@ -54,7 +54,7 @@ class WidgetHeader2 extends StatelessWidget {
     this.padding,
     this.spacing,
     this.titleContainerHeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

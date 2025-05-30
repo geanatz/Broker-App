@@ -38,11 +38,11 @@ class FormScreen extends StatefulWidget {
   final Function(NavigationScreen) onScreenChanged;
 
   const FormScreen({
-    Key? key,
+    super.key,
     required this.consultantName,
     required this.teamName,
     required this.onScreenChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<FormScreen> createState() => _FormScreenState();

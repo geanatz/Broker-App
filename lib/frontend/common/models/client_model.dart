@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 
 /// Model pentru reprezentarea unui client și starea formularului său
 class ClientModel {
@@ -47,6 +46,30 @@ class ClientModel {
   /// Obține o valoare din datele formularului
   T? getFormValue<T>(String key) {
     return formData[key] as T?;
+  }
+  
+  /// Convertește obiectul ClientModel într-un Map pentru Firebase
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'phoneNumber': phoneNumber,
+      'status': status.index,
+      'category': category.index,
+      'formData': formData,
+    };
+  }
+  
+  /// Creează un ClientModel dintr-un Map din Firebase
+  static ClientModel fromMap(Map<String, dynamic> map) {
+    return ClientModel(
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      phoneNumber: map['phoneNumber'] ?? '',
+      status: ClientStatus.values[map['status'] ?? 0],
+      category: ClientCategory.values[map['category'] ?? 0],
+      formData: Map<String, dynamic>.from(map['formData'] ?? {}),
+    );
   }
 }
 

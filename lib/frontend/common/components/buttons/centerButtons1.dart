@@ -86,7 +86,7 @@ class CenteredButtons1 extends StatelessWidget {
   final double? iconSize;
 
   const CenteredButtons1({
-    Key? key,
+    super.key,
     required this.icon1,
     this.onTap1,
     this.buttonBackgroundColor,
@@ -95,7 +95,7 @@ class CenteredButtons1 extends StatelessWidget {
     this.buttonHeight,
     this.buttonPadding,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

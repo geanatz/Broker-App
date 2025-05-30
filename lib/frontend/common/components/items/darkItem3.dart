@@ -41,7 +41,7 @@ class DarkItem3 extends StatelessWidget {
 
 
   const DarkItem3({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     this.onTap,
@@ -50,7 +50,7 @@ class DarkItem3 extends StatelessWidget {
     this.descriptionColor,
     this.borderRadius,
     this.descriptionContainerWidth,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -4,9 +4,6 @@ import '../../backend/services/calculatorService.dart';
 import '../common/appTheme.dart';
 // Import components
 import '../common/components/headers/widgetHeader1.dart';
-import '../common/components/rows/headerRow.dart';
-import '../common/components/rows/amortizationRow.dart';
-import '../common/components/texts/text1.dart';
 
 /// Widget pentru afișarea graficului de amortizare a unui credit
 /// 

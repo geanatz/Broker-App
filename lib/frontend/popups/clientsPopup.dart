@@ -3,10 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../common/components/headers/widgetHeader1.dart';
 import '../common/components/items/lightItem3.dart';
 import '../common/components/items/darkItem3.dart';
-import '../common/components/buttons/flexButtons3.dart';
-import '../common/components/buttons/flexButtons2.dart';
+import '../common/components/buttons/flexButtons3Svg.dart';
+import '../common/components/buttons/flexButtons2Svg.dart';
 import '../common/components/fields/inputField1.dart';
-import '../common/components/fields/inputField2.dart';
 import '../common/appTheme.dart';
 
 /// Client model to represent client data
@@ -63,7 +62,7 @@ class ClientsPopup1 extends StatefulWidget {
   final Client? selectedClient;
 
   const ClientsPopup1({
-    Key? key,
+    super.key,
     required this.clients,
     this.onAddClient,
     this.onExtractClients,
@@ -71,7 +70,7 @@ class ClientsPopup1 extends StatefulWidget {
     this.onClientSelected,
     this.onEditClient,
     this.selectedClient,
-  }) : super(key: key);
+  });
 
   @override
   State<ClientsPopup1> createState() => _ClientsPopup1State();
@@ -80,118 +79,21 @@ class ClientsPopup1 extends StatefulWidget {
 class _ClientsPopup1State extends State<ClientsPopup1> {
   
   Widget _buildBottomButtonsRow() {
-    return Container(
-      width: double.infinity,
-      height: 48,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Primary button - Adauga client
-          Expanded(
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.containerColor2,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: widget.onAddClient,
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "Adauga client",
-                            style: AppTheme.navigationButtonTextStyle.copyWith(
-                              color: AppTheme.elementColor3,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/addIcon.svg',
-                          width: AppTheme.iconSizeMedium,
-                          height: AppTheme.iconSizeMedium,
-                          colorFilter: ColorFilter.mode(
-                            AppTheme.elementColor3,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(width: AppTheme.smallGap),
-          
-          // Trailing button 1 - Extract from image
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.containerColor2,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.onExtractClients,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/imageIcon.svg',
-                    width: AppTheme.iconSizeMedium,
-                    height: AppTheme.iconSizeMedium,
-                    colorFilter: ColorFilter.mode(
-                      AppTheme.elementColor3,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(width: AppTheme.smallGap),
-          
-          // Trailing button 2 - Delete all
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.containerColor2,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.onDeleteAllClients,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/deleteIcon.svg',
-                    width: AppTheme.iconSizeMedium,
-                    height: AppTheme.iconSizeMedium,
-                    colorFilter: ColorFilter.mode(
-                      AppTheme.elementColor3,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return FlexButtonWithTwoTrailingIconsSvg(
+      primaryButtonText: "Adauga client",
+      primaryButtonIconPath: "assets/addIcon.svg",
+      trailingIcon1Path: "assets/imageIcon.svg",
+      trailingIcon2Path: "assets/deleteIcon.svg",
+      onPrimaryButtonTap: widget.onAddClient,
+      onTrailingIcon1Tap: widget.onExtractClients,
+      onTrailingIcon2Tap: widget.onDeleteAllClients,
+      spacing: AppTheme.smallGap,
+      buttonBackgroundColor: AppTheme.containerColor2,
+      textColor: AppTheme.elementColor3,
+      iconColor: AppTheme.elementColor3,
+      borderRadius: AppTheme.borderRadiusMedium,
+      buttonHeight: 48.0,
+      primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
     );
   }
 
@@ -216,7 +118,7 @@ class _ClientsPopup1State extends State<ClientsPopup1> {
           children: [
             // Expanded content area
             Expanded(
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -230,7 +132,7 @@ class _ClientsPopup1State extends State<ClientsPopup1> {
                     
                     // Client list
                     Expanded(
-                      child: Container(
+                      child: SizedBox(
                         width: double.infinity,
                         child: widget.clients.isEmpty
                             ? Center(
@@ -252,22 +154,20 @@ class _ClientsPopup1State extends State<ClientsPopup1> {
                                   final isSelected = widget.selectedClient == client;
                                   
                                   if (isSelected) {
-                                    return GestureDetector(
-                                      onDoubleTap: () => widget.onEditClient?.call(client),
-                                      child: DarkItem3(
-                                        title: client.name,
-                                        description: client.phoneNumber,
-                                        onTap: () => widget.onClientSelected?.call(client),
-                                      ),
+                                    return DarkItem3(
+                                      title: client.name,
+                                      description: client.phoneNumber,
+                                      onTap: () => widget.onEditClient?.call(client),
                                     );
                                   } else {
-                                    return GestureDetector(
-                                      onDoubleTap: () => widget.onEditClient?.call(client),
-                                      child: LightItem3(
-                                        title: client.name,
-                                        description: client.phoneNumber,
-                                        onTap: () => widget.onClientSelected?.call(client),
-                                      ),
+                                    return LightItem3(
+                                      title: client.name,
+                                      description: client.phoneNumber,
+                                      onTap: () {
+                                        widget.onClientSelected?.call(client);
+                                        // Immediately open edit popup after selection
+                                        Future.microtask(() => widget.onEditClient?.call(client));
+                                      },
                                     );
                                   }
                                 },
@@ -302,11 +202,11 @@ class ClientsPopup2 extends StatefulWidget {
   final VoidCallback? onDeleteClient;
 
   const ClientsPopup2({
-    Key? key,
+    super.key,
     this.editingClient,
     this.onSaveClient,
     this.onDeleteClient,
-  }) : super(key: key);
+  });
 
   @override
   State<ClientsPopup2> createState() => _ClientsPopup2State();
@@ -357,75 +257,53 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   }
   
   Widget _buildFormBottomButtonsRow(bool isEditing) {
-    return Container(
-      width: double.infinity,
-      height: 48,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Primary button - Salveaza client
-          Expanded(
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.containerColor2,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _saveClient,
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "Salveaza client",
-                            style: AppTheme.navigationButtonTextStyle.copyWith(
-                              color: AppTheme.elementColor3,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/saveIcon.svg',
-                          width: AppTheme.iconSizeMedium,
-                          height: AppTheme.iconSizeMedium,
-                          colorFilter: ColorFilter.mode(
-                            AppTheme.elementColor3,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    if (isEditing) {
+      return FlexButtonWithTrailingIconSvg(
+        primaryButtonText: "Salveaza client",
+        primaryButtonIconPath: "assets/saveIcon.svg",
+        onPrimaryButtonTap: _saveClient,
+        trailingIconPath: "assets/deleteIcon.svg",
+        onTrailingIconTap: widget.onDeleteClient,
+        spacing: AppTheme.smallGap,
+        buttonBackgroundColor: AppTheme.containerColor2,
+        textColor: AppTheme.elementColor3,
+        iconColor: AppTheme.elementColor3,
+        borderRadius: AppTheme.borderRadiusMedium,
+        buttonHeight: 48.0,
+        primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
+      );
+    } else {
+      // For new client creation, only show save button
+      return SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppTheme.containerColor2,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           ),
-          
-          // Delete button - doar dacă editează
-          if (isEditing) ...[
-            const SizedBox(width: AppTheme.smallGap),
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.containerColor2,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: widget.onDeleteClient,
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/deleteIcon.svg',
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _saveClient,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Salveaza client",
+                      style: AppTheme.navigationButtonTextStyle.copyWith(
+                        color: AppTheme.elementColor3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(width: AppTheme.smallGap),
+                    SvgPicture.asset(
+                      'assets/saveIcon.svg',
                       width: AppTheme.iconSizeMedium,
                       height: AppTheme.iconSizeMedium,
                       colorFilter: ColorFilter.mode(
@@ -433,14 +311,14 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                         BlendMode.srcIn,
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ],
-      ),
-    );
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -466,7 +344,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
           children: [
             // Expanded content area
             Expanded(
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

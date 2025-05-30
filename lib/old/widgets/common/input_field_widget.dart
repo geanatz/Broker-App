@@ -31,7 +31,7 @@ class InputFieldWidget extends StatelessWidget {
   final bool readOnly;
 
   const InputFieldWidget({
-    Key? key,
+    super.key,
     this.controller,
     required this.hintText,
     this.value,
@@ -41,7 +41,7 @@ class InputFieldWidget extends StatelessWidget {
     this.backgroundColor = Colors.white,
     this.textColor = Colors.black,
     this.readOnly = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

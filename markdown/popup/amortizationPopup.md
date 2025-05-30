@@ -102,7 +102,7 @@ ConstrainedBox(
                                                                     spacing: 10,
                                                                     children: [
                                                                         Text(
-                                                                            'Luna',
+                                                                            'Titlu',
                                                                             style: TextStyle(
                                                                                 color: const Color(0xFF666699) /* elementColor2 */,
                                                                                 fontSize: 15,
@@ -136,7 +136,7 @@ ConstrainedBox(
                                                                     spacing: 10,
                                                                     children: [
                                                                         Text(
-                                                                            'Suma',
+                                                                            'Titlu',
                                                                             style: TextStyle(
                                                                                 color: const Color(0xFF666699) /* elementColor2 */,
                                                                                 fontSize: 15,
@@ -170,7 +170,7 @@ ConstrainedBox(
                                                                     spacing: 10,
                                                                     children: [
                                                                         Text(
-                                                                            'Dobanda',
+                                                                            'Titlu',
                                                                             style: TextStyle(
                                                                                 color: const Color(0xFF666699) /* elementColor2 */,
                                                                                 fontSize: 15,
@@ -204,7 +204,7 @@ ConstrainedBox(
                                                                     spacing: 10,
                                                                     children: [
                                                                         Text(
-                                                                            'Principal',
+                                                                            'Titlu',
                                                                             style: TextStyle(
                                                                                 color: const Color(0xFF666699) /* elementColor2 */,
                                                                                 fontSize: 15,
@@ -238,7 +238,7 @@ ConstrainedBox(
                                                                     spacing: 10,
                                                                     children: [
                                                                         Text(
-                                                                            'Sold',
+                                                                            'Titlu',
                                                                             style: TextStyle(
                                                                                 color: const Color(0xFF666699) /* elementColor2 */,
                                                                                 fontSize: 15,

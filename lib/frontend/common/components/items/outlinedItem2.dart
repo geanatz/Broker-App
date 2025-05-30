@@ -39,7 +39,7 @@ class OutlinedItem2 extends StatelessWidget {
   final double? itemHeight;
 
   const OutlinedItem2({
-    Key? key,
+    super.key,
     required this.title,
     this.onTap,
     this.backgroundColor, // Defaults to transparent
@@ -48,7 +48,7 @@ class OutlinedItem2 extends StatelessWidget {
     this.titleColor,
     this.borderRadius,
     this.itemHeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

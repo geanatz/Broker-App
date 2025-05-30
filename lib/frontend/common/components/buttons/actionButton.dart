@@ -60,7 +60,7 @@ class ActionButton extends StatelessWidget {
   final double? spacing;
 
   const ActionButton({
-    Key? key,
+    super.key,
     this.text,
     this.icon,
     this.onTap,
@@ -75,7 +75,7 @@ class ActionButton extends StatelessWidget {
     this.iconSize,
     this.iconAfterText = false,
     this.spacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

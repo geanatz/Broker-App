@@ -60,7 +60,7 @@ class DropdownField2 extends StatelessWidget {
   final double? iconSize;
 
   const DropdownField2({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     required this.selectedOption,
@@ -75,7 +75,7 @@ class DropdownField2 extends StatelessWidget {
     this.iconColor,
     this.dropdownBorderRadius,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

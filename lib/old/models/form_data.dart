@@ -27,16 +27,16 @@ class CreditFormData extends BaseFormData {
   String? selectedRateType; // Specific to Ipotecar/PrimaCasa
 
   CreditFormData({
-    required String id,
-    bool isEmpty = true,
-    String? selectedBank,
+    required super.id,
+    super.isEmpty,
+    super.selectedBank,
     this.selectedCreditType,
     this.sold = '',
     this.consumat = '',
     this.rata = '',
     this.perioada = '',
     this.selectedRateType,
-  }) : super(id: id, isEmpty: isEmpty, selectedBank: selectedBank);
+  });
 
   // Check if the essential fields that define a "filled" form are set
   bool isFilled() {
@@ -76,13 +76,13 @@ class IncomeFormData extends BaseFormData {
   String vechime; // Using String
 
   IncomeFormData({
-    required String id,
-    bool isEmpty = true,
-    String? selectedBank,
+    required super.id,
+    super.isEmpty,
+    super.selectedBank,
     this.selectedIncomeType,
     this.income = '',
     this.vechime = '',
-  }) : super(id: id, isEmpty: isEmpty, selectedBank: selectedBank);
+  });
 
   // Check if essential fields are set
   bool isFilled() {

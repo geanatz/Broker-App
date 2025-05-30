@@ -16,12 +16,12 @@ class PanelContainer extends StatelessWidget {
   final Widget child;
 
   const PanelContainer({
-    Key? key,
+    super.key,
     this.width,
     this.height,
     this.isExpanded = false,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -63,7 +63,7 @@ class SpacedButtonSingleSvg extends StatelessWidget {
   final double? internalSpacing; // Spacing between text and icon
 
   const SpacedButtonSingleSvg({
-    Key? key,
+    super.key,
     required this.text,
     required this.iconPath,
     this.onTap,
@@ -76,7 +76,7 @@ class SpacedButtonSingleSvg extends StatelessWidget {
     this.textStyle,
     this.iconSize,
     this.internalSpacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +167,7 @@ class SpacedButtonSingle extends StatelessWidget {
   final double? internalSpacing; // Spacing between text and icon
 
   const SpacedButtonSingle({
-    Key? key,
+    super.key,
     required this.text,
     required this.icon,
     this.onTap,
@@ -180,7 +180,7 @@ class SpacedButtonSingle extends StatelessWidget {
     this.textStyle,
     this.iconSize,
     this.internalSpacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -30,7 +30,7 @@ class ConsultantService {
       );
       
       if (consultantDoc.exists) {
-        return consultantDoc.data() as Map<String, dynamic>?;
+        return consultantDoc.data();
       }
       return null;
     } catch (e) {
@@ -47,7 +47,7 @@ class ConsultantService {
       );
       
       if (consultantDoc.exists) {
-        return consultantDoc.data() as Map<String, dynamic>?;
+        return consultantDoc.data();
       }
       return null;
     } catch (e) {

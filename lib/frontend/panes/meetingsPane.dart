@@ -18,10 +18,10 @@ class MeetingsPane extends StatefulWidget {
   final Function(String)? onNavigateToMeeting;
 
   const MeetingsPane({
-    Key? key,
+    super.key,
     this.onClose,
     this.onNavigateToMeeting,
-  }) : super(key: key);
+  });
 
   @override
   State<MeetingsPane> createState() => MeetingsPaneState();
@@ -179,11 +179,11 @@ class MeetingsPaneState extends State<MeetingsPane> {
     final minutes = difference.inMinutes;
     
     if (days > 0) {
-      return 'în $days ${days == 1 ? 'zi' : 'zile'}';
+      return 'in $days ${days == 1 ? 'zi' : 'zile'}';
     } else if (hours > 0) {
-      return 'în $hours ${hours == 1 ? 'oră' : 'ore'}';
+      return 'in $hours ${hours == 1 ? 'oră' : 'ore'}';
     } else if (minutes > 0) {
-      return 'în $minutes ${minutes == 1 ? 'minut' : 'minute'}';
+      return 'in $minutes ${minutes == 1 ? 'minut' : 'minute'}';
     } else {
       return 'acum';
     }

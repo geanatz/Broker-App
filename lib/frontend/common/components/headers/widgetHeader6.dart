@@ -61,7 +61,7 @@ class WidgetHeader6 extends StatelessWidget {
   final double? dateNavIconSize;
 
   const WidgetHeader6({
-    Key? key,
+    super.key,
     required this.title,
     required this.dateText,
     this.prevDateIcon,
@@ -78,7 +78,7 @@ class WidgetHeader6 extends StatelessWidget {
     this.titleContainerHeight,
     this.dateTextContainerWidth,
     this.dateNavIconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +108,7 @@ class WidgetHeader6 extends StatelessWidget {
     
     final EdgeInsets iconButtonPadding = const EdgeInsets.symmetric(horizontal: 8); // From snippet
 
-    Widget _buildNavIcon(IconData iconData, VoidCallback? onTap) {
+    Widget buildNavIcon(IconData iconData, VoidCallback? onTap) {
       return MouseRegion(
         cursor: onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
         child: InkWell(
@@ -158,7 +158,7 @@ class WidgetHeader6 extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildNavIcon(finalPrevDateIcon, onPrevDateTap),
+              buildNavIcon(finalPrevDateIcon, onPrevDateTap),
               MouseRegion(
                 cursor: onDateTextTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
                 child: InkWell(
@@ -184,7 +184,7 @@ class WidgetHeader6 extends StatelessWidget {
                   ),
                 ),
               ),
-              _buildNavIcon(finalNextDateIcon, onNextDateTap),
+              buildNavIcon(finalNextDateIcon, onNextDateTap),
             ],
           ),
         ],

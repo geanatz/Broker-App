@@ -18,7 +18,7 @@ import '../common/services/client_service.dart';
 /// - LightItem7: starea normală (viewIcon)
 /// - DarkItem7: starea focusată (doneIcon)
 class ClientsPane extends StatefulWidget {
-  const ClientsPane({Key? key}) : super(key: key);
+  const ClientsPane({super.key});
 
   @override
   State<ClientsPane> createState() => _ClientsPaneState();
@@ -35,9 +35,7 @@ class _ClientsPaneState extends State<ClientsPane> {
   void initState() {
     super.initState();
     // Inițializează datele demo dacă nu există clienți
-    if (_clientService.clients.isEmpty) {
-      _clientService.initializeDemoData();
-    }
+    _initializeClients();
     _clientService.addListener(_onClientServiceChanged);
   }
 
@@ -48,7 +46,12 @@ class _ClientsPaneState extends State<ClientsPane> {
   }
 
   void _onClientServiceChanged() {
-    setState(() {});
+    // Defer setState until after the current frame to avoid calling setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   /// Construiește lista de clienți pentru o anumită categorie
@@ -56,7 +59,7 @@ class _ClientsPaneState extends State<ClientsPane> {
     final clients = _clientService.getClientsByCategory(category);
     
     if (clients.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 60, // Înălțime fixă pentru mesajul de empty state
         child: Center(
           child: Text(
@@ -172,7 +175,7 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: double.infinity,
       child: Column(
@@ -197,5 +200,12 @@ class _ClientsPaneState extends State<ClientsPane> {
         ],
       ),
     );
+  }
+
+  /// Inițializează clienții async
+  Future<void> _initializeClients() async {
+    if (_clientService.clients.isEmpty) {
+      await _clientService.initializeDemoData();
+    }
   }
 }

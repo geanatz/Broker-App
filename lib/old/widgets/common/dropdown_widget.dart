@@ -23,14 +23,14 @@ class DropdownWidget extends StatelessWidget {
   final Color textColor;
 
   const DropdownWidget({
-    Key? key,
+    super.key,
     required this.items,
     this.value,
     required this.hintText,
     required this.onChanged,
     this.backgroundColor = Colors.white,
     this.textColor = Colors.black,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

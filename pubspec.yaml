@@ -102,6 +102,11 @@ flutter:
     - assets/listIcon.svg
     - assets/userIcon.svg
     - assets/imageIcon.svg
+    - assets/logoIcon.svg
+    - assets/darkIcon.svg
+    - assets/lightIcon.svg
+    - assets/systemIcon.svg
+    - assets/colorIcon.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -12,6 +12,7 @@ import 'package:broker_app/frontend/panes/clientsPane.dart';
 import 'package:broker_app/frontend/popups/clientsPopup.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
 import 'package:broker_app/frontend/common/models/client_model.dart';
+import 'package:broker_app/backend/services/settingsService.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:
 /// - pane (stânga, lățime 312)
@@ -22,16 +23,16 @@ class MainScreen extends StatefulWidget {
   final String? teamName;
   
   const MainScreen({
-    Key? key, 
+    super.key, 
     this.consultantName,
     this.teamName,
-  }) : super(key: key);
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Starea actuală de navigare
   AreaType _currentArea = AreaType.form;
   PaneType _currentPane = PaneType.clients;
@@ -47,6 +48,9 @@ class _MainScreenState extends State<MainScreen> {
   // Client service pentru gestionarea popup-urilor
   final ClientService _clientService = ClientService();
   
+  // Settings service pentru actualizări în timp real ale temei
+  final SettingsService _settingsService = SettingsService();
+  
   // State pentru popup-uri
   List<Client> _popupClients = [];
   Client? _selectedPopupClient;
@@ -60,27 +64,47 @@ class _MainScreenState extends State<MainScreen> {
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
     
-    // Inițializează datele demo dacă nu există clienți
-    if (_clientService.clients.isEmpty) {
-      _clientService.initializeDemoData();
-    }
-    
     // Sincronizează popup-ul cu datele din service
     _syncPopupWithService();
     
     // Ascultă schimbările din ClientService
     _clientService.addListener(_onClientServiceChanged);
+    
+    // Ascultă schimbările din SettingsService pentru actualizări în timp real ale temei
+    _settingsService.addListener(_onSettingsChanged);
+    
+    // Inițializează SettingsService
+    _initializeSettings();
+    
+    // Ascultă schimbările de brightness pentru modul auto
+    WidgetsBinding.instance.addObserver(this);
   }
   
   @override
   void dispose() {
     _clientService.removeListener(_onClientServiceChanged);
+    _settingsService.removeListener(_onSettingsChanged);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
   
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    // Actualizează UI-ul când se schimbă brightness-ul sistemului (pentru modul auto)
+    if (_settingsService.currentThemeMode == AppThemeMode.auto) {
+      setState(() {});
+    }
+  }
+  
   void _onClientServiceChanged() {
-    setState(() {
-      _syncPopupWithService();
+    // Defer setState until after the current frame to avoid calling setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _syncPopupWithService();
+        });
+      }
     });
   }
   
@@ -105,8 +129,24 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
   
+  /// Inițializează SettingsService
+  Future<void> _initializeSettings() async {
+    if (!_settingsService.isInitialized) {
+      await _settingsService.initialize();
+    }
+  }
+  
+  /// Callback pentru schimbările din SettingsService
+  void _onSettingsChanged() {
+    if (mounted) {
+      setState(() {
+        // Actualizează întreaga interfață când se schimbă tema
+      });
+    }
+  }
+  
   // Widgets pentru area
-  late final Map<AreaType, Widget> _areaWidgets = {
+  Map<AreaType, Widget> get _areaWidgets => {
     AreaType.dashboard: const DashboardArea(),
     AreaType.form: const FormArea(),
     AreaType.calendar: CalendarArea(
@@ -116,7 +156,7 @@ class _MainScreenState extends State<MainScreen> {
     AreaType.settings: const SettingsArea(),
   };
   
-  late final Map<PaneType, Widget> _paneWidgets = {
+  Map<PaneType, Widget> get _paneWidgets => {
     PaneType.clients: const ClientsPane(),
     PaneType.meetings: MeetingsPane(
       key: _meetingsPaneKey,
@@ -376,12 +416,9 @@ class _MainScreenState extends State<MainScreen> {
   }
   
   /// Performs the actual deletion of all clients
-  void _performDeleteAllClients() {
+  void _performDeleteAllClients() async {
     // Șterge toți clienții din ClientService
-    final clientIds = _clientService.clients.map((client) => client.id).toList();
-    for (final clientId in clientIds) {
-      _clientService.removeClient(clientId);
-    }
+    await _clientService.deleteAllClients();
     
     // Închide popup-ul
     _closeAllPopups();
@@ -395,7 +432,7 @@ class _MainScreenState extends State<MainScreen> {
   }
   
   /// Handles saving a client (create or edit)
-  void _handleSaveClient(Client client) {
+  void _handleSaveClient(Client client) async {
     if (_editingClient == null) {
       // Creează client nou
       final newClientModel = ClientModel(
@@ -406,7 +443,7 @@ class _MainScreenState extends State<MainScreen> {
         category: ClientCategory.apeluri, // Clienții noi merg în "Apeluri"
       );
       
-      _clientService.addClient(newClientModel);
+      await _clientService.addClient(newClientModel);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -426,7 +463,7 @@ class _MainScreenState extends State<MainScreen> {
         phoneNumber: client.phoneNumber,
       );
       
-      _clientService.updateClient(updatedClientModel);
+      await _clientService.updateClient(updatedClientModel);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -472,7 +509,7 @@ class _MainScreenState extends State<MainScreen> {
   }
   
   /// Performs the actual deletion of a client
-  void _performDeleteClient() {
+  void _performDeleteClient() async {
     if (_editingClient == null) return;
     
     final clientToDelete = _clientService.clients.firstWhere(
@@ -480,7 +517,7 @@ class _MainScreenState extends State<MainScreen> {
                       clientModel.phoneNumber == _editingClient!.phoneNumber,
     );
     
-    _clientService.removeClient(clientToDelete.id);
+    await _clientService.removeClient(clientToDelete.id);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -502,7 +539,7 @@ class PlaceholderWidget extends StatelessWidget {
   final String text;
   final Color color;
   
-  const PlaceholderWidget(this.text, this.color, {Key? key}) : super(key: key);
+  const PlaceholderWidget(this.text, this.color, {super.key});
   
   @override
   Widget build(BuildContext context) {

@@ -62,7 +62,7 @@ class OutlinedItem7 extends StatelessWidget {
   final double? iconSize;
 
   const OutlinedItem7({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     this.icon,
@@ -77,7 +77,7 @@ class OutlinedItem7 extends StatelessWidget {
     this.mainBorderRadius,
     this.iconContainerBorderRadius,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

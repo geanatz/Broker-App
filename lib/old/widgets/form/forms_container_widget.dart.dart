@@ -21,11 +21,11 @@ class FormsContainerWidget extends StatefulWidget {
   final String? contactId;
 
   const FormsContainerWidget({
-    Key? key,
+    super.key,
     required this.type,
     required this.isClientForm,
     this.contactId,
-  }) : super(key: key);
+  });
 
   @override
   State<FormsContainerWidget> createState() => _FormsContainerWidgetState();

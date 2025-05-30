@@ -1,7 +1,9 @@
 // lib/components/items/dark_item6.dart
 
 import 'package:flutter/material.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../appTheme.dart';
 
 /// A customizable item component with a primary title on the left
 /// and an optional icon on the right, housed within a padded square container.
@@ -15,19 +17,22 @@ class DarkItem6 extends StatelessWidget {
   /// Optional icon data to display on the right.
   final IconData? icon;
 
+  /// Optional SVG asset path to display on the right (takes precedence over icon).
+  final String? svgAsset;
+
   /// Optional callback when the item is tapped.
   final VoidCallback? onTap;
 
   /// Optional custom background color for the main container.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2) if not provided.
+  /// Defaults to AppTheme.containerColor2 if not provided.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80) if not provided.
+  /// Defaults to AppTheme.elementColor3 if not provided.
   final Color? titleColor;
 
   /// Optional custom color for the icon.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80) if not provided.
+  /// Defaults to AppTheme.elementColor3 if not provided.
   final Color? iconColor;
 
   /// Optional custom background color for the icon's immediate container.
@@ -47,46 +52,49 @@ class DarkItem6 extends StatelessWidget {
   final double? iconSize;
 
   const DarkItem6({
-    Key? key,
+    super.key,
     required this.title,
     this.icon,
+    this.svgAsset,
     this.onTap,
     this.backgroundColor,
     this.titleColor,
     this.iconColor,
-    this.iconContainerColor, // Original snippet had no color here, so transparent default
+    this.iconContainerColor,
     this.mainBorderRadius,
     this.iconContainerBorderRadius,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3 (or dedicated icon color)
-    final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent; // No color in original for this
-    final double effectiveMainBorderRadius = mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
-    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
-    final double itemHeight = 64.0; // AppTheme.itemHeightLarge
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
-    final double internalSpacing = 16.0; // AppTheme.mediumGap (original spacing: 16 on Row)
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor2;
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor3;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
+    final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent;
+    final double effectiveMainBorderRadius = mainBorderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double itemHeight = 64.0;
+    final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
+    final double internalSpacing = AppTheme.mediumGap;
 
-    // Specific padding for the main container from snippet
-    final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
-    // Specific padding for the icon container from snippet
+    final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(
+      top: AppTheme.smallGap, 
+      left: AppTheme.mediumGap, 
+      right: AppTheme.smallGap, 
+      bottom: AppTheme.smallGap
+    );
 
     final double iconContainerSize = 48.0;
 
-
-    // Text Style (Consider moving to AppTheme)
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w600,
     );
+
+    // Determine if we should show an icon (either SVG or IconData)
+    final bool hasIcon = svgAsset != null || icon != null;
 
     Widget content = Container(
       width: double.infinity,
@@ -104,9 +112,6 @@ class DarkItem6 extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              // height: 48, // Inner container height from original
-              // clipBehavior: Clip.antiAlias, // Not needed
-              // decoration: BoxDecoration(), // Not needed
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -121,22 +126,36 @@ class DarkItem6 extends StatelessWidget {
               ),
             ),
           ),
-          if (icon != null) ...[
-            SizedBox(width: internalSpacing), // Original spacing: 16
+          if (hasIcon) ...[
+            SizedBox(width: internalSpacing),
             Container(
               width: iconContainerSize,
               height: iconContainerSize,
               decoration: ShapeDecoration(
-                color: effectiveIconContainerColor, // Can be customized
+                color: effectiveIconContainerColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
                 ),
               ),
-              child: Center( // To center the icon within the 48x48 area
-                child: Icon(
-                  icon,
-                  size: effectiveIconSize,
-                  color: effectiveIconColor,
+              child: Center(
+                child: SizedBox(
+                  width: 24.0,
+                  height: 24.0,
+                  child: svgAsset != null
+                      ? SvgPicture.asset(
+                          svgAsset!,
+                          width: 24.0,
+                          height: 24.0,
+                          colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                          fit: BoxFit.contain,
+                        )
+                      : icon != null
+                          ? Icon(
+                              icon,
+                              size: 24.0,
+                              color: effectiveIconColor,
+                            )
+                          : Container(),
                 ),
               ),
             ),
@@ -146,7 +165,6 @@ class DarkItem6 extends StatelessWidget {
     );
 
     if (onTap != null) {
-      // To make the whole item tappable. If only icon should be, InkWell needs to be on icon.
       return Material(
         color: Colors.transparent,
         child: InkWell(

@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder
 
 // Assuming _TextIconButton and _IconOnlyButton are defined
 // (Copied definitions for standalone example)
@@ -89,7 +88,7 @@ class FlexButtonWithTrailingIcon extends StatelessWidget {
   final TextStyle? primaryButtonTextStyle;
 
   const FlexButtonWithTrailingIcon({
-    Key? key,
+    super.key,
     required this.primaryButtonText,
     required this.primaryButtonIcon,
     this.onPrimaryButtonTap,
@@ -103,7 +102,7 @@ class FlexButtonWithTrailingIcon extends StatelessWidget {
     this.buttonHeight,
     this.trailingButtonSize,
     this.primaryButtonTextStyle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -127,6 +126,7 @@ class FlexButtonWithTrailingIcon extends StatelessWidget {
               textStyle: primaryButtonTextStyle,
               mainAxisAlignment: MainAxisAlignment.center, // Content centered
               internalSpacing: 8.0, // Snippet inner spacing for primary
+              iconSize: 24.0, // Added iconSize parameter
             ),
           ),
           SizedBox(width: effectiveSpacing),

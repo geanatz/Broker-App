@@ -43,7 +43,7 @@ class WidgetHeader3 extends StatelessWidget {
   final double? iconSize;
 
   const WidgetHeader3({
-    Key? key,
+    super.key,
     required this.title,
     this.trailingIcon,
     this.onTrailingIconTap,
@@ -54,7 +54,7 @@ class WidgetHeader3 extends StatelessWidget {
     this.spacing,
     this.titleContainerHeight,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +69,7 @@ class WidgetHeader3 extends StatelessWidget {
     final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeLarge,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
     );
     final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;
 

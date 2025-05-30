@@ -45,7 +45,7 @@ class LightItem3 extends StatelessWidget {
   final TextStyle? descriptionStyle;
 
   const LightItem3({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     this.onTap,
@@ -56,7 +56,7 @@ class LightItem3 extends StatelessWidget {
     this.descriptionContainerWidth,
     this.titleStyle,
     this.descriptionStyle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

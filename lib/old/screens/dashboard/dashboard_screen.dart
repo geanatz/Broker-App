@@ -21,11 +21,11 @@ class DashboardScreen extends StatefulWidget {
   final Function(NavigationScreen) onScreenChanged;
 
   const DashboardScreen({
-    Key? key,
+    super.key,
     required this.consultantName,
     required this.teamName,
     required this.onScreenChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();

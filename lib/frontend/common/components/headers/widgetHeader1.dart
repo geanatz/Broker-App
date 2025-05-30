@@ -30,13 +30,13 @@ class WidgetHeader1 extends StatelessWidget {
   final double? titleContainerHeight;
 
   const WidgetHeader1({
-    Key? key,
+    super.key,
     required this.title,
     this.titleColor,
     this.titleStyle,
     this.padding,
     this.titleContainerHeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class WidgetHeader1 extends StatelessWidget {
     final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeLarge,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
     );
 
     final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;

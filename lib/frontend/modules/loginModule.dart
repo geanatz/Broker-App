@@ -237,7 +237,7 @@ class _LoginPopupState extends State<LoginPopup> {
             width: 48,
             height: 48,
             child: SvgPicture.asset(
-              'assets/Logo.svg',
+              'assets/logoIcon.svg',
               // Ensure the color is applied correctly if needed
               colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
               // Fit might not be needed if SVG viewport is correct
@@ -375,6 +375,7 @@ class _LoginPopupState extends State<LoginPopup> {
             controller: _passwordController,
             obscureText: true,
             textAlignVertical: TextAlignVertical.center,
+            onFieldSubmitted: (_) => _attemptLogin(), // Add Enter key functionality
             style: AppTheme.smallTextStyle.copyWith(
               color: AppTheme.elementColor3,
               fontSize: AppTheme.fontSizeMedium,

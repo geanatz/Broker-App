@@ -29,7 +29,6 @@ class _FormFieldContainer extends StatelessWidget {
 
 
   const _FormFieldContainer({
-    super.key, 
     required this.title,
     required this.mainText,
     this.icon,
@@ -211,7 +210,7 @@ class _FormContainer2State extends State<FormContainer2> {
     final double effectiveColumnSpacing = widget.columnSpacing ?? 8.0;
     
     // Helper function to create a custom input field
-    Widget _buildCustomField(String title, String defaultText, Widget? child, VoidCallback? onTap, {IconData? icon}) {
+    Widget buildCustomField(String title, String defaultText, Widget? child, VoidCallback? onTap, {IconData? icon}) {
       if (child != null) {
         // We have a custom child widget to use instead of the standard field
         return Column(
@@ -284,7 +283,7 @@ class _FormContainer2State extends State<FormContainer2> {
                   children: [
                     Expanded(
                       child: widget.child1R1F1 != null 
-                        ? _buildCustomField(
+                        ? buildCustomField(
                             widget.titleR1F1, 
                             widget.optionR1F1, 
                             widget.child1R1F1, 
@@ -300,7 +299,7 @@ class _FormContainer2State extends State<FormContainer2> {
                     SizedBox(width: effectiveColumnSpacing),
                     Expanded(
                       child: widget.child1R1F2 != null 
-                        ? _buildCustomField(
+                        ? buildCustomField(
                             widget.titleR1F2, 
                             widget.optionR1F2, 
                             widget.child1R1F2, 
@@ -319,7 +318,7 @@ class _FormContainer2State extends State<FormContainer2> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildCustomField(
+                      child: buildCustomField(
                         widget.titleR2F1, 
                         widget.textR2F1, 
                         widget.child1, 
@@ -328,7 +327,7 @@ class _FormContainer2State extends State<FormContainer2> {
                     ),
                     SizedBox(width: effectiveColumnSpacing),
                     Expanded(
-                      child: _buildCustomField(
+                      child: buildCustomField(
                         widget.titleR2F2, 
                         widget.textR2F2, 
                         widget.child2, 
@@ -337,7 +336,7 @@ class _FormContainer2State extends State<FormContainer2> {
                     ),
                     SizedBox(width: effectiveColumnSpacing),
                     Expanded(
-                      child: _buildCustomField(
+                      child: buildCustomField(
                         widget.titleR2F3, 
                         widget.textR2F3, 
                         widget.child3, 

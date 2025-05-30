@@ -58,7 +58,7 @@ class InputField1 extends StatelessWidget {
   final double? inputBorderRadius;
 
   const InputField1({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     this.controller,
@@ -75,7 +75,7 @@ class InputField1 extends StatelessWidget {
     this.subtitleColor,
     this.inputTextColor,
     this.inputBorderRadius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -94,7 +94,7 @@ class IncomeFormModel {
 /// Aceasta componenta inlocuieste vechiul FormScreen pastrand functionalitatea
 /// dar fiind adaptata la noua structura a aplicatiei.
 class FormArea extends StatefulWidget {
-  const FormArea({Key? key}) : super(key: key);
+  const FormArea({super.key});
 
   @override
   State<FormArea> createState() => _FormAreaState();

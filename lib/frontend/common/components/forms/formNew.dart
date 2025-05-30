@@ -29,7 +29,6 @@ class _FormFieldContainer extends StatelessWidget {
 
 
   const _FormFieldContainer({
-    super.key, 
     required this.title,
     required this.mainText,
     this.icon,
@@ -186,7 +185,7 @@ class _FormContainerNewState extends State<FormContainerNew> {
     final double effectiveColumnSpacing = widget.columnSpacing ?? 8.0;
     
     // Helper function to create a custom input field
-    Widget _buildCustomField(String title, String defaultText, Widget? child, VoidCallback? onTap, {IconData? icon}) {
+    Widget buildCustomField(String title, String defaultText, Widget? child, VoidCallback? onTap, {IconData? icon}) {
       if (child != null) {
         // We have a custom child widget to use instead of the standard field
         return Column(
@@ -259,7 +258,7 @@ class _FormContainerNewState extends State<FormContainerNew> {
                   children: [
                     Expanded(
                       child: widget.child1F1 != null 
-                        ? _buildCustomField(
+                        ? buildCustomField(
                             widget.titleF1, 
                             widget.optionF1, 
                             widget.child1F1, 
@@ -278,7 +277,7 @@ class _FormContainerNewState extends State<FormContainerNew> {
                     SizedBox(width: effectiveColumnSpacing),
                     Expanded(
                       child: widget.child1F2 != null 
-                        ? _buildCustomField(
+                        ? buildCustomField(
                             widget.titleF2, 
                             widget.optionF2, 
                             widget.child1F2, 

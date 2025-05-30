@@ -29,14 +29,14 @@ class LightItem2 extends StatelessWidget {
   final double? itemHeight;
 
   const LightItem2({
-    Key? key,
+    super.key,
     required this.title,
     this.onTap,
     this.backgroundColor,
     this.titleColor,
     this.borderRadius,
     this.itemHeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

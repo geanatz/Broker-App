@@ -93,7 +93,7 @@ class FlexButtonWithTwoTrailingIcons extends StatelessWidget {
   final TextStyle? primaryButtonTextStyle;
 
   const FlexButtonWithTwoTrailingIcons({
-    Key? key,
+    super.key,
     required this.primaryButtonText,
     required this.primaryButtonIcon,
     this.onPrimaryButtonTap,
@@ -109,7 +109,7 @@ class FlexButtonWithTwoTrailingIcons extends StatelessWidget {
     this.buttonHeight,
     this.trailingButtonSize,
     this.primaryButtonTextStyle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +133,7 @@ class FlexButtonWithTwoTrailingIcons extends StatelessWidget {
               textStyle: primaryButtonTextStyle,
               mainAxisAlignment: MainAxisAlignment.center,
               internalSpacing: 8.0,
+              iconSize: 24.0,
             ),
           ),
           SizedBox(width: effectiveSpacing),

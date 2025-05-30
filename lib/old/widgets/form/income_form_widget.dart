@@ -28,11 +28,11 @@ class IncomeFormWidget extends StatefulWidget {
   final String? contactId;
 
   const IncomeFormWidget({
-    Key? key,
+    super.key,
     required this.formData,
     required this.onChanged,
     this.contactId,
-  }) : super(key: key);
+  });
 
   @override
   State<IncomeFormWidget> createState() => _IncomeFormWidgetState();

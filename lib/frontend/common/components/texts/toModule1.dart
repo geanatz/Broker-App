@@ -40,7 +40,7 @@ class FixedTitleExpandedAltText extends StatelessWidget {
   final double? spacing;
 
   const FixedTitleExpandedAltText({
-    Key? key,
+    super.key,
     required this.title,
     required this.altText,
     this.titleColor,
@@ -50,7 +50,7 @@ class FixedTitleExpandedAltText extends StatelessWidget {
     this.padding,
     this.height,
     this.spacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -196,7 +196,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
             width: 48,
             height: 48,
             child: SvgPicture.asset(
-              'assets/Logo.svg',
+              'assets/logoIcon.svg',
               colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader1.dart';
 import 'package:broker_app/frontend/common/components/fields/inputField1.dart';
 import 'package:broker_app/frontend/common/components/fields/dropdownField1.dart';
+import 'package:broker_app/frontend/common/components/buttons/flexButtons2Svg.dart';
 import 'package:broker_app/backend/services/meetingService.dart';
 
 /// Popup combinat pentru crearea și editarea întâlnirilor
@@ -20,11 +21,11 @@ class MeetingPopup extends StatefulWidget {
   final VoidCallback? onSaved;
 
   const MeetingPopup({
-    Key? key,
+    super.key,
     this.meetingId,
     this.initialDateTime,
     this.onSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<MeetingPopup> createState() => _MeetingPopupState();
@@ -204,6 +205,31 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
   }
 
+  Future<void> _deleteMeeting() async {
+    if (!isEditMode || widget.meetingId == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _meetingService.deleteMeeting(widget.meetingId!);
+      
+      if (result['success']) {
+        Navigator.of(context).pop();
+        if (widget.onSaved != null) {
+          widget.onSaved!();
+        }
+        _showSuccess(result['message']);
+      } else {
+        _showError(result['message']);
+      }
+    } catch (e) {
+      debugPrint("Eroare la ștergerea întâlnirii: $e");
+      _showError("Eroare la ștergerea întâlnirii");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -226,8 +252,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
     if (_selectedDate == null) return "Selecteaza data";
     return DateFormat('dd/MM/yyyy').format(_selectedDate!);
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -359,42 +383,22 @@ class _MeetingPopupState extends State<MeetingPopup> {
                 
                 const SizedBox(height: AppTheme.smallGap),
                 
-                // Buton salvare
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: TextButton(
-                    onPressed: _saveMeeting,
-                    style: TextButton.styleFrom(
-                      backgroundColor: AppTheme.containerColor1,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.mediumGap,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Salveaza",
-                          style: GoogleFonts.outfit(
-                            color: AppTheme.elementColor2,
-                            fontSize: AppTheme.fontSizeMedium,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: AppTheme.smallGap),
-                        SvgPicture.asset(
-                          'assets/saveIcon.svg',
-                          width: 24,
-                          height: 24,
-                          colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
-                        ),
-                      ],
-                    ),
+                // Buttons - flexButtons2 with save and delete
+                FlexButtonWithTrailingIconSvg(
+                  primaryButtonText: "Salveaza",
+                  primaryButtonIconPath: "assets/saveIcon.svg",
+                  onPrimaryButtonTap: _saveMeeting,
+                  trailingIconPath: "assets/deleteIcon.svg",
+                  onTrailingIconTap: isEditMode ? _deleteMeeting : null,
+                  spacing: AppTheme.smallGap,
+                  buttonBackgroundColor: AppTheme.containerColor1,
+                  textColor: AppTheme.elementColor2,
+                  iconColor: AppTheme.elementColor2,
+                  borderRadius: AppTheme.borderRadiusMedium,
+                  buttonHeight: 48.0,
+                  primaryButtonTextStyle: GoogleFonts.outfit(
+                    fontSize: AppTheme.fontSizeMedium,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -404,8 +408,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
       ),
     );
   }
-
-
 
   Widget _buildLoadingDialog() {
     return Center(
@@ -428,6 +430,4 @@ class _MeetingPopupState extends State<MeetingPopup> {
       ),
     );
   }
-
-
 }

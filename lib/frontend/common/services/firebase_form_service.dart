@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/client_model.dart';
 
 /// Serviciu pentru gestionarea formularelor în Firebase Firestore
 class FirebaseFormService {

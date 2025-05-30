@@ -13,10 +13,10 @@ class ConsultantPopup extends StatelessWidget {
   final String teamName;
 
   const ConsultantPopup({
-    Key? key,
+    super.key,
     required this.consultantName,
     required this.teamName,
-  }) : super(key: key);
+  });
 
   /// Funcție pentru deconectarea utilizatorului
   Future<void> _signOut(BuildContext context) async {

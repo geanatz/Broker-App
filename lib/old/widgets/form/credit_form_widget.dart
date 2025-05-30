@@ -33,11 +33,11 @@ class CreditFormWidget extends StatefulWidget {
   final String? contactId;
 
   const CreditFormWidget({
-    Key? key,
+    super.key,
     required this.formData,
     required this.onChanged,
     this.contactId,
-  }) : super(key: key);
+  });
 
   @override
   State<CreditFormWidget> createState() => _CreditFormWidgetState();

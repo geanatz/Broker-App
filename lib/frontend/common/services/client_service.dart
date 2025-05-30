@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/client_model.dart';
+import '../../../backend/services/clientsService.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Service pentru gestionarea stării clienților și sincronizarea datelor formularelor
 /// între clientsPane și formArea
@@ -13,6 +15,9 @@ class ClientService extends ChangeNotifier {
   
   // Clientul curent focusat (pentru care se afișează formularul)
   ClientModel? _focusedClient;
+  
+  // Firebase service pentru persistența datelor
+  final ClientsFirebaseService _firebaseService = ClientsFirebaseService();
   
   // Getters
   List<ClientModel> get clients => List.unmodifiable(_clients);
@@ -32,61 +37,48 @@ class ClientService extends ChangeNotifier {
   /// Obține clienții din categoria "Recente"
   List<ClientModel> get recente => getClientsByCategory(ClientCategory.recente);
   
-  /// Inițializează datele demo pentru clienți
-  void initializeDemoData() {
-    _clients = [
-      // Clienți din categoria "Apeluri"
-      ClientModel(
-        id: '1',
-        name: 'Ion Popescu',
-        phoneNumber: '0721234567',
-        status: ClientStatus.focused, // Primul client este focusat implicit
-        category: ClientCategory.apeluri,
-      ),
-      ClientModel(
-        id: '2',
-        name: 'Maria Ionescu',
-        phoneNumber: '0731234567',
-        status: ClientStatus.normal,
-        category: ClientCategory.apeluri,
-      ),
-      
-      // Clienți din categoria "Reveniri"
-      ClientModel(
-        id: '3',
-        name: 'Gheorghe Vasilescu',
-        phoneNumber: '0741234567',
-        status: ClientStatus.normal,
-        category: ClientCategory.reveniri,
-      ),
-      ClientModel(
-        id: '4',
-        name: 'Ana Georgescu',
-        phoneNumber: '0751234567',
-        status: ClientStatus.normal,
-        category: ClientCategory.reveniri,
-      ),
-      
-      // Clienți din categoria "Recente"
-      ClientModel(
-        id: '5',
-        name: 'Mihai Constantinescu',
-        phoneNumber: '0761234567',
-        status: ClientStatus.normal,
-        category: ClientCategory.recente,
-      ),
-      ClientModel(
-        id: '6',
-        name: 'Elena Dumitrescu',
-        phoneNumber: '0771234567',
-        status: ClientStatus.normal,
-        category: ClientCategory.recente,
-      ),
-    ];
-    
-    // Setează primul client ca fiind focusat
-    _focusedClient = _clients.isNotEmpty ? _clients.first : null;
+  /// Inițializează serviciul și încarcă clienții din Firebase pentru consultantul curent
+  Future<void> initializeDemoData() async {
+    try {
+      // Verifică dacă utilizatorul este autentificat
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Încarcă clienții din Firebase pentru consultantul curent
+        await loadClientsFromFirebase();
+      } else {
+        // Dacă nu este autentificat, inițializează cu listă goală
+        _clients = [];
+        _focusedClient = null;
+      }
+    } catch (e) {
+      debugPrint('Error initializing client data: $e');
+      // În caz de eroare, inițializează cu listă goală
+      _clients = [];
+      _focusedClient = null;
+    }
     notifyListeners();
+  }
+  
+  /// Încarcă clienții din Firebase pentru consultantul curent
+  Future<void> loadClientsFromFirebase() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        _clients = await _firebaseService.getAllClientsForConsultant(currentUser.uid);
+        
+        // Focusează primul client dacă există
+        if (_clients.isNotEmpty) {
+          _focusedClient = _clients.first;
+          focusClient(_clients.first.id);
+        } else {
+          _focusedClient = null;
+        }
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading clients from Firebase: $e');
+    }
   }
   
   /// Focusează un client (schimbă starea la focused și afișează formularul său)
@@ -140,39 +132,99 @@ class ClientService extends ChangeNotifier {
     return _focusedClient?.getFormValue<T>(key);
   }
   
-  /// Adaugă un client nou
-  void addClient(ClientModel client) {
-    _clients.add(client);
-    notifyListeners();
-  }
-  
-  /// Șterge un client
-  void removeClient(String clientId) {
-    _clients.removeWhere((client) => client.id == clientId);
-    
-    // Dacă clientul șters era focusat, focusează primul client disponibil
-    if (_focusedClient?.id == clientId) {
-      _focusedClient = _clients.isNotEmpty ? _clients.first : null;
-      if (_focusedClient != null) {
-        focusClient(_focusedClient!.id);
+  /// Adaugă un client nou și îl salvează în Firebase
+  Future<void> addClient(ClientModel client) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Salvează în Firebase
+        await _firebaseService.saveClientForConsultant(currentUser.uid, client);
+        
+        // Adaugă în lista locală
+        _clients.add(client);
+        
+        // Focusează primul client dacă este primul client adăugat
+        if (_clients.length == 1) {
+          _focusedClient = _clients.first;
+          focusClient(_clients.first.id);
+        }
+        
+        notifyListeners();
       }
+    } catch (e) {
+      debugPrint('Error adding client: $e');
+      // Poți adăuga aici o notificare de eroare pentru utilizator
     }
-    
-    notifyListeners();
   }
   
-  /// Actualizează un client existent
-  void updateClient(ClientModel updatedClient) {
-    final clientIndex = _clients.indexWhere((client) => client.id == updatedClient.id);
-    if (clientIndex != -1) {
-      _clients[clientIndex] = updatedClient;
-      
-      // Dacă clientul actualizat este cel focusat, actualizează și referința
-      if (_focusedClient?.id == updatedClient.id) {
-        _focusedClient = updatedClient;
+  /// Șterge un client și îl elimină din Firebase
+  Future<void> removeClient(String clientId) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Șterge din Firebase
+        await _firebaseService.deleteClientForConsultant(currentUser.uid, clientId);
+        
+        // Șterge din lista locală
+        _clients.removeWhere((client) => client.id == clientId);
+        
+        // Dacă clientul șters era focusat, focusează primul client disponibil
+        if (_focusedClient?.id == clientId) {
+          _focusedClient = _clients.isNotEmpty ? _clients.first : null;
+          if (_focusedClient != null) {
+            focusClient(_focusedClient!.id);
+          }
+        }
+        
+        notifyListeners();
       }
-      
-      notifyListeners();
+    } catch (e) {
+      debugPrint('Error removing client: $e');
+    }
+  }
+  
+  /// Actualizează un client existent și îl salvează în Firebase
+  Future<void> updateClient(ClientModel updatedClient) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Actualizează în Firebase
+        await _firebaseService.updateClientForConsultant(currentUser.uid, updatedClient);
+        
+        // Actualizează în lista locală
+        final clientIndex = _clients.indexWhere((client) => client.id == updatedClient.id);
+        if (clientIndex != -1) {
+          _clients[clientIndex] = updatedClient;
+          
+          // Dacă clientul actualizat este cel focusat, actualizează și referința
+          if (_focusedClient?.id == updatedClient.id) {
+            _focusedClient = updatedClient;
+          }
+          
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error updating client: $e');
+    }
+  }
+  
+  /// Șterge toți clienții pentru consultantul curent
+  Future<void> deleteAllClients() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // Șterge toți clienții din Firebase
+        await _firebaseService.deleteAllClientsForConsultant(currentUser.uid);
+        
+        // Curăță lista locală
+        _clients.clear();
+        _focusedClient = null;
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error deleting all clients: $e');
     }
   }
 } 

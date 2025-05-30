@@ -71,7 +71,7 @@ class SpacedButtonsDouble extends StatelessWidget {
   final double? internalButtonSpacing; // Spacing within each button (text to icon)
 
   const SpacedButtonsDouble({
-    Key? key,
+    super.key,
     required this.text1,
     required this.icon1,
     this.onTap1,
@@ -88,7 +88,7 @@ class SpacedButtonsDouble extends StatelessWidget {
     this.textStyle,
     this.iconSize,
     this.internalButtonSpacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -48,7 +48,7 @@ class WidgetHeader5 extends StatelessWidget {
 
 
   const WidgetHeader5({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     this.trailingWidget,
@@ -60,7 +60,7 @@ class WidgetHeader5 extends StatelessWidget {
     this.spacingBetweenTexts,
     this.mainRowSpacing,
     this.textColumnAlignment,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

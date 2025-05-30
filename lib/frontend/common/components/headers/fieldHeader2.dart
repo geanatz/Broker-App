@@ -42,7 +42,7 @@ class FieldHeader2 extends StatelessWidget {
   final double? spacing;
 
   const FieldHeader2({
-    Key? key,
+    super.key,
     required this.title,
     required this.altText,
     this.onAltTextTap,
@@ -53,7 +53,7 @@ class FieldHeader2 extends StatelessWidget {
     this.padding,
     this.height,
     this.spacing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

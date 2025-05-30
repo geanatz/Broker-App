@@ -19,7 +19,7 @@ class SidebarWidget extends StatefulWidget {
   final PopupCallback? onClientsPopupRequested;
 
   const SidebarWidget({
-    Key? key,
+    super.key,
     required this.consultantName,
     required this.teamName,
     required this.currentArea,
@@ -27,7 +27,7 @@ class SidebarWidget extends StatefulWidget {
     required this.onAreaChanged,
     required this.onPaneChanged,
     this.onClientsPopupRequested,
-  }) : super(key: key);
+  });
 
   @override
   State<SidebarWidget> createState() => _SidebarWidgetState();
@@ -285,14 +285,14 @@ class SidebarWidgetAdapter extends StatelessWidget {
   final PanelChangeCallback? onPanelChanged;
 
   const SidebarWidgetAdapter({
-    Key? key,
+    super.key,
     required this.consultantName,
     required this.teamName,
     required this.currentScreen,
     this.activeSecondaryPanel,
     required this.onScreenChanged,
     this.onPanelChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

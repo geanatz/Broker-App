@@ -61,7 +61,7 @@ class InputField4 extends StatelessWidget {
   final double? iconSize;
 
   const InputField4({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     required this.inputText,
@@ -77,7 +77,7 @@ class InputField4 extends StatelessWidget {
     this.iconColor,
     this.inputBorderRadius,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

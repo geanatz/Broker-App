@@ -6,7 +6,7 @@ import 'package:broker_app/old/widgets/common/panel_container.dart';
 /// Această area înlocuiește vechiul DashboardScreen, păstrând funcționalitatea
 /// dar adaptând-o la noua structură a aplicației.
 class DashboardArea extends StatelessWidget {
-  const DashboardArea({Key? key}) : super(key: key);
+  const DashboardArea({super.key});
 
   @override
   Widget build(BuildContext context) {
