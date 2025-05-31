@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/sidebar/sidebar_widget.dart';
-import 'package:broker_app/old/sidebar/sidebar_service.dart';
+import 'package:broker_app/frontend/common/sidebar.dart';
+import 'package:broker_app/backend/services/sidebarService.dart';
 import 'package:broker_app/frontend/areas/dashboardArea.dart';
 import 'package:broker_app/frontend/areas/formArea.dart';
 import 'package:broker_app/frontend/areas/calendarArea.dart';
@@ -147,22 +147,22 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   // Widgets pentru area
   Map<AreaType, Widget> get _areaWidgets => {
-    AreaType.dashboard: const DashboardArea(),
-    AreaType.form: const FormArea(),
+    AreaType.dashboard: DashboardArea(),
+    AreaType.form: FormArea(),
     AreaType.calendar: CalendarArea(
       key: _calendarKey,
       onMeetingSaved: _refreshMeetingsPane,
     ),
-    AreaType.settings: const SettingsArea(),
+    AreaType.settings: SettingsArea(),
   };
   
   Map<PaneType, Widget> get _paneWidgets => {
-    PaneType.clients: const ClientsPane(),
+    PaneType.clients: ClientsPane(),
     PaneType.meetings: MeetingsPane(
       key: _meetingsPaneKey,
       onNavigateToMeeting: _navigateToMeeting,
     ),
-    PaneType.calculator: const CalculatorPane(),
+    PaneType.calculator: CalculatorPane(),
     PaneType.matches: const PlaceholderWidget('Matches Pane', Colors.pink),
   };
   

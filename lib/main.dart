@@ -10,7 +10,7 @@ import 'package:broker_app/frontend/screens/authScreen.dart';
 import 'package:broker_app/frontend/screens/mainScreen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:broker_app/old/services/consultant_service.dart';
+import 'package:broker_app/backend/services/consultantService.dart';
 
 // For DevTools inspection
 class DebugOptions {

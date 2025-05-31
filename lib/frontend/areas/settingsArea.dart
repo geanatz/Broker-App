@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/widgets/common/panel_container.dart';
 import 'package:broker_app/backend/services/settingsService.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader1.dart';
 import 'package:broker_app/frontend/common/components/headers/fieldHeader1.dart';
@@ -62,43 +61,33 @@ class _SettingsAreaState extends State<SettingsArea> {
 
   @override
   Widget build(BuildContext context) {
-    return PanelContainer(
-      isExpanded: false,
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.smallGap),
+      decoration: AppTheme.widgetDecoration,
       child: _buildSettingsContent(),
     );
   }
 
   /// Construiește conținutul setărilor conform design-ului specificat
   Widget _buildSettingsContent() {
-    return Container(
-      width: double.infinity,
-      height: 1032,
-      padding: const EdgeInsets.all(AppTheme.smallGap),
-      decoration: ShapeDecoration(
-        color: AppTheme.widgetBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Widget Header
-          WidgetHeader1(title: 'Setări'),
-          
-          const SizedBox(height: AppTheme.smallGap),
-          
-          // Secțiunea pentru modul temei (Light/Dark/Auto)
-          _buildThemeModeSection(),
-          
-          const SizedBox(height: AppTheme.smallGap),
-          
-          // Secțiunea pentru culoarea temei
-          _buildThemeColorSection(),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Widget Header
+        WidgetHeader1(title: 'Setari'),
+        
+        const SizedBox(height: AppTheme.smallGap),
+        
+        // Secțiunea pentru modul temei (Light/Dark/Auto)
+        _buildThemeModeSection(),
+        
+        const SizedBox(height: AppTheme.smallGap),
+        
+        // Secțiunea pentru culoarea temei
+        _buildThemeColorSection(),
+      ],
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/old/widgets/common/panel_container.dart';
 
 /// Area pentru dashboard care va fi afișată în cadrul ecranului principal.
 /// Această area înlocuiește vechiul DashboardScreen, păstrând funcționalitatea
@@ -10,8 +9,9 @@ class DashboardArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PanelContainer(
-      isExpanded: false,
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.smallGap),
+      decoration: AppTheme.widgetDecoration,
       child: _buildDashboardContent(),
     );
   }

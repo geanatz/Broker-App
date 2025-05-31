@@ -3,29 +3,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder
+import 'package:broker_app/frontend/common/appTheme.dart';
 
-// Assuming _TextIconButton is defined (copied for standalone example)
-class _TextIconButton extends StatelessWidget { /* ... full definition ... */
-  final String? text; final IconData? icon; final VoidCallback? onTap; final Color? backgroundColor;
-  final Color? textColor; final Color? iconColor; final double? borderRadius; final double? buttonHeight;
-  final EdgeInsetsGeometry? padding; final TextStyle? textStyle; final double? iconSize;
-  final MainAxisAlignment mainAxisAlignment; final double? internalSpacing;
-  const _TextIconButton({this.text, this.icon, this.onTap, this.backgroundColor, this.textColor, this.iconColor,
-    this.borderRadius, this.buttonHeight, this.padding, this.textStyle, this.iconSize,
-    this.mainAxisAlignment = MainAxisAlignment.center, this.internalSpacing});
+// Assuming _TextIconButton is defined (updated to use AppTheme)
+class _TextIconButton extends StatelessWidget {
+  final String? text;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Color? textColor;
+  final Color? iconColor;
+  final double? borderRadius;
+  final double? buttonHeight;
+  final EdgeInsetsGeometry? padding;
+  final TextStyle? textStyle;
+  final double? iconSize;
+  final MainAxisAlignment mainAxisAlignment;
+  final double? internalSpacing;
+
+  const _TextIconButton({
+    this.text,
+    this.icon,
+    this.onTap,
+    this.backgroundColor,
+    this.textColor,
+    this.iconColor,
+    this.borderRadius,
+    this.buttonHeight,
+    this.padding,
+    this.textStyle,
+    this.iconSize,
+    this.mainAxisAlignment = MainAxisAlignment.center,
+    this.internalSpacing,
+  });
+
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4);
-    final Color effectiveTextColor = textColor ?? const Color(0xFF666699);
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF666699);
-    final double effectiveBorderRadius = borderRadius ?? 24.0;
-    final double effectiveButtonHeight = buttonHeight ?? 48.0;
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16);
-    final double effectiveIconSize = iconSize ?? 24.0;
-    final double effectiveInternalSpacing = internalSpacing ?? 8.0;
-    final TextStyle defaultTextStyle = TextStyle(color: effectiveTextColor, fontSize: 17, fontFamily: GoogleFonts.outfit().fontFamily, fontWeight: FontWeight.w500);
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveTextColor = textColor ?? AppTheme.elementColor2;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveButtonHeight = buttonHeight ?? AppTheme.navButtonHeight;
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
+    final double effectiveInternalSpacing = internalSpacing ?? AppTheme.smallGap;
+
+    final TextStyle defaultTextStyle = GoogleFonts.outfit(
+      color: effectiveTextColor,
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: AppTheme.fontWeightMedium,
+    );
     final TextStyle finalTextStyle = textStyle ?? defaultTextStyle;
+
     List<Widget> children = [];
     if (text != null && text!.isNotEmpty) {
       if (mainAxisAlignment == MainAxisAlignment.start && icon != null) {
@@ -33,13 +62,38 @@ class _TextIconButton extends StatelessWidget { /* ... full definition ... */
       } else {
         children.add(Text(text!, style: finalTextStyle, overflow: TextOverflow.ellipsis));
       }
-      if (icon != null) { children.add(SizedBox(width: effectiveInternalSpacing)); }
+      if (icon != null) {
+        children.add(SizedBox(width: effectiveInternalSpacing));
+      }
     }
-    if (icon != null) { children.add(Icon(icon!, size: effectiveIconSize, color: effectiveIconColor)); }
-    Widget buttonContent = Container(height: effectiveButtonHeight, padding: effectivePadding,
-      decoration: ShapeDecoration(color: effectiveBackgroundColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(effectiveBorderRadius))),
-      child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: mainAxisAlignment, crossAxisAlignment: CrossAxisAlignment.center, children: children));
-    if (onTap != null) { return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(effectiveBorderRadius), child: buttonContent); }
+    if (icon != null) {
+      children.add(Icon(icon!, size: effectiveIconSize, color: effectiveIconColor));
+    }
+
+    Widget buttonContent = Container(
+      height: effectiveButtonHeight,
+      padding: effectivePadding,
+      decoration: ShapeDecoration(
+        color: effectiveBackgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(effectiveBorderRadius)
+        )
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: mainAxisAlignment,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: children
+      )
+    );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(effectiveBorderRadius),
+        child: buttonContent,
+      );
+    }
     return buttonContent;
   }
 }
@@ -80,20 +134,19 @@ class SpacedButtonSingleSvg extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4);
-    final Color effectiveTextColor = textColor ?? const Color(0xFF666699);
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF666699);
-    final double effectiveBorderRadius = borderRadius ?? 24.0;
-    final double effectiveButtonHeight = buttonHeight ?? 48.0;
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16);
-    final double effectiveIconSize = iconSize ?? 24.0;
-    final double effectiveInternalSpacing = internalSpacing ?? 16.0;
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveTextColor = textColor ?? AppTheme.elementColor2;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveButtonHeight = buttonHeight ?? AppTheme.navButtonHeight;
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
+    final double effectiveInternalSpacing = internalSpacing ?? AppTheme.mediumGap;
     
-    final TextStyle defaultTextStyle = TextStyle(
-      color: effectiveTextColor, 
-      fontSize: 17, 
-      fontFamily: GoogleFonts.outfit().fontFamily, 
-      fontWeight: FontWeight.w500
+    final TextStyle defaultTextStyle = GoogleFonts.outfit(
+      color: effectiveTextColor,
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: AppTheme.fontWeightMedium,
     );
     final TextStyle finalTextStyle = textStyle ?? defaultTextStyle;
 
@@ -184,12 +237,10 @@ class SpacedButtonSingle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The outermost Container in snippet sets width: double.infinity, height: 48.
-    // The Row with spacing:16 is not relevant for a single expanded button.
     return SizedBox(
       width: double.infinity,
-      height: buttonHeight ?? 48.0, // Height from outer snippet container
-      child: Row( // Ensures Expanded works
+      height: buttonHeight ?? AppTheme.navButtonHeight,
+      child: Row(
         children: [
           Expanded(
             child: _TextIconButton(
@@ -200,12 +251,12 @@ class SpacedButtonSingle extends StatelessWidget {
               textColor: textColor,
               iconColor: iconColor,
               borderRadius: borderRadius,
-              buttonHeight: buttonHeight ?? 48.0, // Pass height to inner button
-              padding: padding ?? const EdgeInsets.symmetric(horizontal: 16), // Snippet padding
+              buttonHeight: buttonHeight ?? AppTheme.navButtonHeight,
+              padding: padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
               textStyle: textStyle,
               iconSize: iconSize,
-              mainAxisAlignment: MainAxisAlignment.start, // Key change for this type
-              internalSpacing: internalSpacing ?? 16.0, // Snippet inner button spacing
+              mainAxisAlignment: MainAxisAlignment.start,
+              internalSpacing: internalSpacing ?? AppTheme.mediumGap,
             ),
           ),
         ],

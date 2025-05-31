@@ -63,6 +63,12 @@ class AppTheme {
   static const double iconBorderThickness = 2.0;  // Grosimea border-ului icon-urilor
   static const double navButtonHeight = 48.0;     // Înălțimea butoanelor de navigare
 
+  // Font weight
+  static const FontWeight fontWeightRegular = FontWeight.w400;
+  static const FontWeight fontWeightMedium = FontWeight.w500;
+  static const FontWeight fontWeightSemiBold = FontWeight.w600;
+  static const FontWeight fontWeightBold = FontWeight.w700;
+
   // ======== CULORI GENERALE ========
 
   static Color get widgetBackground => isDarkMode
