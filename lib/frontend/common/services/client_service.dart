@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/client_model.dart';
+import '../../../backend/models/client_model.dart';
 import '../../../backend/services/clientsService.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-/// Service pentru gestionarea stării clienților și sincronizarea datelor formularelor
-/// între clientsPane și formArea
+/// Service pentru gestionarea stării clienților în UI și sincronizarea datelor formularelor
+/// între clientsPane și formArea. Acest service se ocupă doar de UI state management.
 class ClientService extends ChangeNotifier {
   static final ClientService _instance = ClientService._internal();
   factory ClientService() => _instance;
@@ -209,6 +209,98 @@ class ClientService extends ChangeNotifier {
     }
   }
   
+  /// Mută un client în categoria "Recente" cu statusul "Acceptat"
+  Future<void> moveClientToRecente(String clientId, {
+    String? additionalInfo,
+  }) async {
+    final clientIndex = _clients.indexWhere((client) => client.id == clientId);
+    if (clientIndex != -1) {
+      final updatedClient = _clients[clientIndex].copyWith(
+        category: ClientCategory.recente,
+        status: ClientStatus.normal, // Nu mai este focusat
+        discussionStatus: 'Acceptat',
+        additionalInfo: additionalInfo,
+      );
+      
+      await updateClient(updatedClient);
+      
+      // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
+      if (_focusedClient?.id == clientId) {
+        final apeluri = getClientsByCategory(ClientCategory.apeluri);
+        if (apeluri.isNotEmpty) {
+          focusClient(apeluri.first.id);
+        } else {
+          _focusedClient = null;
+          notifyListeners();
+        }
+      }
+      
+      debugPrint('✅ Client mutat în Recente: ${updatedClient.name}');
+    }
+  }
+  
+  /// Mută un client în categoria "Reveniri" cu statusul "Amanat"
+  Future<void> moveClientToReveniri(String clientId, {
+    required DateTime scheduledDateTime,
+    String? additionalInfo,
+  }) async {
+    final clientIndex = _clients.indexWhere((client) => client.id == clientId);
+    if (clientIndex != -1) {
+      final updatedClient = _clients[clientIndex].copyWith(
+        category: ClientCategory.reveniri,
+        status: ClientStatus.normal, // Nu mai este focusat
+        discussionStatus: 'Amanat',
+        scheduledDateTime: scheduledDateTime,
+        additionalInfo: additionalInfo,
+      );
+      
+      await updateClient(updatedClient);
+      
+      // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
+      if (_focusedClient?.id == clientId) {
+        final apeluri = getClientsByCategory(ClientCategory.apeluri);
+        if (apeluri.isNotEmpty) {
+          focusClient(apeluri.first.id);
+        } else {
+          _focusedClient = null;
+          notifyListeners();
+        }
+      }
+      
+      debugPrint('✅ Client mutat în Reveniri: ${updatedClient.name} - ${scheduledDateTime.toString()}');
+    }
+  }
+  
+  /// Mută un client în categoria "Recente" cu statusul "Refuzat"
+  Future<void> moveClientToRecenteRefuzat(String clientId, {
+    String? additionalInfo,
+  }) async {
+    final clientIndex = _clients.indexWhere((client) => client.id == clientId);
+    if (clientIndex != -1) {
+      final updatedClient = _clients[clientIndex].copyWith(
+        category: ClientCategory.recente,
+        status: ClientStatus.normal, // Nu mai este focusat
+        discussionStatus: 'Refuzat',
+        additionalInfo: additionalInfo,
+      );
+      
+      await updateClient(updatedClient);
+      
+      // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
+      if (_focusedClient?.id == clientId) {
+        final apeluri = getClientsByCategory(ClientCategory.apeluri);
+        if (apeluri.isNotEmpty) {
+          focusClient(apeluri.first.id);
+        } else {
+          _focusedClient = null;
+          notifyListeners();
+        }
+      }
+      
+      debugPrint('✅ Client mutat în Recente (Refuzat): ${updatedClient.name}');
+    }
+  }
+
   /// Șterge toți clienții pentru consultantul curent
   Future<void> deleteAllClients() async {
     try {

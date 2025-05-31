@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
-import '../../old/services/firebase_thread_handler.dart';
+import 'firebaseService.dart';
 
 /// Service pentru gestionarea datelor consultanților
 class ConsultantService {

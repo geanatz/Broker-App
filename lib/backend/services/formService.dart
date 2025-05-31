@@ -1,8 +1,10 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
-import 'package:broker_app/frontend/common/services/firebase_form_service.dart';
-import 'package:broker_app/frontend/common/models/client_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebaseService.dart';
+import '../models/client_model.dart';
 
 /// Enum pentru diferitele tipuri de credite
 enum CreditType { 
@@ -322,12 +324,18 @@ class FormService extends ChangeNotifier {
   void toggleLoanFormType(String clientId) {
     _showingClientLoanForm[clientId] = !isShowingClientLoanForm(clientId);
     notifyListeners();
+    
+    // Automatically save UI state to Firebase
+    _autoSaveToFirebaseForClient(clientId);
   }
 
   /// Comută între client și codebitor pentru venituri
   void toggleIncomeFormType(String clientId) {
     _showingClientIncomeForm[clientId] = !isShowingClientIncomeForm(clientId);
     notifyListeners();
+    
+    // Automatically save UI state to Firebase
+    _autoSaveToFirebaseForClient(clientId);
   }
 
   /// Actualizează un formular de credit
@@ -343,6 +351,9 @@ class FormService extends ChangeNotifier {
       }
       
       notifyListeners();
+      
+      // Automatically save to Firebase after updating form
+      _autoSaveToFirebaseForClient(clientId);
     }
   }
 
@@ -359,6 +370,9 @@ class FormService extends ChangeNotifier {
       }
       
       notifyListeners();
+      
+      // Automatically save to Firebase after updating form
+      _autoSaveToFirebaseForClient(clientId);
     }
   }
 
@@ -380,6 +394,9 @@ class FormService extends ChangeNotifier {
       }
       
       notifyListeners();
+      
+      // Automatically save to Firebase after removing form
+      _autoSaveToFirebaseForClient(clientId);
     }
   }
 
@@ -401,6 +418,33 @@ class FormService extends ChangeNotifier {
       }
       
       notifyListeners();
+      
+      // Automatically save to Firebase after removing form
+      _autoSaveToFirebaseForClient(clientId);
+    }
+  }
+
+  /// Automatically saves form data to Firebase for a client by phone number
+  Future<void> _autoSaveToFirebaseForClient(String clientPhoneNumber) async {
+    try {
+      debugPrint('FormService: Auto-saving data for client: $clientPhoneNumber');
+      
+      // Find client name - for now use phone number as fallback
+      String clientName = clientPhoneNumber;
+      
+      final success = await saveFormDataForClient(
+        clientPhoneNumber,
+        clientPhoneNumber,
+        clientName,
+      );
+      
+      if (!success) {
+        debugPrint('❌ FormService: Failed to auto-save form data to Firebase for client: $clientPhoneNumber');
+      } else {
+        debugPrint('✅ FormService: Successfully auto-saved form data to Firebase for client: $clientPhoneNumber');
+      }
+    } catch (e) {
+      debugPrint('❌ FormService: Error auto-saving form data to Firebase: $e');
     }
   }
 
@@ -418,6 +462,10 @@ class FormService extends ChangeNotifier {
             _clientCreditForms[clientId] = clientCreditData
                 .map((data) => CreditFormModel.fromMap(data))
                 .toList();
+            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            if (_clientCreditForms[clientId]!.isEmpty || !_clientCreditForms[clientId]!.last.isEmpty) {
+              _clientCreditForms[clientId]!.add(CreditFormModel());
+            }
           }
           
           final coborrowerCreditData = creditForms['coborrower'] as List?;
@@ -425,6 +473,10 @@ class FormService extends ChangeNotifier {
             _coborrowerCreditForms[clientId] = coborrowerCreditData
                 .map((data) => CreditFormModel.fromMap(data))
                 .toList();
+            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            if (_coborrowerCreditForms[clientId]!.isEmpty || !_coborrowerCreditForms[clientId]!.last.isEmpty) {
+              _coborrowerCreditForms[clientId]!.add(CreditFormModel());
+            }
           }
         }
         
@@ -436,6 +488,10 @@ class FormService extends ChangeNotifier {
             _clientIncomeForms[clientId] = clientIncomeData
                 .map((data) => IncomeFormModel.fromMap(data))
                 .toList();
+            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            if (_clientIncomeForms[clientId]!.isEmpty || !_clientIncomeForms[clientId]!.last.isEmpty) {
+              _clientIncomeForms[clientId]!.add(IncomeFormModel());
+            }
           }
           
           final coborrowerIncomeData = incomeForms['coborrower'] as List?;
@@ -443,6 +499,10 @@ class FormService extends ChangeNotifier {
             _coborrowerIncomeForms[clientId] = coborrowerIncomeData
                 .map((data) => IncomeFormModel.fromMap(data))
                 .toList();
+            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            if (_coborrowerIncomeForms[clientId]!.isEmpty || !_coborrowerIncomeForms[clientId]!.last.isEmpty) {
+              _coborrowerIncomeForms[clientId]!.add(IncomeFormModel());
+            }
           }
         }
         
@@ -553,3 +613,4 @@ class FormService extends ChangeNotifier {
     return result;
   }
 }
+

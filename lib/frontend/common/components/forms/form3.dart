@@ -1,201 +1,168 @@
-// lib/components/forms/form_container3.dart
+// lib/frontend/common/components/forms/form3.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:broker_app/frontend/common/appTheme.dart'; // Import AppTheme instead of placeholder
+import '../../appTheme.dart';
+import '../fields/dropdownField1.dart';
+import '../fields/inputField1.dart';
 
-// --- PASTE THE CORRECTED _FormFieldContainer class definition here ---
-// Helper widget to render a single field (dropdown or input type)
-class _FormFieldContainer extends StatelessWidget {
-  final String title;
-  final String mainText; // "Optiune" or "Text"
-  final IconData? icon; // Nullable for input fields
-  final VoidCallback? onTap;
-
-  final Color? headerTextColor;
-  final Color? fieldValueTextColor; // Corrected parameter name
-  final Color? iconColor;
-  final Color? contentContainerColor;
-  final double? contentBorderRadius;
+/// A form container with 2 rows:
+/// - First row: 2 dropdown fields (Bank, Credit/Income Type)
+/// - Second row: 4 input fields
+class Form3 extends StatefulWidget {
+  // First row - dropdown fields
+  /// Title for the top-left dropdown field
+  final String titleR1F1;
   
-  final double _fieldHeight = 73.0;
-  final double _headerHeight = 21.0;
-  final double _contentHeight = 48.0;
-  final double _internalColumnSpacing = 4.0;
-  final EdgeInsets _headerPadding = const EdgeInsets.symmetric(horizontal: 8);
-  final EdgeInsets _contentPadding = const EdgeInsets.symmetric(horizontal: 16);
-  final double _iconSize = 24.0;
-  final double _contentRowSpacing = 16.0;
+  /// Currently selected value for the top-left dropdown field
+  final String? valueR1F1;
+  
+  /// List of dropdown items for the top-left field
+  final List<DropdownMenuItem<String>> itemsR1F1;
+  
+  /// Callback when the top-left dropdown value changes
+  final ValueChanged<String?>? onChangedR1F1;
+  
+  /// Hint text for the top-left dropdown field
+  final String? hintTextR1F1;
+  
+  /// Title for the top-right dropdown field
+  final String titleR1F2;
+  
+  /// Currently selected value for the top-right dropdown field
+  final String? valueR1F2;
+  
+  /// List of dropdown items for the top-right field
+  final List<DropdownMenuItem<String>> itemsR1F2;
+  
+  /// Callback when the top-right dropdown value changes
+  final ValueChanged<String?>? onChangedR1F2;
+  
+  /// Hint text for the top-right dropdown field
+  final String? hintTextR1F2;
 
+  // Second row - input fields
+  /// Title for the first input field in second row
+  final String titleR2F1;
+  
+  /// Text controller for the first input field in second row
+  final TextEditingController? controllerR2F1;
+  
+  /// Hint text for the first input field in second row
+  final String? hintTextR2F1;
+  
+  /// Keyboard type for the first input field in second row
+  final TextInputType? keyboardTypeR2F1;
+  
+  /// Title for the second input field in second row
+  final String titleR2F2;
+  
+  /// Text controller for the second input field in second row
+  final TextEditingController? controllerR2F2;
+  
+  /// Hint text for the second input field in second row
+  final String? hintTextR2F2;
+  
+  /// Keyboard type for the second input field in second row
+  final TextInputType? keyboardTypeR2F2;
+  
+  /// Title for the third input field in second row
+  final String titleR2F3;
+  
+  /// Text controller for the third input field in second row
+  final TextEditingController? controllerR2F3;
+  
+  /// Hint text for the third input field in second row
+  final String? hintTextR2F3;
+  
+  /// Keyboard type for the third input field in second row
+  final TextInputType? keyboardTypeR2F3;
+  
+  /// Title for the fourth input field in second row
+  final String titleR2F4;
+  
+  /// Currently selected value for the fourth dropdown field
+  final String? valueR2F4;
+  
+  /// List of dropdown items for the fourth field
+  final List<DropdownMenuItem<String>> itemsR2F4;
+  
+  /// Callback when the fourth dropdown value changes
+  final ValueChanged<String?>? onChangedR2F4;
+  
+  /// Hint text for the fourth dropdown field
+  final String? hintTextR2F4;
 
-  const _FormFieldContainer({
-    required this.title,
-    required this.mainText,
-    this.icon,
-    this.onTap,
-    this.headerTextColor,
-    this.fieldValueTextColor, 
-    this.iconColor,
-    this.contentContainerColor,
-    this.contentBorderRadius,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final Color effectiveHeaderTextColor = headerTextColor ?? AppTheme.elementColor1; 
-    final Color effectiveValueTextColor = fieldValueTextColor ?? AppTheme.elementColor2; 
-    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2; 
-    final Color effectiveContentContainerColor = contentContainerColor ?? AppTheme.containerColor2; 
-    final double effectiveContentBorderRadius = contentBorderRadius ?? 16.0; 
-
-
-    final TextStyle titleStyle = GoogleFonts.outfit(
-      color: effectiveHeaderTextColor,
-      fontSize: 17,
-      fontWeight: FontWeight.w600,
-    );
-    final TextStyle valueStyle = GoogleFonts.outfit(
-      color: effectiveValueTextColor,
-      fontSize: 17,
-      fontWeight: FontWeight.w500,
-    );
-
-    Widget fieldContentArea = Container(
-      width: double.infinity,
-      height: _contentHeight,
-      padding: _contentPadding,
-      decoration: ShapeDecoration(
-        color: effectiveContentContainerColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(effectiveContentBorderRadius),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              mainText,
-              style: valueStyle,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (icon != null) ...[
-            SizedBox(width: _contentRowSpacing),
-            SizedBox(
-              width: _iconSize,
-              height: _iconSize,
-              child: Icon(icon, size: _iconSize, color: effectiveIconColor),
-            ),
-          ],
-        ],
-      ),
-    );
-    
-    return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: 128), 
-      child: SizedBox( 
-        height: _fieldHeight, 
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start, 
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container( 
-              width: double.infinity,
-              height: _headerHeight,
-              padding: _headerPadding,
-              child: Row( 
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: titleStyle,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: _internalColumnSpacing), 
-            onTap != null 
-              ? InkWell(onTap: onTap, borderRadius: BorderRadius.circular(effectiveContentBorderRadius), child: fieldContentArea) 
-              : fieldContentArea,
-          ],
-        ),
-      ),
-    );
-  }
-}
-// --- END OF _FormFieldContainer DEFINITION ---
-
-/// A form container with three rows of fields.
-class FormContainer3 extends StatefulWidget {
-  // ... (rest of the parameters as before) ...
-  final String titleR1F1, optionR1F1; final IconData? iconR1F1; final VoidCallback? onTapR1F1;
-  final String titleR1F2, optionR1F2; final IconData? iconR1F2; final VoidCallback? onTapR1F2;
-  final String titleR2F1, textR2F1; final VoidCallback? onTapR2F1;
-  final String titleR2F2, textR2F2; final VoidCallback? onTapR2F2;
-  final String titleR3F1, textR3F1; final VoidCallback? onTapR3F1;
-  final String titleR3F2, textR3F2; final VoidCallback? onTapR3F2;
-  final String titleR3F3, textR3F3; final VoidCallback? onTapR3F3;
-  final String titleR3F4, textR3F4; final VoidCallback? onTapR3F4;
-  final Color? outerContainerColor;
-  final double? outerBorderRadius;
-  final EdgeInsetsGeometry? outerPadding;
+  // Container styling
+  /// Optional background color for the outer container
+  final Color? containerColor;
+  
+  /// Optional border radius for the outer container
+  final double? borderRadius;
+  
+  /// Optional padding for the outer container
+  final EdgeInsetsGeometry? padding;
+  
+  /// Optional spacing between rows
   final double? rowSpacing;
-  final double? columnSpacing;
-  final Color? fieldHeaderTextColor;
-  final Color? fieldValueTextColor; // Public parameter
-  final Color? fieldIconColor;
-  final Color? fieldContentContainerColor;
-  final double? fieldContentBorderRadius;
   
-  // Close button callback
+  /// Optional spacing between fields in the same row
+  final double? fieldSpacing;
+
+  // Close button
+  /// Optional callback for close button
   final VoidCallback? onClose;
 
-  const FormContainer3({
-    super.key, // Corrected
-    this.titleR1F1 = 'Titlu', this.optionR1F1 = 'Optiune', this.iconR1F1 = Icons.expand_more, this.onTapR1F1,
-    this.titleR1F2 = 'Titlu', this.optionR1F2 = 'Optiune', this.iconR1F2 = Icons.expand_more, this.onTapR1F2,
-    this.titleR2F1 = 'Titlu', this.textR2F1 = 'Text', this.onTapR2F1,
-    this.titleR2F2 = 'Titlu', this.textR2F2 = 'Text', this.onTapR2F2,
-    this.titleR3F1 = 'Titlu', this.textR3F1 = 'Text', this.onTapR3F1,
-    this.titleR3F2 = 'Titlu', this.textR3F2 = 'Text', this.onTapR3F2,
-    this.titleR3F3 = 'Titlu', this.textR3F3 = 'Text', this.onTapR3F3,
-    this.titleR3F4 = 'Titlu', this.textR3F4 = 'Text', this.onTapR3F4,
-    this.outerContainerColor, this.outerBorderRadius, this.outerPadding,
-    this.rowSpacing, this.columnSpacing, this.fieldHeaderTextColor,
-    this.fieldValueTextColor, // Public parameter
-    this.fieldIconColor, this.fieldContentContainerColor,
-    this.fieldContentBorderRadius,
-    this.onClose, // Close button callback
+  const Form3({
+    super.key,
+    this.titleR1F1 = 'Banca',
+    this.valueR1F1,
+    required this.itemsR1F1,
+    this.onChangedR1F1,
+    this.hintTextR1F1 = 'Selecteaza banca',
+    this.titleR1F2 = 'Tip credit',
+    this.valueR1F2,
+    required this.itemsR1F2,
+    this.onChangedR1F2,
+    this.hintTextR1F2 = 'Selecteaza tipul',
+    this.titleR2F1 = 'Sold',
+    this.controllerR2F1,
+    this.hintTextR2F1 = 'Introduceti soldul',
+    this.keyboardTypeR2F1 = TextInputType.number,
+    this.titleR2F2 = 'Rata',
+    this.controllerR2F2,
+    this.hintTextR2F2 = 'Introduceti rata',
+    this.keyboardTypeR2F2 = TextInputType.number,
+    this.titleR2F3 = 'Perioada',
+    this.controllerR2F3,
+    this.hintTextR2F3 = 'Introduceti perioada',
+    this.keyboardTypeR2F3 = TextInputType.text,
+    this.titleR2F4 = 'Tip rata',
+    this.valueR2F4,
+    required this.itemsR2F4,
+    this.onChangedR2F4,
+    this.hintTextR2F4 = 'Selecteaza tipul',
+    this.containerColor,
+    this.borderRadius,
+    this.padding,
+    this.rowSpacing,
+    this.fieldSpacing,
+    this.onClose,
   });
 
   @override
-  State<FormContainer3> createState() => _FormContainer3State();
+  State<Form3> createState() => _Form3State();
 }
 
-class _FormContainer3State extends State<FormContainer3> {
+class _Form3State extends State<Form3> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveOuterContainerColor = widget.outerContainerColor ?? AppTheme.containerColor1;
-    final double effectiveOuterBorderRadius = widget.outerBorderRadius ?? 24.0;
-    final EdgeInsetsGeometry effectiveOuterPadding = widget.outerPadding ?? const EdgeInsets.all(8);
-    final double effectiveRowSpacing = widget.rowSpacing ?? 8.0;
-    final double effectiveColumnSpacing = widget.columnSpacing ?? 8.0;
-
-    Widget buildField(String title, String mainText, {IconData? icon, VoidCallback? onTap}) {
-        return _FormFieldContainer(
-            title: title, mainText: mainText, icon: icon, onTap: onTap,
-            headerTextColor: widget.fieldHeaderTextColor, 
-            fieldValueTextColor: widget.fieldValueTextColor, // Pass it here
-            iconColor: widget.fieldIconColor,
-            contentContainerColor: widget.fieldContentContainerColor, 
-            contentBorderRadius: widget.fieldContentBorderRadius,
-        );
-    }
+    final Color effectiveContainerColor = widget.containerColor ?? AppTheme.containerColor1;
+    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusMedium;
+    final EdgeInsetsGeometry effectivePadding = widget.padding ?? const EdgeInsets.all(8.0);
+    final double effectiveRowSpacing = widget.rowSpacing ?? AppTheme.smallGap;
+    final double effectiveFieldSpacing = widget.fieldSpacing ?? AppTheme.smallGap;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -205,68 +172,101 @@ class _FormContainer3State extends State<FormContainer3> {
         children: [
           Container(
             width: double.infinity,
-            padding: effectiveOuterPadding,
-            decoration: ShapeDecoration(
-              color: effectiveOuterContainerColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(effectiveOuterBorderRadius),
-              ),
+            padding: effectivePadding,
+            decoration: BoxDecoration(
+              color: effectiveContainerColor,
+              borderRadius: BorderRadius.circular(effectiveBorderRadius),
+              boxShadow: [AppTheme.widgetShadow],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row( // Row 1
+                // First row - dropdown fields
+                Row(
                   children: [
-                    Expanded(child: buildField(widget.titleR1F1, widget.optionR1F1, icon: widget.iconR1F1, onTap: widget.onTapR1F1)),
-                    SizedBox(width: effectiveColumnSpacing),
-                    Expanded(child: buildField(widget.titleR1F2, widget.optionR1F2, icon: widget.iconR1F2, onTap: widget.onTapR1F2)),
+                    Expanded(
+                      child: DropdownField1<String>(
+                        title: widget.titleR1F1,
+                        value: widget.valueR1F1,
+                        items: widget.itemsR1F1,
+                        onChanged: widget.onChangedR1F1,
+                        hintText: widget.hintTextR1F1,
+                      ),
+                    ),
+                    SizedBox(width: effectiveFieldSpacing),
+                    Expanded(
+                      child: DropdownField1<String>(
+                        title: widget.titleR1F2,
+                        value: widget.valueR1F2,
+                        items: widget.itemsR1F2,
+                        onChanged: widget.onChangedR1F2,
+                        hintText: widget.hintTextR1F2,
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(height: effectiveRowSpacing),
-                Row( // Row 2
+                // Second row - input fields (4 fields)
+                Row(
                   children: [
-                    Expanded(child: buildField(widget.titleR2F1, widget.textR2F1, onTap: widget.onTapR2F1)),
-                    SizedBox(width: effectiveColumnSpacing),
-                    Expanded(child: buildField(widget.titleR2F2, widget.textR2F2, onTap: widget.onTapR2F2)),
-                  ],
-                ),
-                SizedBox(height: effectiveRowSpacing),
-                Row( // Row 3
-                  children: [
-                    Expanded(child: buildField(widget.titleR3F1, widget.textR3F1, onTap: widget.onTapR3F1)),
-                    SizedBox(width: effectiveColumnSpacing),
-                    Expanded(child: buildField(widget.titleR3F2, widget.textR3F2, onTap: widget.onTapR3F2)),
-                    SizedBox(width: effectiveColumnSpacing),
-                    Expanded(child: buildField(widget.titleR3F3, widget.textR3F3, onTap: widget.onTapR3F3)),
-                    SizedBox(width: effectiveColumnSpacing),
-                    Expanded(child: buildField(widget.titleR3F4, widget.textR3F4, onTap: widget.onTapR3F4)),
+                    Expanded(
+                      child: InputField1(
+                        title: widget.titleR2F1,
+                        controller: widget.controllerR2F1,
+                        hintText: widget.hintTextR2F1,
+                        keyboardType: widget.keyboardTypeR2F1,
+                        enableCommaFormatting: true,
+                        enableKTransformation: true,
+                      ),
+                    ),
+                    SizedBox(width: effectiveFieldSpacing),
+                    Expanded(
+                      child: InputField1(
+                        title: widget.titleR2F2,
+                        controller: widget.controllerR2F2,
+                        hintText: widget.hintTextR2F2,
+                        keyboardType: widget.keyboardTypeR2F2,
+                        enableCommaFormatting: true,
+                        enableKTransformation: true,
+                      ),
+                    ),
+                    SizedBox(width: effectiveFieldSpacing),
+                    Expanded(
+                      child: InputField1(
+                        title: widget.titleR2F3,
+                        controller: widget.controllerR2F3,
+                        hintText: widget.hintTextR2F3,
+                        keyboardType: widget.keyboardTypeR2F3,
+                        enableCommaFormatting: true,
+                        enableKTransformation: true,
+                      ),
+                    ),
+                    SizedBox(width: effectiveFieldSpacing),
+                    Expanded(
+                      child: DropdownField1<String>(
+                        title: widget.titleR2F4,
+                        value: widget.valueR2F4,
+                        items: widget.itemsR2F4,
+                        onChanged: widget.onChangedR2F4,
+                        hintText: widget.hintTextR2F4,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          // Close button positioned in top-right corner
-          if (_isHovered && widget.onClose != null)
+          // Close button - only visible on hover
+          if (widget.onClose != null && _isHovered)
             Positioned(
-              top: -8,
-              right: -8,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: ShapeDecoration(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: widget.onClose,
+                child: Icon(
+                  Icons.close,
+                  size: 20,
                   color: AppTheme.elementColor2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: InkWell(
-                  onTap: widget.onClose,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Icon(
-                    Icons.close,
-                    size: 16,
-                    color: Colors.white,
-                  ),
                 ),
               ),
             ),

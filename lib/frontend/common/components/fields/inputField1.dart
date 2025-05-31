@@ -1,40 +1,39 @@
 // lib/components/fields/input_field1.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../appTheme.dart';
 
 /// A real input field component with a title and TextFormField.
 ///
-/// This component shows a title label above a styled TextFormField that allows
-/// real text input. It can be used with a controller for form handling.
-class InputField1 extends StatelessWidget {
+/// This component shows a title label above a styled TextFormField
+/// that allows real text input.
+class InputField1 extends StatefulWidget {
   /// The title label displayed above the input area.
   final String title;
 
-  /// Optional subtitle or additional text shown next to the title.
-  final String? subtitle;
-
-  /// The controller for the text field.
+  /// The text controller for the input field.
   final TextEditingController? controller;
 
-  /// Placeholder text shown when the field is empty.
+  /// Hint text shown when the field is empty.
   final String? hintText;
 
-  /// Keyboard type for the input.
+  /// The keyboard type for the input field.
   final TextInputType? keyboardType;
 
   /// Whether the field is enabled.
   final bool enabled;
 
-  /// Optional callback when the field value changes.
-  final ValueChanged<String>? onChanged;
+  /// Whether the field is obscured (for passwords).
+  final bool obscureText;
 
-  /// Optional callback when the field is tapped (useful for date pickers, etc.).
-  final VoidCallback? onTap;
+  /// Optional icon to display at the end of the input area.
+  final IconData? trailingIcon;
 
-  /// Whether the field is read-only.
-  final bool readOnly;
+  /// Optional callback for trailing icon tap.
+  final VoidCallback? onTrailingIconTap;
 
   /// Optional minimum width for the component. Defaults to 128.
   final double minWidth;
@@ -48,46 +47,131 @@ class InputField1 extends StatelessWidget {
   /// Optional text color for the title.
   final Color? titleColor;
 
-  /// Optional text color for the subtitle.
-  final Color? subtitleColor;
-
   /// Optional text color for the input text.
   final Color? inputTextColor;
+
+  /// Optional color for the trailing icon.
+  final Color? iconColor;
 
   /// Optional border radius for the input area.
   final double? inputBorderRadius;
 
+  /// Optional size for the icon.
+  final double? iconSize;
+
+  /// Whether to enable automatic comma formatting for numbers.
+  final bool enableCommaFormatting;
+
+  /// Whether to enable "k" to "000" transformation.
+  final bool enableKTransformation;
+
   const InputField1({
     super.key,
     required this.title,
-    this.subtitle,
     this.controller,
     this.hintText,
     this.keyboardType,
     this.enabled = true,
-    this.onChanged,
-    this.onTap,
-    this.readOnly = false,
+    this.obscureText = false,
+    this.trailingIcon,
+    this.onTrailingIconTap,
     this.minWidth = 128.0,
     this.fieldHeight,
     this.inputContainerColor,
     this.titleColor,
-    this.subtitleColor,
     this.inputTextColor,
+    this.iconColor,
     this.inputBorderRadius,
+    this.iconSize,
+    this.enableCommaFormatting = false,
+    this.enableKTransformation = false,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
-    final Color effectiveSubtitleColor = subtitleColor ?? AppTheme.elementColor1;
-    final Color effectiveInputTextColor = inputTextColor ?? AppTheme.elementColor3;
-    final Color effectiveInputContainerColor = inputContainerColor ?? AppTheme.containerColor2;
+  State<InputField1> createState() => _InputField1State();
+}
 
-    final double effectiveHeight = fieldHeight ?? 72.0;
+class _InputField1State extends State<InputField1> {
+  
+  /// Formats a number string with commas every 3 digits
+  String _formatWithCommas(String value) {
+    if (value.isEmpty) return '';
+    
+    try {
+      // Handle decimal numbers
+      final parts = value.split('.');
+      final intPart = parts[0];
+      final decPart = parts.length > 1 ? parts[1] : '';
+      
+      // Format the integer part with commas
+      final formattedInt = NumberFormat('#,###').format(int.parse(intPart));
+      
+      // Return with decimal part if it exists
+      return decPart.isNotEmpty ? '$formattedInt.$decPart' : formattedInt;
+    } catch (e) {
+      return value;
+    }
+  }
+
+  /// Transforms "k" to "000" when it follows directly after a number
+  String _transformKToZeros(String value) {
+    if (value.isEmpty) return '';
+    
+    // Replace "k" with "000" only when it follows directly after a digit
+    // This regex matches one or more digits followed by one or more "k"s
+    return value.replaceAllMapped(RegExp(r'(\d+)(k+)', caseSensitive: false), (match) {
+      final number = match.group(1)!;
+      final kCount = match.group(2)!.length;
+      final zeros = '000' * kCount;
+      return '$number$zeros';
+    });
+  }
+
+  /// Handles text changes with formatting
+  void _handleTextChange(String value) {
+    if (!widget.enableCommaFormatting && !widget.enableKTransformation) {
+      return;
+    }
+
+    String processedValue = value;
+    
+    // First, handle "k" transformation if enabled
+    if (widget.enableKTransformation) {
+      processedValue = _transformKToZeros(processedValue);
+    }
+    
+    // Then, handle comma formatting if enabled
+    if (widget.enableCommaFormatting) {
+      // Remove existing commas before processing
+      final numericValue = processedValue.replaceAll(',', '');
+      if (numericValue.isNotEmpty && RegExp(r'^\d*\.?\d*$').hasMatch(numericValue)) {
+        processedValue = _formatWithCommas(numericValue);
+      }
+    }
+    
+    // Update the controller if the value changed
+    if (processedValue != value && widget.controller != null) {
+      final newSelection = TextSelection.collapsed(offset: processedValue.length);
+      widget.controller!.value = TextEditingValue(
+        text: processedValue,
+        selection: newSelection,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Fixed color scheme: header uses elementColor2, content uses elementColor3
+    final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor2;
+    final Color effectiveInputTextColor = widget.inputTextColor ?? AppTheme.elementColor3;
+    final Color effectiveIconColor = widget.iconColor ?? AppTheme.elementColor3;
+    final Color effectiveInputContainerColor = widget.inputContainerColor ?? AppTheme.containerColor2;
+
+    final double effectiveHeight = widget.fieldHeight ?? 72.0;
     final double labelAreaHeight = 21.0;
     final double inputAreaHeight = 48.0;
-    final double effectiveInputBorderRadius = inputBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveInputBorderRadius = widget.inputBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveIconSize = widget.iconSize ?? 24.0;
 
     final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
@@ -95,12 +179,6 @@ class InputField1 extends StatelessWidget {
       fontWeight: FontWeight.w600,
     );
     
-    final TextStyle subtitleStyle = GoogleFonts.outfit(
-      color: effectiveSubtitleColor,
-      fontSize: AppTheme.fontSizeSmall,
-      fontWeight: FontWeight.w500,
-    );
-
     final TextStyle inputTextStyle = GoogleFonts.outfit(
       color: effectiveInputTextColor,
       fontSize: AppTheme.fontSizeMedium,
@@ -109,8 +187,15 @@ class InputField1 extends StatelessWidget {
 
     final EdgeInsets labelPadding = const EdgeInsets.symmetric(horizontal: 8);
 
+    // Create input formatters based on enabled features
+    List<TextInputFormatter> inputFormatters = [];
+    if (widget.enableCommaFormatting || widget.enableKTransformation) {
+      // Allow digits, commas, periods, and 'k' character
+      inputFormatters.add(FilteringTextInputFormatter.allow(RegExp(r'[\d,\.kK]')));
+    }
+
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: minWidth),
+      constraints: BoxConstraints(minWidth: widget.minWidth),
       child: SizedBox(
         width: double.infinity,
         height: effectiveHeight,
@@ -124,23 +209,14 @@ class InputField1 extends StatelessWidget {
               height: labelAreaHeight,
               padding: labelPadding,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Text(
-                      title,
+                      widget.title,
                       style: titleStyle,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(width: AppTheme.smallGap),
-                    Text(
-                      subtitle!,
-                      style: subtitleStyle,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -151,26 +227,36 @@ class InputField1 extends StatelessWidget {
                 color: effectiveInputContainerColor,
                 borderRadius: BorderRadius.circular(effectiveInputBorderRadius),
               ),
-              child: MouseRegion(
-                cursor: readOnly && onTap != null ? SystemMouseCursors.click : SystemMouseCursors.text,
-                child: TextFormField(
-                  controller: controller,
-                  keyboardType: keyboardType,
-                  enabled: enabled,
-                  readOnly: readOnly,
-                  onTap: onTap,
-                  onChanged: onChanged,
-                  textAlignVertical: TextAlignVertical.center,
-                  style: inputTextStyle,
-                  decoration: InputDecoration(
-                    hintText: hintText,
-                    hintStyle: inputTextStyle,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.mediumGap,
-                      vertical: 15.0,
-                    ),
+              child: TextFormField(
+                controller: widget.controller,
+                keyboardType: widget.keyboardType,
+                enabled: widget.enabled,
+                obscureText: widget.obscureText,
+                style: inputTextStyle,
+                inputFormatters: inputFormatters,
+                onChanged: _handleTextChange,
+                decoration: InputDecoration(
+                  hintText: widget.hintText,
+                  hintStyle: GoogleFonts.outfit(
+                    color: effectiveInputTextColor,
+                    fontSize: AppTheme.fontSizeMedium,
+                    fontWeight: FontWeight.w500,
                   ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.mediumGap,
+                    vertical: 15.0,
+                  ),
+                  suffixIcon: widget.trailingIcon != null
+                      ? GestureDetector(
+                          onTap: widget.onTrailingIconTap,
+                          child: Icon(
+                            widget.trailingIcon,
+                            color: effectiveIconColor,
+                            size: effectiveIconSize,
+                          ),
+                        )
+                      : null,
                 ),
               ),
             ),

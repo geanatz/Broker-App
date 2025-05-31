@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/backend/services/formService.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
-import 'package:broker_app/frontend/common/models/client_model.dart';
-import 'package:broker_app/frontend/common/components/headers/widgetHeader2.dart';
+import 'package:broker_app/backend/models/client_model.dart';
 import 'package:broker_app/frontend/common/components/forms/form1.dart';
 import 'package:broker_app/frontend/common/components/forms/form2.dart';
+import 'package:broker_app/frontend/common/components/forms/form3.dart';
 import 'package:broker_app/frontend/common/components/forms/formNew.dart';
+import 'package:broker_app/frontend/common/components/headers/widgetHeader2.dart';
 
 /// Area pentru formulare care va fi afișată în cadrul ecranului principal.
 /// Această componentă înlocuiește vechiul FormScreen păstrând funcționalitatea
@@ -27,11 +29,20 @@ class _FormAreaState extends State<FormArea> {
   // Text controllers pentru input fields
   final Map<String, TextEditingController> _textControllers = {};
   
+  // Debounce timer for saving controller values
+  Timer? _saveTimer;
+  
   // Store the GLOBAL tap position for the context menu
   Offset _globalTapPosition = Offset.zero;
   
   // Previous client for handling client changes
   ClientModel? _previousClient;
+
+  // State for FormNew selections - separate for credit and income
+  String? _newCreditFormSelectedBank;
+  String? _newCreditFormSelectedType;
+  String? _newIncomeFormSelectedBank;
+  String? _newIncomeFormSelectedType;
 
   @override
   void initState() {
@@ -41,6 +52,7 @@ class _FormAreaState extends State<FormArea> {
 
   @override
   void dispose() {
+    _saveTimer?.cancel();
     _disposeControllers();
     _formService.removeListener(_onFormServiceChanged);
     _clientService.removeListener(_onClientServiceChanged);
@@ -85,6 +97,7 @@ class _FormAreaState extends State<FormArea> {
     
     // Salvează datele clientului anterior dacă există
     if (_previousClient != null && currentClient?.phoneNumber != _previousClient?.phoneNumber) {
+      debugPrint('Saving data for previous client: ${_previousClient!.name} (${_previousClient!.phoneNumber})');
       await _saveFormDataForClient(_previousClient!);
     }
     
@@ -93,6 +106,7 @@ class _FormAreaState extends State<FormArea> {
     
     // Încarcă datele pentru noul client
     if (currentClient != null) {
+      debugPrint('Loading data for new client: ${currentClient.name} (${currentClient.phoneNumber})');
       await _loadFormDataForCurrentClient();
     }
     
@@ -179,16 +193,106 @@ class _FormAreaState extends State<FormArea> {
     return _textControllers[key]!;
   }
 
+  /// Setează textul controller-ului doar dacă este necesar
+  /// Aceasta previne suprascrierea valorilor introduse de utilizator
+  TextEditingController _getControllerWithText(String key, String modelValue) {
+    final controller = _getController(key);
+    
+    // Setează textul doar dacă:
+    // 1. Controller-ul este gol și modelul are o valoare
+    // 2. Sau dacă valoarea din model este diferită și controller-ul nu a fost modificat recent
+    if (controller.text.isEmpty && modelValue.isNotEmpty) {
+      controller.text = modelValue;
+    }
+    
+    // Adaugă listener pentru a salva modificările automat
+    if (!controller.hasListeners) {
+      controller.addListener(() {
+        _saveControllerValueToModel(key, controller.text);
+      });
+    }
+    
+    return controller;
+  }
+
+  /// Salvează valoarea din controller înapoi în model
+  void _saveControllerValueToModel(String key, String value) {
+    // Cancel the previous timer if it exists
+    _saveTimer?.cancel();
+    
+    // Set a new timer to save after a short delay
+    _saveTimer = Timer(Duration(milliseconds: 500), () {
+      // Parse key to extract client, form type, index, and field
+      final parts = key.split('_');
+      if (parts.length >= 4) {
+        final clientPhone = parts[0];
+        final formType = parts[1]; // 'credit' or 'income'
+        final indexStr = parts[2];
+        final field = parts[3];
+        
+        final index = int.tryParse(indexStr);
+        if (index != null) {
+          final client = _clientService.focusedClient;
+          if (client != null && client.phoneNumber == clientPhone) {
+            final isCreditForm = formType == 'credit';
+            
+            // Determine if this is a client or coborrower form
+            // Use the appropriate method based on form type
+            final isClient = isCreditForm 
+                ? _formService.isShowingClientLoanForm(clientPhone)
+                : _formService.isShowingClientIncomeForm(clientPhone);
+            
+            if (mounted) {
+              _updateFormField(client, index, field, value, isCreditForm, isClient);
+              // Automatically save to Firebase after updating the form field
+              _autoSaveToFirebase(client);
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /// Automatically saves form data to Firebase for the given client
+  Future<void> _autoSaveToFirebase(ClientModel client) async {
+    try {
+      debugPrint('Auto-saving form data to Firebase for client: ${client.name} (${client.phoneNumber})');
+      
+      final success = await _formService.saveFormDataForClient(
+        client.phoneNumber,
+        client.phoneNumber,
+        client.name,
+      );
+      
+      if (!success) {
+        debugPrint('❌ Failed to auto-save form data to Firebase for client: ${client.name}');
+      } else {
+        debugPrint('✅ Successfully auto-saved form data to Firebase for client: ${client.name}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error auto-saving form data to Firebase: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.smallGap),
-      decoration: AppTheme.widgetDecoration,
-      child: _buildFormContent(),
+      width: double.infinity,
+      height: double.infinity,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: _buildFormContent(),
+          ),
+        ],
+      ),
     );
   }
 
-  /// Construiește conținutul formularului
+  /// Construiește conținutul formularului conform design-ului din formArea.md
   Widget _buildFormContent() {
     final focusedClient = _clientService.focusedClient;
     
@@ -197,7 +301,7 @@ class _FormAreaState extends State<FormArea> {
       return _buildNoClientSelectedPlaceholder();
     }
     
-    // Afișează formularele pentru client conform design-ului Figma
+    // Afișează formularele pentru client conform design-ului exact din Figma
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -206,7 +310,7 @@ class _FormAreaState extends State<FormArea> {
         Expanded(
           child: _buildCreditSection(focusedClient),
         ),
-        const SizedBox(width: AppTheme.mediumGap),
+        const SizedBox(width: 16),
         Expanded(
           child: _buildIncomeSection(focusedClient),
         ),
@@ -248,7 +352,7 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește secțiunea pentru credite
+  /// Construiește secțiunea pentru credite conform design-ului exact din formArea.md
   Widget _buildCreditSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientLoanForm(client.phoneNumber);
     final forms = isShowingClient 
@@ -257,21 +361,28 @@ class _FormAreaState extends State<FormArea> {
 
     return Container(
       height: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.smallGap),
+      padding: const EdgeInsets.all(8),
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(32),
         ),
-        shadows: [AppTheme.widgetShadow],
+        shadows: [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 15,
+            offset: Offset(0, 0),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Header cu toggle
+          // Header cu toggle conform design-ului
           WidgetHeader2(
             title: 'Credit',
             altText: isShowingClient ? 'Vezi codebitor' : 'Vezi client',
@@ -280,7 +391,7 @@ class _FormAreaState extends State<FormArea> {
             },
           ),
           
-          const SizedBox(height: AppTheme.smallGap),
+          const SizedBox(height: 8),
           
           // Lista de formulare de credit
           Expanded(
@@ -291,7 +402,7 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește secțiunea pentru venituri
+  /// Construiește secțiunea pentru venituri conform design-ului exact din formArea.md
   Widget _buildIncomeSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientIncomeForm(client.phoneNumber);
     final forms = isShowingClient 
@@ -300,21 +411,28 @@ class _FormAreaState extends State<FormArea> {
 
     return Container(
       height: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.smallGap),
+      padding: const EdgeInsets.all(8),
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(32),
         ),
-        shadows: [AppTheme.widgetShadow],
+        shadows: [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 15,
+            offset: Offset(0, 0),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Header cu toggle
+          // Header cu toggle conform design-ului
           WidgetHeader2(
             title: 'Venit',
             altText: isShowingClient ? 'Vezi codebitor' : 'Vezi client',
@@ -323,7 +441,7 @@ class _FormAreaState extends State<FormArea> {
             },
           ),
           
-          const SizedBox(height: AppTheme.smallGap),
+          const SizedBox(height: 8),
           
           // Lista de formulare de venit
           Expanded(
@@ -334,230 +452,373 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește lista de formulare de credit
+  /// Construiește lista de formulare de credit folosind componentele specificate
   Widget _buildCreditFormsList(ClientModel client, List<CreditFormModel> forms, bool isClient) {
-    return SingleChildScrollView(
+    // Filtrează doar formularele care au date (nu sunt goale)
+    final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
+    
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
       child: Column(
-        children: forms.asMap().entries.map((entry) {
-          final index = entry.key;
-          final form = entry.value;
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Formulare existente (doar cele cu date)
+          ...nonEmptyForms.asMap().entries.map((entry) {
+            final index = entry.key;
+            final form = entry.value;
+            // Găsește indexul real în lista originală
+            final realIndex = forms.indexOf(form);
+            
+            return GestureDetector(
+              onTapDown: _getTapPosition,
+              onLongPress: () => _showContextMenu(context, realIndex, true, isClient),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: _buildCreditForm(client, form, realIndex, isClient),
+              ),
+            );
+          }).toList(),
           
-          return GestureDetector(
-            onTapDown: _getTapPosition,
-            onLongPress: () => _showContextMenu(context, index, true, isClient),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: AppTheme.smallGap),
-              child: _buildCreditForm(client, form, index, isClient),
-            ),
-          );
-        }).toList(),
+          // Formular nou (FormNew) pentru adăugare - întotdeauna afișat
+          FormNew(
+            key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_${_newCreditFormSelectedType}'),
+            titleF1: 'Banca',
+            valueF1: _newCreditFormSelectedBank,
+            itemsF1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+              value: bank,
+              child: Text(bank),
+            )).toList(),
+            onChangedF1: (value) {
+              setState(() {
+                _newCreditFormSelectedBank = value;
+                print('DEBUG: Credit bank selected: $value');
+              });
+              // Check if both fields are completed and transform if needed
+              if (value != null && _newCreditFormSelectedType != null) {
+                print('DEBUG: Both credit fields completed, transforming...');
+                Future.microtask(() {
+                  _transformCreditFormNew(client, value, _newCreditFormSelectedType!, isClient);
+                });
+              }
+            },
+            hintTextF1: 'Selecteaza banca',
+            
+            titleF2: 'Tip credit',
+            valueF2: _newCreditFormSelectedType,
+            itemsF2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
+              value: type,
+              child: Text(type),
+            )).toList(),
+            onChangedF2: (value) {
+              setState(() {
+                _newCreditFormSelectedType = value;
+                print('DEBUG: Credit type selected: $value');
+              });
+              // Check if both fields are completed and transform if needed
+              if (value != null && _newCreditFormSelectedBank != null) {
+                print('DEBUG: Both credit fields completed, transforming...');
+                Future.microtask(() {
+                  _transformCreditFormNew(client, _newCreditFormSelectedBank!, value, isClient);
+                });
+              }
+            },
+            hintTextF2: 'Selecteaza tipul',
+          ),
+        ],
       ),
     );
   }
 
-  /// Construiește lista de formulare de venit
+  /// Construiește lista de formulare de venit folosind componentele specificate
   Widget _buildIncomeFormsList(ClientModel client, List<IncomeFormModel> forms, bool isClient) {
-    return SingleChildScrollView(
+    // Filtrează doar formularele care au date (nu sunt goale)
+    final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
+    
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
       child: Column(
-        children: forms.asMap().entries.map((entry) {
-          final index = entry.key;
-          final form = entry.value;
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Formulare existente (doar cele cu date)
+          ...nonEmptyForms.asMap().entries.map((entry) {
+            final index = entry.key;
+            final form = entry.value;
+            // Găsește indexul real în lista originală
+            final realIndex = forms.indexOf(form);
+            
+            return GestureDetector(
+              onTapDown: _getTapPosition,
+              onLongPress: () => _showContextMenu(context, realIndex, false, isClient),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: _buildIncomeForm(client, form, realIndex, isClient),
+              ),
+            );
+          }).toList(),
           
-          return GestureDetector(
-            onTapDown: _getTapPosition,
-            onLongPress: () => _showContextMenu(context, index, false, isClient),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: AppTheme.smallGap),
-              child: _buildIncomeForm(client, form, index, isClient),
-            ),
-          );
-        }).toList(),
+          // Formular nou (FormNew) pentru adăugare - întotdeauna afișat
+          FormNew(
+            key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_${_newIncomeFormSelectedType}'),
+            titleF1: 'Banca',
+            valueF1: _newIncomeFormSelectedBank,
+            itemsF1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+              value: bank,
+              child: Text(bank),
+            )).toList(),
+            onChangedF1: (value) {
+              setState(() {
+                _newIncomeFormSelectedBank = value;
+                print('DEBUG: Income bank selected: $value');
+              });
+              // Check if both fields are completed and transform if needed
+              if (value != null && _newIncomeFormSelectedType != null) {
+                print('DEBUG: Both income fields completed, transforming...');
+                Future.microtask(() {
+                  _transformIncomeFormNew(client, value, _newIncomeFormSelectedType!, isClient);
+                });
+              }
+            },
+            hintTextF1: 'Selecteaza banca',
+            
+            titleF2: 'Tip venit',
+            valueF2: _newIncomeFormSelectedType,
+            itemsF2: FormService.incomeTypes.map((type) => DropdownMenuItem<String>(
+              value: type,
+              child: Text(type),
+            )).toList(),
+            onChangedF2: (value) {
+              setState(() {
+                _newIncomeFormSelectedType = value;
+                print('DEBUG: Income type selected: $value');
+              });
+              // Check if both fields are completed and transform if needed
+              if (value != null && _newIncomeFormSelectedBank != null) {
+                print('DEBUG: Both income fields completed, transforming...');
+                Future.microtask(() {
+                  _transformIncomeFormNew(client, _newIncomeFormSelectedBank!, value, isClient);
+                });
+              }
+            },
+            hintTextF2: 'Selecteaza tipul',
+          ),
+        ],
       ),
     );
   }
 
-  /// Construiește un formular de credit individual
+  /// Construiește un formular de credit individual folosind componentele specificate
   Widget _buildCreditForm(ClientModel client, CreditFormModel form, int index, bool isClient) {
     // Determină ce tipuri de câmpuri să afișeze în funcție de tipul de credit
     final showConsumat = form.creditType == 'Card de cumparaturi' || form.creditType == 'Overdraft';
-    final showRataAndPeriod = form.creditType == 'Nevoi personale' || 
-                              form.creditType == 'Ipotecar' || 
-                              form.creditType == 'Prima casa';
+    final showRataAndPeriod = form.creditType == 'Nevoi personale';
+    final showIpotecarFields = form.creditType == 'Ipotecar' || form.creditType == 'Prima casa';
 
-    if (showRataAndPeriod) {
-      // Folosește Form2 pentru Nevoi personale, Ipotecar și Prima casa (5 câmpuri)
-      return FormContainer2(
+    if (showIpotecarFields) {
+      // Folosește Form3 pentru Ipotecar și Prima casa (2+4 câmpuri: Banca, Tip credit în primul rând; Sold, Rata, Perioada, Tip Rata în al doilea rând)
+      return Form3(
         titleR1F1: 'Banca',
-        optionR1F1: form.bank,
-        iconR1F1: Icons.expand_more,
-        onTapR1F1: () => _showBankDropdown(client, index, true, isClient),
+        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+        itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+          value: bank,
+          child: Text(bank),
+        )).toList(),
+        onChangedR1F1: (value) {
+          if (value != null) {
+            _updateFormField(client, index, 'bank', value, true, isClient);
+          }
+        },
+        hintTextR1F1: 'Selecteaza banca',
         
         titleR1F2: 'Tip credit',
-        optionR1F2: form.creditType,
-        iconR1F2: Icons.expand_more,
-        onTapR1F2: () => _showCreditTypeDropdown(client, index, isClient),
+        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+        itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
+          value: type,
+          child: Text(type),
+        )).toList(),
+        onChangedR1F2: (value) {
+          if (value != null) {
+            _updateFormField(client, index, 'creditType', value, true, isClient);
+          }
+        },
+        hintTextR1F2: 'Selecteaza tipul',
         
         titleR2F1: 'Sold',
-        textR2F1: form.sold,
-        onTapR2F1: () => _showInputDialog(client, index, 'sold', form.sold, true, isClient),
+        controllerR2F1: _getControllerWithText('${client.phoneNumber}_credit_${index}_sold', form.sold),
+        hintTextR2F1: 'Introduceti soldul',
+        keyboardTypeR2F1: TextInputType.number,
         
         titleR2F2: 'Rata',
-        textR2F2: form.rata,
-        onTapR2F2: () => _showInputDialog(client, index, 'rata', form.rata, true, isClient),
+        controllerR2F2: _getControllerWithText('${client.phoneNumber}_credit_${index}_rata', form.rata),
+        hintTextR2F2: 'Introduceti rata',
+        keyboardTypeR2F2: TextInputType.number,
         
         titleR2F3: 'Perioada',
-        textR2F3: form.perioada,
-        onTapR2F3: () => _showInputDialog(client, index, 'perioada', form.perioada, true, isClient),
+        controllerR2F3: _getControllerWithText('${client.phoneNumber}_credit_${index}_perioada', form.perioada),
+        hintTextR2F3: 'Introduceti perioada',
+        keyboardTypeR2F3: TextInputType.text,
+        
+        titleR2F4: 'Tip rata',
+        valueR2F4: (form.rateType.isEmpty || form.rateType == 'Selecteaza tipul') ? null : form.rateType,
+        itemsR2F4: ['IRCC', 'Euribor', 'Variabila', 'Fixa'].map((type) => DropdownMenuItem<String>(
+          value: type,
+          child: Text(type),
+        )).toList(),
+        onChangedR2F4: (value) {
+          if (value != null) {
+            _updateFormField(client, index, 'rateType', value, true, isClient);
+          }
+        },
+        hintTextR2F4: 'Selecteaza tipul',
+        
+        onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
+      );
+    } else if (showRataAndPeriod) {
+      // Folosește Form2 pentru Nevoi personale (5 câmpuri)
+      return Form2(
+        titleR1F1: 'Banca',
+        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+        itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+          value: bank,
+          child: Text(bank),
+        )).toList(),
+        onChangedR1F1: (value) {
+          if (value != null) {
+            _updateFormField(client, index, 'bank', value, true, isClient);
+          }
+        },
+        hintTextR1F1: 'Selecteaza banca',
+        
+        titleR1F2: 'Tip credit',
+        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+        itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
+          value: type,
+          child: Text(type),
+        )).toList(),
+        onChangedR1F2: (value) {
+          if (value != null) {
+            _updateFormField(client, index, 'creditType', value, true, isClient);
+          }
+        },
+        hintTextR1F2: 'Selecteaza tipul',
+        
+        titleR2F1: 'Sold',
+        controllerR2F1: _getControllerWithText('${client.phoneNumber}_credit_${index}_sold', form.sold),
+        hintTextR2F1: 'Introduceti soldul',
+        keyboardTypeR2F1: TextInputType.number,
+        
+        titleR2F2: 'Rata',
+        controllerR2F2: _getControllerWithText('${client.phoneNumber}_credit_${index}_rata', form.rata),
+        hintTextR2F2: 'Introduceti rata',
+        keyboardTypeR2F2: TextInputType.number,
+        
+        titleR2F3: 'Perioada',
+        controllerR2F3: _getControllerWithText('${client.phoneNumber}_credit_${index}_perioada', form.perioada),
+        hintTextR2F3: 'Introduceti perioada',
+        keyboardTypeR2F3: TextInputType.text,
+        
+        onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
     } else {
       // Folosește Form1 pentru Card de cumparaturi și Overdraft (4 câmpuri)
-      return FormContainer1(
-        titleTL: 'Banca',
-        optionTL: form.bank,
-        iconTL: Icons.expand_more,
-        onTapTL: () => _showBankDropdown(client, index, true, isClient),
+      return Form1(
+        titleR1F1: 'Banca',
+        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+        itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+          value: bank,
+          child: Text(bank),
+        )).toList(),
+        onChangedR1F1: (value) {
+          if (value != null) {
+            _updateFormField(client, index, 'bank', value, true, isClient);
+          }
+        },
+        hintTextR1F1: 'Selecteaza banca',
         
-        titleTR: 'Tip credit',
-        optionTR: form.creditType,
-        iconTR: Icons.expand_more,
-        onTapTR: () => _showCreditTypeDropdown(client, index, isClient),
+        titleR1F2: 'Tip credit',
+        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+        itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
+          value: type,
+          child: Text(type),
+        )).toList(),
+        onChangedR1F2: (value) {
+          if (value != null) {
+            _updateFormField(client, index, 'creditType', value, true, isClient);
+          }
+        },
+        hintTextR1F2: 'Selecteaza tipul',
         
-        titleBL: 'Sold',
-        textBL: form.sold,
-        onTapBL: () => _showInputDialog(client, index, 'sold', form.sold, true, isClient),
+        titleR2F1: 'Sold',
+        controllerR2F1: _getControllerWithText('${client.phoneNumber}_credit_${index}_sold', form.sold),
+        hintTextR2F1: 'Introduceti soldul',
+        keyboardTypeR2F1: TextInputType.number,
         
-        titleBR: showConsumat ? 'Consumat' : 'Rata',
-        textBR: showConsumat ? form.consumat : form.rata,
-        onTapBR: () => _showInputDialog(
-          client, 
-          index, 
-          showConsumat ? 'consumat' : 'rata', 
-          showConsumat ? form.consumat : form.rata, 
-          true, 
-          isClient
-        ),
+        titleR2F2: showConsumat ? 'Consumat' : 'Rata',
+        controllerR2F2: _getControllerWithText('${client.phoneNumber}_credit_${index}_${showConsumat ? 'consumat' : 'rata'}', showConsumat ? form.consumat : form.rata),
+        hintTextR2F2: showConsumat ? 'Introduceti consumatul' : 'Introduceti rata',
+        keyboardTypeR2F2: TextInputType.number,
+        
+        onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
     }
   }
 
-  /// Construiește un formular de venit individual
+  /// Construiește un formular de venit individual folosind componentele specificate
   Widget _buildIncomeForm(ClientModel client, IncomeFormModel form, int index, bool isClient) {
-    // Folosește FormNew pentru venituri (2 câmpuri)
-    return FormContainerNew(
-      titleF1: 'Banca',
-      optionF1: form.bank,
-      iconF1: Icons.expand_more,
-      onTapF1: () => _showBankDropdown(client, index, false, isClient),
+    // Folosește Form1 pentru venituri (4 câmpuri: 2x2)
+    return Form1(
+      titleR1F1: 'Banca',
+      valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+      itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+        value: bank,
+        child: Text(bank),
+      )).toList(),
+      onChangedR1F1: (value) {
+        if (value != null) {
+          _updateFormField(client, index, 'bank', value, false, isClient);
+        }
+      },
+      hintTextR1F1: 'Selecteaza banca',
       
-      titleF2: 'Tip venit',
-      optionF2: form.incomeType,
-      iconF2: Icons.expand_more,
-      onTapF2: () => _showIncomeTypeDropdown(client, index, isClient),
-    );
-  }
-
-  /// Afișează dropdown pentru selectarea băncii
-  void _showBankDropdown(ClientModel client, int index, bool isCreditForm, bool isClient) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.popupBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.borderRadiusLarge)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(AppTheme.mediumGap),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Selectează banca',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeLarge,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.elementColor2,
-              ),
-            ),
-            const SizedBox(height: AppTheme.mediumGap),
-            ...FormService.banks.map((bank) => ListTile(
-              title: Text(bank),
-              onTap: () {
-                Navigator.pop(context);
-                _updateFormField(client, index, 'bank', bank, isCreditForm, isClient);
-              },
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Afișează dropdown pentru selectarea tipului de credit
-  void _showCreditTypeDropdown(ClientModel client, int index, bool isClient) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.popupBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.borderRadiusLarge)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(AppTheme.mediumGap),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Selectează tipul de credit',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeLarge,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.elementColor2,
-              ),
-            ),
-            const SizedBox(height: AppTheme.mediumGap),
-            ...FormService.creditTypes.map((type) => ListTile(
-              title: Text(type),
-              onTap: () {
-                Navigator.pop(context);
-                _updateFormField(client, index, 'creditType', type, true, isClient);
-              },
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Afișează dropdown pentru selectarea tipului de venit
-  void _showIncomeTypeDropdown(ClientModel client, int index, bool isClient) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.popupBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.borderRadiusLarge)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(AppTheme.mediumGap),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Selectează tipul de venit',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeLarge,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.elementColor2,
-              ),
-            ),
-            const SizedBox(height: AppTheme.mediumGap),
-            ...FormService.incomeTypes.map((type) => ListTile(
-              title: Text(type),
-              onTap: () {
-                Navigator.pop(context);
-                _updateFormField(client, index, 'incomeType', type, false, isClient);
-              },
-            )),
-          ],
-        ),
-      ),
+      titleR1F2: 'Tip venit',
+      valueR1F2: (form.incomeType.isEmpty || form.incomeType == 'Selecteaza tipul') ? null : form.incomeType,
+      itemsR1F2: FormService.incomeTypes.map((type) => DropdownMenuItem<String>(
+        value: type,
+        child: Text(type),
+      )).toList(),
+      onChangedR1F2: (value) {
+        if (value != null) {
+          _updateFormField(client, index, 'incomeType', value, false, isClient);
+        }
+      },
+      hintTextR1F2: 'Selecteaza tipul',
+      
+      titleR2F1: 'Suma venit',
+      controllerR2F1: _getControllerWithText('${client.phoneNumber}_income_${index}_incomeAmount', form.incomeAmount),
+      hintTextR2F1: 'Introduceti suma',
+      keyboardTypeR2F1: TextInputType.number,
+      
+      titleR2F2: 'Vechime',
+      controllerR2F2: _getControllerWithText('${client.phoneNumber}_income_${index}_vechime', form.vechime),
+      hintTextR2F2: 'Introduceti vechimea',
+      keyboardTypeR2F2: TextInputType.text,
+      
+      onClose: () => _formService.removeIncomeForm(client.phoneNumber, index, isClient: isClient),
     );
   }
 
@@ -570,7 +831,7 @@ class _FormAreaState extends State<FormArea> {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.popupBackground,
         title: Text(
-          'Introduceți ${_getFieldDisplayName(field)}',
+          'Introduceti ${_getFieldDisplayName(field)}',
           style: TextStyle(color: AppTheme.elementColor2),
         ),
         content: TextField(
@@ -579,7 +840,7 @@ class _FormAreaState extends State<FormArea> {
           inputFormatters: _getInputFormatters(field),
           style: TextStyle(color: AppTheme.elementColor2),
           decoration: InputDecoration(
-            hintText: 'Introduceți ${_getFieldDisplayName(field)}',
+            hintText: 'Introduceti ${_getFieldDisplayName(field)}',
             hintStyle: TextStyle(color: AppTheme.elementColor1),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: AppTheme.containerColor2),
@@ -608,6 +869,88 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
+  /// Reset new form selections
+  void _resetNewFormSelections() {
+    setState(() {
+      _newCreditFormSelectedBank = null;
+      _newCreditFormSelectedType = null;
+      _newIncomeFormSelectedBank = null;
+      _newIncomeFormSelectedType = null;
+    });
+  }
+
+  /// Reset credit form selections
+  void _resetCreditFormSelections() {
+    print('DEBUG: Resetting credit form selections');
+    setState(() {
+      _newCreditFormSelectedBank = null;
+      _newCreditFormSelectedType = null;
+      print('DEBUG: Credit selections reset to null');
+    });
+  }
+
+  /// Reset income form selections
+  void _resetIncomeFormSelections() {
+    print('DEBUG: Resetting income form selections');
+    setState(() {
+      _newIncomeFormSelectedBank = null;
+      _newIncomeFormSelectedType = null;
+      print('DEBUG: Income selections reset to null');
+    });
+  }
+
+  /// Create new credit form based on selected bank and credit type
+  void _createNewCreditForm(ClientModel client, String bank, String creditType, bool isClient) {
+    final forms = isClient 
+        ? _formService.getClientCreditForms(client.phoneNumber)
+        : _formService.getCoborrowerCreditForms(client.phoneNumber);
+    
+    // Dacă ultimul formular este gol, nu facem nimic
+    if (forms.isNotEmpty && forms.last.isEmpty) {
+      return;
+    }
+    
+    // Creează un formular nou cu date minime pentru a declanșa adăugarea automată
+    final newForm = CreditFormModel(
+      bank: bank,
+      creditType: creditType,
+    );
+    
+    // Folosește metoda de update pentru a declanșa adăugarea automată
+    _formService.updateCreditForm(
+      client.phoneNumber, 
+      forms.length - 1, 
+      newForm, 
+      isClient: isClient
+    );
+  }
+
+  /// Create new income form based on selected bank and income type
+  void _createNewIncomeForm(ClientModel client, String bank, String incomeType, bool isClient) {
+    final forms = isClient 
+        ? _formService.getClientIncomeForms(client.phoneNumber)
+        : _formService.getCoborrowerIncomeForms(client.phoneNumber);
+    
+    // Dacă ultimul formular este gol, nu facem nimic
+    if (forms.isNotEmpty && forms.last.isEmpty) {
+      return;
+    }
+    
+    // Creează un formular nou cu date minime pentru a declanșa adăugarea automată
+    final newForm = IncomeFormModel(
+      bank: bank,
+      incomeType: incomeType,
+    );
+    
+    // Folosește metoda de update pentru a declanșa adăugarea automată
+    _formService.updateIncomeForm(
+      client.phoneNumber, 
+      forms.length - 1, 
+      newForm, 
+      isClient: isClient
+    );
+  }
+
   /// Actualizează un câmp din formular
   void _updateFormField(ClientModel client, int index, String field, String value, bool isCreditForm, bool isClient) {
     if (isCreditForm) {
@@ -629,6 +972,9 @@ class _FormAreaState extends State<FormArea> {
         );
         
         _formService.updateCreditForm(client.phoneNumber, index, updatedForm, isClient: isClient);
+        
+        // Automatically save to Firebase after updating the form field
+        _autoSaveToFirebase(client);
       }
     } else {
       final forms = isClient 
@@ -646,6 +992,9 @@ class _FormAreaState extends State<FormArea> {
         );
         
         _formService.updateIncomeForm(client.phoneNumber, index, updatedForm, isClient: isClient);
+        
+        // Automatically save to Firebase after updating the form field
+        _autoSaveToFirebase(client);
       }
     }
   }
@@ -661,6 +1010,12 @@ class _FormAreaState extends State<FormArea> {
         return 'rata';
       case 'perioada':
         return 'perioada';
+      case 'rateType':
+        return 'tipul de rată';
+      case 'avans':
+        return 'avansul';
+      case 'valoare':
+        return 'valoarea imobilului';
       case 'incomeAmount':
         return 'suma venitului';
       case 'vechime':
@@ -676,6 +1031,8 @@ class _FormAreaState extends State<FormArea> {
       case 'sold':
       case 'consumat':
       case 'rata':
+      case 'avans':
+      case 'valoare':
       case 'incomeAmount':
         return TextInputType.number;
       case 'perioada':
@@ -692,10 +1049,100 @@ class _FormAreaState extends State<FormArea> {
       case 'sold':
       case 'consumat':
       case 'rata':
+      case 'avans':
+      case 'valoare':
       case 'incomeAmount':
         return [FilteringTextInputFormatter.digitsOnly];
       default:
         return [];
     }
+  }
+
+  /// Transform credit form new based on selected bank and credit type
+  void _transformCreditFormNew(ClientModel client, String bank, String creditType, bool isClient) {
+    print('DEBUG: Transforming credit form - Bank: $bank, Type: $creditType, IsClient: $isClient');
+    
+    // Creează un formular nou cu datele selectate
+    final newForm = CreditFormModel(
+      bank: bank,
+      creditType: creditType,
+    );
+    
+    // Obține lista de formulare și găsește ultimul formular gol
+    final forms = isClient 
+        ? _formService.getClientCreditForms(client.phoneNumber)
+        : _formService.getCoborrowerCreditForms(client.phoneNumber);
+    
+    print('DEBUG: Current forms count: ${forms.length}');
+    
+    // Găsește ultimul formular gol pentru a-l actualiza
+    int lastEmptyIndex = forms.length - 1;
+    for (int i = forms.length - 1; i >= 0; i--) {
+      if (forms[i].isEmpty) {
+        lastEmptyIndex = i;
+        break;
+      }
+    }
+    
+    print('DEBUG: Updating form at index: $lastEmptyIndex');
+    
+    // Actualizează ultimul formular gol cu datele noi
+    _formService.updateCreditForm(
+      client.phoneNumber, 
+      lastEmptyIndex, 
+      newForm, 
+      isClient: isClient
+    );
+    
+    // Automatically save to Firebase after creating new form
+    _autoSaveToFirebase(client);
+    
+    // Reset selections to show a new clean FormNew
+    _resetCreditFormSelections();
+    print('DEBUG: Credit form selections reset');
+  }
+
+  /// Transform income form new based on selected bank and income type
+  void _transformIncomeFormNew(ClientModel client, String bank, String incomeType, bool isClient) {
+    print('DEBUG: Transforming income form - Bank: $bank, Type: $incomeType, IsClient: $isClient');
+    
+    // Creează un formular nou cu datele selectate
+    final newForm = IncomeFormModel(
+      bank: bank,
+      incomeType: incomeType,
+    );
+    
+    // Obține lista de formulare și găsește ultimul formular gol
+    final forms = isClient 
+        ? _formService.getClientIncomeForms(client.phoneNumber)
+        : _formService.getCoborrowerIncomeForms(client.phoneNumber);
+    
+    print('DEBUG: Current forms count: ${forms.length}');
+    
+    // Găsește ultimul formular gol pentru a-l actualiza
+    int lastEmptyIndex = forms.length - 1;
+    for (int i = forms.length - 1; i >= 0; i--) {
+      if (forms[i].isEmpty) {
+        lastEmptyIndex = i;
+        break;
+      }
+    }
+    
+    print('DEBUG: Updating form at index: $lastEmptyIndex');
+    
+    // Actualizează ultimul formular gol cu datele noi
+    _formService.updateIncomeForm(
+      client.phoneNumber, 
+      lastEmptyIndex, 
+      newForm, 
+      isClient: isClient
+    );
+    
+    // Automatically save to Firebase after creating new form
+    _autoSaveToFirebase(client);
+    
+    // Reset selections to show a new clean FormNew
+    _resetIncomeFormSelections();
+    print('DEBUG: Income form selections reset');
   }
 }

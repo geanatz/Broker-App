@@ -75,6 +75,7 @@ class DropdownField1<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Fixed color scheme: header uses elementColor2, content uses elementColor3
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
     final Color effectiveSelectedOptionColor = selectedOptionColor ?? AppTheme.elementColor3;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
@@ -158,6 +159,18 @@ class DropdownField1<T> extends StatelessWidget {
                 ),
                 style: selectedOptionStyle,
                 dropdownColor: effectiveDropdownContainerColor,
+                selectedItemBuilder: (BuildContext context) {
+                  return items.map<Widget>((DropdownMenuItem<T> item) {
+                    return Container(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        item.child is Text ? (item.child as Text).data ?? '' : item.value.toString(),
+                        style: selectedOptionStyle,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList();
+                },
               ),
             ),
           ],

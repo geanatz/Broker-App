@@ -1,7 +1,7 @@
 // lib/components/fields/dropdown_field2.dart
 
 import 'package:flutter/material.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import '../../appTheme.dart';
 
 /// A display component for a dropdown field with a title, an optional subtitle,
 /// selected option, and a trailing icon.
@@ -32,23 +32,23 @@ class DropdownField2 extends StatelessWidget {
   final double? fieldHeight;
 
   /// Optional background color for the dropdown area.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2).
+  /// Defaults to AppTheme.containerColor2.
   final Color? dropdownContainerColor;
 
   /// Optional text color for the title.
-  /// Defaults to AppTheme.elementColor2 (0xFF666699).
+  /// Defaults to AppTheme.elementColor2.
   final Color? titleColor;
 
   /// Optional text color for the subtitle.
-  /// Defaults to AppTheme.elementColor1 (0xFF8A8AA8).
+  /// Defaults to AppTheme.elementColor1.
   final Color? subtitleColor;
 
   /// Optional text color for the selected option.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80).
+  /// Defaults to AppTheme.elementColor3.
   final Color? selectedOptionColor;
 
   /// Optional color for the trailing icon.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80).
+  /// Defaults to AppTheme.elementColor3.
   final Color? iconColor;
 
   /// Optional border radius for the dropdown area.
@@ -79,21 +79,21 @@ class DropdownField2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveSubtitleColor = subtitleColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final Color effectiveSelectedOptionColor = selectedOptionColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveDropdownContainerColor = dropdownContainerColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
+    // Fixed color scheme: header uses elementColor2, content uses elementColor3
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
+    final Color effectiveSubtitleColor = subtitleColor ?? AppTheme.elementColor1;
+    final Color effectiveSelectedOptionColor = selectedOptionColor ?? AppTheme.elementColor3;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
+    final Color effectiveDropdownContainerColor = dropdownContainerColor ?? AppTheme.containerColor2;
 
-    final double effectiveHeight = fieldHeight ?? 72.0; // AppTheme.inputFieldHeight
-    final double labelAreaHeight = 21.0; // AppTheme.inputFieldLabelHeight
-    final double dropdownAreaHeight = 48.0; // AppTheme.inputFieldContentHeight
-    final double effectiveDropdownBorderRadius = dropdownBorderRadius ?? 16.0; // AppTheme.inputFieldBorderRadius
-    final double labelRowSpacing = 8.0; // AppTheme.inputFieldLabelInternalSpacing (original spacing: 8)
-    final double dropdownRowSpacing = 16.0; // AppTheme.inputFieldContentInternalSpacing (original spacing: 16)
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
-    final IconData effectiveTrailingIcon = trailingIcon ?? Icons.expand_more; // Default icon
+    final double effectiveHeight = fieldHeight ?? 72.0;
+    final double labelAreaHeight = 21.0;
+    final double dropdownAreaHeight = 48.0;
+    final double effectiveDropdownBorderRadius = dropdownBorderRadius ?? 16.0;
+    final double labelRowSpacing = 8.0;
+    final double dropdownRowSpacing = 16.0;
+    final double effectiveIconSize = iconSize ?? 24.0;
+    final IconData effectiveTrailingIcon = trailingIcon ?? Icons.expand_more;
 
     // Text Styles
     final TextStyle titleStyle = TextStyle(
@@ -182,7 +182,7 @@ class DropdownField2 extends StatelessWidget {
                     ),
                   ),
                   if (subtitle != null && subtitle!.isNotEmpty) ...[
-                    SizedBox(width: labelRowSpacing), // For original Row spacing: 8
+                    SizedBox(width: labelRowSpacing),
                     Text(
                       subtitle!,
                       style: subtitleStyle,

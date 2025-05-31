@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../common/appTheme.dart';
 import '../common/components/headers/widgetHeader1.dart';
 import '../common/components/headers/widgetHeader3.dart';
 import '../common/components/items/darkItem7.dart';
 import '../common/components/items/lightItem7.dart';
-import '../common/models/client_model.dart';
+import '../../backend/models/client_model.dart';
 import '../common/services/client_service.dart';
+import '../popups/clientsavePopup.dart';
 
 /// ClientsPane - Interfața pentru gestionarea apelurilor clienților
 /// 
@@ -95,21 +97,46 @@ class _ClientsPaneState extends State<ClientsPane> {
   Widget _buildClientItem(ClientModel client) {
     final bool isFocused = client.status == ClientStatus.focused;
     
+    // Determină ce să afișeze ca descriere
+    String description;
+    if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
+      // Pentru clienții amânați, afișează data și ora
+      description = DateFormat('dd/MM/yy HH:mm').format(client.scheduledDateTime!);
+    } else {
+      // Pentru ceilalți clienți, afișează numărul de telefon
+      description = client.phoneNumber;
+    }
+    
     if (isFocused) {
       return DarkItem7(
         title: client.name,
-        description: client.phoneNumber,
+        description: description,
         svgAsset: 'assets/doneIcon.svg',
+        onIconTap: () => _showClientSavePopup(client),
         // Nu facem nimic când se apasă pe darkItem7 (client deja focusat)
       );
     } else {
       return LightItem7(
         title: client.name,
-        description: client.phoneNumber,
+        description: description,
         svgAsset: 'assets/viewIcon.svg',
         onTap: () => _clientService.focusClient(client.id),
       );
     }
+  }
+
+  /// Afișează popup-ul pentru salvarea statusului clientului
+  void _showClientSavePopup(ClientModel client) {
+    showDialog(
+      context: context,
+      builder: (context) => ClientSavePopup(
+        client: client,
+        onSaved: () {
+          // Refresh UI sau alte acțiuni după salvare
+          setState(() {});
+        },
+      ),
+    );
   }
 
   /// Construiește o secțiune (Apeluri, Reveniri, Recente)

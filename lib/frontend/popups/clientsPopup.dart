@@ -398,7 +398,6 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                             // Co-debitor Name Field
                             InputField1(
                               title: "Nume codebitor",
-                              subtitle: "Optional",
                               hintText: "Introdu numele codebitorului",
                               controller: _coDebitorNameController,
                               minWidth: 128,
@@ -409,7 +408,6 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                             // Co-debitor Phone Field
                             InputField1(
                               title: "Numar codebitor",
-                              subtitle: "Optional",
                               hintText: "Introdu numarul codebitorului",
                               controller: _coDebitorPhoneController,
                               keyboardType: TextInputType.phone,

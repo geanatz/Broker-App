@@ -1,4 +1,3 @@
-
 /// Model pentru reprezentarea unui client și starea formularului său
 class ClientModel {
   final String id;
@@ -10,6 +9,15 @@ class ClientModel {
   // Datele formularului pentru acest client
   Map<String, dynamic> formData;
   
+  // Statusul discuției cu clientul
+  final String? discussionStatus; // 'Acceptat', 'Amanat', 'Refuzat'
+  
+  // Data și ora pentru amânare sau întâlnire
+  final DateTime? scheduledDateTime;
+  
+  // Informații adiționale despre discuție
+  final String? additionalInfo;
+  
   ClientModel({
     required this.id,
     required this.name,
@@ -17,6 +25,9 @@ class ClientModel {
     required this.status,
     required this.category,
     Map<String, dynamic>? formData,
+    this.discussionStatus,
+    this.scheduledDateTime,
+    this.additionalInfo,
   }) : formData = formData ?? {};
   
   /// Copiază clientul cu noi valori
@@ -27,6 +38,9 @@ class ClientModel {
     ClientStatus? status,
     ClientCategory? category,
     Map<String, dynamic>? formData,
+    String? discussionStatus,
+    DateTime? scheduledDateTime,
+    String? additionalInfo,
   }) {
     return ClientModel(
       id: id ?? this.id,
@@ -35,6 +49,9 @@ class ClientModel {
       status: status ?? this.status,
       category: category ?? this.category,
       formData: formData ?? Map<String, dynamic>.from(this.formData),
+      discussionStatus: discussionStatus ?? this.discussionStatus,
+      scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
+      additionalInfo: additionalInfo ?? this.additionalInfo,
     );
   }
   
@@ -57,6 +74,9 @@ class ClientModel {
       'status': status.index,
       'category': category.index,
       'formData': formData,
+      'discussionStatus': discussionStatus,
+      'scheduledDateTime': scheduledDateTime?.millisecondsSinceEpoch,
+      'additionalInfo': additionalInfo,
     };
   }
   
@@ -69,6 +89,11 @@ class ClientModel {
       status: ClientStatus.values[map['status'] ?? 0],
       category: ClientCategory.values[map['category'] ?? 0],
       formData: Map<String, dynamic>.from(map['formData'] ?? {}),
+      discussionStatus: map['discussionStatus'],
+      scheduledDateTime: map['scheduledDateTime'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(map['scheduledDateTime'])
+          : null,
+      additionalInfo: map['additionalInfo'],
     );
   }
 }

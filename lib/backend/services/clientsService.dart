@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../frontend/common/models/client_model.dart';
+import '../models/client_model.dart';
 
 /// Firebase service pentru gestionarea datelor clienților
 /// Acesta va fi integrat cu ClientService pentru persistența datelor

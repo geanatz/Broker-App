@@ -1,6 +1,7 @@
 // lib/components/fields/input_field2.dart
 
 import 'package:flutter/material.dart';
+import '../../appTheme.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A display component for an input field with a title, an optional subtitle,
@@ -64,11 +65,11 @@ class InputField2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveSubtitleColor = subtitleColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final Color effectiveInputTextColor = inputTextColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveInputContainerColor = inputContainerColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
+    // Fixed color scheme: header uses elementColor2, content uses elementColor3
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
+    final Color effectiveSubtitleColor = subtitleColor ?? AppTheme.elementColor1;
+    final Color effectiveInputTextColor = inputTextColor ?? AppTheme.elementColor3;
+    final Color effectiveInputContainerColor = inputContainerColor ?? AppTheme.containerColor2;
 
     final double effectiveHeight = fieldHeight ?? 72.0; // AppTheme.inputFieldHeight
     final double labelAreaHeight = 21.0; // AppTheme.inputFieldLabelHeight

@@ -1,7 +1,8 @@
 // lib/components/fields/input_field3.dart
 
 import 'package:flutter/material.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import 'package:google_fonts/google_fonts.dart';
+import '../../appTheme.dart';
 
 /// A display component for an input field with a title, text value,
 /// and an optional trailing icon.
@@ -31,23 +32,23 @@ class InputField3 extends StatelessWidget {
   final double? fieldHeight;
 
   /// Optional background color for the input area.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2).
+  /// Defaults to AppTheme.containerColor2.
   final Color? inputContainerColor;
 
   /// Optional text color for the title.
-  /// Defaults to AppTheme.elementColor2 (0xFF666699).
+  /// Defaults to AppTheme.elementColor2.
   final Color? titleColor;
 
   /// Optional text color for the input text.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80).
+  /// Defaults to AppTheme.elementColor3.
   final Color? inputTextColor;
 
   /// Optional color for the trailing icon.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80).
+  /// Defaults to AppTheme.elementColor3.
   final Color? iconColor;
 
   /// Optional border radius for the input area.
-  /// Defaults to 16.0.
+  /// Defaults to AppTheme.borderRadiusSmall.
   final double? inputBorderRadius;
 
   /// Optional size for the icon.
@@ -73,27 +74,29 @@ class InputField3 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveInputTextColor = inputTextColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveInputContainerColor = inputContainerColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
+    // Use AppTheme colors and styles like InputField1
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
+    final Color effectiveInputTextColor = inputTextColor ?? AppTheme.elementColor3;
+    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
+    final Color effectiveInputContainerColor = inputContainerColor ?? AppTheme.containerColor2;
 
-    final double effectiveHeight = fieldHeight ?? 72.0; // AppTheme.inputFieldHeight
-    final double labelAreaHeight = 21.0; // AppTheme.inputFieldLabelHeight
-    final double inputAreaHeight = 48.0; // AppTheme.inputFieldContentHeight
-    final double effectiveInputBorderRadius = inputBorderRadius ?? 16.0; // AppTheme.inputFieldBorderRadius
-    final double inputRowSpacing = 16.0; // AppTheme.inputFieldContentInternalSpacing (original spacing: 16)
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
+    final double effectiveHeight = fieldHeight ?? 72.0;
+    final double labelAreaHeight = 21.0;
+    final double inputAreaHeight = 48.0;
+    final double effectiveInputBorderRadius = inputBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveIconSize = iconSize ?? 24.0;
 
-    // Text Styles
-    final TextStyle titleStyle = TextStyle(
+    // Use Google Fonts Outfit like InputField1
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, fontWeight: FontWeight.w600, fontFamily: 'Outfit',
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w600,
     );
-    final TextStyle inputTextStyle = TextStyle(
+    
+    final TextStyle inputTextStyle = GoogleFonts.outfit(
       color: effectiveInputTextColor,
-      fontSize: 17, fontWeight: FontWeight.w500, fontFamily: 'Outfit',
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w500,
     );
 
     // Paddings
@@ -126,14 +129,12 @@ class InputField3 extends StatelessWidget {
             ),
           ),
           if (trailingIcon != null) ...[
-            SizedBox(width: inputRowSpacing), // For original Row spacing: 16
+            SizedBox(width: AppTheme.mediumGap),
             GestureDetector(
               onTap: onIconTap,
-              child: SizedBox( // Original 24x24 container for icon
+              child: SizedBox(
                 width: effectiveIconSize,
                 height: effectiveIconSize,
-                // decoration: BoxDecoration(), // Original empty decoration, not needed for Icon
-                // clipBehavior: Clip.antiAlias, // Not needed for Icon
                 child: Icon(
                   trailingIcon,
                   color: effectiveIconColor,
@@ -176,6 +177,7 @@ class InputField3 extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 3),
             onTap != null && onIconTap == null // Only make main area tappable if icon doesn't have its own tap
                 ? InkWell(onTap: onTap, borderRadius: BorderRadius.circular(effectiveInputBorderRadius), child: inputContent)
                 : inputContent,

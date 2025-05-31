@@ -11,7 +11,7 @@ import 'package:broker_app/frontend/panes/calculatorPane.dart';
 import 'package:broker_app/frontend/panes/clientsPane.dart';
 import 'package:broker_app/frontend/popups/clientsPopup.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
-import 'package:broker_app/frontend/common/models/client_model.dart';
+import 'package:broker_app/backend/models/client_model.dart';
 import 'package:broker_app/backend/services/settingsService.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:

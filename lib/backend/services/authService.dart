@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
-import 'package:broker_app/old/services/firebase_thread_handler.dart';
+import 'firebaseService.dart';
 
 /// Enum pentru a defini stările/pașii posibili ai ecranului de autentificare.
 /// Aceasta va controla ce popup este afișat.

@@ -296,7 +296,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
                         // Nume client
                         InputField1(
                           title: "Nume client",
-                          subtitle: "(optional)",
                           controller: _clientNameController,
                           hintText: "Introduceti numele",
                         ),
@@ -306,7 +305,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
                         // Telefon (optional)
                         InputField1(
                           title: "Telefon",
-                          subtitle: "(optional)",
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
                           hintText: "Introduceti telefonul",
@@ -340,13 +338,58 @@ class _MeetingPopupState extends State<MeetingPopup> {
                         // Row cu Data si Ora
                         Row(
                           children: [
-                            // Data
+                            // Data - using GestureDetector for date picker
                             Expanded(
-                              child: InputField1(
-                                title: "Data",
-                                controller: TextEditingController(text: _selectedDateText),
-                                readOnly: true,
+                              child: GestureDetector(
                                 onTap: _selectDate,
+                                child: Container(
+                                  height: 72,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        height: 21,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        child: Text(
+                                          "Data",
+                                          style: GoogleFonts.outfit(
+                                            color: AppTheme.elementColor2,
+                                            fontSize: AppTheme.fontSizeMedium,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Container(
+                                        height: 48,
+                                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.containerColor2,
+                                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                _selectedDateText,
+                                                style: GoogleFonts.outfit(
+                                                  color: AppTheme.elementColor3,
+                                                  fontSize: AppTheme.fontSizeMedium,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.calendar_today,
+                                              color: AppTheme.elementColor3,
+                                              size: 24,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                             

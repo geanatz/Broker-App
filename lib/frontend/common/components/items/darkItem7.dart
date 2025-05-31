@@ -26,6 +26,9 @@ class DarkItem7 extends StatelessWidget {
   /// Optional callback when the item is tapped.
   final VoidCallback? onTap;
 
+  /// Optional callback when the icon is tapped.
+  final VoidCallback? onIconTap;
+
   /// Optional custom background color for the main container.
   /// Defaults to AppTheme.containerColor2.
   final Color? backgroundColor;
@@ -65,6 +68,7 @@ class DarkItem7 extends StatelessWidget {
     this.icon,
     this.svgAsset,
     this.onTap,
+    this.onIconTap,
     this.backgroundColor,
     this.titleColor,
     this.descriptionColor,
@@ -107,37 +111,40 @@ class DarkItem7 extends StatelessWidget {
     // Determine if we should show an icon (either SVG or IconData)
     final bool hasIcon = svgAsset != null || icon != null;
 
-    Widget iconButton = hasIcon ? Container(
-      width: iconContainerSize,
-      height: iconContainerSize,
-      padding: const EdgeInsets.all(12),
-      decoration: ShapeDecoration(
-        color: effectiveIconContainerColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-        ),
-      ),
-      child: Center(
-          child: SizedBox(
-            width: 24.0,
-            height: 24.0,
-            child: svgAsset != null
-                ? SvgPicture.asset(
-                    svgAsset!,
-                    width: 24.0,
-                    height: 24.0,
-                    colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
-                    fit: BoxFit.contain,
-                  )
-                : icon != null
-                    ? Icon(
-                        icon,
-                        size: 24.0,
-                        color: effectiveIconColor,
-                      )
-                    : Container(),
+    Widget iconButton = hasIcon ? GestureDetector(
+      onTap: onIconTap,
+      child: Container(
+        width: iconContainerSize,
+        height: iconContainerSize,
+        padding: const EdgeInsets.all(12),
+        decoration: ShapeDecoration(
+          color: effectiveIconContainerColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
           ),
         ),
+        child: Center(
+            child: SizedBox(
+              width: 24.0,
+              height: 24.0,
+              child: svgAsset != null
+                  ? SvgPicture.asset(
+                      svgAsset!,
+                      width: 24.0,
+                      height: 24.0,
+                      colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                      fit: BoxFit.contain,
+                    )
+                  : icon != null
+                      ? Icon(
+                          icon,
+                          size: 24.0,
+                          color: effectiveIconColor,
+                        )
+                      : Container(),
+            ),
+          ),
+      ),
     ) : Container();
 
     Widget content = Container(
