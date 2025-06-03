@@ -184,7 +184,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       switch (_selectedStatus) {
         case 'Acceptat':
           await _clientService.moveClientToRecente(
-            widget.client.id,
+            widget.client.phoneNumber,
             additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
           );
           break;
@@ -192,7 +192,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         case 'Amanat':
           if (finalDateTime != null) {
             await _clientService.moveClientToReveniri(
-              widget.client.id,
+              widget.client.phoneNumber,
               scheduledDateTime: finalDateTime,
               additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
             );
@@ -201,7 +201,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           
         case 'Refuzat':
           await _clientService.moveClientToRecenteRefuzat(
-            widget.client.id,
+            widget.client.phoneNumber,
             additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
           );
           break;
@@ -436,16 +436,8 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                 text: _isLoading ? 'Se salveaza...' : 'Salveaza status',
                 icon: Icons.save,
                 onTap: _isLoading ? null : _saveClientStatus,
-                backgroundColor: AppTheme.containerColor1,
-                textColor: AppTheme.elementColor2,
-                iconColor: AppTheme.elementColor2,
                 borderRadius: AppTheme.borderRadiusMedium,
                 buttonHeight: AppTheme.navButtonHeight,
-                textStyle: GoogleFonts.outfit(
-                  color: AppTheme.elementColor2,
-                  fontSize: AppTheme.fontSizeMedium,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
             ],
           ),

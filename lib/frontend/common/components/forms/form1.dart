@@ -1,7 +1,6 @@
 // lib/components/forms/form_container1.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart'; // Import AppTheme instead of placeholder
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder
 import '../fields/dropdownField1.dart';
@@ -55,6 +54,9 @@ class Form1 extends StatefulWidget {
   /// Keyboard type for the bottom-left input field
   final TextInputType? keyboardTypeR2F1;
   
+  /// Optional suffix text for the bottom-left input field
+  final String? suffixTextR2F1;
+  
   /// Title for the bottom-right input field
   final String titleR2F2;
   
@@ -66,6 +68,9 @@ class Form1 extends StatefulWidget {
   
   /// Keyboard type for the bottom-right input field
   final TextInputType? keyboardTypeR2F2;
+  
+  /// Optional suffix text for the bottom-right input field
+  final String? suffixTextR2F2;
 
   // Container styling
   /// Optional background color for the outer container
@@ -103,10 +108,12 @@ class Form1 extends StatefulWidget {
     this.controllerR2F1,
     this.hintTextR2F1 = 'Introduceti soldul',
     this.keyboardTypeR2F1 = TextInputType.number,
+    this.suffixTextR2F1,
     this.titleR2F2 = 'Rata',
     this.controllerR2F2,
     this.hintTextR2F2 = 'Introduceti rata',
     this.keyboardTypeR2F2 = TextInputType.number,
+    this.suffixTextR2F2,
     this.containerColor,
     this.borderRadius,
     this.padding,
@@ -142,7 +149,6 @@ class _Form1State extends State<Form1> {
             decoration: BoxDecoration(
               color: effectiveContainerColor,
               borderRadius: BorderRadius.circular(effectiveBorderRadius),
-              boxShadow: [AppTheme.widgetShadow],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -181,8 +187,9 @@ class _Form1State extends State<Form1> {
                         controller: widget.controllerR2F1,
                         hintText: widget.hintTextR2F1,
                         keyboardType: widget.keyboardTypeR2F1,
-                        enableCommaFormatting: true,
-                        enableKTransformation: true,
+                        enableCommaFormatting: widget.suffixTextR2F1 == null,
+                        enableKTransformation: widget.suffixTextR2F1 == null,
+                        suffixText: widget.suffixTextR2F1,
                       ),
                     ),
                     SizedBox(width: effectiveFieldSpacing),
@@ -192,8 +199,9 @@ class _Form1State extends State<Form1> {
                         controller: widget.controllerR2F2,
                         hintText: widget.hintTextR2F2,
                         keyboardType: widget.keyboardTypeR2F2,
-                        enableCommaFormatting: true,
-                        enableKTransformation: true,
+                        enableCommaFormatting: widget.suffixTextR2F2 == null,
+                        enableKTransformation: widget.suffixTextR2F2 == null,
+                        suffixText: widget.suffixTextR2F2,
                       ),
                     ),
                   ],

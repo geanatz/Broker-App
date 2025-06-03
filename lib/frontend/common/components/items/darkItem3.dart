@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import '../../appTheme.dart';
 
 /// A customizable item component with a primary title on the left
 /// and a secondary description text on the right.
@@ -20,19 +20,19 @@ class DarkItem3 extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Optional custom background color for the container.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2) if not provided.
+  /// Defaults to AppTheme.containerColor2 if not provided.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
-  /// Defaults to AppTheme.elementColor3 (0xFF4D4D80) if not provided.
+  /// Defaults to AppTheme.elementColor3 if not provided.
   final Color? titleColor;
 
   /// Optional custom color for the description text.
-  /// Defaults to AppTheme.elementColor2 (0xFF666699) if not provided.
+  /// Defaults to AppTheme.elementColor2 if not provided.
   final Color? descriptionColor;
 
   /// Optional custom border radius for the container.
-  /// Defaults to 24.0 if not provided.
+  /// Defaults to AppTheme.borderRadiusMedium if not provided.
   final double? borderRadius;
 
   /// Optional width for the container holding the description text.
@@ -54,28 +54,25 @@ class DarkItem3 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveDescriptionColor = descriptionColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final double effectiveBorderRadius = borderRadius ?? 24.0; // AppTheme.borderRadiusLarge
-    final double itemHeight = 48.0; // AppTheme.itemHeightMedium
-    final double horizontalPadding = 16.0; // AppTheme.paddingMedium
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor2;
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor3;
+    final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor2;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double itemHeight = 48.0;
+    final double horizontalPadding = AppTheme.mediumGap;
     final double effectiveDescriptionContainerWidth = descriptionContainerWidth ?? 104.0;
-    final double internalSpacing = 16.0; // AppTheme.mediumGap (original spacing: 16 on Row)
+    final double internalSpacing = AppTheme.mediumGap;
 
-    // Text Styles (Consider moving to AppTheme)
-    final TextStyle titleStyle = TextStyle(
+    // Text Styles
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w500,
     );
-    final TextStyle descriptionStyle = TextStyle(
+    final TextStyle descriptionStyle = GoogleFonts.outfit(
       color: effectiveDescriptionColor,
-      fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+      fontSize: AppTheme.fontSizeSmall,
+      fontWeight: FontWeight.w500,
     );
 
     Widget content = Container(
@@ -93,13 +90,10 @@ class DarkItem3 extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            // clipBehavior: Clip.antiAlias, // Not needed
-            // decoration: BoxDecoration(), // Not needed
             child: Row(
-              mainAxisSize: MainAxisSize.min, // Allow Expanded to control width
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
-              // spacing: 10, // Use SizedBox for clarity if needed
               children: [
                 Text(
                   title,
@@ -109,19 +103,14 @@ class DarkItem3 extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: internalSpacing), // Represents original spacing: 16
+          SizedBox(width: internalSpacing),
           SizedBox(
             width: effectiveDescriptionContainerWidth,
-            // clipBehavior: Clip.antiAlias, // Not needed
-            // decoration: BoxDecoration(), // Not needed
             child: Row(
-              mainAxisSize: MainAxisSize.min, // To allow end alignment
-              mainAxisAlignment: MainAxisAlignment.end, // Aligns text to the end
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.center,
-              // spacing: 10, // Ineffective for single Text child
               children: [
-                // Expanded might be better here if text can be long,
-                // but original has fixed width container and right align.
                 Text(
                   description,
                   textAlign: TextAlign.right,

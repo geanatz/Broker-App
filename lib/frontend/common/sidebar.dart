@@ -58,6 +58,9 @@ class _SidebarWidgetState extends State<SidebarWidget> {
   // UI state for collapsible sections
   bool _isAreaSectionCollapsed = false;
   bool _isPaneSectionCollapsed = false;
+  
+  // UI state for consultant section hover
+  bool _isConsultantSectionHovered = false;
 
   @override
   void initState() {
@@ -83,10 +86,6 @@ class _SidebarWidgetState extends State<SidebarWidget> {
           _buildConsultantSection(),
           const SizedBox(height: AppTheme.mediumGap),
           
-          // Quick function section
-          _buildFunctionSection(),
-          const SizedBox(height: AppTheme.mediumGap),
-          
           // Areas navigation section
           _buildAreasSection(),
           const SizedBox(height: AppTheme.mediumGap),
@@ -100,17 +99,18 @@ class _SidebarWidgetState extends State<SidebarWidget> {
 
   /// Builds the consultant information section with avatar and details
   Widget _buildConsultantSection() {
-    return Container(
-      height: 63,
-      decoration: BoxDecoration(
-        color: AppTheme.containerColor1,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _showConsultantPopup,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isConsultantSectionHovered = true),
+      onExit: (_) => setState(() => _isConsultantSectionHovered = false),
+      child: GestureDetector(
+        onTap: _showConsultantPopup,
+        child: Container(
+          height: 63,
+          decoration: BoxDecoration(
+            color: _isConsultantSectionHovered ? AppTheme.containerColor2 : AppTheme.containerColor1,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 7),
             child: Row(
@@ -123,14 +123,18 @@ class _SidebarWidgetState extends State<SidebarWidget> {
                     children: [
                       Text(
                         widget.consultantName,
-                        style: AppTheme.primaryTitleStyle,
+                        style: AppTheme.primaryTitleStyle.copyWith(
+                          color: _isConsultantSectionHovered ? AppTheme.elementColor3 : AppTheme.elementColor2,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 3),
                       Text(
                         widget.teamName,
-                        style: AppTheme.secondaryTitleStyle,
+                        style: AppTheme.secondaryTitleStyle.copyWith(
+                          color: _isConsultantSectionHovered ? AppTheme.elementColor2 : AppTheme.elementColor1,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -163,25 +167,11 @@ class _SidebarWidgetState extends State<SidebarWidget> {
           width: AppTheme.iconSizeMedium,
           height: AppTheme.iconSizeMedium,
           colorFilter: ColorFilter.mode(
-            AppTheme.elementColor2,
+            AppTheme.elementColor3,
             BlendMode.srcIn,
           ),
         ),
       ),
-    );
-  }
-
-  /// Builds the quick function section (e.g., "Clienti" button)
-  Widget _buildFunctionSection() {
-    return SpacedButtonSingleSvg(
-      text: 'Clienti',
-      iconPath: 'assets/clientsIcon.svg',
-      onTap: widget.onClientsPopupRequested,
-      backgroundColor: AppTheme.containerColor1,
-      textColor: AppTheme.elementColor2,
-      iconColor: AppTheme.elementColor2,
-      borderRadius: AppTheme.borderRadiusMedium,
-      buttonHeight: 48.0,
     );
   }
 
@@ -190,7 +180,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     return Column(
       children: [
         WidgetHeader3(
-          title: 'Areas',
+          title: 'Principal',
           trailingIcon: _isAreaSectionCollapsed 
               ? Icons.keyboard_arrow_up 
               : Icons.keyboard_arrow_down,
@@ -212,7 +202,7 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     return Column(
       children: [
         WidgetHeader3(
-          title: 'Panes',
+          title: 'Secundar',
           trailingIcon: _isPaneSectionCollapsed 
               ? Icons.keyboard_arrow_up 
               : Icons.keyboard_arrow_down,
@@ -281,26 +271,28 @@ class _SidebarWidgetState extends State<SidebarWidget> {
   Widget _buildNavigationButton(ButtonConfig button) {
     bool isActive = _isButtonActive(button);
     
-    final Color backgroundColor = isActive 
-        ? AppTheme.containerColor2 
-        : AppTheme.containerColor1;
-    final Color iconColor = isActive 
-        ? AppTheme.elementColor3 
-        : AppTheme.elementColor2;
-    final Color textColor = isActive 
-        ? AppTheme.elementColor3 
-        : AppTheme.elementColor2;
-    
-    return SpacedButtonSingleSvg(
-      text: button.title,
-      iconPath: button.iconPath,
-      onTap: () => _sidebarService.handleButtonClick(button),
-      backgroundColor: backgroundColor,
-      textColor: textColor,
-      iconColor: iconColor,
-      borderRadius: AppTheme.borderRadiusMedium,
-      buttonHeight: AppTheme.navButtonHeight,
-    );
+    if (isActive) {
+      // For active buttons, set explicit colors
+      return SpacedButtonSingleSvg(
+        text: button.title,
+        iconPath: button.iconPath,
+        onTap: () => _sidebarService.handleButtonClick(button),
+        backgroundColor: AppTheme.containerColor2,
+        textColor: AppTheme.elementColor3,
+        iconColor: AppTheme.elementColor3,
+        borderRadius: AppTheme.borderRadiusMedium,
+        buttonHeight: AppTheme.navButtonHeight,
+      );
+    } else {
+      // For inactive buttons, let the component handle hover states
+      return SpacedButtonSingleSvg(
+        text: button.title,
+        iconPath: button.iconPath,
+        onTap: () => _sidebarService.handleButtonClick(button),
+        borderRadius: AppTheme.borderRadiusMedium,
+        buttonHeight: AppTheme.navButtonHeight,
+      );
+    }
   }
 
   /// Determines if a button should appear as active

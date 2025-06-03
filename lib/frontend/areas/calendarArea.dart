@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
@@ -7,6 +6,8 @@ import 'package:broker_app/frontend/common/appTheme.dart';
 
 import 'package:broker_app/frontend/popups/meetingPopup.dart';
 import 'package:broker_app/backend/services/calendarService.dart';
+import 'package:broker_app/backend/services/unified_client_service.dart';
+import 'package:broker_app/backend/models/unified_client_model.dart';
 import 'package:broker_app/frontend/common/components/texts/text2.dart';
 
 // Import the required components
@@ -20,8 +21,13 @@ import 'package:broker_app/frontend/common/components/items/darkItem2.dart';
 class CalendarArea extends StatefulWidget {
   /// Callback pentru refresh meetingsPane când se salvează întâlniri
   final VoidCallback? onMeetingSaved;
+  final Function(String)? onMeetingSelected;
   
-  const CalendarArea({super.key, this.onMeetingSaved});
+  const CalendarArea({
+    super.key,
+    this.onMeetingSaved,
+    this.onMeetingSelected,
+  });
 
   @override
   State<CalendarArea> createState() => CalendarAreaState();
@@ -30,6 +36,7 @@ class CalendarArea extends StatefulWidget {
 class CalendarAreaState extends State<CalendarArea> {
   // Services
   final CalendarService _calendarService = CalendarService();
+  final UnifiedClientService _unifiedService = UnifiedClientService();
   
   // Firebase references
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -40,12 +47,16 @@ class CalendarAreaState extends State<CalendarArea> {
   bool _isLoading = false;
   
   // Data cache pentru meetings
-  List<QueryDocumentSnapshot> _cachedMeetings = [];
+  List<ClientActivity> _cachedMeetings = [];
+  List<ClientActivity> _allMeetings = []; // Cache for all meetings for navigation
   Timer? _refreshTimer;
   
   // Highlight functionality
   String? _highlightedMeetingId;
   Timer? _highlightTimer;
+  
+  // Scroll controller for calendar grid
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -57,6 +68,7 @@ class CalendarAreaState extends State<CalendarArea> {
   void dispose() {
     _refreshTimer?.cancel();
     _highlightTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -64,21 +76,15 @@ class CalendarAreaState extends State<CalendarArea> {
   Future<void> _initializeCalendar() async {
     try {
       await _calendarService.initialize();
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-        // Load initial data and start periodic refresh
-        _loadMeetingsForCurrentWeek();
-        _startPeriodicRefresh();
-      }
+      setState(() {
+        _isInitialized = true;
+      });
+      await _loadMeetingsForCurrentWeek();
     } catch (e) {
-      debugPrint('Calendar initialization error: $e');
-      if (mounted) {
-        setState(() {
-          _isInitialized = true; // Show calendar even with init errors
-        });
-      }
+      debugPrint('Error initializing calendar: $e');
+      setState(() {
+        _isInitialized = true;
+      });
     }
   }
 
@@ -88,40 +94,44 @@ class CalendarAreaState extends State<CalendarArea> {
     // Removed automatic refresh - will only refresh when explicitly needed
   }
 
-  /// Load meetings for current week using one-time fetch instead of stream
+  /// Încarcă întâlnirile pentru săptămâna curentă din noua structură unificată
   Future<void> _loadMeetingsForCurrentWeek() async {
-    if (_isLoading) return;
-    
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) {
+      debugPrint("User not authenticated");
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
+      debugPrint("Loading meetings from unified structure for week offset: $_currentWeekOffset");
+      
       final DateTime startOfWeek = _calendarService.getStartOfWeekToDisplay(_currentWeekOffset);
       final DateTime endOfWeek = _calendarService.getEndOfWeekToDisplay(_currentWeekOffset);
       
-      // Use get() instead of snapshots() to avoid streaming issues
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('meetings')
-          .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
-          .where('dateTime', isLessThan: Timestamp.fromDate(endOfWeek))
-          .get()
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              debugPrint('Firestore query timeout');
-              throw TimeoutException('Query timeout', const Duration(seconds: 5));
-            },
-          );
+      // Obține toate întâlnirile din noua structură unificată
+      final allMeetings = await _unifiedService.getAllMeetings();
+      
+      // Filtrează întâlnirile pentru săptămâna curentă
+      final weekMeetings = allMeetings.where((meeting) {
+        return meeting.dateTime.isAfter(startOfWeek) && 
+               meeting.dateTime.isBefore(endOfWeek);
+      }).toList();
+
+      debugPrint("Found ${weekMeetings.length} meetings for current week");
 
       if (mounted) {
         setState(() {
-          _cachedMeetings = snapshot.docs;
+          _cachedMeetings = weekMeetings;
+          _allMeetings = allMeetings;
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Error loading meetings: $e');
+      debugPrint('Error loading meetings from unified structure: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -327,27 +337,27 @@ class CalendarAreaState extends State<CalendarArea> {
     final Map<String, String> meetingsDocIds = {};
     
     // Process cached meetings
-    for (var doc in _cachedMeetings) {
+    for (var meeting in _cachedMeetings) {
       try {
-        final data = doc.data() as Map<String, dynamic>;
-        final dateTime = (data['dateTime'] as Timestamp).toDate();
+        final dateTime = meeting.dateTime;
         
         final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
         final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
         
         if (dayIndex != null && hourIndex != -1) {
           final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
-          meetingsMap[slotKey] = data;
-          meetingsDocIds[slotKey] = doc.id;
+          meetingsMap[slotKey] = meeting.toMap();
+          meetingsDocIds[slotKey] = meeting.id;
         }
       } catch (e) {
-        debugPrint('Error processing meeting document ${doc.id}: $e');
+        debugPrint('Error processing meeting document ${meeting.id}: $e');
         continue;
       }
     }
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
+      controller: _scrollController,
       child: Column(
         children: _buildHourRows(meetingsMap, meetingsDocIds),
       ),
@@ -413,15 +423,19 @@ class CalendarAreaState extends State<CalendarArea> {
 
   /// Construiește un slot rezervat conform designului folosind DarkItem4 sau DarkItem2
   Widget _buildMeetingSlot(Map<String, dynamic> meetingData, String docId) {
-    final consultantName = meetingData['consultantName'] ?? 'N/A';
-    final clientName = meetingData['clientName'] ?? 'N/A';
-    final consultantId = meetingData['consultantId'] as String?;
+    // Access data from additionalData where it's actually stored
+    final additionalData = meetingData['additionalData'] as Map<String, dynamic>?;
+    final consultantName = additionalData?['consultantName'] ?? 'N/A';
+    final clientName = additionalData?['clientName'] ?? 'N/A';
+    final consultantId = additionalData?['consultantId'] as String?;
     final currentUserId = _auth.currentUser?.uid;
     final bool isOwner = consultantId != null && currentUserId == consultantId;
     final bool isHighlighted = _highlightedMeetingId == docId;
     
     // Check if client name is the default value (meeting without real client name)
-    final bool hasRealClientName = clientName != 'Client nedefinit' && clientName != 'N/A';
+    final bool hasRealClientName = clientName != 'Client nedefinit' && 
+                                   clientName != 'N/A' && 
+                                   clientName != 'Client necunoscut';
 
     // Calculate background color with highlight effect
     Color backgroundColor = AppTheme.containerColor2;
@@ -523,22 +537,41 @@ class CalendarAreaState extends State<CalendarArea> {
   }
 
   /// Navigates to a specific meeting and highlights it
-  void navigateToMeeting(String meetingId) {
+  void navigateToMeeting(String meetingId) async {
     debugPrint('Navigate to meeting: $meetingId');
     
-    // Find the meeting in cached data to determine which week it's in
-    QueryDocumentSnapshot? targetMeeting;
-    for (var meeting in _cachedMeetings) {
+    // First, try to find the meeting in all meetings cache
+    ClientActivity? targetMeeting;
+    for (var meeting in _allMeetings) {
       if (meeting.id == meetingId) {
         targetMeeting = meeting;
         break;
       }
     }
     
+    // If not found in cache, load all meetings fresh
+    if (targetMeeting == null) {
+      try {
+        final allMeetings = await _unifiedService.getAllMeetings();
+        setState(() {
+          _allMeetings = allMeetings;
+        });
+        
+        // Try to find the meeting again
+        for (var meeting in _allMeetings) {
+          if (meeting.id == meetingId) {
+            targetMeeting = meeting;
+            break;
+          }
+        }
+      } catch (e) {
+        debugPrint('Error loading all meetings for navigation: $e');
+        return;
+      }
+    }
+    
     if (targetMeeting != null) {
-      // Get meeting date to calculate week offset
-      final meetingData = targetMeeting.data() as Map<String, dynamic>;
-      final meetingDateTime = (meetingData['dateTime'] as Timestamp).toDate();
+      final meetingDateTime = targetMeeting.dateTime;
       
       // Calculate what week offset this meeting is in
       final weekDifference = _calendarService.getWeekOffsetForDate(meetingDateTime);
@@ -548,22 +581,49 @@ class CalendarAreaState extends State<CalendarArea> {
         setState(() {
           _currentWeekOffset = weekDifference;
         });
-        _loadMeetingsForCurrentWeek();
+        await _loadMeetingsForCurrentWeek();
       }
       
-      // Highlight the meeting
-      _highlightMeeting(meetingId);
-    } else {
-      // Meeting not in current cache, try to load fresh data
-      _loadMeetingsForCurrentWeek().then((_) {
-        // Try again after loading
-        for (var meeting in _cachedMeetings) {
-          if (meeting.id == meetingId) {
-            _highlightMeeting(meetingId);
-            break;
-          }
-        }
+      // Wait for frame to be built, then scroll and highlight
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToMeeting(targetMeeting!);
+        _highlightMeeting(meetingId);
       });
+    } else {
+      debugPrint('Meeting with id $meetingId not found');
+    }
+  }
+  
+  /// Scrolls to show the meeting at optimal position
+  void _scrollToMeeting(ClientActivity meeting) {
+    try {
+      final dayIndex = _calendarService.getDayIndexForDate(meeting.dateTime, _currentWeekOffset);
+      final hourIndex = _calendarService.getHourIndexForDateTime(meeting.dateTime);
+      
+      if (dayIndex != null && hourIndex != -1) {
+        // Calculate scroll position to center the meeting
+        // Each hour row has a height of approximately 64 + 16 (spacing) = 80 pixels
+        final double targetScrollPosition = hourIndex * 80.0;
+        final double maxScroll = _scrollController.position.maxScrollExtent;
+        final double viewportHeight = _scrollController.position.viewportDimension;
+        
+        // Center the meeting in the viewport
+        double scrollPosition = targetScrollPosition - (viewportHeight / 2) + 40; // 40 is half the row height
+        
+        // Ensure we don't scroll beyond bounds
+        scrollPosition = scrollPosition.clamp(0.0, maxScroll);
+        
+        // Animate to the position
+        _scrollController.animateTo(
+          scrollPosition,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+        
+        debugPrint('Scrolling to meeting at day $dayIndex, hour $hourIndex (position: $scrollPosition)');
+      }
+    } catch (e) {
+      debugPrint('Error scrolling to meeting: $e');
     }
   }
   
@@ -582,5 +642,11 @@ class CalendarAreaState extends State<CalendarArea> {
         });
       }
     });
+  }
+
+  /// Public method to refresh calendar data
+  void refreshCalendar() {
+    debugPrint('🔄 Refreshing calendar data...');
+    _loadMeetingsForCurrentWeek();
   }
 }

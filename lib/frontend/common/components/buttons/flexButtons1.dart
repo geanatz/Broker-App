@@ -1,44 +1,131 @@
 // lib/components/buttons/flex_button_single.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder
+import '../../appTheme.dart';
 
 // Assuming _TextIconButton is defined (copied for standalone example)
-class _TextIconButton extends StatelessWidget {
-  final String? text; final IconData? icon; final VoidCallback? onTap; final Color? backgroundColor;
-  final Color? textColor; final Color? iconColor; final double? borderRadius; final double? buttonHeight;
-  final EdgeInsetsGeometry? padding; final TextStyle? textStyle; final double? iconSize;
-  final MainAxisAlignment mainAxisAlignment; final double? internalSpacing;
-  const _TextIconButton({this.text, this.icon, this.onTap, this.backgroundColor, this.textColor, this.iconColor,
-    this.borderRadius, this.buttonHeight, this.padding, this.textStyle, this.iconSize,
-    this.mainAxisAlignment = MainAxisAlignment.center, this.internalSpacing});
+class _TextIconButton extends StatefulWidget {
+  final String? text; 
+  final IconData? icon; 
+  final String? iconPath; // SVG asset path
+  final VoidCallback? onTap; 
+  final Color? backgroundColor;
+  final Color? textColor; 
+  final Color? iconColor; 
+  final double? borderRadius; 
+  final double? buttonHeight;
+  final EdgeInsetsGeometry? padding; 
+  final TextStyle? textStyle; 
+  final double? iconSize;
+  final MainAxisAlignment mainAxisAlignment; 
+  final double? internalSpacing;
+  
+  const _TextIconButton({
+    this.text, 
+    this.icon, 
+    this.iconPath, // Added SVG support
+    this.onTap, 
+    this.backgroundColor, 
+    this.textColor, 
+    this.iconColor,
+    this.borderRadius, 
+    this.buttonHeight, 
+    this.padding, 
+    this.textStyle, 
+    this.iconSize,
+    this.mainAxisAlignment = MainAxisAlignment.center, 
+    this.internalSpacing
+  });
+
+  @override
+  State<_TextIconButton> createState() => _TextIconButtonState();
+}
+
+class _TextIconButtonState extends State<_TextIconButton> {
+  bool _isHovered = false;
+  bool _isFocused = false;
+
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4);
-    final Color effectiveTextColor = textColor ?? const Color(0xFF666699);
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF666699);
-    final double effectiveBorderRadius = borderRadius ?? 24.0;
-    final double effectiveButtonHeight = buttonHeight ?? 48.0;
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16);
-    final double effectiveIconSize = iconSize ?? 24.0;
-    final double effectiveInternalSpacing = internalSpacing ?? 8.0;
-    final TextStyle defaultTextStyle = TextStyle(color: effectiveTextColor, fontSize: 17, fontFamily: GoogleFonts.outfit().fontFamily, fontWeight: FontWeight.w500);
-    final TextStyle finalTextStyle = textStyle ?? defaultTextStyle;
+    final bool isInteractive = _isHovered || _isFocused;
+    
+    // Corrected color scheme: default uses containerColor1, hover/focus uses containerColor2
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? 
+        (isInteractive ? AppTheme.containerColor2 : AppTheme.containerColor1);
+    final Color effectiveTextColor = widget.textColor ?? 
+        (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
+    final Color effectiveIconColor = widget.iconColor ?? 
+        (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
+    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveButtonHeight = widget.buttonHeight ?? 48.0;
+    final EdgeInsetsGeometry effectivePadding = widget.padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final double effectiveIconSize = widget.iconSize ?? AppTheme.iconSizeMedium;
+    final double effectiveInternalSpacing = widget.internalSpacing ?? AppTheme.smallGap;
+    
+    final TextStyle defaultTextStyle = GoogleFonts.outfit(
+      color: effectiveTextColor, 
+      fontSize: AppTheme.fontSizeMedium, 
+      fontWeight: FontWeight.w500
+    );
+    final TextStyle finalTextStyle = widget.textStyle?.copyWith(color: effectiveTextColor) ?? defaultTextStyle;
+    
     List<Widget> children = [];
-    if (text != null && text!.isNotEmpty) {
-      if (mainAxisAlignment == MainAxisAlignment.start && icon != null) {
-        children.add(Expanded(child: Text(text!, style: finalTextStyle, overflow: TextOverflow.ellipsis)));
+    if (widget.text != null && widget.text!.isNotEmpty) {
+      if (widget.mainAxisAlignment == MainAxisAlignment.start && (widget.icon != null || widget.iconPath != null)) {
+        children.add(Expanded(child: Text(widget.text!, style: finalTextStyle, overflow: TextOverflow.ellipsis)));
       } else {
-        children.add(Text(text!, style: finalTextStyle, overflow: TextOverflow.ellipsis));
+        children.add(Text(widget.text!, style: finalTextStyle, overflow: TextOverflow.ellipsis));
       }
-      if (icon != null) { children.add(SizedBox(width: effectiveInternalSpacing)); }
+      if (widget.icon != null || widget.iconPath != null) { 
+        children.add(SizedBox(width: effectiveInternalSpacing)); 
+      }
     }
-    if (icon != null) { children.add(Icon(icon!, size: effectiveIconSize, color: effectiveIconColor)); }
-    Widget buttonContent = Container(height: effectiveButtonHeight, padding: effectivePadding,
-      decoration: ShapeDecoration(color: effectiveBackgroundColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(effectiveBorderRadius))),
-      child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: mainAxisAlignment, crossAxisAlignment: CrossAxisAlignment.center, children: children));
-    if (onTap != null) { return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(effectiveBorderRadius), child: buttonContent); }
+    
+    // Support both IconData and SVG
+    if (widget.iconPath != null) {
+      children.add(
+        SvgPicture.asset(
+          widget.iconPath!,
+          width: effectiveIconSize,
+          height: effectiveIconSize,
+          colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+        ),
+      );
+    } else if (widget.icon != null) { 
+      children.add(Icon(widget.icon!, size: effectiveIconSize, color: effectiveIconColor)); 
+    }
+    
+    Widget buttonContent = Container(
+      height: effectiveButtonHeight, 
+      padding: effectivePadding,
+      decoration: ShapeDecoration(
+        color: effectiveBackgroundColor, 
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(effectiveBorderRadius))
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min, 
+        mainAxisAlignment: widget.mainAxisAlignment, 
+        crossAxisAlignment: CrossAxisAlignment.center, 
+        children: children
+      )
+    );
+    
+    if (widget.onTap != null) { 
+      return MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Focus(
+          onFocusChange: (hasFocus) => setState(() => _isFocused = hasFocus),
+          child: InkWell(
+            onTap: widget.onTap, 
+            borderRadius: BorderRadius.circular(effectiveBorderRadius), 
+            child: buttonContent
+          ),
+        ),
+      ); 
+    }
     return buttonContent;
   }
 }
@@ -46,7 +133,9 @@ class _TextIconButton extends StatelessWidget {
 /// A row with a single, horizontally expanded button containing centered text and a trailing icon.
 class FlexButtonSingle extends StatelessWidget {
   final String text;
-  final IconData icon;
+  final IconData? icon; // Made optional
+  final String? iconPath; // Added SVG support
+
   final VoidCallback? onTap;
 
   // Styling properties
@@ -63,14 +152,15 @@ class FlexButtonSingle extends StatelessWidget {
   const FlexButtonSingle({
     super.key,
     required this.text,
-    required this.icon,
+    this.icon, // Made optional
+    this.iconPath, // Added SVG support
     this.onTap,
     this.backgroundColor,
     this.textColor,
     this.iconColor,
     this.borderRadius,
     this.buttonHeight,
-    this.padding, // Note: snippet padding is horizontal:16, vertical for content inside is implicitly handled by height and centering
+    this.padding,
     this.textStyle,
     this.iconSize,
     this.internalSpacing,
@@ -78,27 +168,26 @@ class FlexButtonSingle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The outer Row in the snippet is for layout within a larger context.
-    // For a single expanded button, it's simpler.
     return SizedBox(
       width: double.infinity,
-      child: Row( // Ensures Expanded works
+      child: Row(
         children: [
           Expanded(
             child: _TextIconButton(
               text: text,
               icon: icon,
+              iconPath: iconPath, // Added SVG support
               onTap: onTap,
               backgroundColor: backgroundColor,
               textColor: textColor,
               iconColor: iconColor,
               borderRadius: borderRadius,
               buttonHeight: buttonHeight,
-              padding: padding ?? const EdgeInsets.symmetric(horizontal: 16), // Snippet padding
+              padding: padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
               textStyle: textStyle,
               iconSize: iconSize,
-              mainAxisAlignment: MainAxisAlignment.center, // Content is centered
-              internalSpacing: internalSpacing ?? 8.0, // Snippet inner spacing
+              mainAxisAlignment: MainAxisAlignment.center,
+              internalSpacing: internalSpacing ?? AppTheme.smallGap,
             ),
           ),
         ],

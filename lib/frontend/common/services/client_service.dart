@@ -69,7 +69,7 @@ class ClientService extends ChangeNotifier {
         // Focusează primul client dacă există
         if (_clients.isNotEmpty) {
           _focusedClient = _clients.first;
-          focusClient(_clients.first.id);
+          focusClient(_clients.first.phoneNumber); // Folosește phoneNumber ca ID
         } else {
           _focusedClient = null;
         }
@@ -82,19 +82,32 @@ class ClientService extends ChangeNotifier {
   }
   
   /// Focusează un client (schimbă starea la focused și afișează formularul său)
-  void focusClient(String clientId) {
-    // Resetează starea tuturor clienților la normal
-    for (int i = 0; i < _clients.length; i++) {
-      if (_clients[i].status == ClientStatus.focused) {
-        _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
+  void focusClient(String clientPhoneNumber) {
+    // Defocusează clientul anterior
+    if (_focusedClient != null) {
+      final oldClientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
+      if (oldClientIndex != -1) {
+        _clients[oldClientIndex] = _clients[oldClientIndex].copyWith(status: ClientStatus.normal);
       }
     }
     
-    // Găsește și focusează clientul selectat
-    final clientIndex = _clients.indexWhere((client) => client.id == clientId);
-    if (clientIndex != -1) {
-      _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.focused);
-      _focusedClient = _clients[clientIndex];
+    // Focusează noul client
+    final newClientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
+    if (newClientIndex != -1) {
+      _clients[newClientIndex] = _clients[newClientIndex].copyWith(status: ClientStatus.focused);
+      _focusedClient = _clients[newClientIndex];
+      notifyListeners();
+    }
+  }
+  
+  /// Defocusează clientul curent
+  void defocusCurrentClient() {
+    if (_focusedClient != null) {
+      final clientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
+      if (clientIndex != -1) {
+        _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.normal);
+      }
+      _focusedClient = null;
       notifyListeners();
     }
   }
@@ -105,7 +118,7 @@ class ClientService extends ChangeNotifier {
       _focusedClient!.updateFormData(key, value);
       
       // Actualizează și în lista principală
-      final clientIndex = _clients.indexWhere((client) => client.id == _focusedClient!.id);
+      final clientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
       if (clientIndex != -1) {
         _clients[clientIndex] = _focusedClient!;
       }
@@ -113,14 +126,14 @@ class ClientService extends ChangeNotifier {
       notifyListeners();
     }
   }
-
+  
   /// Actualizează datele formularului pentru clientul focusat fără notificare
   void updateFocusedClientFormDataSilent(String key, dynamic value) {
     if (_focusedClient != null) {
       _focusedClient!.updateFormData(key, value);
       
       // Actualizează și în lista principală
-      final clientIndex = _clients.indexWhere((client) => client.id == _focusedClient!.id);
+      final clientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
       if (clientIndex != -1) {
         _clients[clientIndex] = _focusedClient!;
       }
@@ -133,20 +146,24 @@ class ClientService extends ChangeNotifier {
   }
   
   /// Adaugă un client nou și îl salvează în Firebase
+  /// Folosește numărul de telefon ca ID unic
   Future<void> addClient(ClientModel client) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
+        // Creează un client cu phoneNumber ca ID
+        final clientWithPhoneId = client.copyWith(id: client.phoneNumber);
+        
         // Salvează în Firebase
-        await _firebaseService.saveClientForConsultant(currentUser.uid, client);
+        await _firebaseService.saveClientForConsultant(currentUser.uid, clientWithPhoneId);
         
         // Adaugă în lista locală
-        _clients.add(client);
+        _clients.add(clientWithPhoneId);
         
         // Focusează primul client dacă este primul client adăugat
         if (_clients.length == 1) {
           _focusedClient = _clients.first;
-          focusClient(_clients.first.id);
+          focusClient(_clients.first.phoneNumber);
         }
         
         notifyListeners();
@@ -158,21 +175,22 @@ class ClientService extends ChangeNotifier {
   }
   
   /// Șterge un client și îl elimină din Firebase
-  Future<void> removeClient(String clientId) async {
+  /// Folosește phoneNumber pentru identificare
+  Future<void> removeClient(String clientPhoneNumber) async {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
-        // Șterge din Firebase
-        await _firebaseService.deleteClientForConsultant(currentUser.uid, clientId);
+        // Șterge din Firebase folosind phoneNumber ca ID
+        await _firebaseService.deleteClientForConsultant(currentUser.uid, clientPhoneNumber);
         
         // Șterge din lista locală
-        _clients.removeWhere((client) => client.id == clientId);
+        _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
         
         // Dacă clientul șters era focusat, focusează primul client disponibil
-        if (_focusedClient?.id == clientId) {
+        if (_focusedClient?.phoneNumber == clientPhoneNumber) {
           _focusedClient = _clients.isNotEmpty ? _clients.first : null;
           if (_focusedClient != null) {
-            focusClient(_focusedClient!.id);
+            focusClient(_focusedClient!.phoneNumber);
           }
         }
         
@@ -188,17 +206,20 @@ class ClientService extends ChangeNotifier {
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
+        // Asigură-te că ID-ul este phoneNumber
+        final clientWithPhoneId = updatedClient.copyWith(id: updatedClient.phoneNumber);
+        
         // Actualizează în Firebase
-        await _firebaseService.updateClientForConsultant(currentUser.uid, updatedClient);
+        await _firebaseService.updateClientForConsultant(currentUser.uid, clientWithPhoneId);
         
         // Actualizează în lista locală
-        final clientIndex = _clients.indexWhere((client) => client.id == updatedClient.id);
+        final clientIndex = _clients.indexWhere((client) => client.phoneNumber == updatedClient.phoneNumber);
         if (clientIndex != -1) {
-          _clients[clientIndex] = updatedClient;
+          _clients[clientIndex] = clientWithPhoneId;
           
           // Dacă clientul actualizat este cel focusat, actualizează și referința
-          if (_focusedClient?.id == updatedClient.id) {
-            _focusedClient = updatedClient;
+          if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
+            _focusedClient = clientWithPhoneId;
           }
           
           notifyListeners();
@@ -210,10 +231,10 @@ class ClientService extends ChangeNotifier {
   }
   
   /// Mută un client în categoria "Recente" cu statusul "Acceptat"
-  Future<void> moveClientToRecente(String clientId, {
+  Future<void> moveClientToRecente(String clientPhoneNumber, {
     String? additionalInfo,
   }) async {
-    final clientIndex = _clients.indexWhere((client) => client.id == clientId);
+    final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
       final updatedClient = _clients[clientIndex].copyWith(
         category: ClientCategory.recente,
@@ -225,26 +246,26 @@ class ClientService extends ChangeNotifier {
       await updateClient(updatedClient);
       
       // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
-      if (_focusedClient?.id == clientId) {
+      if (_focusedClient?.phoneNumber == clientPhoneNumber) {
         final apeluri = getClientsByCategory(ClientCategory.apeluri);
         if (apeluri.isNotEmpty) {
-          focusClient(apeluri.first.id);
+          focusClient(apeluri.first.phoneNumber);
         } else {
           _focusedClient = null;
           notifyListeners();
         }
       }
       
-      debugPrint('✅ Client mutat în Recente: ${updatedClient.name}');
+      debugPrint('✅ Client mutat în Recente (Acceptat): ${updatedClient.name}');
     }
   }
-  
-  /// Mută un client în categoria "Reveniri" cu statusul "Amanat"
-  Future<void> moveClientToReveniri(String clientId, {
+
+  /// Mută un client în categoria "Reveniri" cu statusul "Amânat"
+  Future<void> moveClientToReveniri(String clientPhoneNumber, {
     required DateTime scheduledDateTime,
     String? additionalInfo,
   }) async {
-    final clientIndex = _clients.indexWhere((client) => client.id == clientId);
+    final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
       final updatedClient = _clients[clientIndex].copyWith(
         category: ClientCategory.reveniri,
@@ -257,25 +278,25 @@ class ClientService extends ChangeNotifier {
       await updateClient(updatedClient);
       
       // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
-      if (_focusedClient?.id == clientId) {
+      if (_focusedClient?.phoneNumber == clientPhoneNumber) {
         final apeluri = getClientsByCategory(ClientCategory.apeluri);
         if (apeluri.isNotEmpty) {
-          focusClient(apeluri.first.id);
+          focusClient(apeluri.first.phoneNumber);
         } else {
           _focusedClient = null;
           notifyListeners();
         }
       }
       
-      debugPrint('✅ Client mutat în Reveniri: ${updatedClient.name} - ${scheduledDateTime.toString()}');
+      debugPrint('✅ Client mutat în Reveniri (Amânat): ${updatedClient.name}');
     }
   }
-  
+
   /// Mută un client în categoria "Recente" cu statusul "Refuzat"
-  Future<void> moveClientToRecenteRefuzat(String clientId, {
+  Future<void> moveClientToRecenteRefuzat(String clientPhoneNumber, {
     String? additionalInfo,
   }) async {
-    final clientIndex = _clients.indexWhere((client) => client.id == clientId);
+    final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
       final updatedClient = _clients[clientIndex].copyWith(
         category: ClientCategory.recente,
@@ -287,10 +308,10 @@ class ClientService extends ChangeNotifier {
       await updateClient(updatedClient);
       
       // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
-      if (_focusedClient?.id == clientId) {
+      if (_focusedClient?.phoneNumber == clientPhoneNumber) {
         final apeluri = getClientsByCategory(ClientCategory.apeluri);
         if (apeluri.isNotEmpty) {
-          focusClient(apeluri.first.id);
+          focusClient(apeluri.first.phoneNumber);
         } else {
           _focusedClient = null;
           notifyListeners();

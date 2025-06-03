@@ -1,10 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'firebaseService.dart';
-import '../models/client_model.dart';
 
 /// Enum pentru diferitele tipuri de credite
 enum CreditType { 

@@ -3,8 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../common/components/headers/widgetHeader1.dart';
 import '../common/components/items/lightItem3.dart';
 import '../common/components/items/darkItem3.dart';
-import '../common/components/buttons/flexButtons3Svg.dart';
-import '../common/components/buttons/flexButtons2Svg.dart';
+import '../common/components/buttons/flexButtons3.dart';
+import '../common/components/buttons/flexButtons2.dart';
+import '../common/components/buttons/flexButtons1.dart';
 import '../common/components/fields/inputField1.dart';
 import '../common/appTheme.dart';
 
@@ -79,7 +80,7 @@ class ClientsPopup1 extends StatefulWidget {
 class _ClientsPopup1State extends State<ClientsPopup1> {
   
   Widget _buildBottomButtonsRow() {
-    return FlexButtonWithTwoTrailingIconsSvg(
+    return FlexButtonWithTwoTrailingIcons(
       primaryButtonText: "Adauga client",
       primaryButtonIconPath: "assets/addIcon.svg",
       trailingIcon1Path: "assets/imageIcon.svg",
@@ -88,9 +89,6 @@ class _ClientsPopup1State extends State<ClientsPopup1> {
       onTrailingIcon1Tap: widget.onExtractClients,
       onTrailingIcon2Tap: widget.onDeleteAllClients,
       spacing: AppTheme.smallGap,
-      buttonBackgroundColor: AppTheme.containerColor2,
-      textColor: AppTheme.elementColor3,
-      iconColor: AppTheme.elementColor3,
       borderRadius: AppTheme.borderRadiusMedium,
       buttonHeight: 48.0,
       primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
@@ -258,65 +256,26 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   
   Widget _buildFormBottomButtonsRow(bool isEditing) {
     if (isEditing) {
-      return FlexButtonWithTrailingIconSvg(
+      return FlexButtonWithTrailingIcon(
         primaryButtonText: "Salveaza client",
         primaryButtonIconPath: "assets/saveIcon.svg",
         onPrimaryButtonTap: _saveClient,
         trailingIconPath: "assets/deleteIcon.svg",
         onTrailingIconTap: widget.onDeleteClient,
         spacing: AppTheme.smallGap,
-        buttonBackgroundColor: AppTheme.containerColor2,
-        textColor: AppTheme.elementColor3,
-        iconColor: AppTheme.elementColor3,
         borderRadius: AppTheme.borderRadiusMedium,
         buttonHeight: 48.0,
         primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
       );
     } else {
-      // For new client creation, only show save button
-      return SizedBox(
-        width: double.infinity,
-        height: 48,
-        child: Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppTheme.containerColor2,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _saveClient,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Salveaza client",
-                      style: AppTheme.navigationButtonTextStyle.copyWith(
-                        color: AppTheme.elementColor3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(width: AppTheme.smallGap),
-                    SvgPicture.asset(
-                      'assets/saveIcon.svg',
-                      width: AppTheme.iconSizeMedium,
-                      height: AppTheme.iconSizeMedium,
-                      colorFilter: ColorFilter.mode(
-                        AppTheme.elementColor3,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+      // For new client creation, use FlexButtonSingle
+      return FlexButtonSingle(
+        text: "Salveaza client",
+        iconPath: "assets/saveIcon.svg",
+        onTap: _saveClient,
+        borderRadius: AppTheme.borderRadiusMedium,
+        buttonHeight: 48.0,
+        textStyle: AppTheme.navigationButtonTextStyle,
       );
     }
   }

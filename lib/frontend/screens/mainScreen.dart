@@ -13,6 +13,7 @@ import 'package:broker_app/frontend/popups/clientsPopup.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
 import 'package:broker_app/backend/models/client_model.dart';
 import 'package:broker_app/backend/services/settingsService.dart';
+import 'package:broker_app/backend/services/unified_client_service.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:
 /// - pane (stânga, lățime 312)
@@ -50,6 +51,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   // Settings service pentru actualizări în timp real ale temei
   final SettingsService _settingsService = SettingsService();
+  
+  // Unified service for migration
+  final UnifiedClientService _unifiedService = UnifiedClientService();
   
   // State pentru popup-uri
   List<Client> _popupClients = [];
@@ -157,7 +161,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   };
   
   Map<PaneType, Widget> get _paneWidgets => {
-    PaneType.clients: ClientsPane(),
+    PaneType.clients: ClientsPane(
+      onClientsPopupRequested: _handleClientsPopupRequested,
+    ),
     PaneType.meetings: MeetingsPane(
       key: _meetingsPaneKey,
       onNavigateToMeeting: _navigateToMeeting,
@@ -184,6 +190,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Refreshes meetings pane when meetings are saved
   void _refreshMeetingsPane() {
     _meetingsPaneKey.currentState?.refreshMeetings();
+    _calendarKey.currentState?.refreshCalendar();
   }
 
   @override
@@ -296,7 +303,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     ClientsPopup2(
                       editingClient: _editingClient,
                       onSaveClient: _handleSaveClient,
-                      onDeleteClient: _editingClient != null ? _handleDeleteClient : null,
+                      onDeleteClient: _editingClient != null ? () => _handleDeleteClient(_editingClient!) : null,
                     ),
                 ],
               ),
@@ -351,14 +358,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _selectedPopupClient = client;
     });
     
-    // Focusează clientul corespunzător în ClientService
-    final correspondingClientModel = _clientService.clients.firstWhere(
-      (clientModel) => clientModel.name == client.name && 
-                      clientModel.phoneNumber == client.phoneNumber,
-      orElse: () => _clientService.clients.first,
-    );
-    
-    _clientService.focusClient(correspondingClientModel.id);
+    // Nu mai focusăm clientul în ClientService pentru a nu afecta clientsPane
+    // Focus-ul din clientsPane rămâne independent de selecția din popup
   }
   
   /// Handles edit client (double-tap on client)
@@ -436,7 +437,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     if (_editingClient == null) {
       // Creează client nou
       final newClientModel = ClientModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: client.phoneNumber, // Folosește phoneNumber ca ID
         name: client.name,
         phoneNumber: client.phoneNumber,
         status: ClientStatus.normal,
@@ -444,18 +445,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       );
       
       await _clientService.addClient(newClientModel);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Clientul ${client.name} a fost adaugat cu succes'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
     } else {
       // Actualizează client existent
       final existingClientModel = _clientService.clients.firstWhere(
-        (clientModel) => clientModel.name == _editingClient!.name && 
-                        clientModel.phoneNumber == _editingClient!.phoneNumber,
+        (clientModel) => clientModel.phoneNumber == _editingClient!.phoneNumber, // Folosește phoneNumber pentru căutare
       );
       
       final updatedClientModel = existingClientModel.copyWith(
@@ -464,13 +457,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       );
       
       await _clientService.updateClient(updatedClientModel);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Clientul ${client.name} a fost actualizat cu succes'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
     }
     
     // Închide doar formularul, lista rămâne deschisă
@@ -481,56 +467,108 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   /// Handles deleting a client
-  void _handleDeleteClient() {
-    if (_editingClient == null) return;
-    
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmare stergere'),
-          content: Text('Esti sigur ca vrei sa stergi clientul ${_editingClient!.name}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Anuleaza'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _performDeleteClient();
-              },
-              child: const Text('Sterge'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-  
-  /// Performs the actual deletion of a client
-  void _performDeleteClient() async {
-    if (_editingClient == null) return;
-    
-    final clientToDelete = _clientService.clients.firstWhere(
-      (clientModel) => clientModel.name == _editingClient!.name && 
-                      clientModel.phoneNumber == _editingClient!.phoneNumber,
+  void _handleDeleteClient(Client client) async {
+    // Găsește clientul în lista de clienți
+    final clientModel = _clientService.clients.firstWhere(
+      (clientModel) => clientModel.phoneNumber == client.phoneNumber, // Folosește phoneNumber pentru căutare
     );
     
-    await _clientService.removeClient(clientToDelete.id);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Clientul ${_editingClient!.name} a fost sters cu succes'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    // Șterge clientul folosind phoneNumber ca ID
+    await _clientService.removeClient(clientModel.phoneNumber);
     
     // Închide doar formularul, lista rămâne deschisă
     setState(() {
       _isShowingClientFormPopup = false;
       _editingClient = null;
     });
+  }
+
+  /// Handles migration to new database structure
+  void _handleMigrateData() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Migrare structură bază de date'),
+          content: const Text(
+            'Această operațiune va migra toate datele (clienți, formulare, întâlniri) '
+            'din structura veche în noua structură optimizată.\n\n'
+            'Operațiunea este sigură și nu va șterge datele existente.\n\n'
+            'Continuați?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Anulează'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Migrează'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Se migrează datele...'),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      // Perform migration
+      final success = await _unifiedService.migrateAllDataToNewStructure();
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      if (success) {
+        // Reload clients after migration
+        await _clientService.loadClientsFromFirebase();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Migrarea a fost completată cu succes!'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Eroare la migrarea datelor. Verificați consola pentru detalii.'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Eroare la migrarea datelor: $e'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 

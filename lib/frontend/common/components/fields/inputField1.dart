@@ -65,6 +65,15 @@ class InputField1 extends StatefulWidget {
   /// Whether to enable "k" to "000" transformation.
   final bool enableKTransformation;
 
+  /// Optional suffix text to display at the end of the input field.
+  final String? suffixText;
+
+  /// Optional text color for the suffix text.
+  final Color? suffixTextColor;
+
+  /// Optional list of input formatters to apply to the text field.
+  final List<TextInputFormatter>? inputFormatters;
+
   const InputField1({
     super.key,
     required this.title,
@@ -85,6 +94,9 @@ class InputField1 extends StatefulWidget {
     this.iconSize,
     this.enableCommaFormatting = false,
     this.enableKTransformation = false,
+    this.suffixText,
+    this.suffixTextColor,
+    this.inputFormatters,
   });
 
   @override
@@ -193,6 +205,11 @@ class _InputField1State extends State<InputField1> {
       // Allow digits, commas, periods, and 'k' character
       inputFormatters.add(FilteringTextInputFormatter.allow(RegExp(r'[\d,\.kK]')));
     }
+    
+    // Add external input formatters if provided
+    if (widget.inputFormatters != null) {
+      inputFormatters.addAll(widget.inputFormatters!);
+    }
 
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: widget.minWidth),
@@ -247,6 +264,14 @@ class _InputField1State extends State<InputField1> {
                     horizontal: AppTheme.mediumGap,
                     vertical: 15.0,
                   ),
+                  suffixText: widget.suffixText,
+                  suffixStyle: widget.suffixText != null
+                      ? GoogleFonts.outfit(
+                          color: widget.suffixTextColor ?? effectiveInputTextColor,
+                          fontSize: AppTheme.fontSizeMedium,
+                          fontWeight: FontWeight.w500,
+                        )
+                      : null,
                   suffixIcon: widget.trailingIcon != null
                       ? GestureDetector(
                           onTap: widget.onTrailingIconTap,

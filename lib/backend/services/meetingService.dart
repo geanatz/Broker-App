@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'unified_client_service.dart';
+import '../models/unified_client_model.dart';
 
 /// Tipul de întâlnire
 enum MeetingType {
@@ -55,19 +57,18 @@ class MeetingData {
   }
 }
 
-/// Service pentru gestionarea întâlnirilor (combină functionalitatea de creare și editare)
+/// Service pentru gestionarea întâlnirilor folosind noua structură unificată
 class MeetingService {
   static final MeetingService _instance = MeetingService._internal();
   factory MeetingService() => _instance;
   MeetingService._internal();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final String _collectionName = 'meetings';
+  final UnifiedClientService _unifiedService = UnifiedClientService();
 
   User? get currentUser => _auth.currentUser;
 
-  /// Creează o nouă întâlnire
+  /// Creează o nouă întâlnire în noua structură
   Future<Map<String, dynamic>> createMeeting(MeetingData meetingData) async {
     final user = currentUser;
     if (user == null) {
@@ -87,31 +88,43 @@ class MeetingService {
         return {'success': false, 'message': 'Date consultant negăsite'};
       }
 
-      // Creează întâlnirea cu datele consultantului
-      final updatedMeetingData = MeetingData(
-        clientName: meetingData.clientName,
-        phoneNumber: meetingData.phoneNumber,
-        dateTime: meetingData.dateTime,
-        type: meetingData.type,
-        consultantId: user.uid,
-        consultantName: consultantData['name'] ?? 'Necunoscut',
+      // Verifică dacă clientul există, dacă nu îl creează
+      final existingClient = await _unifiedService.getClient(meetingData.phoneNumber);
+      if (existingClient == null) {
+        await _unifiedService.createClient(
+          phoneNumber: meetingData.phoneNumber,
+          name: meetingData.clientName,
+          source: 'meeting_service',
+        );
+      }
+
+      // Programează întâlnirea în noua structură
+      final success = await _unifiedService.scheduleMeeting(
+        meetingData.phoneNumber,
+        meetingData.dateTime,
+        description: meetingData.type == MeetingType.bureauDelete 
+            ? 'Ștergere birou credit' 
+            : 'Întâlnire programată',
+        type: meetingData.type == MeetingType.meeting ? 'meeting' : 'bureauDelete',
+        additionalData: {
+          'consultantId': user.uid,
+          'consultantName': consultantData['name'] ?? 'Necunoscut',
+        },
       );
 
-      debugPrint("Creating meeting with consultantId: ${user.uid}");
-      debugPrint("Meeting dateTime: ${meetingData.dateTime}");
-      debugPrint("Meeting data to save: ${updatedMeetingData.toFirestore()}");
-
-      final docRef = await _firestore.collection(_collectionName).add(updatedMeetingData.toFirestore());
-      debugPrint("Meeting created with ID: ${docRef.id}");
-      
-      return {'success': true, 'message': 'Întâlnire creată cu succes'};
+      if (success) {
+        debugPrint("✅ Meeting created successfully in unified structure for: ${meetingData.clientName}");
+        return {'success': true, 'message': 'Întâlnire creată cu succes'};
+      } else {
+        return {'success': false, 'message': 'Eroare la salvarea întâlnirii în noua structură'};
+      }
     } catch (e) {
-      debugPrint("Eroare createMeeting: $e");
+      debugPrint("❌ Error createMeeting: $e");
       return {'success': false, 'message': 'Eroare la crearea întâlnirii: $e'};
     }
   }
 
-  /// Actualizează o întâlnire existentă
+  /// Actualizează o întâlnire existentă în noua structură
   Future<Map<String, dynamic>> updateMeeting(String meetingId, MeetingData meetingData) async {
     final user = currentUser;
     if (user == null) {
@@ -119,37 +132,35 @@ class MeetingService {
     }
 
     try {
-      // Verifică dacă întâlnirea există și aparține utilizatorului curent
-      final doc = await _firestore.collection(_collectionName).doc(meetingId).get();
-      if (!doc.exists) {
-        return {'success': false, 'message': 'Întâlnirea nu a fost găsită'};
-      }
-
-      final existingData = doc.data()!;
-      if (existingData['consultantId'] != user.uid) {
-        return {'success': false, 'message': 'Nu aveți permisiunea să modificați această întâlnire'};
-      }
-
-      // Verifică dacă noul slot este disponibil (exclude întâlnirea curentă)
-      final isAvailable = await _isTimeSlotAvailable(meetingData.dateTime, excludeId: meetingId);
+      // Verifică dacă noul slot este disponibil
+      final isAvailable = await _isTimeSlotAvailable(meetingData.dateTime, excludePhoneNumber: meetingData.phoneNumber);
       if (!isAvailable) {
         return {'success': false, 'message': 'Noul slot de timp nu este disponibil'};
       }
 
-      // Actualizează întâlnirea
-      final updateData = meetingData.toFirestore();
-      updateData['updatedAt'] = FieldValue.serverTimestamp();
-      
-      await _firestore.collection(_collectionName).doc(meetingId).update(updateData);
-      
-      return {'success': true, 'message': 'Întâlnire actualizată cu succes'};
+      // Actualizează întâlnirea în noua structură
+      final success = await _unifiedService.updateMeeting(
+        meetingData.phoneNumber,
+        meetingId,
+        meetingData.dateTime,
+        description: meetingData.type == MeetingType.bureauDelete 
+            ? 'Ștergere birou credit' 
+            : 'Întâlnire programată',
+        type: meetingData.type == MeetingType.meeting ? 'meeting' : 'bureauDelete',
+      );
+
+      if (success) {
+        return {'success': true, 'message': 'Întâlnire actualizată cu succes'};
+      } else {
+        return {'success': false, 'message': 'Eroare la actualizarea întâlnirii în noua structură'};
+      }
     } catch (e) {
-      debugPrint("Eroare updateMeeting: $e");
+      debugPrint("❌ Error updateMeeting: $e");
       return {'success': false, 'message': 'Eroare la actualizarea întâlnirii: $e'};
     }
   }
 
-  /// Șterge o întâlnire
+  /// Șterge o întâlnire din noua structură
   Future<Map<String, dynamic>> deleteMeeting(String meetingId) async {
     final user = currentUser;
     if (user == null) {
@@ -157,22 +168,29 @@ class MeetingService {
     }
 
     try {
-      // Verifică dacă întâlnirea există și aparține utilizatorului curent
-      final doc = await _firestore.collection(_collectionName).doc(meetingId).get();
-      if (!doc.exists) {
-        return {'success': false, 'message': 'Întâlnirea nu a fost găsită'};
+      // Găsește întâlnirea în toate clientele consultantului
+      final allMeetings = await _unifiedService.getAllMeetings();
+      final targetMeeting = allMeetings.firstWhere(
+        (meeting) => meeting.id == meetingId,
+        orElse: () => throw Exception('Meeting not found'),
+      );
+
+      // Extrage phoneNumber din additionalData
+      final phoneNumber = targetMeeting.additionalData?['phoneNumber'] as String?;
+      if (phoneNumber == null) {
+        return {'success': false, 'message': 'Nu s-a putut identifica clientul pentru această întâlnire'};
       }
 
-      final data = doc.data()!;
-      if (data['consultantId'] != user.uid) {
-        return {'success': false, 'message': 'Nu aveți permisiunea să ștergeți această întâlnire'};
-      }
+      // Șterge întâlnirea din noua structură
+      final success = await _unifiedService.deleteMeeting(phoneNumber, meetingId);
 
-      await _firestore.collection(_collectionName).doc(meetingId).delete();
-      
-      return {'success': true, 'message': 'Întâlnire ștearsă cu succes'};
+      if (success) {
+        return {'success': true, 'message': 'Întâlnire ștearsă cu succes'};
+      } else {
+        return {'success': false, 'message': 'Eroare la ștergerea întâlnirii din noua structură'};
+      }
     } catch (e) {
-      debugPrint("Eroare deleteMeeting: $e");
+      debugPrint("❌ Error deleteMeeting: $e");
       return {'success': false, 'message': 'Eroare la ștergerea întâlnirii: $e'};
     }
   }
@@ -187,120 +205,120 @@ class MeetingService {
         '15:00', '15:30', '16:00'
       ];
 
-      // Obține întâlnirile existente pentru această dată
+      // Obține întâlnirile existente pentru această dată din noua structură
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-      QuerySnapshot snapshot = await _firestore
-          .collection(_collectionName)
-          .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('dateTime', isLessThan: Timestamp.fromDate(endOfDay))
-          .get();
+      final allMeetings = await _unifiedService.getAllMeetings();
+      
+      // Filtrează întâlnirile pentru data specificată
+      final dayMeetings = allMeetings.where((meeting) {
+        final meetingDate = meeting.dateTime;
+        return meetingDate.isAfter(startOfDay) && meetingDate.isBefore(endOfDay);
+      });
 
       // Extrage orele ocupate (excluzând întâlnirea specificată dacă există)
       final Set<String> occupiedSlots = {};
-      for (var doc in snapshot.docs) {
-        if (excludeId != null && doc.id == excludeId) continue;
+      for (var meeting in dayMeetings) {
+        if (excludeId != null && meeting.id == excludeId) continue;
         
-        final meetingDateTime = (doc.data() as Map<String, dynamic>)['dateTime'] as Timestamp;
-        final meetingTime = meetingDateTime.toDate();
-        final timeSlot = DateFormat('HH:mm').format(meetingTime);
+        final timeSlot = DateFormat('HH:mm').format(meeting.dateTime);
         occupiedSlots.add(timeSlot);
       }
 
       // Returnează sloturile disponibile
       return allSlots.where((slot) => !occupiedSlots.contains(slot)).toList();
     } catch (e) {
-      debugPrint("Eroare getAvailableTimeSlots: $e");
+      debugPrint("❌ Error getAvailableTimeSlots: $e");
       return [];
     }
   }
 
-  /// Obține întâlnirile pentru o săptămână (versiune simplificată fără orderBy)
+  /// Obține întâlnirile pentru o săptămână din noua structură
   Stream<QuerySnapshot> getMeetingsForWeek(DateTime startOfWeek, DateTime endOfWeek) {
     try {
-      // Simplificăm query-ul pentru a evita necesitatea unui index compus
-      // Vom sorta datele în client în loc de Firestore
-      return _firestore
-          .collection(_collectionName)
-          .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
-          .where('dateTime', isLessThan: Timestamp.fromDate(endOfWeek))
-          .snapshots()
-          .handleError((error) {
-            debugPrint("Error in getMeetingsForWeek stream: $error");
-            return Stream<QuerySnapshot>.empty();
-          });
+      // Returnăm un stream care emite periodic datele din noua structură
+      return Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
+        final allMeetings = await _unifiedService.getAllMeetings();
+        
+        // Filtrează întâlnirile pentru săptămâna specificată
+        final weekMeetings = allMeetings.where((meeting) {
+          final meetingDate = meeting.dateTime;
+          return meetingDate.isAfter(startOfWeek) && meetingDate.isBefore(endOfWeek);
+        }).toList();
+
+        // Convertește în format compatibil cu QuerySnapshot
+        return _MockQuerySnapshot(weekMeetings);
+      });
     } catch (e) {
-      debugPrint("Error creating getMeetingsForWeek stream: $e");
+      debugPrint("❌ Error creating getMeetingsForWeek stream: $e");
       return Stream<QuerySnapshot>.empty();
     }
   }
 
-  /// Obține întâlnirile viitoare pentru consultantul curent (versiune simplificată)
+  /// Obține întâlnirile viitoare pentru consultantul curent din noua structură
   Stream<QuerySnapshot> getUpcomingMeetings({int limit = 10}) {
     final user = currentUser;
     if (user == null) {
-      debugPrint("No authenticated user for getUpcomingMeetings");
+      debugPrint("❌ No authenticated user for getUpcomingMeetings");
       return Stream<QuerySnapshot>.empty();
     }
 
     try {
-      // Simplificăm și acest query pentru a evita probleme de index
-      return _firestore
-          .collection(_collectionName)
-          .where('consultantId', isEqualTo: user.uid)
-          .where('dateTime', isGreaterThanOrEqualTo: Timestamp.now())
-          .limit(limit)
-          .snapshots()
-          .handleError((error) {
-            debugPrint("Error in getUpcomingMeetings stream: $error");
-            return Stream<QuerySnapshot>.empty();
-          });
+      return Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
+        final allMeetings = await _unifiedService.getAllMeetings();
+        final now = DateTime.now();
+        
+        // Filtrează întâlnirile viitoare pentru consultantul curent
+        final upcomingMeetings = allMeetings
+            .where((meeting) => meeting.dateTime.isAfter(now))
+            .take(limit)
+            .toList();
+
+        // Sortează după dată
+        upcomingMeetings.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+        return _MockQuerySnapshot(upcomingMeetings);
+      });
     } catch (e) {
-      debugPrint("Error creating getUpcomingMeetings stream: $e");
+      debugPrint("❌ Error creating getUpcomingMeetings stream: $e");
       return Stream<QuerySnapshot>.empty();
     }
   }
 
-  /// Obține o întâlnire specifică
+  /// Obține o întâlnire specifică din noua structură
   Future<MeetingData?> getMeeting(String meetingId) async {
     try {
-      final doc = await _firestore.collection(_collectionName).doc(meetingId).get();
-      if (doc.exists) {
-        return MeetingData.fromFirestore(doc.data()!, doc.id);
-      }
-      return null;
+      final allMeetings = await _unifiedService.getAllMeetings();
+      final targetMeeting = allMeetings.firstWhere(
+        (meeting) => meeting.id == meetingId,
+        orElse: () => throw Exception('Meeting not found'),
+      );
+
+      // Convertește din ClientActivity în MeetingData
+      return MeetingData(
+        id: targetMeeting.id,
+        clientName: targetMeeting.additionalData?['clientName'] ?? 'Client necunoscut',
+        phoneNumber: targetMeeting.additionalData?['phoneNumber'] ?? '',
+        dateTime: targetMeeting.dateTime,
+        type: targetMeeting.type == ClientActivityType.bureauDelete 
+            ? MeetingType.bureauDelete 
+            : MeetingType.meeting,
+        consultantId: targetMeeting.additionalData?['consultantId'] ?? '',
+        consultantName: targetMeeting.additionalData?['consultantName'] ?? '',
+      );
     } catch (e) {
-      debugPrint("Eroare getMeeting: $e");
+      debugPrint("❌ Error getMeeting: $e");
       return null;
     }
   }
 
   /// Helper: verifică dacă un slot de timp este disponibil
-  Future<bool> _isTimeSlotAvailable(DateTime dateTime, {String? excludeId}) async {
+  Future<bool> _isTimeSlotAvailable(DateTime dateTime, {String? excludePhoneNumber}) async {
     try {
-      // Verifică dacă există deja o întâlnire la această oră exactă
-      final exactTime = DateTime(
-        dateTime.year,
-        dateTime.month,
-        dateTime.day,
-        dateTime.hour,
-        dateTime.minute,
-      );
-
-      QuerySnapshot snapshot = await _firestore
-          .collection(_collectionName)
-          .where('dateTime', isEqualTo: Timestamp.fromDate(exactTime))
-          .get();
-
-      // Dacă excludeId este specificat, nu îl considera conflictual
-      if (excludeId != null) {
-        return snapshot.docs.every((doc) => doc.id == excludeId);
-      }
-
-      return snapshot.docs.isEmpty;
+      return await _unifiedService.isTimeSlotAvailable(dateTime, excludePhoneNumber: excludePhoneNumber);
     } catch (e) {
-      debugPrint("Eroare _isTimeSlotAvailable: $e");
+      debugPrint("❌ Error _isTimeSlotAvailable: $e");
       return false;
     }
   }
@@ -308,14 +326,76 @@ class MeetingService {
   /// Helper: obține datele consultantului
   Future<Map<String, dynamic>?> _getConsultantData(String uid) async {
     try {
-      DocumentSnapshot doc = await _firestore.collection('consultants').doc(uid).get();
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('consultants').doc(uid).get();
       if (doc.exists) {
         return doc.data() as Map<String, dynamic>?;
       }
       return null;
     } catch (e) {
-      debugPrint("Eroare _getConsultantData: $e");
+      debugPrint("❌ Error _getConsultantData: $e");
       return null;
     }
   }
+}
+
+/// Mock QuerySnapshot pentru compatibilitate cu stream-urile existente
+class _MockQuerySnapshot implements QuerySnapshot<Map<String, dynamic>> {
+  final List<ClientActivity> _meetings;
+  
+  _MockQuerySnapshot(this._meetings);
+  
+  @override
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> get docs {
+    return _meetings.map((meeting) => _MockQueryDocumentSnapshot(meeting)).toList();
+  }
+  
+  @override
+  int get size => _meetings.length;
+  
+  @override
+  bool get isEmpty => _meetings.isEmpty;
+  
+  @override
+  SnapshotMetadata get metadata => throw UnimplementedError();
+  
+  @override
+  List<DocumentChange<Map<String, dynamic>>> get docChanges => throw UnimplementedError();
+}
+
+/// Mock QueryDocumentSnapshot pentru compatibilitate
+class _MockQueryDocumentSnapshot implements QueryDocumentSnapshot<Map<String, dynamic>> {
+  final ClientActivity _meeting;
+  
+  _MockQueryDocumentSnapshot(this._meeting);
+  
+  @override
+  Map<String, dynamic> data() {
+    return {
+      'clientName': _meeting.additionalData?['clientName'] ?? 'Client necunoscut',
+      'phoneNumber': _meeting.additionalData?['phoneNumber'] ?? '',
+      'dateTime': Timestamp.fromDate(_meeting.dateTime),
+      'type': _meeting.type == ClientActivityType.bureauDelete ? 'bureauDelete' : 'meeting',
+      'consultantId': _meeting.additionalData?['consultantId'] ?? '',
+      'consultantName': _meeting.additionalData?['consultantName'] ?? '',
+      'createdAt': Timestamp.fromDate(_meeting.createdAt),
+    };
+  }
+  
+  @override
+  String get id => _meeting.id;
+  
+  @override
+  bool get exists => true;
+  
+  @override
+  DocumentReference<Map<String, dynamic>> get reference => throw UnimplementedError();
+  
+  @override
+  SnapshotMetadata get metadata => throw UnimplementedError();
+  
+  @override
+  dynamic get(Object field) => data()[field];
+  
+  @override
+  dynamic operator [](Object field) => data()[field];
 }

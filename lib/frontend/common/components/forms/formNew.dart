@@ -1,7 +1,6 @@
 // lib/components/forms/form_container_new.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart'; // Import AppTheme instead of placeholder
 import '../fields/dropdownField1.dart';
 
@@ -81,7 +80,6 @@ class FormNew extends StatelessWidget {
       decoration: BoxDecoration(
         color: effectiveContainerColor,
         borderRadius: BorderRadius.circular(effectiveBorderRadius),
-        boxShadow: [AppTheme.widgetShadow],
       ),
       child: Row(
         children: [

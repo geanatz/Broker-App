@@ -7,7 +7,7 @@ import '../../appTheme.dart';
 
 /// A customizable light-themed item with title, description, and an
 /// optional icon in a styled trailing container.
-class LightItem7 extends StatelessWidget {
+class LightItem7 extends StatefulWidget {
   /// The primary title text.
   final String title;
 
@@ -73,17 +73,29 @@ class LightItem7 extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
-    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
-    final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor1;
-    final Color effectiveIconContainerColor = iconContainerColor ?? AppTheme.containerColor2;
-    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
+  State<LightItem7> createState() => _LightItem7State();
+}
 
-    final double effectiveMainBorderRadius = mainBorderRadius ?? AppTheme.borderRadiusMedium;
-    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
+class _LightItem7State extends State<LightItem7> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Apply hover transformations: containerColor1->containerColor2, elementColor1->elementColor2, elementColor2->elementColor3
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? 
+        (_isHovered ? AppTheme.containerColor2 : AppTheme.containerColor1);
+    final Color effectiveTitleColor = widget.titleColor ?? 
+        (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2);
+    final Color effectiveDescriptionColor = widget.descriptionColor ?? 
+        (_isHovered ? AppTheme.elementColor2 : AppTheme.elementColor1);
+    final Color effectiveIconContainerColor = widget.iconContainerColor ?? AppTheme.containerColor2;
+    final Color effectiveIconColor = widget.iconColor ?? 
+        (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor3); // Icon always elementColor3
+
+    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
-    final double effectiveIconSize = iconSize ?? 24.0;
+    final double effectiveIconSize = widget.iconSize ?? 24.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;
     final double iconContainerSize = 48.0;
@@ -102,41 +114,37 @@ class LightItem7 extends StatelessWidget {
     );
 
     // Determine if we should show an icon (either SVG or IconData)
-    final bool hasIcon = svgAsset != null || icon != null;
+    final bool hasIcon = widget.svgAsset != null || widget.icon != null;
 
-    Widget iconButton = hasIcon ? InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-      child: Container(
-        width: iconContainerSize,
-        height: iconContainerSize,
-        padding: const EdgeInsets.all(12),
-        decoration: ShapeDecoration(
-          color: effectiveIconContainerColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-          ),
+    Widget iconButton = hasIcon ? Container(
+      width: iconContainerSize,
+      height: iconContainerSize,
+      padding: const EdgeInsets.all(12),
+      decoration: ShapeDecoration(
+        color: effectiveIconContainerColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
         ),
-        child: Center(
-          child: SizedBox(
-            width: 24.0,
-            height: 24.0,
-            child: svgAsset != null
-                ? SvgPicture.asset(
-                    svgAsset!,
-                    width: 24.0,
-                    height: 24.0,
-                    colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
-                    fit: BoxFit.contain,
-                  )
-                : icon != null
-                    ? Icon(
-                        icon,
-                        size: 24.0,
-                        color: effectiveIconColor,
-                      )
-                    : Container(),
-          ),
+      ),
+      child: Center(
+        child: SizedBox(
+          width: 24.0,
+          height: 24.0,
+          child: widget.svgAsset != null
+              ? SvgPicture.asset(
+                  widget.svgAsset!,
+                  width: 24.0,
+                  height: 24.0,
+                  colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                  fit: BoxFit.contain,
+                )
+              : widget.icon != null
+                  ? Icon(
+                      widget.icon,
+                      size: 24.0,
+                      color: effectiveIconColor,
+                    )
+                  : Container(),
         ),
       ),
     ) : Container();
@@ -159,14 +167,14 @@ class LightItem7 extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: titleStyle,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
                 SizedBox(height: textColumnSpacing),
                 Text(
-                  description,
+                  widget.description,
                   style: descriptionStyle,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -180,6 +188,20 @@ class LightItem7 extends StatelessWidget {
       ),
     );
 
-    return content;
+    // Make the entire item clickable with hover behavior
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: widget.onTap != null
+          ? Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onTap,
+                borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
+                child: content,
+              ),
+            )
+          : content,
+    );
   }
 }

@@ -8,6 +8,7 @@ import '../popups/amortizationPopup.dart';
 // Import components
 import '../common/components/headers/widgetHeader1.dart';
 import '../common/components/items/lightItem3.dart';
+import '../common/components/buttons/flexButtons2.dart';
 import 'package:intl/intl.dart';
 
 /// Widget pentru panoul de calculator de credit
@@ -520,79 +521,18 @@ class _CalculatorPaneState extends State<CalculatorPane> {
           ),
           
           // Bottom Buttons
-          SizedBox(
-            width: double.infinity,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: _showAmortizationSchedule,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: ShapeDecoration(
-                        color: AppTheme.containerColor1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Amortizare',
-                            style: GoogleFonts.outfit(
-                              color: AppTheme.elementColor2,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          SvgPicture.asset(
-                            'assets/viewIcon.svg',
-                            width: 24,
-                            height: 24,
-                            colorFilter: ColorFilter.mode(
-                              AppTheme.elementColor2,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Container(
-                  width: 48,
-                  height: 48,
-                  padding: const EdgeInsets.all(12),
-                  decoration: ShapeDecoration(
-                    color: AppTheme.containerColor1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  child: InkWell(
-                    onTap: _resetFields,
-                    child: SvgPicture.asset(
-                      'assets/returnIcon.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                        AppTheme.elementColor2,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          FlexButtonWithTrailingIcon(
+            primaryButtonText: 'Amortizare',
+            primaryButtonIconPath: 'assets/viewIcon.svg',
+            onPrimaryButtonTap: _showAmortizationSchedule,
+            trailingIconPath: 'assets/returnIcon.svg',
+            onTrailingIconTap: _resetFields,
+            spacing: AppTheme.smallGap,
+            borderRadius: AppTheme.borderRadiusMedium,
+            buttonHeight: 48.0,
+            primaryButtonTextStyle: GoogleFonts.outfit(
+              fontSize: AppTheme.fontSizeMedium,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

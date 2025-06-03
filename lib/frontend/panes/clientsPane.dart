@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../common/appTheme.dart';
-import '../common/components/headers/widgetHeader1.dart';
+import '../common/components/headers/widgetHeader2.dart';
 import '../common/components/headers/widgetHeader3.dart';
 import '../common/components/items/darkItem7.dart';
 import '../common/components/items/lightItem7.dart';
@@ -20,7 +20,13 @@ import '../popups/clientsavePopup.dart';
 /// - LightItem7: starea normală (viewIcon)
 /// - DarkItem7: starea focusată (doneIcon)
 class ClientsPane extends StatefulWidget {
-  const ClientsPane({super.key});
+  /// Callback pentru deschiderea popup-ului de clienți
+  final VoidCallback? onClientsPopupRequested;
+
+  const ClientsPane({
+    super.key,
+    this.onClientsPopupRequested,
+  });
 
   @override
   State<ClientsPane> createState() => _ClientsPaneState();
@@ -65,7 +71,7 @@ class _ClientsPaneState extends State<ClientsPane> {
         height: 60, // Înălțime fixă pentru mesajul de empty state
         child: Center(
           child: Text(
-            'Nu există clienți',
+            'Nu exista clienti',
             style: TextStyle(
               color: AppTheme.elementColor1,
               fontSize: AppTheme.fontSizeSmall,
@@ -112,8 +118,8 @@ class _ClientsPaneState extends State<ClientsPane> {
         title: client.name,
         description: description,
         svgAsset: 'assets/doneIcon.svg',
+        onTap: () => _showClientSavePopup(client),
         onIconTap: () => _showClientSavePopup(client),
-        // Nu facem nimic când se apasă pe darkItem7 (client deja focusat)
       );
     } else {
       return LightItem7(
@@ -179,8 +185,12 @@ class _ClientsPaneState extends State<ClientsPane> {
         children: [
           // Header pentru secțiune
           if (category == ClientCategory.apeluri)
-            // Folosim WidgetHeader1 pentru Apeluri (fără collapse)
-            WidgetHeader1(title: title)
+            // Folosim WidgetHeader2 pentru Apeluri cu buton Editeaza
+            WidgetHeader2(
+              title: title,
+              altText: 'Editeaza',
+              onAltTextTap: widget.onClientsPopupRequested,
+            )
           else
             // Folosim WidgetHeader3 pentru Reveniri și Recente (cu collapse)
             WidgetHeader3(

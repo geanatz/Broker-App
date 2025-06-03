@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/items/lightItem7.dart';
 import 'package:broker_app/frontend/common/components/items/darkItem7.dart';
 import 'package:broker_app/backend/services/meetingService.dart';
+import '../../backend/services/unified_client_service.dart';
+import '../../backend/models/unified_client_model.dart';
 
 /// Widget pentru panoul de intâlniri
 /// 
@@ -31,21 +31,22 @@ class MeetingsPaneState extends State<MeetingsPane> {
   // Firebase reference
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final MeetingService _meetingService = MeetingService();
+  final UnifiedClientService _unifiedService = UnifiedClientService();
   
   // Formatter pentru date
   DateFormat? dateFormatter;
+  DateFormat? timeFormatter;
   bool _isInitializing = true;
   
   // Data cache for meetings
-  List<QueryDocumentSnapshot> _allAppointments = [];
+  List<ClientActivity> _allAppointments = [];
   bool _isLoading = true;
   Timer? _refreshTimer;
   
   @override
   void initState() {
     super.initState();
-    _initializeDateFormatting();
-    _loadUpcomingMeetings();
+    _initializeFormatters();
     _startPeriodicRefresh();
   }
   
@@ -55,24 +56,21 @@ class MeetingsPaneState extends State<MeetingsPane> {
     super.dispose();
   }
   
-  // Inițializăm formatarea datelor
-  Future<void> _initializeDateFormatting() async {
+  void _initializeFormatters() async {
     try {
-      await initializeDateFormatting('ro', null);
-      if (mounted) {
-        setState(() {
-          dateFormatter = DateFormat('d MMM', 'ro');
-          _isInitializing = false;
-        });
-      }
+      dateFormatter = DateFormat('dd MMM yyyy', 'ro_RO');
+      timeFormatter = DateFormat('HH:mm', 'ro_RO');
+      
+      setState(() {
+        _isInitializing = false;
+      });
+      
+      await _loadUpcomingMeetings();
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          dateFormatter = DateFormat('d MMM');
-          _isInitializing = false;
-        });
-      }
-      debugPrint('Error initializing date formatting: $e');
+      debugPrint("Error initializing formatters: $e");
+      setState(() {
+        _isInitializing = false;
+      });
     }
   }
   
@@ -87,55 +85,34 @@ class MeetingsPaneState extends State<MeetingsPane> {
     _loadUpcomingMeetings();
   }
 
-  /// Load upcoming meetings for the current consultant
+  /// Încarcă întâlnirile viitoare din noua structură unificată
   Future<void> _loadUpcomingMeetings() async {
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      debugPrint("User not authenticated");
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      // Use the start of today to ensure we get meetings from today onwards
+      debugPrint("Loading upcoming meetings from unified structure for consultant: $currentUserId");
+      
+      // Obține toate întâlnirile din noua structură unificată
+      final allMeetings = await _unifiedService.getAllMeetings();
       final now = DateTime.now();
-      final startOfToday = DateTime(now.year, now.month, now.day);
       
-      debugPrint("Loading meetings for consultant: $currentUserId");
-      debugPrint("Filtering meetings from: $startOfToday");
-      
-
-      
-      // Use simple query with only consultantId to avoid composite index requirement
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('meetings')
-          .where('consultantId', isEqualTo: currentUserId)
-          .get()
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              debugPrint('Firestore query timeout for meetings');
-              throw TimeoutException('Query timeout', const Duration(seconds: 5));
-            },
-          );
-
-      debugPrint("Found ${snapshot.docs.length} total meetings for consultant $currentUserId");
-      
-      // Filter for future meetings on client-side
-      final futureAppointments = snapshot.docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        final meetingDateTime = (data['dateTime'] as Timestamp).toDate();
-        final isPastMeeting = meetingDateTime.isBefore(now);
-        if (isPastMeeting) {
-          debugPrint("Filtering out past meeting: ${doc.id} at $meetingDateTime");
-        }
-        return !isPastMeeting;
+      // Filtrează doar întâlnirile viitoare
+      final futureAppointments = allMeetings.where((meeting) {
+        return meeting.dateTime.isAfter(now);
       }).toList();
 
-      debugPrint("After filtering for future meetings: ${futureAppointments.length} remaining");
+      // Sortează după dată
+      futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+      debugPrint("Found ${allMeetings.length} total meetings, ${futureAppointments.length} future meetings");
 
       if (mounted) {
         setState(() {
@@ -144,7 +121,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         });
       }
     } catch (e) {
-      debugPrint("Error loading upcoming meetings: $e");
+      debugPrint("Error loading upcoming meetings from unified structure: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -207,7 +184,6 @@ class MeetingsPaneState extends State<MeetingsPane> {
   
   // Marchează întâlnirea ca terminată (placeholder)
   void _markMeetingAsDone(String meetingId) {
-    // TODO: Implementează logica pentru marcarea întâlnirii ca terminată
     debugPrint('Mark meeting as done: $meetingId');
   }
 
@@ -241,7 +217,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.only(left: AppTheme.mediumGap, right: AppTheme.mediumGap, bottom: AppTheme.smallGap),
+            padding: const EdgeInsets.only(left: AppTheme.mediumGap, right: AppTheme.mediumGap, bottom: AppTheme.tinyGap),
             child: Text(
               'Intalnirile mele',
               style: AppTheme.headerTitleStyle,
@@ -257,7 +233,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
     );
   }
   
-  /// Construiește lista de întâlniri folosind componentele lightItem7 și darkItem7
+  /// Construiește lista de întâlniri folosind noua structură unificată
   Widget _buildMeetingsList() {
     final currentUserId = _auth.currentUser?.uid;
 
@@ -277,16 +253,6 @@ class MeetingsPaneState extends State<MeetingsPane> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Sort the appointments list
-    _allAppointments.sort((a, b) {
-      final aData = a.data() as Map<String, dynamic>?;
-      final bData = b.data() as Map<String, dynamic>?;
-      if (aData == null || bData == null || aData['dateTime'] == null || bData['dateTime'] == null) return 0;
-      final aTime = aData['dateTime'] as Timestamp;
-      final bTime = bData['dateTime'] as Timestamp;
-      return aTime.compareTo(bTime);
-    });
-
     if (_allAppointments.isEmpty) {
       return Center(
         child: Text(
@@ -300,33 +266,77 @@ class MeetingsPaneState extends State<MeetingsPane> {
     return ListView.builder(
       itemCount: _allAppointments.length,
       itemBuilder: (context, index) {
-        final doc = _allAppointments[index];
-        final meetingData = doc.data() as Map<String, dynamic>;
-        final dateTime = (meetingData['dateTime'] as Timestamp).toDate();
-        final clientName = meetingData['clientName'] ?? 'Client necunoscut';
-        final clientPhone = meetingData['phoneNumber'] ?? '';
-        final meetingId = doc.id;
+        final meeting = _allAppointments[index];
+        final dateTime = meeting.dateTime;
+        final clientName = meeting.additionalData?['clientName'] ?? 'Client necunoscut';
+        final clientPhone = meeting.additionalData?['phoneNumber'] ?? '';
+        final meetingId = meeting.id ?? '';
         
-        final timeUntilMeeting = _getTimeUntilMeeting(dateTime);
+        // Calculează timpul rămas
+        final timeUntil = _getTimeUntilMeeting(dateTime);
         final isUrgent = _isWithin30Minutes(dateTime);
         
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppTheme.smallGap),
+        // Formatează data și ora
+        final formattedDate = dateFormatter?.format(dateTime) ?? dateTime.toString();
+        final formattedTime = timeFormatter?.format(dateTime) ?? dateTime.toString();
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: AppTheme.smallGap),
           child: isUrgent 
-            ? DarkItem7(
-                title: clientName,
-                description: clientPhone.isNotEmpty ? clientPhone : timeUntilMeeting,
-                svgAsset: 'assets/doneIcon.svg',
-                onTap: () => _markMeetingAsDone(meetingId),
+            ? _buildUrgentMeetingItem(
+                clientName: clientName,
+                clientPhone: clientPhone,
+                dateTime: dateTime,
+                formattedDate: formattedDate,
+                formattedTime: formattedTime,
+                timeUntil: timeUntil,
+                meetingId: meetingId,
               )
-            : LightItem7(
-                title: clientName,
-                description: timeUntilMeeting,
-                svgAsset: 'assets/viewIcon.svg',
-                onTap: () => _navigateToCalendarMeeting(meetingId),
+            : _buildNormalMeetingItem(
+                clientName: clientName,
+                clientPhone: clientPhone,
+                dateTime: dateTime,
+                formattedDate: formattedDate,
+                formattedTime: formattedTime,
+                timeUntil: timeUntil,
+                meetingId: meetingId,
               ),
         );
       },
+    );
+  }
+
+  Widget _buildUrgentMeetingItem({
+    required String clientName,
+    required String clientPhone,
+    required DateTime dateTime,
+    required String formattedDate,
+    required String formattedTime,
+    required String timeUntil,
+    required String meetingId,
+  }) {
+    return DarkItem7(
+      title: clientName,
+      description: clientPhone.isNotEmpty ? clientPhone : timeUntil,
+      svgAsset: 'assets/doneIcon.svg',
+      onTap: () => _markMeetingAsDone(meetingId),
+    );
+  }
+
+  Widget _buildNormalMeetingItem({
+    required String clientName,
+    required String clientPhone,
+    required DateTime dateTime,
+    required String formattedDate,
+    required String formattedTime,
+    required String timeUntil,
+    required String meetingId,
+  }) {
+    return LightItem7(
+      title: clientName,
+      description: timeUntil,
+      svgAsset: 'assets/viewIcon.svg',
+      onTap: () => _navigateToCalendarMeeting(meetingId),
     );
   }
 }

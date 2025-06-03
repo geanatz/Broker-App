@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+import '../../appTheme.dart';
 
 /// A customizable light-themed item component with a primary title on the left
 /// and a secondary description text on the right.
@@ -17,19 +17,19 @@ class LightItem3 extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Optional custom background color for the container.
-  /// Defaults to AppTheme.containerColor1 (0xFFC4C4D4) if not provided.
+  /// Defaults to AppTheme.containerColor1 if not provided.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
-  /// Defaults to AppTheme.elementColor2 (0xFF666699) if not provided.
+  /// Defaults to AppTheme.elementColor2 if not provided.
   final Color? titleColor;
 
   /// Optional custom color for the description text.
-  /// Defaults to AppTheme.elementColor1 (0xFF8A8AA8) if not provided.
+  /// Defaults to AppTheme.elementColor1 if not provided.
   final Color? descriptionColor;
 
   /// Optional custom border radius for the container.
-  /// Defaults to 24.0 if not provided.
+  /// Defaults to AppTheme.borderRadiusMedium if not provided.
   final double? borderRadius;
 
   /// Optional width for the container holding the description text.
@@ -60,28 +60,25 @@ class LightItem3 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveDescriptionColor = descriptionColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final double effectiveBorderRadius = borderRadius ?? 24.0; // AppTheme.borderRadiusLarge
-    final double itemHeight = 48.0; // AppTheme.itemHeightMedium
-    final double horizontalPadding = 16.0; // AppTheme.paddingMedium
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
+    final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor1;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double itemHeight = 48.0;
+    final double horizontalPadding = AppTheme.mediumGap;
     final double effectiveDescriptionContainerWidth = descriptionContainerWidth ?? 104.0;
-    final double internalSpacing = 16.0; // AppTheme.mediumGap (original spacing: 16 on Row)
+    final double internalSpacing = AppTheme.mediumGap;
 
-    final TextStyle defaultTitleStyle = TextStyle(
+    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+      fontSize: AppTheme.fontSizeMedium,
+      fontWeight: FontWeight.w500,
     );
     
-    final TextStyle defaultDescriptionStyle = TextStyle(
+    final TextStyle defaultDescriptionStyle = GoogleFonts.outfit(
       color: effectiveDescriptionColor,
-      fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
+      fontSize: AppTheme.fontSizeSmall,
+      fontWeight: FontWeight.w500,
     );
 
     // Use provided styles or defaults

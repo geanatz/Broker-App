@@ -10,7 +10,8 @@ import '../../appTheme.dart';
 ///
 /// The main item has a prominent border. The icon container has rounded corners
 /// but is transparent by default and has no border.
-class OutlinedItem6 extends StatelessWidget {
+/// On hover, the background changes to containerColor2.
+class OutlinedItem6 extends StatefulWidget {
   /// The primary title text.
   final String title;
 
@@ -77,18 +78,35 @@ class OutlinedItem6 extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final Color effectiveMainBackgroundColor = mainBackgroundColor ?? Colors.transparent;
-    final Color effectiveMainBorderColor = mainBorderColor ?? AppTheme.containerColor2;
-    final double effectiveMainBorderWidth = mainBorderWidth ?? 4.0;
-    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
-    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
-    final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent;
+  State<OutlinedItem6> createState() => _OutlinedItem6State();
+}
 
-    final double effectiveMainBorderRadius = mainBorderRadius ?? AppTheme.borderRadiusMedium;
-    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
+class _OutlinedItem6State extends State<OutlinedItem6> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Use containerColor2 on hover, otherwise use the provided color or transparent
+    final Color effectiveMainBackgroundColor = _isHovered 
+        ? AppTheme.containerColor2 
+        : (widget.mainBackgroundColor ?? Colors.transparent);
+    final Color effectiveMainBorderColor = widget.mainBorderColor ?? AppTheme.containerColor2;
+    final double effectiveMainBorderWidth = widget.mainBorderWidth ?? 4.0;
+    
+    // Change text and icon colors on hover: elementColor2 default, elementColor3 on hover
+    final Color effectiveTitleColor = _isHovered 
+        ? AppTheme.elementColor3 
+        : (widget.titleColor ?? AppTheme.elementColor2);
+    final Color effectiveIconColor = _isHovered 
+        ? AppTheme.elementColor3 
+        : (widget.iconColor ?? AppTheme.elementColor2);
+        
+    final Color effectiveIconContainerColor = widget.iconContainerColor ?? Colors.transparent;
+
+    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
-    final double effectiveIconSize = iconSize ?? 24.0;
+    final double effectiveIconSize = widget.iconSize ?? 24.0;
     final double internalSpacing = AppTheme.mediumGap;
     final double iconContainerSize = 48.0;
 
@@ -101,7 +119,7 @@ class OutlinedItem6 extends StatelessWidget {
     );
 
     // Determine if we should show an icon (either SVG or IconData)
-    final bool hasIcon = svgAsset != null || icon != null;
+    final bool hasIcon = widget.svgAsset != null || widget.icon != null;
 
     Widget content = Container(
       width: double.infinity,
@@ -128,7 +146,7 @@ class OutlinedItem6 extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    widget.title,
                     style: titleStyle,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -151,17 +169,17 @@ class OutlinedItem6 extends StatelessWidget {
                 child: SizedBox(
                   width: 24.0,
                   height: 24.0,
-                  child: svgAsset != null
+                  child: widget.svgAsset != null
                       ? SvgPicture.asset(
-                          svgAsset!,
+                          widget.svgAsset!,
                           width: 24.0,
                           height: 24.0,
                           colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
                           fit: BoxFit.contain,
                         )
-                      : icon != null
+                      : widget.icon != null
                           ? Icon(
-                              icon,
+                              widget.icon,
                               size: 24.0,
                               color: effectiveIconColor,
                             )
@@ -174,16 +192,20 @@ class OutlinedItem6 extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
-          customBorder: RoundedRectangleBorder(
-             borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
+    if (widget.onTap != null) {
+      return MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
+            customBorder: RoundedRectangleBorder(
+               borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
+            ),
+            child: content,
           ),
-          child: content,
         ),
       );
     }

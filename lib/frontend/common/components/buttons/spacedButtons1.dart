@@ -100,7 +100,7 @@ class _TextIconButton extends StatelessWidget {
 
 /// A row with a single, horizontally expanded button containing left-aligned text
 /// and a right-aligned SVG icon from assets.
-class SpacedButtonSingleSvg extends StatelessWidget {
+class SpacedButtonSingleSvg extends StatefulWidget {
   final String text;
   final String iconPath; // Path to SVG asset
   final VoidCallback? onTap;
@@ -133,22 +133,36 @@ class SpacedButtonSingleSvg extends StatelessWidget {
   });
 
   @override
+  State<SpacedButtonSingleSvg> createState() => _SpacedButtonSingleSvgState();
+}
+
+class _SpacedButtonSingleSvgState extends State<SpacedButtonSingleSvg> {
+  bool _isHovered = false;
+  bool _isFocused = false;
+
+  @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
-    final Color effectiveTextColor = textColor ?? AppTheme.elementColor2;
-    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
-    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
-    final double effectiveButtonHeight = buttonHeight ?? AppTheme.navButtonHeight;
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
-    final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
-    final double effectiveInternalSpacing = internalSpacing ?? AppTheme.mediumGap;
+    final bool isInteractive = _isHovered || _isFocused;
+    
+    // Apply hover/focus color scheme
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? 
+        (isInteractive ? AppTheme.containerColor2 : AppTheme.containerColor1);
+    final Color effectiveTextColor = widget.textColor ?? 
+        (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
+    final Color effectiveIconColor = widget.iconColor ?? 
+        (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
+    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveButtonHeight = widget.buttonHeight ?? AppTheme.navButtonHeight;
+    final EdgeInsetsGeometry effectivePadding = widget.padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final double effectiveIconSize = widget.iconSize ?? AppTheme.iconSizeMedium;
+    final double effectiveInternalSpacing = widget.internalSpacing ?? AppTheme.mediumGap;
     
     final TextStyle defaultTextStyle = GoogleFonts.outfit(
       color: effectiveTextColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: AppTheme.fontWeightMedium,
     );
-    final TextStyle finalTextStyle = textStyle ?? defaultTextStyle;
+    final TextStyle finalTextStyle = widget.textStyle?.copyWith(color: effectiveTextColor) ?? defaultTextStyle;
 
     Widget buttonContent = Container(
       height: effectiveButtonHeight,
@@ -165,14 +179,14 @@ class SpacedButtonSingleSvg extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              text,
+              widget.text,
               style: finalTextStyle,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           SizedBox(width: effectiveInternalSpacing),
           SvgPicture.asset(
-            iconPath,
+            widget.iconPath,
             width: effectiveIconSize,
             height: effectiveIconSize,
             colorFilter: ColorFilter.mode(
@@ -187,13 +201,20 @@ class SpacedButtonSingleSvg extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: effectiveButtonHeight,
-      child: onTap != null
-          ? Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(effectiveBorderRadius),
-                child: buttonContent,
+      child: widget.onTap != null
+          ? MouseRegion(
+              onEnter: (_) => setState(() => _isHovered = true),
+              onExit: (_) => setState(() => _isHovered = false),
+              child: Focus(
+                onFocusChange: (hasFocus) => setState(() => _isFocused = hasFocus),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: widget.onTap,
+                    borderRadius: BorderRadius.circular(effectiveBorderRadius),
+                    child: buttonContent,
+                  ),
+                ),
               ),
             )
           : buttonContent,

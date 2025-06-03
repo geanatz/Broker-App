@@ -131,13 +131,13 @@ class SettingsService extends ChangeNotifier {
   String getThemeColorDisplayName(AppThemeColor color) {
     switch (color) {
       case AppThemeColor.red:
-        return 'Roșu';
+        return 'Rosu';
       case AppThemeColor.yellow:
         return 'Galben';
       case AppThemeColor.green:
         return 'Verde';
       case AppThemeColor.cyan:
-        return 'Cyan';
+        return 'Turcoaz';
       case AppThemeColor.blue:
         return 'Albastru';
       case AppThemeColor.pink:

@@ -1,6 +1,7 @@
 // lib/components/fields/input_field3.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../appTheme.dart';
 
@@ -18,6 +19,9 @@ class InputField3 extends StatelessWidget {
 
   /// Optional icon to display at the end of the input area.
   final IconData? trailingIcon;
+
+  /// Optional SVG icon path to display at the end of the input area (takes precedence over trailingIcon).
+  final String? trailingIconPath;
 
   /// Optional callback when the input area is tapped.
   final VoidCallback? onTap;
@@ -60,6 +64,7 @@ class InputField3 extends StatelessWidget {
     required this.title,
     required this.inputText,
     this.trailingIcon,
+    this.trailingIconPath,
     this.onTap,
     this.onIconTap,
     this.minWidth = 128.0,
@@ -128,18 +133,28 @@ class InputField3 extends StatelessWidget {
               ],
             ),
           ),
-          if (trailingIcon != null) ...[
+          if (trailingIconPath != null || trailingIcon != null) ...[
             SizedBox(width: AppTheme.mediumGap),
             GestureDetector(
               onTap: onIconTap,
               child: SizedBox(
                 width: effectiveIconSize,
                 height: effectiveIconSize,
-                child: Icon(
-                  trailingIcon,
-                  color: effectiveIconColor,
-                  size: effectiveIconSize,
-                ),
+                child: trailingIconPath != null
+                    ? SvgPicture.asset(
+                        trailingIconPath!,
+                        width: effectiveIconSize,
+                        height: effectiveIconSize,
+                        colorFilter: ColorFilter.mode(
+                          effectiveIconColor,
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : Icon(
+                        trailingIcon,
+                        color: effectiveIconColor,
+                        size: effectiveIconSize,
+                      ),
               ),
             ),
           ],

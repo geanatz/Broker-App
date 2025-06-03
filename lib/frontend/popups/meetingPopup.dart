@@ -1,13 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader1.dart';
 import 'package:broker_app/frontend/common/components/fields/inputField1.dart';
+import 'package:broker_app/frontend/common/components/fields/inputField3.dart';
 import 'package:broker_app/frontend/common/components/fields/dropdownField1.dart';
-import 'package:broker_app/frontend/common/components/buttons/flexButtons2Svg.dart';
+import 'package:broker_app/frontend/common/components/buttons/flexButtons2.dart';
 import 'package:broker_app/backend/services/meetingService.dart';
+
+/// Custom TextInputFormatter for automatic colon insertion in time format
+class TimeInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    
+    // Remove any existing colons to start fresh
+    final digitsOnly = text.replaceAll(':', '');
+    
+    // Limit to 4 digits maximum (HHMM)
+    if (digitsOnly.length > 4) {
+      return oldValue;
+    }
+    
+    String formattedText = digitsOnly;
+    int cursorPosition = newValue.selection.end;
+    
+    // Add colon after 2 digits
+    if (digitsOnly.length >= 2) {
+      formattedText = '${digitsOnly.substring(0, 2)}:${digitsOnly.substring(2)}';
+      
+      // Adjust cursor position if we added a colon
+      if (digitsOnly.length == 2 && oldValue.text.length == 1) {
+        cursorPosition = 3; // Position after the colon
+      } else if (digitsOnly.length > 2) {
+        cursorPosition = formattedText.length;
+      }
+    }
+    
+    return TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: cursorPosition),
+    );
+  }
+}
 
 /// Popup combinat pentru crearea și editarea întâlnirilor
 class MeetingPopup extends StatefulWidget {
@@ -37,12 +77,11 @@ class _MeetingPopupState extends State<MeetingPopup> {
   // Controllers pentru inputuri
   final TextEditingController _clientNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
   
   // State variables
   MeetingType _selectedType = MeetingType.meeting;
   DateTime? _selectedDate;
-  String? _selectedTime;
-  List<String> _availableTimeSlots = [];
   bool _isLoading = false;
 
   // Pentru a ști dacă suntem în modul editare
@@ -60,6 +99,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
   void dispose() {
     _clientNameController.dispose();
     _phoneController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -73,8 +113,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
       // Modul creare - folosește data inițială dacă este furnizată
       if (widget.initialDateTime != null) {
         _selectedDate = widget.initialDateTime;
-        _selectedTime = DateFormat('HH:mm').format(widget.initialDateTime!);
-        await _loadAvailableTimeSlots();
+        _timeController.text = DateFormat('HH:mm').format(widget.initialDateTime!);
       }
     }
 
@@ -91,9 +130,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
         _phoneController.text = meetingData.phoneNumber;
         _selectedType = meetingData.type;
         _selectedDate = meetingData.dateTime;
-        _selectedTime = DateFormat('HH:mm').format(meetingData.dateTime);
-        
-        await _loadAvailableTimeSlots();
+        _timeController.text = DateFormat('HH:mm').format(meetingData.dateTime);
       }
     } catch (e) {
       debugPrint("Eroare la încărcarea întâlnirii: $e");
@@ -102,31 +139,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   Future<void> _loadAvailableTimeSlots() async {
-    if (_selectedDate == null) return;
-
-    try {
-      final slots = await _meetingService.getAvailableTimeSlots(
-        _selectedDate!, 
-        excludeId: widget.meetingId,
-      );
-      
-      setState(() {
-        _availableTimeSlots = slots;
-        
-        // Dacă slotul selectat nu este disponibil, resetează-l
-        if (_selectedTime != null && !_availableTimeSlots.contains(_selectedTime)) {
-          _selectedTime = null;
-        }
-        
-        // Dacă nu avem un slot selectat și există sloturi disponibile, selectează primul
-        if (_selectedTime == null && _availableTimeSlots.isNotEmpty) {
-          _selectedTime = _availableTimeSlots.first;
-        }
-      });
-    } catch (e) {
-      debugPrint("Eroare la încărcarea sloturilor: $e");
-      _showError("Eroare la încărcarea orelor disponibile");
-    }
+    // Această metodă nu mai este necesară pentru validarea sloturilor
+    // dar o păstrez pentru compatibilitate
   }
 
   Future<void> _selectDate() async {
@@ -140,9 +154,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _selectedTime = null; // Resetează ora când se schimbă data
       });
-      await _loadAvailableTimeSlots();
     }
   }
 
@@ -153,8 +165,15 @@ class _MeetingPopupState extends State<MeetingPopup> {
       return;
     }
 
-    if (_selectedTime == null) {
-      _showError("Selecteaza o ora");
+    if (_timeController.text.trim().isEmpty) {
+      _showError("Introduceti ora");
+      return;
+    }
+
+    // Validare format oră (HH:mm)
+    final timeRegex = RegExp(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$');
+    if (!timeRegex.hasMatch(_timeController.text.trim())) {
+      _showError("Formatul orei trebuie să fie HH:mm (ex: 14:30)");
       return;
     }
 
@@ -162,7 +181,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
     try {
       // Construiește data și ora finale
-      final timeParts = _selectedTime!.split(':');
+      final timeParts = _timeController.text.trim().split(':');
       final finalDateTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
@@ -206,12 +225,44 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   Future<void> _deleteMeeting() async {
-    if (!isEditMode || widget.meetingId == null) return;
+    if (!isEditMode || widget.meetingId == null) {
+      debugPrint("Delete meeting called but not in edit mode or no meeting ID");
+      return;
+    }
+
+    debugPrint("Delete meeting called for ID: ${widget.meetingId}");
+
+    // Afișează dialog de confirmare
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmare ștergere'),
+        content: const Text('Ești sigur că vrei să ștergi această întâlnire?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Anulează'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Șterge'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) {
+      debugPrint("Delete cancelled by user");
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
+      debugPrint("Attempting to delete meeting with ID: ${widget.meetingId}");
       final result = await _meetingService.deleteMeeting(widget.meetingId!);
+      
+      debugPrint("Delete result: $result");
       
       if (result['success']) {
         Navigator.of(context).pop();
@@ -250,7 +301,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
   String get _selectedDateText {
     if (_selectedDate == null) return "Selecteaza data";
-    return DateFormat('dd/MM/yyyy').format(_selectedDate!);
+    return DateFormat('dd/MM/yy').format(_selectedDate!);
   }
 
   @override
@@ -338,83 +389,29 @@ class _MeetingPopupState extends State<MeetingPopup> {
                         // Row cu Data si Ora
                         Row(
                           children: [
-                            // Data - using GestureDetector for date picker
+                            // Data - using InputField3 with calendar icon
                             Expanded(
-                              child: GestureDetector(
+                              child: InputField3(
+                                title: "Data",
+                                inputText: _selectedDateText,
+                                trailingIconPath: "assets/calendarIcon.svg",
                                 onTap: _selectDate,
-                                child: Container(
-                                  height: 72,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: 21,
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                                        child: Text(
-                                          "Data",
-                                          style: GoogleFonts.outfit(
-                                            color: AppTheme.elementColor2,
-                                            fontSize: AppTheme.fontSizeMedium,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Container(
-                                        height: 48,
-                                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.containerColor2,
-                                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                _selectedDateText,
-                                                style: GoogleFonts.outfit(
-                                                  color: AppTheme.elementColor3,
-                                                  fontSize: AppTheme.fontSizeMedium,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                            Icon(
-                                              Icons.calendar_today,
-                                              color: AppTheme.elementColor3,
-                                              size: 24,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ),
                             
                             const SizedBox(width: AppTheme.smallGap),
                             
-                            // Ora
+                            // Ora - using InputField1 for manual time input
                             Expanded(
-                              child: DropdownField1<String>(
+                              child: InputField1(
                                 title: "Ora",
-                                value: _selectedTime,
-                                items: _availableTimeSlots.map((timeSlot) {
-                                  return DropdownMenuItem<String>(
-                                    value: timeSlot,
-                                    child: Text(timeSlot),
-                                  );
-                                }).toList(),
-                                onChanged: _selectedDate != null ? (value) {
-                                  if (value != null) {
-                                    setState(() {
-                                      _selectedTime = value;
-                                    });
-                                  }
-                                } : null,
-                                hintText: "Selecteaza ora",
-                                enabled: _selectedDate != null,
+                                controller: _timeController,
+                                hintText: "HH:mm",
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  TimeInputFormatter(),
+                                ],
                               ),
                             ),
                           ],
@@ -427,16 +424,20 @@ class _MeetingPopupState extends State<MeetingPopup> {
                 const SizedBox(height: AppTheme.smallGap),
                 
                 // Buttons - flexButtons2 with save and delete
-                FlexButtonWithTrailingIconSvg(
+                FlexButtonWithTrailingIcon(
                   primaryButtonText: "Salveaza",
                   primaryButtonIconPath: "assets/saveIcon.svg",
                   onPrimaryButtonTap: _saveMeeting,
                   trailingIconPath: "assets/deleteIcon.svg",
-                  onTrailingIconTap: isEditMode ? _deleteMeeting : null,
+                  onTrailingIconTap: () {
+                    debugPrint("Delete button tapped. isEditMode: $isEditMode, meetingId: ${widget.meetingId}");
+                    if (isEditMode) {
+                      _deleteMeeting();
+                    } else {
+                      _showError("Nu poți șterge o întâlnire care nu există încă");
+                    }
+                  },
                   spacing: AppTheme.smallGap,
-                  buttonBackgroundColor: AppTheme.containerColor1,
-                  textColor: AppTheme.elementColor2,
-                  iconColor: AppTheme.elementColor2,
                   borderRadius: AppTheme.borderRadiusMedium,
                   buttonHeight: 48.0,
                   primaryButtonTextStyle: GoogleFonts.outfit(

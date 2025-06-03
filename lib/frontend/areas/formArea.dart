@@ -185,6 +185,19 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
+  /// Extrage doar valoarea numerică din câmpurile care pot conține "luni"
+  String _extractNumericValue(String value, String fieldType) {
+    if (fieldType == 'perioada' || fieldType == 'vechime') {
+      // Extrage doar numerele din string
+      final numbers = RegExp(r'\d+').allMatches(value);
+      if (numbers.isNotEmpty) {
+        return numbers.first.group(0) ?? '';
+      }
+      return '';
+    }
+    return value;
+  }
+
   /// Obține controller-ul pentru un field specific
   TextEditingController _getController(String key) {
     if (!_textControllers.containsKey(key)) {
@@ -198,11 +211,16 @@ class _FormAreaState extends State<FormArea> {
   TextEditingController _getControllerWithText(String key, String modelValue) {
     final controller = _getController(key);
     
+    // Extrage tipul de câmp din key pentru a determina dacă trebuie să extracem doar valoarea numerică
+    final parts = key.split('_');
+    final fieldType = parts.length >= 4 ? parts[3] : '';
+    final cleanValue = _extractNumericValue(modelValue, fieldType);
+    
     // Setează textul doar dacă:
     // 1. Controller-ul este gol și modelul are o valoare
     // 2. Sau dacă valoarea din model este diferită și controller-ul nu a fost modificat recent
-    if (controller.text.isEmpty && modelValue.isNotEmpty) {
-      controller.text = modelValue;
+    if (controller.text.isEmpty && cleanValue.isNotEmpty) {
+      controller.text = cleanValue;
     }
     
     // Adaugă listener pentru a salva modificările automat
@@ -276,7 +294,7 @@ class _FormAreaState extends State<FormArea> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: double.infinity,
       child: Row(
@@ -485,11 +503,11 @@ class _FormAreaState extends State<FormArea> {
                 child: _buildCreditForm(client, form, realIndex, isClient),
               ),
             );
-          }).toList(),
+          }),
           
           // Formular nou (FormNew) pentru adăugare - întotdeauna afișat
           FormNew(
-            key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_${_newCreditFormSelectedType}'),
+            key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_$_newCreditFormSelectedType'),
             titleF1: 'Banca',
             valueF1: _newCreditFormSelectedBank,
             itemsF1: FormService.banks.map((bank) => DropdownMenuItem<String>(
@@ -570,11 +588,11 @@ class _FormAreaState extends State<FormArea> {
                 child: _buildIncomeForm(client, form, realIndex, isClient),
               ),
             );
-          }).toList(),
+          }),
           
           // Formular nou (FormNew) pentru adăugare - întotdeauna afișat
           FormNew(
-            key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_${_newIncomeFormSelectedType}'),
+            key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_$_newIncomeFormSelectedType'),
             titleF1: 'Banca',
             valueF1: _newIncomeFormSelectedBank,
             itemsF1: FormService.banks.map((bank) => DropdownMenuItem<String>(
@@ -815,8 +833,9 @@ class _FormAreaState extends State<FormArea> {
       
       titleR2F2: 'Vechime',
       controllerR2F2: _getControllerWithText('${client.phoneNumber}_income_${index}_vechime', form.vechime),
-      hintTextR2F2: 'Introduceti vechimea',
-      keyboardTypeR2F2: TextInputType.text,
+      hintTextR2F2: '0',
+      keyboardTypeR2F2: TextInputType.number,
+      suffixTextR2F2: ' luni',
       
       onClose: () => _formService.removeIncomeForm(client.phoneNumber, index, isClient: isClient),
     );
@@ -1034,10 +1053,9 @@ class _FormAreaState extends State<FormArea> {
       case 'avans':
       case 'valoare':
       case 'incomeAmount':
-        return TextInputType.number;
       case 'perioada':
       case 'vechime':
-        return TextInputType.text;
+        return TextInputType.number;
       default:
         return TextInputType.text;
     }
@@ -1052,6 +1070,8 @@ class _FormAreaState extends State<FormArea> {
       case 'avans':
       case 'valoare':
       case 'incomeAmount':
+      case 'perioada':
+      case 'vechime':
         return [FilteringTextInputFormatter.digitsOnly];
       default:
         return [];
