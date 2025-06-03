@@ -1,14 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader1.dart';
 import 'package:broker_app/frontend/common/components/fields/dropdownField1.dart';
+import 'package:broker_app/frontend/common/components/fields/inputField1.dart';
 import 'package:broker_app/frontend/common/components/fields/inputField3.dart';
 import 'package:broker_app/frontend/common/components/buttons/flexButtons1.dart';
 import 'package:broker_app/backend/models/client_model.dart';
 import 'package:broker_app/backend/services/meetingService.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
+
+/// Custom TextInputFormatter for automatic colon insertion in time format
+class TimeInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    
+    // Remove any existing colons to start fresh
+    final digitsOnly = text.replaceAll(':', '');
+    
+    // Limit to 4 digits maximum (HHMM)
+    if (digitsOnly.length > 4) {
+      return oldValue;
+    }
+    
+    String formattedText = digitsOnly;
+    int cursorPosition = newValue.selection.end;
+    
+    // Add colon after 2 digits
+    if (digitsOnly.length >= 2) {
+      formattedText = '${digitsOnly.substring(0, 2)}:${digitsOnly.substring(2)}';
+      
+      // Adjust cursor position if we added a colon
+      if (digitsOnly.length == 2 && oldValue.text.length == 1) {
+        cursorPosition = 3; // Position after the colon
+      } else if (digitsOnly.length > 2) {
+        cursorPosition = formattedText.length;
+      }
+    }
+    
+    return TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: cursorPosition),
+    );
+  }
+}
 
 /// Popup pentru salvarea statusului discuției cu clientul
 class ClientSavePopup extends StatefulWidget {
@@ -35,11 +76,12 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   
   // Controllers pentru inputuri
   final TextEditingController _statusController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
   
   // State variables
   String? _selectedStatus;
   DateTime? _selectedDate;
-  String? _selectedTime;
+  String? _selectedTimeSlot; // Pentru dropdown-ul de ore când statusul este "Acceptat"
   List<String> _availableTimeSlots = [];
   bool _isLoading = false;
 
@@ -55,6 +97,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   @override
   void dispose() {
     _statusController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -81,12 +124,17 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        // Resetează ora când se schimbă data și încarcă orele disponibile
-        _selectedTime = null;
+        // Resetează ora când se schimbă data
+        _timeController.clear();
+        if (_selectedStatus == 'Acceptat') {
+          _selectedTimeSlot = null;
+        }
       });
       
-      // Încarcă orele disponibile pentru data selectată
-      await _loadAvailableTimeSlotsForDate();
+      // Încarcă orele disponibile pentru data selectată dacă statusul este "Acceptat"
+      if (_selectedStatus == 'Acceptat') {
+        await _loadAvailableTimeSlotsForDate();
+      }
     }
   }
 
@@ -100,12 +148,6 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       
       setState(() {
         _availableTimeSlots = availableSlots;
-        // Selectează prima oră disponibilă automat
-        if (_availableTimeSlots.isNotEmpty) {
-          _selectedTime = _availableTimeSlots.first;
-        } else {
-          _selectedTime = null;
-        }
       });
       
       // Afișează mesaj dacă nu sunt ore disponibile
@@ -123,6 +165,16 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     return _selectedStatus == 'Acceptat' || _selectedStatus == 'Amanat';
   }
 
+  /// Generează textul pentru placeholder-ul datei (data curentă)
+  String get _currentDateText {
+    return DateFormat('dd/MM/yy').format(DateTime.now());
+  }
+
+  /// Generează textul pentru placeholder-ul orei (ora curentă)
+  String get _currentTimeText {
+    return DateFormat('HH:mm').format(DateTime.now());
+  }
+
   /// Salvează statusul clientului
   Future<void> _saveClientStatus() async {
     // Validare
@@ -137,8 +189,13 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         return;
       }
 
-      if (_selectedTime == null) {
-        _showError("Selectează o oră");
+      if (_selectedStatus == 'Amanat' && _timeController.text.trim().isEmpty) {
+        _showError("Introduceti ora pentru amânare");
+        return;
+      }
+
+      if (_selectedStatus == 'Acceptat' && (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty)) {
+        _showError("Selectați ora pentru întâlnire");
         return;
       }
     }
@@ -148,15 +205,32 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     try {
       // Construiește data și ora finale dacă sunt necesare
       DateTime? finalDateTime;
-      if (_shouldShowSecondRow && _selectedDate != null && _selectedTime != null) {
-        final timeParts = _selectedTime!.split(':');
-        finalDateTime = DateTime(
-          _selectedDate!.year,
-          _selectedDate!.month,
-          _selectedDate!.day,
-          int.parse(timeParts[0]),
-          int.parse(timeParts[1]),
-        );
+      if (_shouldShowSecondRow && _selectedDate != null) {
+        if (_selectedStatus == 'Amanat' && _timeController.text.trim().isNotEmpty) {
+          // Pentru amânat, folosește ora introdusă manual
+          final timeParts = _timeController.text.trim().split(':');
+          if (timeParts.length == 2) {
+            finalDateTime = DateTime(
+              _selectedDate!.year,
+              _selectedDate!.month,
+              _selectedDate!.day,
+              int.parse(timeParts[0]),
+              int.parse(timeParts[1]),
+            );
+          }
+        } else if (_selectedStatus == 'Acceptat' && _selectedTimeSlot != null) {
+          // Pentru acceptat, folosește ora selectată din dropdown
+          final timeParts = _selectedTimeSlot!.split(':');
+          if (timeParts.length == 2) {
+            finalDateTime = DateTime(
+              _selectedDate!.year,
+              _selectedDate!.month,
+              _selectedDate!.day,
+              int.parse(timeParts[0]),
+              int.parse(timeParts[1]),
+            );
+          }
+        }
       }
 
       // Dacă statusul este "Acceptat", salvează întâlnirea în calendar
@@ -273,7 +347,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              WidgetHeader1(title: 'Status discutie - ${widget.client.name}'),
+              const WidgetHeader1(title: 'Status client'),
               
               const SizedBox(height: 8),
               
@@ -295,7 +369,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                     children: [
                       // Primul rând - Dropdown pentru status
                       DropdownField1<String>(
-                        title: 'Status discutie',
+                        title: 'Status',
                         value: _selectedStatus,
                         items: _statusOptions.map((status) => DropdownMenuItem<String>(
                           value: status,
@@ -307,7 +381,8 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                             // Resetează data și ora când se schimbă statusul
                             if (!_shouldShowSecondRow) {
                               _selectedDate = null;
-                              _selectedTime = null;
+                              _timeController.clear();
+                              _selectedTimeSlot = null;
                             }
                           });
                         },
@@ -320,37 +395,50 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                       if (_shouldShowSecondRow) ...[
                         Row(
                           children: [
-                            // Câmpul pentru dată
+                            // Câmpul pentru dată - folosind InputField3 cu iconița calendar
                             Expanded(
                               child: InputField3(
                                 title: _selectedStatus == 'Acceptat' ? 'Data intalnire' : 'Data amanare',
                                 inputText: _selectedDate != null 
                                   ? DateFormat('dd/MM/yy').format(_selectedDate!)
-                                  : 'zz/ll/aa',
-                                trailingIcon: Icons.calendar_today,
+                                  : _currentDateText,
+                                trailingIconPath: "assets/calendarIcon.svg",
                                 onTap: _selectDate,
                               ),
                             ),
                             
                             const SizedBox(width: 8),
                             
-                            // Câmpul pentru oră
+                            // Câmpul pentru oră - diferit pentru Acceptat vs Amanat
                             Expanded(
-                              child: DropdownField1<String>(
-                                title: _selectedStatus == 'Acceptat' ? 'Ora intalnire' : 'Ora amanare',
-                                value: _selectedTime,
-                                items: _availableTimeSlots.map((time) => DropdownMenuItem<String>(
-                                  value: time,
-                                  child: Text(time),
-                                )).toList(),
-                                onChanged: _selectedDate != null ? (value) {
-                                  setState(() {
-                                    _selectedTime = value;
-                                  });
-                                } : null,
-                                hintText: _selectedDate != null ? 'Selecteaza ora' : 'Blocat',
-                                enabled: _selectedDate != null,
-                              ),
+                              child: _selectedStatus == 'Amanat'
+                                  ? InputField1(
+                                      title: 'Ora amanare',
+                                      controller: _timeController,
+                                      hintText: _currentTimeText,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        TimeInputFormatter(),
+                                      ],
+                                    )
+                                  : DropdownField1<String>(
+                                      title: 'Ora intalnire',
+                                      value: _selectedTimeSlot,
+                                      items: _availableTimeSlots.map((timeSlot) {
+                                        return DropdownMenuItem<String>(
+                                          value: timeSlot,
+                                          child: Text(timeSlot),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedTimeSlot = value;
+                                        });
+                                      },
+                                      hintText: _selectedDate != null ? "00:00" : "Alege data",
+                                      enabled: _selectedDate != null && _availableTimeSlots.isNotEmpty,
+                                    ),
                             ),
                           ],
                         ),
@@ -411,7 +499,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                   decoration: InputDecoration(
                                     hintText: 'Introduceti informatii aditionale...',
                                     hintStyle: GoogleFonts.outfit(
-                                      color: AppTheme.elementColor1,
+                                      color: AppTheme.elementColor3,
                                       fontSize: AppTheme.fontSizeMedium,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -431,13 +519,18 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
               
               const SizedBox(height: 8),
               
-              // Butonul de salvare
+              // Butonul de salvare - folosind FlexButtonSingle cu saveIcon
               FlexButtonSingle(
                 text: _isLoading ? 'Se salveaza...' : 'Salveaza status',
-                icon: Icons.save,
+                iconPath: "assets/saveIcon.svg",
                 onTap: _isLoading ? null : _saveClientStatus,
                 borderRadius: AppTheme.borderRadiusMedium,
                 buttonHeight: AppTheme.navButtonHeight,
+                textStyle: GoogleFonts.outfit(
+                  fontSize: AppTheme.fontSizeMedium,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.elementColor2,
+                ),
               ),
             ],
           ),

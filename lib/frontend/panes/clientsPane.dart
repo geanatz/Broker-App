@@ -7,7 +7,7 @@ import '../common/components/items/darkItem7.dart';
 import '../common/components/items/lightItem7.dart';
 import '../../backend/models/client_model.dart';
 import '../common/services/client_service.dart';
-import '../popups/clientsavePopup.dart';
+import '../popups/statusPopup.dart';
 
 /// ClientsPane - Interfața pentru gestionarea apelurilor clienților
 /// 

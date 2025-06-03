@@ -77,11 +77,12 @@ class _MeetingPopupState extends State<MeetingPopup> {
   // Controllers pentru inputuri
   final TextEditingController _clientNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
   
   // State variables
   MeetingType _selectedType = MeetingType.meeting;
   DateTime? _selectedDate;
+  String? _selectedTimeSlot; // Schimbat din controller la String pentru dropdown
+  List<String> _availableTimeSlots = []; // Lista orelor disponibile
   bool _isLoading = false;
 
   // Pentru a ști dacă suntem în modul editare
@@ -99,7 +100,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
   void dispose() {
     _clientNameController.dispose();
     _phoneController.dispose();
-    _timeController.dispose();
     super.dispose();
   }
 
@@ -113,7 +113,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       // Modul creare - folosește data inițială dacă este furnizată
       if (widget.initialDateTime != null) {
         _selectedDate = widget.initialDateTime;
-        _timeController.text = DateFormat('HH:mm').format(widget.initialDateTime!);
+        _selectedTimeSlot = DateFormat('HH:mm').format(widget.initialDateTime!);
+        // Încarcă orele disponibile pentru data inițială
+        await _loadAvailableTimeSlots();
       }
     }
 
@@ -130,7 +132,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
         _phoneController.text = meetingData.phoneNumber;
         _selectedType = meetingData.type;
         _selectedDate = meetingData.dateTime;
-        _timeController.text = DateFormat('HH:mm').format(meetingData.dateTime);
+        _selectedTimeSlot = DateFormat('HH:mm').format(meetingData.dateTime);
+        // Încarcă orele disponibile pentru data existentă
+        await _loadAvailableTimeSlots();
       }
     } catch (e) {
       debugPrint("Eroare la încărcarea întâlnirii: $e");
@@ -139,8 +143,30 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   Future<void> _loadAvailableTimeSlots() async {
-    // Această metodă nu mai este necesară pentru validarea sloturilor
-    // dar o păstrez pentru compatibilitate
+    if (_selectedDate == null) return;
+
+    try {
+      // Folosește MeetingService pentru a obține orele disponibile
+      final availableSlots = await _meetingService.getAvailableTimeSlots(_selectedDate!);
+      
+      setState(() {
+        _availableTimeSlots = availableSlots;
+        
+        // Dacă ora selectată curent nu este în lista de ore disponibile,
+        // resetează selecția (doar pentru modul creare)
+        if (!isEditMode && _selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
+          _selectedTimeSlot = null;
+        }
+      });
+      
+      // Afișează mesaj dacă nu sunt ore disponibile
+      if (_availableTimeSlots.isEmpty) {
+        _showError('Nu sunt ore disponibile în această dată');
+      }
+    } catch (e) {
+      debugPrint('Eroare la încărcarea orelor disponibile: $e');
+      _showError('Eroare la încărcarea orelor disponibile');
+    }
   }
 
   Future<void> _selectDate() async {
@@ -154,7 +180,12 @@ class _MeetingPopupState extends State<MeetingPopup> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        // Resetează ora când se schimbă data
+        _selectedTimeSlot = null;
       });
+      
+      // Încarcă orele disponibile pentru noua dată
+      await _loadAvailableTimeSlots();
     }
   }
 
@@ -165,15 +196,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
       return;
     }
 
-    if (_timeController.text.trim().isEmpty) {
-      _showError("Introduceti ora");
-      return;
-    }
-
-    // Validare format oră (HH:mm)
-    final timeRegex = RegExp(r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$');
-    if (!timeRegex.hasMatch(_timeController.text.trim())) {
-      _showError("Formatul orei trebuie să fie HH:mm (ex: 14:30)");
+    if (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty) {
+      _showError("Selecteaza o ora");
       return;
     }
 
@@ -181,7 +205,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
     try {
       // Construiește data și ora finale
-      final timeParts = _timeController.text.trim().split(':');
+      final timeParts = _selectedTimeSlot!.trim().split(':');
       final finalDateTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
@@ -401,17 +425,24 @@ class _MeetingPopupState extends State<MeetingPopup> {
                             
                             const SizedBox(width: AppTheme.smallGap),
                             
-                            // Ora - using InputField1 for manual time input
+                            // Ora - using DropdownField1 for time slot selection
                             Expanded(
-                              child: InputField1(
+                              child: DropdownField1<String>(
                                 title: "Ora",
-                                controller: _timeController,
-                                hintText: "HH:mm",
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  TimeInputFormatter(),
-                                ],
+                                value: _selectedTimeSlot,
+                                items: _availableTimeSlots.map((timeSlot) {
+                                  return DropdownMenuItem<String>(
+                                    value: timeSlot,
+                                    child: Text(timeSlot),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedTimeSlot = value;
+                                  });
+                                },
+                                hintText: "Selecteaza ora",
+                                enabled: _selectedDate != null && _availableTimeSlots.isNotEmpty,
                               ),
                             ),
                           ],

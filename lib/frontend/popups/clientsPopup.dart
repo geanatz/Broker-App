@@ -226,6 +226,20 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   }
 
   @override
+  void didUpdateWidget(ClientsPopup2 oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Verifică dacă clientul pentru editare s-a schimbat
+    if (oldWidget.editingClient != widget.editingClient) {
+      // Actualizează textul din controlleri cu noile valori
+      _nameController.text = widget.editingClient?.name ?? '';
+      _phoneController.text = widget.editingClient?.phoneNumber ?? '';
+      _coDebitorNameController.text = widget.editingClient?.coDebitorName ?? '';
+      _coDebitorPhoneController.text = widget.editingClient?.coDebitorPhone ?? '';
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
