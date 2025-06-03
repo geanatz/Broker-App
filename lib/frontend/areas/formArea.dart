@@ -490,7 +490,6 @@ class _FormAreaState extends State<FormArea> {
         children: [
           // Formulare existente (doar cele cu date)
           ...nonEmptyForms.asMap().entries.map((entry) {
-            final index = entry.key;
             final form = entry.value;
             // Găsește indexul real în lista originală
             final realIndex = forms.indexOf(form);
@@ -575,7 +574,6 @@ class _FormAreaState extends State<FormArea> {
         children: [
           // Formulare existente (doar cele cu date)
           ...nonEmptyForms.asMap().entries.map((entry) {
-            final index = entry.key;
             final form = entry.value;
             // Găsește indexul real în lista originală
             final realIndex = forms.indexOf(form);
@@ -841,62 +839,7 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Afișează dialog pentru introducerea textului
-  void _showInputDialog(ClientModel client, int index, String field, String currentValue, bool isCreditForm, bool isClient) {
-    final controller = TextEditingController(text: currentValue);
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.popupBackground,
-        title: Text(
-          'Introduceti ${_getFieldDisplayName(field)}',
-          style: TextStyle(color: AppTheme.elementColor2),
-        ),
-        content: TextField(
-          controller: controller,
-          keyboardType: _getKeyboardType(field),
-          inputFormatters: _getInputFormatters(field),
-          style: TextStyle(color: AppTheme.elementColor2),
-          decoration: InputDecoration(
-            hintText: 'Introduceti ${_getFieldDisplayName(field)}',
-            hintStyle: TextStyle(color: AppTheme.elementColor1),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppTheme.containerColor2),
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppTheme.elementColor2),
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Anulează', style: TextStyle(color: AppTheme.elementColor1)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _updateFormField(client, index, field, controller.text, isCreditForm, isClient);
-            },
-            child: Text('Salvează', style: TextStyle(color: AppTheme.elementColor2)),
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// Reset new form selections
-  void _resetNewFormSelections() {
-    setState(() {
-      _newCreditFormSelectedBank = null;
-      _newCreditFormSelectedType = null;
-      _newIncomeFormSelectedBank = null;
-      _newIncomeFormSelectedType = null;
-    });
-  }
 
   /// Reset credit form selections
   void _resetCreditFormSelections() {
@@ -918,57 +861,7 @@ class _FormAreaState extends State<FormArea> {
     });
   }
 
-  /// Create new credit form based on selected bank and credit type
-  void _createNewCreditForm(ClientModel client, String bank, String creditType, bool isClient) {
-    final forms = isClient 
-        ? _formService.getClientCreditForms(client.phoneNumber)
-        : _formService.getCoborrowerCreditForms(client.phoneNumber);
-    
-    // Dacă ultimul formular este gol, nu facem nimic
-    if (forms.isNotEmpty && forms.last.isEmpty) {
-      return;
-    }
-    
-    // Creează un formular nou cu date minime pentru a declanșa adăugarea automată
-    final newForm = CreditFormModel(
-      bank: bank,
-      creditType: creditType,
-    );
-    
-    // Folosește metoda de update pentru a declanșa adăugarea automată
-    _formService.updateCreditForm(
-      client.phoneNumber, 
-      forms.length - 1, 
-      newForm, 
-      isClient: isClient
-    );
-  }
 
-  /// Create new income form based on selected bank and income type
-  void _createNewIncomeForm(ClientModel client, String bank, String incomeType, bool isClient) {
-    final forms = isClient 
-        ? _formService.getClientIncomeForms(client.phoneNumber)
-        : _formService.getCoborrowerIncomeForms(client.phoneNumber);
-    
-    // Dacă ultimul formular este gol, nu facem nimic
-    if (forms.isNotEmpty && forms.last.isEmpty) {
-      return;
-    }
-    
-    // Creează un formular nou cu date minime pentru a declanșa adăugarea automată
-    final newForm = IncomeFormModel(
-      bank: bank,
-      incomeType: incomeType,
-    );
-    
-    // Folosește metoda de update pentru a declanșa adăugarea automată
-    _formService.updateIncomeForm(
-      client.phoneNumber, 
-      forms.length - 1, 
-      newForm, 
-      isClient: isClient
-    );
-  }
 
   /// Actualizează un câmp din formular
   void _updateFormField(ClientModel client, int index, String field, String value, bool isCreditForm, bool isClient) {
@@ -1018,65 +911,8 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
-  /// Obține numele de afișare pentru un câmp
-  String _getFieldDisplayName(String field) {
-    switch (field) {
-      case 'sold':
-        return 'soldul';
-      case 'consumat':
-        return 'suma consumată';
-      case 'rata':
-        return 'rata';
-      case 'perioada':
-        return 'perioada';
-      case 'rateType':
-        return 'tipul de rată';
-      case 'avans':
-        return 'avansul';
-      case 'valoare':
-        return 'valoarea imobilului';
-      case 'incomeAmount':
-        return 'suma venitului';
-      case 'vechime':
-        return 'vechimea';
-      default:
-        return field;
-    }
-  }
 
-  /// Obține tipul de tastatură pentru un câmp
-  TextInputType _getKeyboardType(String field) {
-    switch (field) {
-      case 'sold':
-      case 'consumat':
-      case 'rata':
-      case 'avans':
-      case 'valoare':
-      case 'incomeAmount':
-      case 'perioada':
-      case 'vechime':
-        return TextInputType.number;
-      default:
-        return TextInputType.text;
-    }
-  }
 
-  /// Obține formatările de input pentru un câmp
-  List<TextInputFormatter> _getInputFormatters(String field) {
-    switch (field) {
-      case 'sold':
-      case 'consumat':
-      case 'rata':
-      case 'avans':
-      case 'valoare':
-      case 'incomeAmount':
-      case 'perioada':
-      case 'vechime':
-        return [FilteringTextInputFormatter.digitsOnly];
-      default:
-        return [];
-    }
-  }
 
   /// Transform credit form new based on selected bank and credit type
   void _transformCreditFormNew(ClientModel client, String bank, String creditType, bool isClient) {

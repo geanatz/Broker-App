@@ -106,7 +106,6 @@ class _OutlinedItem6State extends State<OutlinedItem6> {
     final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
     final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
-    final double effectiveIconSize = widget.iconSize ?? 24.0;
     final double internalSpacing = AppTheme.mediumGap;
     final double iconContainerSize = 48.0;
 

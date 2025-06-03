@@ -74,13 +74,6 @@ class DynamicTextHeaderRow extends StatelessWidget {
     final double effectiveCellHeight = cellHeight ?? 21.0; // Matches row height
     final TextAlign effectiveTextAlign = textAlign ?? TextAlign.start;
 
-    final TextStyle defaultStyle = TextStyle(
-      color: effectiveTextColor,
-      fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
-    );
-    final TextStyle effectiveTitleStyle = titleStyle ?? defaultStyle;
 
     final ShapeDecoration defaultDecoration = ShapeDecoration(
       // No background color by default for header, relies on parent or can be customized

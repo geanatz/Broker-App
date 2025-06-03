@@ -73,6 +73,7 @@ class _LoginPopupState extends State<LoginPopup> {
   List<String> _consultantNames = [];
   bool _isLoadingConsultants = true;
   String? _loginError;
+  bool _isPasswordVisible = false; // Add password visibility state
   
   // Adăugare stări pentru validare
   bool _isConsultantInvalid = false;
@@ -345,25 +346,46 @@ class _LoginPopupState extends State<LoginPopup> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // --- Labelul pentru câmpul de parolă (rămâne la fel) ---
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-          child: Container(
-            height: 24, // Figma: Titlu Câmp height
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Parola",
-              style: AppTheme.primaryTitleStyle.copyWith(
-                fontSize: AppTheme.fontSizeMedium,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.elementColor2,
-              ),
-            ),
-          )
-        ),
-        // --- Câmpul de introducere a parolei (modificat) ---
+        // Title area with "Am uitat parola" altText
         Container(
-          height: 48, // Figma: Input height - păstrăm înălțimea
+          width: double.infinity,
+          height: 21,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "Parola",
+                style: AppTheme.primaryTitleStyle.copyWith(
+                  fontSize: AppTheme.fontSizeMedium,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.elementColor2,
+                ),
+              ),
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: widget.onForgotPassword,
+                  child: Text(
+                    "Am uitat parola",
+                    style: AppTheme.primaryTitleStyle.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.elementColor1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 3), // 3px spacing between title and input
+        
+        // Input area
+        Container(
+          height: 48,
           decoration: BoxDecoration(
             color: AppTheme.containerColor2,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
@@ -373,9 +395,9 @@ class _LoginPopupState extends State<LoginPopup> {
           ),
           child: TextFormField(
             controller: _passwordController,
-            obscureText: true,
+            obscureText: !_isPasswordVisible,
             textAlignVertical: TextAlignVertical.center,
-            onFieldSubmitted: (_) => _attemptLogin(), // Add Enter key functionality
+            onFieldSubmitted: (_) => _attemptLogin(),
             style: AppTheme.smallTextStyle.copyWith(
               color: AppTheme.elementColor3,
               fontSize: AppTheme.fontSizeMedium,
@@ -400,9 +422,9 @@ class _LoginPopupState extends State<LoginPopup> {
               suffixIcon: Padding(
                 padding: const EdgeInsets.only(right: AppTheme.smallGap),
                 child: IconButton(
-                  tooltip: "Am uitat parola",
+                  tooltip: _isPasswordVisible ? "Ascunde parola" : "Afiseaza parola",
                   icon: SvgPicture.asset(
-                    'assets/infoIcon.svg',
+                    _isPasswordVisible ? 'assets/hideIcon.svg' : 'assets/showIcon.svg',
                     width: AppTheme.iconSizeMedium,
                     height: AppTheme.iconSizeMedium,
                     colorFilter: ColorFilter.mode(
@@ -411,7 +433,11 @@ class _LoginPopupState extends State<LoginPopup> {
                     ),
                   ),
                   iconSize: AppTheme.iconSizeMedium,
-                  onPressed: widget.onForgotPassword,
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    });
+                  },
                   padding: EdgeInsets.zero,
                 ),
               ),
@@ -420,7 +446,7 @@ class _LoginPopupState extends State<LoginPopup> {
                  minWidth: AppTheme.iconSizeMedium + 16,
                ),
             ),
-            validator: null, // Eliminăm validatorul standard
+            validator: null,
           ),
         ),
       ],

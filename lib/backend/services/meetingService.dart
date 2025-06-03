@@ -205,24 +205,17 @@ class MeetingService {
         '15:00', '15:30', '16:00'
       ];
 
-      // Obține întâlnirile existente pentru această dată din noua structură
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
-      final allMeetings = await _unifiedService.getAllMeetings();
+      // Obține întâlnirile echipei pentru această dată din noua structură
+      final teamMeetingsForDate = await _unifiedService.getTeamMeetingsForDate(date);
       
-      // Filtrează întâlnirile pentru data specificată
-      final dayMeetings = allMeetings.where((meeting) {
-        final meetingDate = meeting.dateTime;
-        return meetingDate.isAfter(startOfDay) && meetingDate.isBefore(endOfDay);
-      });
-
       // Extrage orele ocupate (excluzând întâlnirea specificată dacă există)
       final Set<String> occupiedSlots = {};
-      for (var meeting in dayMeetings) {
-        if (excludeId != null && meeting.id == excludeId) continue;
+      for (var meeting in teamMeetingsForDate) {
+        // Skip the meeting we're editing
+        if (excludeId != null && meeting['meetingId'] == excludeId) continue;
         
-        final timeSlot = DateFormat('HH:mm').format(meeting.dateTime);
+        final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
+        final timeSlot = DateFormat('HH:mm').format(meetingDateTime);
         occupiedSlots.add(timeSlot);
       }
 

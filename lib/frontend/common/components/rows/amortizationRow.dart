@@ -88,13 +88,6 @@ class DynamicTextDataRow extends StatelessWidget {
     final Color effectiveRowBackgroundColor = rowBackgroundColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
     final double effectiveRowBorderRadius = rowBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
 
-    final TextStyle defaultStyle = TextStyle(
-      color: effectiveTextColor,
-      fontSize: 15, // AppTheme.fontSizeSmall
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
-      fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
-    );
-    final TextStyle effectiveValueStyle = valueStyle ?? defaultStyle;
 
     final ShapeDecoration defaultDecoration = ShapeDecoration(
       color: effectiveRowBackgroundColor,

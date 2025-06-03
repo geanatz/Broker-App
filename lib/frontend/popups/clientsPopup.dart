@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../common/components/headers/widgetHeader1.dart';
 import '../common/components/items/lightItem3.dart';
 import '../common/components/items/darkItem3.dart';

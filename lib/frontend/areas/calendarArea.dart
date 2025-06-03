@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
 import 'package:broker_app/frontend/common/appTheme.dart';
@@ -88,11 +89,6 @@ class CalendarAreaState extends State<CalendarArea> {
     }
   }
 
-  /// Start periodic refresh to avoid blocking streams (disabled - refresh only when needed)
-  void _startPeriodicRefresh() {
-    _refreshTimer?.cancel();
-    // Removed automatic refresh - will only refresh when explicitly needed
-  }
 
   /// Încarcă întâlnirile pentru săptămâna curentă din noua structură unificată
   Future<void> _loadMeetingsForCurrentWeek() async {
@@ -107,31 +103,69 @@ class CalendarAreaState extends State<CalendarArea> {
     });
 
     try {
-      debugPrint("Loading meetings from unified structure for week offset: $_currentWeekOffset");
+      debugPrint("Loading team meetings from unified structure for week offset: $_currentWeekOffset");
       
       final DateTime startOfWeek = _calendarService.getStartOfWeekToDisplay(_currentWeekOffset);
       final DateTime endOfWeek = _calendarService.getEndOfWeekToDisplay(_currentWeekOffset);
       
-      // Obține toate întâlnirile din noua structură unificată
-      final allMeetings = await _unifiedService.getAllMeetings();
+      // Obține toate întâlnirile echipei din noua structură unificată
+      final allTeamMeetings = await _unifiedService.getAllTeamMeetings();
       
-      // Filtrează întâlnirile pentru săptămâna curentă
-      final weekMeetings = allMeetings.where((meeting) {
-        return meeting.dateTime.isAfter(startOfWeek) && 
-               meeting.dateTime.isBefore(endOfWeek);
-      }).toList();
+      // Convertește din format raw în ClientActivity pentru compatibility
+      final List<ClientActivity> weekMeetings = [];
+      for (final meeting in allTeamMeetings) {
+        final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
+        
+        // Filtrează întâlnirile pentru săptămâna curentă
+        if (meetingDateTime.isAfter(startOfWeek) && meetingDateTime.isBefore(endOfWeek)) {
+          final activity = ClientActivity(
+            id: meeting['meetingId'] ?? '',
+            type: meeting['type'] == 'bureauDelete' 
+                ? ClientActivityType.bureauDelete 
+                : ClientActivityType.meeting,
+            dateTime: meetingDateTime,
+            description: meeting['description'] ?? 'Întâlnire',
+            additionalData: Map<String, dynamic>.from(meeting),
+            createdAt: meeting['createdAt'] != null 
+                ? (meeting['createdAt'] as Timestamp).toDate()
+                : DateTime.now(),
+            updatedAt: meeting['updatedAt'] != null 
+                ? (meeting['updatedAt'] as Timestamp).toDate()
+                : null,
+          );
+          weekMeetings.add(activity);
+        }
+      }
 
-      debugPrint("Found ${weekMeetings.length} meetings for current week");
+      debugPrint("Found ${weekMeetings.length} team meetings for current week");
 
       if (mounted) {
         setState(() {
           _cachedMeetings = weekMeetings;
-          _allMeetings = allMeetings;
+          // Also update _allMeetings with all team meetings for navigation
+          _allMeetings = allTeamMeetings.map((meeting) {
+            final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
+            return ClientActivity(
+              id: meeting['meetingId'] ?? '',
+              type: meeting['type'] == 'bureauDelete' 
+                  ? ClientActivityType.bureauDelete 
+                  : ClientActivityType.meeting,
+              dateTime: meetingDateTime,
+              description: meeting['description'] ?? 'Întâlnire',
+              additionalData: Map<String, dynamic>.from(meeting),
+              createdAt: meeting['createdAt'] != null 
+                  ? (meeting['createdAt'] as Timestamp).toDate()
+                  : DateTime.now(),
+              updatedAt: meeting['updatedAt'] != null 
+                  ? (meeting['updatedAt'] as Timestamp).toDate()
+                  : null,
+            );
+          }).toList();
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Error loading meetings from unified structure: $e');
+      debugPrint('Error loading team meetings from unified structure: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -405,7 +439,7 @@ class CalendarAreaState extends State<CalendarArea> {
                   
                   return Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(right: isLastSlot ? 0 : 8),
+                      padding: EdgeInsets.only(right: isLastSlot ? 0 : AppTheme.mediumGap),
                       child: isMeeting 
                           ? _buildMeetingSlot(meetingData, docId!)
                           : _buildAvailableSlot(dayIndex, hourIndex),
@@ -549,12 +583,33 @@ class CalendarAreaState extends State<CalendarArea> {
       }
     }
     
-    // If not found in cache, load all meetings fresh
+    // If not found in cache, load all team meetings fresh
     if (targetMeeting == null) {
       try {
-        final allMeetings = await _unifiedService.getAllMeetings();
+        final allTeamMeetings = await _unifiedService.getAllTeamMeetings();
+        
+        // Convert to ClientActivity list and update cache
+        final convertedMeetings = allTeamMeetings.map((meeting) {
+          final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
+          return ClientActivity(
+            id: meeting['meetingId'] ?? '',
+            type: meeting['type'] == 'bureauDelete' 
+                ? ClientActivityType.bureauDelete 
+                : ClientActivityType.meeting,
+            dateTime: meetingDateTime,
+            description: meeting['description'] ?? 'Întâlnire',
+            additionalData: Map<String, dynamic>.from(meeting),
+            createdAt: meeting['createdAt'] != null 
+                ? (meeting['createdAt'] as Timestamp).toDate()
+                : DateTime.now(),
+            updatedAt: meeting['updatedAt'] != null 
+                ? (meeting['updatedAt'] as Timestamp).toDate()
+                : null,
+          );
+        }).toList();
+        
         setState(() {
-          _allMeetings = allMeetings;
+          _allMeetings = convertedMeetings;
         });
         
         // Try to find the meeting again
@@ -565,7 +620,7 @@ class CalendarAreaState extends State<CalendarArea> {
           }
         }
       } catch (e) {
-        debugPrint('Error loading all meetings for navigation: $e');
+        debugPrint('Error loading all team meetings for navigation: $e');
         return;
       }
     }

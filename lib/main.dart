@@ -11,6 +11,7 @@ import 'package:broker_app/frontend/screens/mainScreen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultantService.dart';
+import 'package:broker_app/backend/services/settingsService.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -98,6 +99,10 @@ void main() async {
       return true;
     };
     
+    // Initialize SettingsService early
+    final settingsService = SettingsService();
+    await settingsService.initialize();
+    
     runApp(const MyApp());
   }, (error, stackTrace) {
     debugPrint('Caught error in runZonedGuarded: $error');
@@ -105,45 +110,74 @@ void main() async {
   });
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final SettingsService _settingsService = SettingsService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to theme changes
+    _settingsService.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _settingsService.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    setState(() {
+      // Rebuild the app when theme changes
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Broker App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppTheme.elementColor1,
-          primary: AppTheme.elementColor2,
-          secondary: AppTheme.elementColor1,
-          surface: Colors.white,
-        ),
-        useMaterial3: true,
-        textTheme: GoogleFonts.outfitTextTheme(),
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: GoogleFonts.outfit(
-            color: AppTheme.elementColor2,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-          iconTheme: IconThemeData(
-            color: AppTheme.elementColor1,
-          ),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.appBackground,
       ),
-      home: const AuthWrapper(),
-      // routes: { // Eliminat vechile rute
-      //   '/register': (context) => const RegisterScreen(),
-      //   '/login': (context) => const LoginScreen(),
-      //   '/token': (context) => const TokenScreen(),
-      //   '/reset_password': (context) => const ResetPasswordScreen(),
-      // },
+      child: MaterialApp(
+        title: 'Broker App',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppTheme.elementColor2,
+            brightness: AppTheme.isDarkMode ? Brightness.dark : Brightness.light,
+          ),
+          useMaterial3: true,
+          textTheme: GoogleFonts.outfitTextTheme(),
+          scaffoldBackgroundColor: Colors.transparent, // Make scaffold transparent to show gradient
+          appBarTheme: AppBarTheme(
+            backgroundColor: Colors.transparent, // Make app bar transparent
+            elevation: 0,
+            centerTitle: true,
+            titleTextStyle: GoogleFonts.outfit(
+              color: AppTheme.elementColor2,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            iconTheme: IconThemeData(
+              color: AppTheme.elementColor1,
+            ),
+          ),
+        ),
+        home: const AuthWrapper(),
+        // routes: { // Eliminat vechile rute
+        //   '/register': (context) => const RegisterScreen(),
+        //   '/login': (context) => const LoginScreen(),
+        //   '/token': (context) => const TokenScreen(),
+        //   '/reset_password': (context) => const ResetPasswordScreen(),
+        // },
+      ),
     );
   }
 }
@@ -166,6 +200,12 @@ class AuthWrapper extends StatelessWidget {
           return const MainAppWrapper();
         }
         
+        // When user is logged out, reset to default theme
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          final settingsService = SettingsService();
+          await settingsService.onConsultantChanged(); // This will load default theme
+        });
+        
         return const AuthScreen(); // Navighează la noul AuthScreen
       },
     );
@@ -182,6 +222,7 @@ class MainAppWrapper extends StatefulWidget {
 class _MainAppWrapperState extends State<MainAppWrapper> {
   Map<String, dynamic>? _consultantData;
   bool _isLoading = true;
+  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -210,6 +251,9 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
       if (!mounted) return;
 
       if (consultantData != null) {
+        // Reload theme settings for the current consultant
+        await _settingsService.onConsultantChanged();
+        
         setState(() {
           _consultantData = consultantData;
           _isLoading = false;

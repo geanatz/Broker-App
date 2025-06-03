@@ -95,7 +95,6 @@ class _LightItem7State extends State<LightItem7> {
     final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
     final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
-    final double effectiveIconSize = widget.iconSize ?? 24.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;
     final double iconContainerSize = 48.0;

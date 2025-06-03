@@ -286,6 +286,7 @@ class FormService extends ChangeNotifier {
   /// Obține formularele de credit pentru codebitor
   List<CreditFormModel> getCoborrowerCreditForms(String clientId) {
     if (!_coborrowerCreditForms.containsKey(clientId)) {
+      // Create separate empty form for coborrower, not sharing client data
       _coborrowerCreditForms[clientId] = [CreditFormModel()];
     }
     return _coborrowerCreditForms[clientId]!;
@@ -302,6 +303,7 @@ class FormService extends ChangeNotifier {
   /// Obține formularele de venit pentru codebitor
   List<IncomeFormModel> getCoborrowerIncomeForms(String clientId) {
     if (!_coborrowerIncomeForms.containsKey(clientId)) {
+      // Create separate empty form for coborrower, not sharing client data
       _coborrowerIncomeForms[clientId] = [IncomeFormModel()];
     }
     return _coborrowerIncomeForms[clientId]!;

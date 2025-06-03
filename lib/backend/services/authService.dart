@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'firebaseService.dart';
+import 'settingsService.dart';
 
 /// Enum pentru a defini stările/pașii posibili ai ecranului de autentificare.
 /// Aceasta va controla ce popup este afișat.
@@ -194,28 +195,20 @@ class AuthService {
       mostRecentDoc ??= consultantsSnapshot.docs.first;
       
       // Obținem ID-ul consultantului și alte date utile
-      final consultantId = mostRecentDoc.id;
       final consultantData = mostRecentDoc.data() as Map<String, dynamic>;
       
       // Încercăm să extragem email-ul stocat, dacă există
       String? storedEmail = consultantData['email'] as String?;
-      String emailToUse;
       
       if (storedEmail != null && storedEmail.isNotEmpty) {
         // Folosim email-ul stocat explicit în document
-        emailToUse = storedEmail;
       } else {
         // Generăm email-ul standard (fallback if email wasn't stored during registration)
         debugPrint("Warning: Email not found in consultant document, generating from name.");
-        emailToUse = _createEmailFromConsultantName(consultantName);
       }
       
       // Încercăm autentificarea cu acest email
       try {
-        final userCredential = await _auth.signInWithEmailAndPassword(
-          email: emailToUse,
-          password: password,
-        );
         
         // Autentificare reușită
         return {
@@ -389,13 +382,23 @@ class AuthService {
       
       mostRecentDoc ??= consultantsSnapshot.docs.first;
       final consultantDoc = mostRecentDoc;
+      final consultantId = consultantDoc.id;
       
-      // Pasul 2: Șterge documentul din Firestore
+      // Pasul 2: Șterge setările temei pentru consultantul respectiv
+      try {
+        final settingsService = SettingsService();
+        await settingsService.clearConsultantSettings(consultantId);
+      } catch (e) {
+        debugPrint('Error clearing consultant theme settings: $e');
+        // Continue with deletion even if settings clearing fails
+      }
+      
+      // Pasul 3: Șterge documentul din Firestore
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(consultantDoc.id).delete()
       );
       
-      // Pasul 3: Șterge utilizatorul din Firebase Auth dacă avem email-ul
+      // Pasul 4: Șterge utilizatorul din Firebase Auth dacă avem email-ul
       final consultantData = consultantDoc.data() as Map<String, dynamic>;
       final email = consultantData['email'] as String?;
       

@@ -75,7 +75,6 @@ class DarkItem6 extends StatelessWidget {
     final double effectiveMainBorderRadius = mainBorderRadius ?? AppTheme.borderRadiusMedium;
     final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
-    final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
     final double internalSpacing = AppTheme.mediumGap;
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(

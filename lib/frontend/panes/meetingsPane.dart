@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/items/lightItem7.dart';
 import 'package:broker_app/frontend/common/components/items/darkItem7.dart';
-import 'package:broker_app/backend/services/meetingService.dart';
 import '../../backend/services/unified_client_service.dart';
 import '../../backend/models/unified_client_model.dart';
 
@@ -30,7 +29,6 @@ class MeetingsPane extends StatefulWidget {
 class MeetingsPaneState extends State<MeetingsPane> {
   // Firebase reference
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final MeetingService _meetingService = MeetingService();
   final UnifiedClientService _unifiedService = UnifiedClientService();
   
   // Formatter pentru date
@@ -131,16 +129,6 @@ class MeetingsPaneState extends State<MeetingsPane> {
   }
   
   // Verifică dacă două map-uri sunt egale
-  bool _areMapsEqual(Map<String, dynamic>? map1, Map<String, dynamic>? map2) {
-    if (map1 == null || map2 == null) return map1 == map2;
-    if (map1.length != map2.length) return false;
-    for (final key in map1.keys) {
-      if (!map2.containsKey(key) || map1[key] != map2[key]) {
-        return false;
-      }
-    }
-    return true;
-  }
   
   // Calculează timpul rămas până la întâlnire în format text
   String _getTimeUntilMeeting(DateTime meetingDateTime) {

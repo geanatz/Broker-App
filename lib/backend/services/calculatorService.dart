@@ -1,10 +1,15 @@
 import 'dart:math';
+import 'package:broker_app/backend/services/formService.dart';
+import 'package:broker_app/frontend/common/services/client_service.dart';
 
 /// Serviciul pentru calculare credite
 /// 
 /// Acest serviciu oferă funcționalitatea de calcul pentru credite și 
 /// generarea graficului de amortizare
 class CalculatorService {
+  static final FormService _formService = FormService();
+  static final ClientService _clientService = ClientService();
+
   /// Calculează rata lunară pentru un credit
   /// 
   /// [principal] - suma împrumutată (principal)
@@ -59,6 +64,39 @@ class CalculatorService {
     required double principal,
   }) {
     return totalCost - principal;
+  }
+
+  /// Calculează 40% din totalul veniturilor pentru clientul activ
+  /// 
+  /// Returnează 40% din suma tuturor veniturilor (client + codebitor)
+  static double calculateIncomePercentage() {
+    final currentClient = _clientService.focusedClient;
+    if (currentClient == null) {
+      return 0;
+    }
+    
+    double totalIncome = 0;
+    
+    // Obține veniturile clientului
+    final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
+    for (final form in clientIncomeForms) {
+      if (form.incomeAmount.isNotEmpty && !form.isEmpty) {
+        final amount = double.tryParse(form.incomeAmount.replaceAll(',', '')) ?? 0;
+        totalIncome += amount;
+      }
+    }
+    
+    // Obține veniturile codebitorului
+    final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+    for (final form in coborrowerIncomeForms) {
+      if (form.incomeAmount.isNotEmpty && !form.isEmpty) {
+        final amount = double.tryParse(form.incomeAmount.replaceAll(',', '')) ?? 0;
+        totalIncome += amount;
+      }
+    }
+    
+    // Calculează 40% din total
+    return totalIncome * 0.4;
   }
   
   /// Generează graficul de amortizare pentru un credit

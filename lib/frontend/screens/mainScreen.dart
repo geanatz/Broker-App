@@ -13,7 +13,6 @@ import 'package:broker_app/frontend/popups/clientsPopup.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
 import 'package:broker_app/backend/models/client_model.dart';
 import 'package:broker_app/backend/services/settingsService.dart';
-import 'package:broker_app/backend/services/unified_client_service.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:
 /// - pane (stânga, lățime 312)
@@ -53,7 +52,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final SettingsService _settingsService = SettingsService();
   
   // Unified service for migration
-  final UnifiedClientService _unifiedService = UnifiedClientService();
   
   // State pentru popup-uri
   List<Client> _popupClients = [];
@@ -248,24 +246,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
   
-  /// Builds the popup overlay with proper positioning and backdrop
-  Widget _buildPopupOverlay({required Widget child}) {
-    return GestureDetector(
-      onTap: _closeAllPopups, // Închide popup-ul la click pe background
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.5),
-        child: Center(
-          child: GestureDetector(
-            onTap: () {}, // Previne închiderea când se face click pe popup
-            child: Material(
-              color: Colors.transparent,
-              child: child,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
   
   /// Builds dual popup overlay with both popups side by side
   Widget _buildDualPopupOverlay() {
@@ -483,93 +463,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  /// Handles migration to new database structure
-  void _handleMigrateData() async {
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Migrare structură bază de date'),
-          content: const Text(
-            'Această operațiune va migra toate datele (clienți, formulare, întâlniri) '
-            'din structura veche în noua structură optimizată.\n\n'
-            'Operațiunea este sigură și nu va șterge datele existente.\n\n'
-            'Continuați?'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Anulează'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Migrează'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true) return;
-
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Se migrează datele...'),
-            ],
-          ),
-        );
-      },
-    );
-
-    try {
-      // Perform migration
-      final success = await _unifiedService.migrateAllDataToNewStructure();
-      
-      // Close loading dialog
-      Navigator.of(context).pop();
-      
-      if (success) {
-        // Reload clients after migration
-        await _clientService.loadClientsFromFirebase();
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Migrarea a fost completată cu succes!'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ Eroare la migrarea datelor. Verificați consola pentru detalii.'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      // Close loading dialog
-      Navigator.of(context).pop();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('❌ Eroare la migrarea datelor: $e'),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 }
 
 /// Widget simplu pentru placeholder

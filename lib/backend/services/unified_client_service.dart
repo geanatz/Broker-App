@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/unified_client_model.dart';
+import 'consultantService.dart';
 
 /// Serviciu unificat pentru gestionarea bazei de date conform structurii:
 /// consultants/{token}/clients/{phoneNumber}/form/{loan|income} și meetings/{meetingId}
@@ -12,6 +13,7 @@ class UnifiedClientService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ConsultantService _consultantService = ConsultantService();
   
   // Constante pentru organizarea bazei de date
   static const String _consultantsCollection = 'consultants';
@@ -894,16 +896,137 @@ class UnifiedClientService {
     }
   }
 
-  /// Convertește datele vechi ale formularului în noul format
-  ClientFormData _convertOldFormData(Map<String, dynamic> oldFormData) {
-    // TODO: Implementează conversia specifică în funcție de structura veche
-    return ClientFormData(
-      clientCredits: [],
-      coDebitorCredits: [],
-      clientIncomes: [],
-      coDebitorIncomes: [],
-      additionalData: Map<String, dynamic>.from(oldFormData),
-    );
+
+  // =================== TEAM-BASED OPERATIONS ===================
+
+  /// Obține toate întâlnirile pentru echipa consultantului curent
+  /// Aceasta va fi folosită pentru calendarArea să afișeze întâlnirile întregii echipe
+  Future<List<Map<String, dynamic>>> getAllTeamMeetings() async {
+    try {
+      // Obține consultanții din echipa curentă
+      final teamConsultants = await _consultantService.getTeamConsultants();
+      
+      final List<Map<String, dynamic>> allMeetings = [];
+      
+      // Pentru fiecare consultant din echipă, obține toate întâlnirile
+      for (final consultant in teamConsultants) {
+        final consultantId = consultant['id'] as String;
+        final consultantName = consultant['name'] as String? ?? 'Consultant necunoscut';
+        
+        final consultantMeetings = await _getConsultantMeetings(consultantId, consultantName);
+        allMeetings.addAll(consultantMeetings);
+      }
+      
+      // Sortează întâlnirile după dată
+      allMeetings.sort((a, b) {
+        final dateA = (a['dateTime'] as Timestamp).toDate();
+        final dateB = (b['dateTime'] as Timestamp).toDate();
+        return dateA.compareTo(dateB);
+      });
+      
+      return allMeetings;
+    } catch (e) {
+      debugPrint('❌ Error getting team meetings: $e');
+      return [];
+    }
+  }
+
+  /// Obține toate întâlnirile pentru un consultant specific
+  Future<List<Map<String, dynamic>>> _getConsultantMeetings(String consultantId, String consultantName) async {
+    try {
+      final List<Map<String, dynamic>> consultantMeetings = [];
+      
+      // Obține toți clienții consultantului
+      final clientsSnapshot = await _firestore
+          .collection(_consultantsCollection)
+          .doc(consultantId)
+          .collection(_clientsSubcollection)
+          .get();
+      
+      // Pentru fiecare client, obține întâlnirile
+      for (final clientDoc in clientsSnapshot.docs) {
+        final phoneNumber = clientDoc.id;
+        final clientData = clientDoc.data();
+        final clientName = clientData['name'] as String? ?? 'Client necunoscut';
+        
+        final meetingsSnapshot = await _firestore
+            .collection(_consultantsCollection)
+            .doc(consultantId)
+            .collection(_clientsSubcollection)
+            .doc(phoneNumber)
+            .collection(_meetingsSubcollection)
+            .get();
+        
+        for (final meetingDoc in meetingsSnapshot.docs) {
+          final meetingData = meetingDoc.data();
+          
+          // Adaugă informații suplimentare despre consultant și client
+          final enrichedMeeting = Map<String, dynamic>.from(meetingData);
+          enrichedMeeting['meetingId'] = meetingDoc.id;
+          enrichedMeeting['consultantId'] = consultantId;
+          enrichedMeeting['consultantName'] = consultantName;
+          enrichedMeeting['clientName'] = clientName;
+          enrichedMeeting['phoneNumber'] = phoneNumber;
+          
+          consultantMeetings.add(enrichedMeeting);
+        }
+      }
+      
+      return consultantMeetings;
+    } catch (e) {
+      debugPrint('❌ Error getting consultant meetings for $consultantId: $e');
+      return [];
+    }
+  }
+
+  /// Obține întâlnirile echipei pentru o anumită dată
+  Future<List<Map<String, dynamic>>> getTeamMeetingsForDate(DateTime date) async {
+    try {
+      final allTeamMeetings = await getAllTeamMeetings();
+      
+      // Filtrează întâlnirile pentru data specificată
+      return allTeamMeetings.where((meeting) {
+        final meetingDate = (meeting['dateTime'] as Timestamp).toDate();
+        return meetingDate.year == date.year &&
+               meetingDate.month == date.month &&
+               meetingDate.day == date.day;
+      }).toList();
+    } catch (e) {
+      debugPrint('❌ Error getting team meetings for date: $e');
+      return [];
+    }
+  }
+
+  /// Verifică dacă un slot de timp este ocupat de întâlniri în echipă
+  Future<bool> isTimeSlotOccupiedByTeam(DateTime dateTime, {String? excludeMeetingId, String? excludeConsultantId}) async {
+    try {
+      final teamMeetings = await getTeamMeetingsForDate(dateTime);
+      
+      for (final meeting in teamMeetings) {
+        final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
+        final meetingId = meeting['meetingId'] as String?;
+        final consultantId = meeting['consultantId'] as String?;
+        
+        // Exclude specific meeting or consultant if specified
+        if ((excludeMeetingId != null && meetingId == excludeMeetingId) ||
+            (excludeConsultantId != null && consultantId == excludeConsultantId)) {
+          continue;
+        }
+        
+        // Check if the time slots overlap (assuming 30-minute meetings)
+        final meetingEnd = meetingDateTime.add(const Duration(minutes: 30));
+        final slotEnd = dateTime.add(const Duration(minutes: 30));
+        
+        if (dateTime.isBefore(meetingEnd) && slotEnd.isAfter(meetingDateTime)) {
+          return true; // Time slot is occupied
+        }
+      }
+      
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error checking time slot availability: $e');
+      return true; // Assume occupied on error for safety
+    }
   }
 }
 

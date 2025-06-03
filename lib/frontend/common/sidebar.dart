@@ -232,14 +232,14 @@ class _SidebarWidgetState extends State<SidebarWidget> {
       return _buildNavigationButton(activeButton);
     }
     
-    // When expanded, show all buttons
+    // When expanded, show all buttons with proper gap spacing
     return Column(
-      children: buttons.map((button) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppTheme.smallGap),
-          child: _buildNavigationButton(button),
-        );
-      }).toList(),
+      children: [
+        for (int i = 0; i < buttons.length; i++) ...[
+          _buildNavigationButton(buttons[i]),
+          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
+        ],
+      ],
     );
   }
 
@@ -256,14 +256,14 @@ class _SidebarWidgetState extends State<SidebarWidget> {
       return _buildNavigationButton(activeButton);
     }
     
-    // When expanded, show all buttons
+    // When expanded, show all buttons with proper gap spacing
     return Column(
-      children: buttons.map((button) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppTheme.smallGap),
-          child: _buildNavigationButton(button),
-        );
-      }).toList(),
+      children: [
+        for (int i = 0; i < buttons.length; i++) ...[
+          _buildNavigationButton(buttons[i]),
+          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
+        ],
+      ],
     );
   }
 

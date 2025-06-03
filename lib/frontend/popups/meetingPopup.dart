@@ -147,20 +147,41 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
     try {
       // Folosește MeetingService pentru a obține orele disponibile
-      final availableSlots = await _meetingService.getAvailableTimeSlots(_selectedDate!);
+      final availableSlots = await _meetingService.getAvailableTimeSlots(
+        _selectedDate!, 
+        excludeId: widget.meetingId // Exclude current meeting when editing
+      );
       
       setState(() {
         _availableTimeSlots = availableSlots;
         
-        // Dacă ora selectată curent nu este în lista de ore disponibile,
-        // resetează selecția (doar pentru modul creare)
+        // In edit mode, ensure the current time slot is always available
+        if (isEditMode && _selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
+          _availableTimeSlots.add(_selectedTimeSlot!);
+          // Sort the list to keep it in chronological order
+          _availableTimeSlots.sort((a, b) {
+            final timeA = a.split(':');
+            final timeB = b.split(':');
+            final hourA = int.parse(timeA[0]);
+            final minuteA = int.parse(timeA[1]);
+            final hourB = int.parse(timeB[0]);
+            final minuteB = int.parse(timeB[1]);
+            
+            if (hourA != hourB) {
+              return hourA.compareTo(hourB);
+            }
+            return minuteA.compareTo(minuteB);
+          });
+        }
+        
+        // For create mode, reset selection if time slot is not available
         if (!isEditMode && _selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
           _selectedTimeSlot = null;
         }
       });
       
-      // Afișează mesaj dacă nu sunt ore disponibile
-      if (_availableTimeSlots.isEmpty) {
+      // Afișează mesaj dacă nu sunt ore disponibile (only for create mode)
+      if (!isEditMode && _availableTimeSlots.isEmpty) {
         _showError('Nu sunt ore disponibile în această dată');
       }
     } catch (e) {

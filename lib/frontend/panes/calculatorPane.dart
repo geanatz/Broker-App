@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../backend/services/calculatorService.dart';
+import '../../backend/services/formService.dart';
 import '../common/appTheme.dart';
 import '../popups/amortizationPopup.dart';
 // Import components
@@ -35,10 +35,14 @@ class _CalculatorPaneState extends State<CalculatorPane> {
   final TextEditingController _loanYearsController = TextEditingController();
   final TextEditingController _loanMonthsController = TextEditingController();
   
+  // Services - only keep FormService for listening to changes
+  final FormService _formService = FormService();
+  
   // Valori calculate
   double _monthlyPayment = 0;
   double _totalCost = 0;
   double _totalInterest = 0;
+  double _incomePercentage = 0;
   
   // Flag pentru a verifica daca calculul poate fi efectuat
   bool get _canCalculate {
@@ -57,6 +61,12 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     _interestRateController.addListener(_calculateLoan);
     _loanYearsController.addListener(_calculateLoan);
     _loanMonthsController.addListener(_calculateLoan);
+    
+    // Listen to form service changes to update income calculation
+    _formService.addListener(_calculateIncomePercentage);
+    
+    // Calculate initial income percentage
+    _calculateIncomePercentage();
   }
   
   // Functie pentru calcularea valorilor
@@ -191,6 +201,9 @@ class _CalculatorPaneState extends State<CalculatorPane> {
       _totalCost = 0;
       _totalInterest = 0;
     });
+    
+    // Recalculate income percentage after reset
+    _calculateIncomePercentage();
   }
 
   @override
@@ -200,6 +213,9 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     _interestRateController.removeListener(_calculateLoan);
     _loanYearsController.removeListener(_calculateLoan);
     _loanMonthsController.removeListener(_calculateLoan);
+    
+    // Remove form service listener
+    _formService.removeListener(_calculateIncomePercentage);
     
     // Dispose controllers
     _principalController.dispose();
@@ -312,6 +328,15 @@ class _CalculatorPaneState extends State<CalculatorPane> {
         ),
       ),
     );
+  }
+
+  /// Calculează 40% din totalul veniturilor pentru clientul activ
+  void _calculateIncomePercentage() {
+    final percentage = CalculatorService.calculateIncomePercentage();
+    
+    setState(() {
+      _incomePercentage = percentage;
+    });
   }
 
   @override
@@ -496,6 +521,27 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: 'Plata totala',
                               description: _totalCost > 0 ? _totalCost.toStringAsFixed(1) : '0.0',
+                              backgroundColor: AppTheme.containerColor1,
+                              titleColor: AppTheme.elementColor2,
+                              descriptionColor: AppTheme.elementColor1,
+                              titleStyle: GoogleFonts.outfit(
+                                color: AppTheme.elementColor2,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              descriptionStyle: GoogleFonts.outfit(
+                                color: AppTheme.elementColor1,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            
+                            SizedBox(height: 8),
+                            
+                            // 40% of Total Income
+                            LightItem3(
+                              title: '40% din venituri',
+                              description: _incomePercentage > 0 ? _incomePercentage.toStringAsFixed(1) : '0.0',
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
