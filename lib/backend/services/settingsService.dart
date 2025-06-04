@@ -62,6 +62,17 @@ class SettingsService extends ChangeNotifier {
     if (newConsultantId != _currentConsultantId) {
       _currentConsultantId = newConsultantId;
       await _loadThemeSettings(newConsultantId);
+      
+      // If user logged out (consultantId is null), force apply default theme
+      if (newConsultantId == null) {
+        // Force default theme values
+        _currentThemeMode = AppThemeMode.auto;
+        _currentThemeColor = AppThemeColor.blue;
+        // Sync with AppTheme static variables immediately
+        AppTheme.setThemeMode(_currentThemeMode);
+        AppTheme.setThemeColor(_currentThemeColor);
+      }
+      
       notifyListeners();
     }
   }
@@ -100,7 +111,7 @@ class SettingsService extends ChangeNotifier {
           : AppThemeColor.blue; // default albastru pentru authScreen
     }
 
-    // Aplicăm setările în AppTheme
+    // Sync with AppTheme static variables
     AppTheme.setThemeMode(_currentThemeMode);
     AppTheme.setThemeColor(_currentThemeColor);
   }
@@ -109,6 +120,7 @@ class SettingsService extends ChangeNotifier {
   Future<void> _setDefaultTheme() async {
     _currentThemeMode = AppThemeMode.auto;
     _currentThemeColor = AppThemeColor.blue;
+    // Sync with AppTheme static variables
     AppTheme.setThemeMode(_currentThemeMode);
     AppTheme.setThemeColor(_currentThemeColor);
   }
@@ -118,6 +130,7 @@ class SettingsService extends ChangeNotifier {
     if (_currentThemeMode == mode) return;
 
     _currentThemeMode = mode;
+    // Sync with AppTheme static variables
     AppTheme.setThemeMode(mode);
 
     // Salvează în SharedPreferences
@@ -144,6 +157,7 @@ class SettingsService extends ChangeNotifier {
     if (_currentThemeColor == color) return;
 
     _currentThemeColor = color;
+    // Sync with AppTheme static variables
     AppTheme.setThemeColor(color);
 
     // Salvează în SharedPreferences

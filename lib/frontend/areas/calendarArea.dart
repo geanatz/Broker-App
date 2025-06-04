@@ -503,7 +503,7 @@ class CalendarAreaState extends State<CalendarArea> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: OutlinedItem6(
-        title: 'Slot liber',
+        title: 'Liber',
         svgAsset: 'assets/addIcon.svg',
         onTap: () => _showCreateMeetingDialog(dayIndex, hourIndex),
         mainBorderColor: AppTheme.containerColor2,

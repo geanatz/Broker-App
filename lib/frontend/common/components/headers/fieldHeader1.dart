@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A simple header component displaying a single title, typically used for field labels.
@@ -43,7 +44,7 @@ class FieldHeader1 extends StatelessWidget {
     final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.smallGap);
     final double effectiveHeight = height ?? 21.0;
 
-    final TextStyle defaultStyle = GoogleFonts.outfit(
+    final TextStyle defaultStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w600,
@@ -71,3 +72,4 @@ class FieldHeader1 extends StatelessWidget {
     );
   }
 }
+

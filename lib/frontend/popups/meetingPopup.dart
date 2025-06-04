@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader1.dart';
@@ -492,7 +493,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                   spacing: AppTheme.smallGap,
                   borderRadius: AppTheme.borderRadiusMedium,
                   buttonHeight: 48.0,
-                  primaryButtonTextStyle: GoogleFonts.outfit(
+                  primaryButtonTextStyle: SafeGoogleFonts.outfit(
                     fontSize: AppTheme.fontSizeMedium,
                     fontWeight: FontWeight.w500,
                   ),
@@ -527,3 +528,4 @@ class _MeetingPopupState extends State<MeetingPopup> {
     );
   }
 }
+

@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 // Updated _TextIconButton with hover/focus states and AppTheme
@@ -64,7 +64,7 @@ class _TextIconButtonState extends State<_TextIconButton> {
     final double effectiveIconSize = widget.iconSize ?? AppTheme.iconSizeMedium;
     final double effectiveInternalSpacing = widget.internalSpacing ?? AppTheme.smallGap;
     
-    final TextStyle defaultTextStyle = GoogleFonts.outfit(
+    final TextStyle defaultTextStyle = SafeGoogleFonts.outfit(
       color: effectiveTextColor, 
       fontSize: AppTheme.fontSizeMedium, 
       fontWeight: FontWeight.w500
@@ -326,3 +326,4 @@ class FlexButtonWithTwoTrailingIcons extends StatelessWidget {
     );
   }
 }
+

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A simple text component with customizable styling.
@@ -56,7 +57,7 @@ class Text1 extends StatelessWidget {
 
     return Text(
       text,
-      style: GoogleFonts.outfit(
+      style: SafeGoogleFonts.outfit(
         color: effectiveColor,
         fontSize: effectiveFontSize,
         fontWeight: effectiveFontWeight,
@@ -67,3 +68,4 @@ class Text1 extends StatelessWidget {
     );
   }
 }
+

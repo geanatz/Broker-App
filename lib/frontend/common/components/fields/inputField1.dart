@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../appTheme.dart';
 
@@ -185,13 +186,13 @@ class _InputField1State extends State<InputField1> {
     final double effectiveInputBorderRadius = widget.inputBorderRadius ?? AppTheme.borderRadiusSmall;
     final double effectiveIconSize = widget.iconSize ?? 24.0;
 
-    final TextStyle titleStyle = GoogleFonts.outfit(
+    final TextStyle titleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w600,
     );
     
-    final TextStyle inputTextStyle = GoogleFonts.outfit(
+    final TextStyle inputTextStyle = SafeGoogleFonts.outfit(
       color: effectiveInputTextColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w500,
@@ -254,7 +255,7 @@ class _InputField1State extends State<InputField1> {
                 onChanged: _handleTextChange,
                 decoration: InputDecoration(
                   hintText: widget.hintText,
-                  hintStyle: GoogleFonts.outfit(
+                  hintStyle: SafeGoogleFonts.outfit(
                     color: effectiveInputTextColor,
                     fontSize: AppTheme.fontSizeMedium,
                     fontWeight: FontWeight.w500,
@@ -266,7 +267,7 @@ class _InputField1State extends State<InputField1> {
                   ),
                   suffixText: widget.suffixText,
                   suffixStyle: widget.suffixText != null
-                      ? GoogleFonts.outfit(
+                      ? SafeGoogleFonts.outfit(
                           color: widget.suffixTextColor ?? effectiveInputTextColor,
                           fontSize: AppTheme.fontSizeMedium,
                           fontWeight: FontWeight.w500,
@@ -291,3 +292,4 @@ class _InputField1State extends State<InputField1> {
     );
   }
 }
+

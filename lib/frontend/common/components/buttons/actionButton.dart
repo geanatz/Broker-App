@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A button component for actions, supporting both text and icon buttons.
@@ -102,7 +102,7 @@ class ActionButton extends StatelessWidget {
     final TextStyle defaultTextStyle = TextStyle(
       color: effectiveTextColor,
       fontSize: AppTheme.fontSizeMedium,
-      fontFamily: GoogleFonts.outfit().fontFamily,
+      fontFamily: SafeSafeGoogleFonts.fontFamily,
       fontWeight: FontWeight.w500,
     );
 
@@ -159,3 +159,4 @@ class ActionButton extends StatelessWidget {
     return buttonContent;
   }
 } 
+

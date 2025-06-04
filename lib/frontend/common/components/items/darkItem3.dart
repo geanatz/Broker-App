@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A customizable item component with a primary title on the left
@@ -64,12 +65,12 @@ class DarkItem3 extends StatelessWidget {
     final double internalSpacing = AppTheme.mediumGap;
 
     // Text Styles
-    final TextStyle titleStyle = GoogleFonts.outfit(
+    final TextStyle titleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w500,
     );
-    final TextStyle descriptionStyle = GoogleFonts.outfit(
+    final TextStyle descriptionStyle = SafeGoogleFonts.outfit(
       color: effectiveDescriptionColor,
       fontSize: AppTheme.fontSizeSmall,
       fontWeight: FontWeight.w500,
@@ -137,3 +138,4 @@ class DarkItem3 extends StatelessWidget {
     return content;
   }
 }
+

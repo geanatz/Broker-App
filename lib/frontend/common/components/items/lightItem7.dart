@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A customizable light-themed item with title, description, and an
@@ -101,12 +102,12 @@ class _LightItem7State extends State<LightItem7> {
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
 
-    final TextStyle titleStyle = GoogleFonts.outfit(
+    final TextStyle titleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w600,
     );
-    final TextStyle descriptionStyle = GoogleFonts.outfit(
+    final TextStyle descriptionStyle = SafeGoogleFonts.outfit(
       color: effectiveDescriptionColor,
       fontSize: AppTheme.fontSizeSmall,
       fontWeight: FontWeight.w500,
@@ -204,3 +205,4 @@ class _LightItem7State extends State<LightItem7> {
     );
   }
 }
+

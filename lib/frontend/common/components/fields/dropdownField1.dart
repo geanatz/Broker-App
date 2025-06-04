@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A real dropdown field component with a title and DropdownButtonFormField.
@@ -87,13 +88,13 @@ class DropdownField1<T> extends StatelessWidget {
     final double effectiveDropdownBorderRadius = dropdownBorderRadius ?? AppTheme.borderRadiusSmall;
     final double effectiveIconSize = iconSize ?? 24.0;
 
-    final TextStyle titleStyle = GoogleFonts.outfit(
+    final TextStyle titleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w600,
     );
     
-    final TextStyle selectedOptionStyle = GoogleFonts.outfit(
+    final TextStyle selectedOptionStyle = SafeGoogleFonts.outfit(
       color: effectiveSelectedOptionColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w500,
@@ -179,3 +180,4 @@ class DropdownField1<T> extends StatelessWidget {
     );
   }
 }
+

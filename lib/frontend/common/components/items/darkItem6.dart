@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A customizable item component with a primary title on the left
@@ -86,7 +87,7 @@ class DarkItem6 extends StatelessWidget {
 
     final double iconContainerSize = 48.0;
 
-    final TextStyle titleStyle = GoogleFonts.outfit(
+    final TextStyle titleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w600,
@@ -176,3 +177,4 @@ class DarkItem6 extends StatelessWidget {
     return content;
   }
 }
+

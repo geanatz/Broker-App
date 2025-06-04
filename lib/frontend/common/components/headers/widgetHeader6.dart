@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A widget header with a title on the left and a date navigation-like
@@ -92,12 +93,12 @@ class WidgetHeader6 extends StatelessWidget {
     final IconData finalPrevDateIcon = prevDateIcon ?? Icons.chevron_left;
     final IconData finalNextDateIcon = nextDateIcon ?? Icons.chevron_right;
 
-    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
+    final TextStyle defaultTitleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeLarge, 
       fontWeight: FontWeight.w600,
     );
-    final TextStyle defaultDateTextStyle = GoogleFonts.outfit(
+    final TextStyle defaultDateTextStyle = SafeGoogleFonts.outfit(
       color: effectiveDateTextColor,
       fontSize: AppTheme.fontSizeSmall, 
       fontWeight: FontWeight.w500,
@@ -192,3 +193,4 @@ class WidgetHeader6 extends StatelessWidget {
     );
   }
 }
+

@@ -125,7 +125,7 @@ class _TokenPopupState extends State<TokenPopup> {
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF927B9D),
+                      color: AppTheme.elementColor1,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

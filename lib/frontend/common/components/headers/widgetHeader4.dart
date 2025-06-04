@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A widget header displaying a title and a description stacked vertically.
@@ -65,11 +66,11 @@ class WidgetHeader4 extends StatelessWidget {
 
     final TextStyle defaultTitleStyle = TextStyle(
       color: effectiveTitleColor,
-      fontSize: 19, fontWeight: FontWeight.w500, fontFamily: GoogleFonts.outfit().fontFamily,
+      fontSize: 19, fontWeight: FontWeight.w500, fontFamily: SafeSafeGoogleFonts.fontFamily,
     );
     final TextStyle defaultDescriptionStyle = TextStyle(
       color: effectiveDescriptionColor,
-      fontSize: 17, fontWeight: FontWeight.w500, fontFamily: GoogleFonts.outfit().fontFamily,
+      fontSize: 17, fontWeight: FontWeight.w500, fontFamily: SafeSafeGoogleFonts.fontFamily,
     );
 
     final TextStyle finalTitleStyle = titleStyle ?? defaultTitleStyle;
@@ -112,3 +113,4 @@ class WidgetHeader4 extends StatelessWidget {
     );
   }
 }
+

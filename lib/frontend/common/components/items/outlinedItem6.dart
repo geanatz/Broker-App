@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A customizable outlined item component with a primary title on the left
@@ -111,7 +112,7 @@ class _OutlinedItem6State extends State<OutlinedItem6> {
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: AppTheme.smallGap, left: AppTheme.mediumGap, right: AppTheme.smallGap, bottom: AppTheme.smallGap);
 
-    final TextStyle titleStyle = GoogleFonts.outfit(
+    final TextStyle titleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w600,
@@ -211,3 +212,4 @@ class _OutlinedItem6State extends State<OutlinedItem6> {
     return content;
   }
 }
+

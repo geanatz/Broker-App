@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import '../common/components/headers/widgetHeader1.dart';
 import '../common/components/buttons/flexButtons1.dart';
@@ -110,7 +111,7 @@ class ConsultantPopup extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8.0), // 8px horizontal padding
           child: Text(
             title,
-            style: GoogleFonts.outfit(
+            style: SafeGoogleFonts.outfit(
               fontSize: AppTheme.fontSizeMedium, // 17px
               fontWeight: FontWeight.w600, // large
               color: AppTheme.elementColor2, // #886699
@@ -127,7 +128,7 @@ class ConsultantPopup extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Text(
             value,
-            style: GoogleFonts.outfit(
+            style: SafeGoogleFonts.outfit(
               fontSize: AppTheme.fontSizeMedium, // 17px
               fontWeight: FontWeight.w500, // medium
               color: AppTheme.elementColor3,
@@ -147,7 +148,7 @@ class ConsultantPopup extends StatelessWidget {
         onTap: () => _signOut(context),
         text: "Deconectare",
         iconPath: "assets/returnIcon.svg",
-        textStyle: GoogleFonts.outfit(
+        textStyle: SafeGoogleFonts.outfit(
           fontSize: AppTheme.fontSizeMedium, // 17px
           fontWeight: FontWeight.w500, // medium
           color: AppTheme.elementColor2, // #886699
@@ -156,3 +157,4 @@ class ConsultantPopup extends StatelessWidget {
     );
   }
 } 
+

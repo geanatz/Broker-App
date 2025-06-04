@@ -199,21 +199,28 @@ class AuthService {
       
       // Încercăm să extragem email-ul stocat, dacă există
       String? storedEmail = consultantData['email'] as String?;
+      String emailToUse;
       
       if (storedEmail != null && storedEmail.isNotEmpty) {
         // Folosim email-ul stocat explicit în document
+        emailToUse = storedEmail;
       } else {
         // Generăm email-ul standard (fallback if email wasn't stored during registration)
         debugPrint("Warning: Email not found in consultant document, generating from name.");
+        emailToUse = _createEmailFromConsultantName(consultantName);
       }
       
-      // Încercăm autentificarea cu acest email
+      // Încercăm autentificarea cu acest email și parolă în Firebase Auth
       try {
+        await _auth.signInWithEmailAndPassword(
+          email: emailToUse,
+          password: password,
+        );
         
-        // Autentificare reușită
+        // Autentificare reușită - Nu returnăm mesaj de succes pentru că utilizatorul va fi navigat automat
+        // AuthWrapper va detecta schimbarea și va naviga la MainScreen
         return {
           'success': true,
-          'message': 'Autentificare reușită',
           'consultantData': consultantData,
         };
       } catch (authError) {

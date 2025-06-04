@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A display component for an input field with a title, text value,
@@ -92,13 +93,13 @@ class InputField3 extends StatelessWidget {
     final double effectiveIconSize = iconSize ?? 24.0;
 
     // Use Google Fonts Outfit like InputField1
-    final TextStyle titleStyle = GoogleFonts.outfit(
+    final TextStyle titleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w600,
     );
     
-    final TextStyle inputTextStyle = GoogleFonts.outfit(
+    final TextStyle inputTextStyle = SafeGoogleFonts.outfit(
       color: effectiveInputTextColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w500,
@@ -202,3 +203,4 @@ class InputField3 extends StatelessWidget {
     );
   }
 }
+

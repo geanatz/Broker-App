@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../backend/services/calculatorService.dart';
 import '../common/appTheme.dart';
 // Import components
@@ -92,7 +93,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Luna',
-                                  style: GoogleFonts.outfit(
+                                  style: SafeGoogleFonts.outfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -107,7 +108,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Suma',
-                                  style: GoogleFonts.outfit(
+                                  style: SafeGoogleFonts.outfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -122,7 +123,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Dobanda',
-                                  style: GoogleFonts.outfit(
+                                  style: SafeGoogleFonts.outfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -137,7 +138,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Principal',
-                                  style: GoogleFonts.outfit(
+                                  style: SafeGoogleFonts.outfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -152,7 +153,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Sold',
-                                  style: GoogleFonts.outfit(
+                                  style: SafeGoogleFonts.outfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -197,7 +198,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         '${entry.paymentNumber}',
-                                        style: GoogleFonts.outfit(
+                                        style: SafeGoogleFonts.outfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -212,7 +213,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.payment.toStringAsFixed(2),
-                                        style: GoogleFonts.outfit(
+                                        style: SafeGoogleFonts.outfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -227,7 +228,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.interestPayment.toStringAsFixed(2),
-                                        style: GoogleFonts.outfit(
+                                        style: SafeGoogleFonts.outfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -242,7 +243,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.principalPayment.toStringAsFixed(2),
-                                        style: GoogleFonts.outfit(
+                                        style: SafeGoogleFonts.outfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -257,7 +258,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.remainingBalance.toStringAsFixed(2),
-                                        style: GoogleFonts.outfit(
+                                        style: SafeGoogleFonts.outfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -282,3 +283,4 @@ class AmortizationPopup extends StatelessWidget {
     );
   }
 }
+

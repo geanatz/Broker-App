@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/backend/services/formService.dart';
@@ -10,6 +9,7 @@ import 'package:broker_app/frontend/common/components/forms/form2.dart';
 import 'package:broker_app/frontend/common/components/forms/form3.dart';
 import 'package:broker_app/frontend/common/components/forms/formNew.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader2.dart';
+import 'package:intl/intl.dart';
 
 /// Area pentru formulare care va fi afișată în cadrul ecranului principal.
 /// Această componentă înlocuiește vechiul FormScreen păstrând funcționalitatea
@@ -79,6 +79,22 @@ class _FormAreaState extends State<FormArea> {
     _textControllers.clear();
   }
 
+  /// Clear controllers for specific client type and form type to prevent data sharing
+  void _clearControllersForClientType(String clientPhone, String clientType, String formType) {
+    final keysToRemove = <String>[];
+    
+    _textControllers.forEach((key, controller) {
+      if (key.startsWith('${clientPhone}_${clientType}_${formType}_')) {
+        keysToRemove.add(key);
+      }
+    });
+    
+    for (final key in keysToRemove) {
+      _textControllers[key]?.dispose();
+      _textControllers.remove(key);
+    }
+  }
+
   /// Callback pentru schimbările din FormService
   void _onFormServiceChanged() {
     if (mounted) {
@@ -123,20 +139,43 @@ class _FormAreaState extends State<FormArea> {
   Future<void> _loadFormDataForCurrentClient() async {
     final currentClient = _clientService.focusedClient;
     if (currentClient != null) {
+      debugPrint('Loading form data for client: ${currentClient.name} (${currentClient.phoneNumber})');
+      
       await _formService.loadFormDataForClient(
         currentClient.phoneNumber,
         currentClient.phoneNumber,
       );
+      
+      // Clear all controllers to force fresh data loading
+      _disposeControllers();
+      debugPrint('Controllers cleared, will be recreated with fresh data');
+      
+      // Force refresh controllers after loading data
+      if (mounted) {
+        setState(() {
+          // This will trigger rebuild and sync controllers with loaded data
+        });
+      }
+      
+      debugPrint('Form data loaded and UI refreshed for client: ${currentClient.name}');
     }
   }
 
   /// Salvează datele formularului pentru un client specific
   Future<void> _saveFormDataForClient(ClientModel client) async {
-    await _formService.saveFormDataForClient(
+    debugPrint('Manually saving form data for client: ${client.name} (${client.phoneNumber})');
+    
+    final success = await _formService.saveFormDataForClient(
       client.phoneNumber,
       client.phoneNumber,
       client.name,
     );
+    
+    if (success) {
+      debugPrint('✅ Successfully saved form data for client: ${client.name}');
+    } else {
+      debugPrint('❌ Failed to save form data for client: ${client.name}');
+    }
   }
 
   /// Store GLOBAL tap position
@@ -188,13 +227,15 @@ class _FormAreaState extends State<FormArea> {
   /// Extrage doar valoarea numerică din câmpurile care pot conține "luni"
   String _extractNumericValue(String value, String fieldType) {
     if (fieldType == 'perioada' || fieldType == 'vechime') {
-      // Extrage doar numerele din string
+      // Extrage doar numerele din string (pentru câmpurile cu sufixe)
       final numbers = RegExp(r'\d+').allMatches(value);
       if (numbers.isNotEmpty) {
         return numbers.first.group(0) ?? '';
       }
       return '';
     }
+    // Pentru toate celelalte câmpuri, returnează valoarea exact cum este
+    // pentru a nu interfera cu transformarea K și formatarea cu virgule
     return value;
   }
 
@@ -206,21 +247,71 @@ class _FormAreaState extends State<FormArea> {
     return _textControllers[key]!;
   }
 
+  /// Formatează o valoare numerică cu virgule pentru afișare
+  String _formatValueForDisplay(String value, String fieldType) {
+    // Aplică formatarea cu virgule doar pentru câmpurile numerice
+    if (fieldType == 'sold' || fieldType == 'rata' || fieldType == 'consumat' || fieldType == 'incomeAmount') {
+      if (value.isNotEmpty && value != '0') {
+        try {
+          // Remove existing commas if any
+          final cleanValue = value.replaceAll(',', '');
+          
+          // Parse as integer and format with commas
+          final numericValue = int.tryParse(cleanValue);
+          if (numericValue != null && numericValue > 0) {
+            // Format with commas using NumberFormat
+            final formatter = NumberFormat('#,###');
+            return formatter.format(numericValue);
+          }
+        } catch (e) {
+          debugPrint('Error formatting value for display: $e');
+        }
+      }
+    }
+    
+    // For non-numeric fields or invalid values, return as-is
+    return value;
+  }
+
   /// Setează textul controller-ului doar dacă este necesar
   /// Aceasta previne suprascrierea valorilor introduse de utilizator
   TextEditingController _getControllerWithText(String key, String modelValue) {
     final controller = _getController(key);
     
     // Extrage tipul de câmp din key pentru a determina dacă trebuie să extracem doar valoarea numerică
+    // New format: phoneNumber_clientType_formType_index_field
     final parts = key.split('_');
-    final fieldType = parts.length >= 4 ? parts[3] : '';
+    final fieldType = parts.length >= 5 ? parts[4] : '';
     final cleanValue = _extractNumericValue(modelValue, fieldType);
     
-    // Setează textul doar dacă:
-    // 1. Controller-ul este gol și modelul are o valoare
-    // 2. Sau dacă valoarea din model este diferită și controller-ul nu a fost modificat recent
-    if (controller.text.isEmpty && cleanValue.isNotEmpty) {
-      controller.text = cleanValue;
+    // Check if we should update the controller
+    // For numeric fields, compare the numeric values (without commas) to avoid formatting conflicts
+    if (cleanValue.isNotEmpty) {
+      if (fieldType == 'sold' || fieldType == 'rata' || fieldType == 'consumat' || fieldType == 'incomeAmount') {
+        // For numeric fields, compare values without commas
+        final controllerNumericValue = controller.text.replaceAll(',', '');
+        if (controller.text.isEmpty) {
+          // Controller is empty, set initial value with proper formatting
+          final formattedValue = _formatValueForDisplay(cleanValue, fieldType);
+          controller.text = formattedValue;
+          debugPrint('Controller $key initialized with formatted value: "$formattedValue" (from model: "$cleanValue")');
+        } else if (controllerNumericValue != cleanValue && cleanValue != '0') {
+          // Only update if the numeric values are actually different and not just placeholder
+          final formattedValue = _formatValueForDisplay(cleanValue, fieldType);
+          controller.text = formattedValue;
+          debugPrint('Controller $key updated to formatted value: "$formattedValue" (from model: "$cleanValue")');
+        }
+        // Don't update if only formatting differs (e.g., "12000" vs "12,000")
+      } else {
+        // For non-numeric fields, use exact comparison
+        if (controller.text.isEmpty) {
+          controller.text = cleanValue;
+          debugPrint('Controller $key initialized with: "$cleanValue"');
+        } else if (controller.text != cleanValue && cleanValue != '0') {
+          controller.text = cleanValue;
+          debugPrint('Controller $key updated to: "$cleanValue" (from model: "$modelValue")');
+        }
+      }
     }
     
     // Adaugă listener pentru a salva modificările automat
@@ -238,37 +329,95 @@ class _FormAreaState extends State<FormArea> {
     // Cancel the previous timer if it exists
     _saveTimer?.cancel();
     
-    // Set a new timer to save after a short delay
-    _saveTimer = Timer(Duration(milliseconds: 500), () {
-      // Parse key to extract client, form type, index, and field
+    // Set a shorter timer to save after a brief delay (reduced from 500ms to 200ms)
+    _saveTimer = Timer(Duration(milliseconds: 200), () {
+      // Parse key to extract client, client type, form type, index, and field
+      // New format: phoneNumber_clientType_formType_index_field
       final parts = key.split('_');
-      if (parts.length >= 4) {
+      if (parts.length >= 5) {
         final clientPhone = parts[0];
-        final formType = parts[1]; // 'credit' or 'income'
-        final indexStr = parts[2];
-        final field = parts[3];
+        final clientType = parts[1]; // 'client' or 'coborrower'
+        final formType = parts[2]; // 'credit' or 'income'
+        final indexStr = parts[3];
+        final field = parts[4];
         
         final index = int.tryParse(indexStr);
         if (index != null) {
           final client = _clientService.focusedClient;
           if (client != null && client.phoneNumber == clientPhone) {
             final isCreditForm = formType == 'credit';
-            
-            // Determine if this is a client or coborrower form
-            // Use the appropriate method based on form type
-            final isClient = isCreditForm 
-                ? _formService.isShowingClientLoanForm(clientPhone)
-                : _formService.isShowingClientIncomeForm(clientPhone);
+            final isClient = clientType == 'client';
             
             if (mounted) {
-              _updateFormField(client, index, field, value, isCreditForm, isClient);
-              // Automatically save to Firebase after updating the form field
-              _autoSaveToFirebase(client);
+              // Remove commas before saving to get the clean numeric value
+              String cleanValue = value;
+              if (field == 'sold' || field == 'rata' || field == 'consumat' || field == 'incomeAmount') {
+                cleanValue = value.replaceAll(',', '');
+              }
+              
+              // Check if the value actually changed before saving
+              bool shouldSave = false;
+              
+              if (isCreditForm) {
+                final forms = isClient 
+                    ? _formService.getClientCreditForms(clientPhone)
+                    : _formService.getCoborrowerCreditForms(clientPhone);
+                
+                if (index < forms.length) {
+                  final currentValue = _getCurrentFieldValue(forms[index], field, true);
+                  shouldSave = currentValue != cleanValue;
+                }
+              } else {
+                final forms = isClient 
+                    ? _formService.getClientIncomeForms(clientPhone)
+                    : _formService.getCoborrowerIncomeForms(clientPhone);
+                
+                if (index < forms.length) {
+                  final currentValue = _getCurrentFieldValue(forms[index], field, false);
+                  shouldSave = currentValue != cleanValue;
+                }
+              }
+              
+              if (shouldSave) {
+                debugPrint('Saving field $field with value: "$cleanValue" (original: "$value")');
+                _updateFormField(client, index, field, cleanValue, isCreditForm, isClient);
+                
+                // Automatically save to Firebase after updating the form field
+                _autoSaveToFirebase(client);
+              } else {
+                debugPrint('Skipping save for field $field - value unchanged: "$cleanValue"');
+              }
             }
           }
         }
       }
     });
+  }
+
+  /// Helper method to get current field value from a form model
+  String _getCurrentFieldValue(dynamic form, String field, bool isCreditForm) {
+    if (isCreditForm) {
+      final creditForm = form as CreditFormModel;
+      switch (field) {
+        case 'bank': return creditForm.bank;
+        case 'creditType': return creditForm.creditType;
+        case 'sold': return creditForm.sold;
+        case 'rata': return creditForm.rata;
+        case 'consumat': return creditForm.consumat;
+        case 'rateType': return creditForm.rateType;
+        case 'perioada': return creditForm.perioada;
+        default: return '';
+      }
+    } else {
+      final incomeForm = form as IncomeFormModel;
+      switch (field) {
+        case 'bank': return incomeForm.bank;
+        case 'incomeType': return incomeForm.incomeType;
+        case 'incomeAmount': return incomeForm.incomeAmount;
+        case 'vechime': return incomeForm.vechime;
+        default: return '';
+      }
+    }
   }
 
   /// Automatically saves form data to Firebase for the given client
@@ -405,6 +554,10 @@ class _FormAreaState extends State<FormArea> {
             title: 'Credit',
             altText: isShowingClient ? 'Vezi codebitor' : 'Vezi client',
             onAltTextTap: () {
+              // Clear controllers for the current view before switching
+              final newClientType = isShowingClient ? 'coborrower' : 'client';
+              _clearControllersForClientType(client.phoneNumber, newClientType, 'credit');
+              
               _formService.toggleLoanFormType(client.phoneNumber);
             },
           ),
@@ -455,6 +608,10 @@ class _FormAreaState extends State<FormArea> {
             title: 'Venit',
             altText: isShowingClient ? 'Vezi codebitor' : 'Vezi client',
             onAltTextTap: () {
+              // Clear controllers for the current view before switching
+              final newClientType = isShowingClient ? 'coborrower' : 'client';
+              _clearControllersForClientType(client.phoneNumber, newClientType, 'income');
+              
               _formService.toggleIncomeFormType(client.phoneNumber);
             },
           ),
@@ -526,7 +683,7 @@ class _FormAreaState extends State<FormArea> {
                 });
               }
             },
-            hintTextF1: 'Selecteaza banca',
+            hintTextF1: 'Selecteaza',
             
             titleF2: 'Tip credit',
             valueF2: _newCreditFormSelectedType,
@@ -547,7 +704,7 @@ class _FormAreaState extends State<FormArea> {
                 });
               }
             },
-            hintTextF2: 'Selecteaza tipul',
+            hintTextF2: 'Selecteaza',
           ),
         ],
       ),
@@ -610,7 +767,7 @@ class _FormAreaState extends State<FormArea> {
                 });
               }
             },
-            hintTextF1: 'Selecteaza banca',
+            hintTextF1: 'Selecteaza',
             
             titleF2: 'Tip venit',
             valueF2: _newIncomeFormSelectedType,
@@ -631,7 +788,7 @@ class _FormAreaState extends State<FormArea> {
                 });
               }
             },
-            hintTextF2: 'Selecteaza tipul',
+            hintTextF2: 'Selecteaza',
           ),
         ],
       ),
@@ -641,7 +798,7 @@ class _FormAreaState extends State<FormArea> {
   /// Construiește un formular de credit individual folosind componentele specificate
   Widget _buildCreditForm(ClientModel client, CreditFormModel form, int index, bool isClient) {
     // Determină ce tipuri de câmpuri să afișeze în funcție de tipul de credit
-    final showConsumat = form.creditType == 'Card de cumparaturi' || form.creditType == 'Overdraft';
+    final showConsumat = form.creditType == 'Card cumparaturi' || form.creditType == 'Overdraft';
     final showRataAndPeriod = form.creditType == 'Nevoi personale';
     final showIpotecarFields = form.creditType == 'Ipotecar' || form.creditType == 'Prima casa';
 
@@ -649,7 +806,7 @@ class _FormAreaState extends State<FormArea> {
       // Folosește Form3 pentru Ipotecar și Prima casa (2+4 câmpuri: Banca, Tip credit în primul rând; Sold, Rata, Perioada, Tip Rata în al doilea rând)
       return Form3(
         titleR1F1: 'Banca',
-        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
         itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
@@ -659,10 +816,10 @@ class _FormAreaState extends State<FormArea> {
             _updateFormField(client, index, 'bank', value, true, isClient);
           }
         },
-        hintTextR1F1: 'Selecteaza banca',
+        hintTextR1F1: 'Selecteaza',
         
         titleR1F2: 'Tip credit',
-        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza' || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
         itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
           value: type,
           child: Text(type),
@@ -672,25 +829,26 @@ class _FormAreaState extends State<FormArea> {
             _updateFormField(client, index, 'creditType', value, true, isClient);
           }
         },
-        hintTextR1F2: 'Selecteaza tipul',
+        hintTextR1F2: 'Selecteaza',
         
         titleR2F1: 'Sold',
-        controllerR2F1: _getControllerWithText('${client.phoneNumber}_credit_${index}_sold', form.sold),
-        hintTextR2F1: 'Introduceti soldul',
+        controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_sold', form.sold),
+        hintTextR2F1: '0',
         keyboardTypeR2F1: TextInputType.number,
         
         titleR2F2: 'Rata',
-        controllerR2F2: _getControllerWithText('${client.phoneNumber}_credit_${index}_rata', form.rata),
-        hintTextR2F2: 'Introduceti rata',
+        controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_rata', form.rata),
+        hintTextR2F2: '0',
         keyboardTypeR2F2: TextInputType.number,
         
         titleR2F3: 'Perioada',
-        controllerR2F3: _getControllerWithText('${client.phoneNumber}_credit_${index}_perioada', form.perioada),
-        hintTextR2F3: 'Introduceti perioada',
+        controllerR2F3: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_perioada', form.perioada),
+        hintTextR2F3: '0',
         keyboardTypeR2F3: TextInputType.text,
+        suffixTextColorR2F3: AppTheme.elementColor2,
         
         titleR2F4: 'Tip rata',
-        valueR2F4: (form.rateType.isEmpty || form.rateType == 'Selecteaza tipul') ? null : form.rateType,
+        valueR2F4: (form.rateType.isEmpty || form.rateType == 'Selecteaza' || form.rateType == 'Selecteaza tipul') ? null : form.rateType,
         itemsR2F4: ['IRCC', 'Euribor', 'Variabila', 'Fixa'].map((type) => DropdownMenuItem<String>(
           value: type,
           child: Text(type),
@@ -700,7 +858,7 @@ class _FormAreaState extends State<FormArea> {
             _updateFormField(client, index, 'rateType', value, true, isClient);
           }
         },
-        hintTextR2F4: 'Selecteaza tipul',
+        hintTextR2F4: 'Selecteaza',
         
         onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
@@ -708,7 +866,7 @@ class _FormAreaState extends State<FormArea> {
       // Folosește Form2 pentru Nevoi personale (5 câmpuri)
       return Form2(
         titleR1F1: 'Banca',
-        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
         itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
@@ -718,10 +876,10 @@ class _FormAreaState extends State<FormArea> {
             _updateFormField(client, index, 'bank', value, true, isClient);
           }
         },
-        hintTextR1F1: 'Selecteaza banca',
+        hintTextR1F1: 'Selecteaza',
         
         titleR1F2: 'Tip credit',
-        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza' || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
         itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
           value: type,
           child: Text(type),
@@ -731,30 +889,31 @@ class _FormAreaState extends State<FormArea> {
             _updateFormField(client, index, 'creditType', value, true, isClient);
           }
         },
-        hintTextR1F2: 'Selecteaza tipul',
+        hintTextR1F2: 'Selecteaza',
         
         titleR2F1: 'Sold',
-        controllerR2F1: _getControllerWithText('${client.phoneNumber}_credit_${index}_sold', form.sold),
-        hintTextR2F1: 'Introduceti soldul',
+        controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_sold', form.sold),
+        hintTextR2F1: '0',
         keyboardTypeR2F1: TextInputType.number,
         
         titleR2F2: 'Rata',
-        controllerR2F2: _getControllerWithText('${client.phoneNumber}_credit_${index}_rata', form.rata),
-        hintTextR2F2: 'Introduceti rata',
+        controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_rata', form.rata),
+        hintTextR2F2: '0',
         keyboardTypeR2F2: TextInputType.number,
         
         titleR2F3: 'Perioada',
-        controllerR2F3: _getControllerWithText('${client.phoneNumber}_credit_${index}_perioada', form.perioada),
-        hintTextR2F3: 'Introduceti perioada',
+        controllerR2F3: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_perioada', form.perioada),
+        hintTextR2F3: '0',
         keyboardTypeR2F3: TextInputType.text,
+        suffixTextColorR2F3: AppTheme.elementColor2,
         
         onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
     } else {
-      // Folosește Form1 pentru Card de cumparaturi și Overdraft (4 câmpuri)
+      // Folosește Form1 pentru Card cumparaturi și Overdraft (4 câmpuri)
       return Form1(
         titleR1F1: 'Banca',
-        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
         itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
@@ -764,10 +923,10 @@ class _FormAreaState extends State<FormArea> {
             _updateFormField(client, index, 'bank', value, true, isClient);
           }
         },
-        hintTextR1F1: 'Selecteaza banca',
+        hintTextR1F1: 'Selecteaza',
         
         titleR1F2: 'Tip credit',
-        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza' || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
         itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
           value: type,
           child: Text(type),
@@ -777,16 +936,16 @@ class _FormAreaState extends State<FormArea> {
             _updateFormField(client, index, 'creditType', value, true, isClient);
           }
         },
-        hintTextR1F2: 'Selecteaza tipul',
+        hintTextR1F2: 'Selecteaza',
         
         titleR2F1: 'Sold',
-        controllerR2F1: _getControllerWithText('${client.phoneNumber}_credit_${index}_sold', form.sold),
-        hintTextR2F1: 'Introduceti soldul',
+        controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_sold', form.sold),
+        hintTextR2F1: '0',
         keyboardTypeR2F1: TextInputType.number,
         
         titleR2F2: showConsumat ? 'Consumat' : 'Rata',
-        controllerR2F2: _getControllerWithText('${client.phoneNumber}_credit_${index}_${showConsumat ? 'consumat' : 'rata'}', showConsumat ? form.consumat : form.rata),
-        hintTextR2F2: showConsumat ? 'Introduceti consumatul' : 'Introduceti rata',
+        controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_${showConsumat ? 'consumat' : 'rata'}', showConsumat ? form.consumat : form.rata),
+        hintTextR2F2: showConsumat ? '0' : '0',
         keyboardTypeR2F2: TextInputType.number,
         
         onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
@@ -799,7 +958,7 @@ class _FormAreaState extends State<FormArea> {
     // Folosește Form1 pentru venituri (4 câmpuri: 2x2)
     return Form1(
       titleR1F1: 'Banca',
-      valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza banca') ? null : form.bank,
+      valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
       itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
         value: bank,
         child: Text(bank),
@@ -809,10 +968,10 @@ class _FormAreaState extends State<FormArea> {
           _updateFormField(client, index, 'bank', value, false, isClient);
         }
       },
-      hintTextR1F1: 'Selecteaza banca',
+      hintTextR1F1: 'Selecteaza',
       
       titleR1F2: 'Tip venit',
-      valueR1F2: (form.incomeType.isEmpty || form.incomeType == 'Selecteaza tipul') ? null : form.incomeType,
+      valueR1F2: (form.incomeType.isEmpty || form.incomeType == 'Selecteaza' || form.incomeType == 'Selecteaza tipul') ? null : form.incomeType,
       itemsR1F2: FormService.incomeTypes.map((type) => DropdownMenuItem<String>(
         value: type,
         child: Text(type),
@@ -822,24 +981,23 @@ class _FormAreaState extends State<FormArea> {
           _updateFormField(client, index, 'incomeType', value, false, isClient);
         }
       },
-      hintTextR1F2: 'Selecteaza tipul',
+      hintTextR1F2: 'Selecteaza',
       
       titleR2F1: 'Suma venit',
-      controllerR2F1: _getControllerWithText('${client.phoneNumber}_income_${index}_incomeAmount', form.incomeAmount),
-      hintTextR2F1: 'Introduceti suma',
+      controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_income_${index}_incomeAmount', form.incomeAmount),
+      hintTextR2F1: '0',
       keyboardTypeR2F1: TextInputType.number,
       
       titleR2F2: 'Vechime',
-      controllerR2F2: _getControllerWithText('${client.phoneNumber}_income_${index}_vechime', form.vechime),
+      controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_income_${index}_vechime', form.vechime),
       hintTextR2F2: '0',
       keyboardTypeR2F2: TextInputType.number,
       suffixTextR2F2: ' luni',
+      suffixTextColorR2F2: AppTheme.elementColor2,
       
       onClose: () => _formService.removeIncomeForm(client.phoneNumber, index, isClient: isClient),
     );
   }
-
-
 
   /// Reset credit form selections
   void _resetCreditFormSelections() {
@@ -861,10 +1019,10 @@ class _FormAreaState extends State<FormArea> {
     });
   }
 
-
-
   /// Actualizează un câmp din formular
   void _updateFormField(ClientModel client, int index, String field, String value, bool isCreditForm, bool isClient) {
+    debugPrint('_updateFormField called: client=${client.phoneNumber}, index=$index, field=$field, value="$value", isCreditForm=$isCreditForm, isClient=$isClient');
+    
     if (isCreditForm) {
       final forms = isClient 
           ? _formService.getClientCreditForms(client.phoneNumber)
@@ -872,6 +1030,8 @@ class _FormAreaState extends State<FormArea> {
       
       if (index < forms.length) {
         final form = forms[index];
+        debugPrint('Original form values: bank=${form.bank}, sold=${form.sold}, rata=${form.rata}, perioada=${form.perioada}');
+        
         final updatedForm = CreditFormModel(
           bank: field == 'bank' ? value : form.bank,
           creditType: field == 'creditType' ? value : form.creditType,
@@ -883,10 +1043,15 @@ class _FormAreaState extends State<FormArea> {
           isNew: form.isNew,
         );
         
+        debugPrint('Updated form values: bank=${updatedForm.bank}, sold=${updatedForm.sold}, rata=${updatedForm.rata}, perioada=${updatedForm.perioada}');
+        
         _formService.updateCreditForm(client.phoneNumber, index, updatedForm, isClient: isClient);
+        debugPrint('Credit form updated in FormService');
         
         // Automatically save to Firebase after updating the form field
         _autoSaveToFirebase(client);
+      } else {
+        debugPrint('ERROR: Index $index out of bounds for credit forms (length: ${forms.length})');
       }
     } else {
       final forms = isClient 
@@ -895,6 +1060,8 @@ class _FormAreaState extends State<FormArea> {
       
       if (index < forms.length) {
         final form = forms[index];
+        debugPrint('Original income form values: bank=${form.bank}, incomeAmount=${form.incomeAmount}, vechime=${form.vechime}');
+        
         final updatedForm = IncomeFormModel(
           bank: field == 'bank' ? value : form.bank,
           incomeType: field == 'incomeType' ? value : form.incomeType,
@@ -903,16 +1070,18 @@ class _FormAreaState extends State<FormArea> {
           isNew: form.isNew,
         );
         
+        debugPrint('Updated income form values: bank=${updatedForm.bank}, incomeAmount=${updatedForm.incomeAmount}, vechime=${updatedForm.vechime}');
+        
         _formService.updateIncomeForm(client.phoneNumber, index, updatedForm, isClient: isClient);
+        debugPrint('Income form updated in FormService');
         
         // Automatically save to Firebase after updating the form field
         _autoSaveToFirebase(client);
+      } else {
+        debugPrint('ERROR: Index $index out of bounds for income forms (length: ${forms.length})');
       }
     }
   }
-
-
-
 
   /// Transform credit form new based on selected bank and credit type
   void _transformCreditFormNew(ClientModel client, String bank, String creditType, bool isClient) {

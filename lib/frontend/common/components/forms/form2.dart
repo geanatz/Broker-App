@@ -77,6 +77,9 @@ class Form2 extends StatefulWidget {
   /// Keyboard type for the bottom-right input field
   final TextInputType? keyboardTypeR2F3;
 
+  /// Optional suffix text color for the bottom-right input field (Perioada)
+  final Color? suffixTextColorR2F3;
+
   // Container styling
   /// Optional background color for the outer container
   final Color? containerColor;
@@ -103,24 +106,25 @@ class Form2 extends StatefulWidget {
     this.valueR1F1,
     required this.itemsR1F1,
     this.onChangedR1F1,
-    this.hintTextR1F1 = 'Selecteaza banca',
+    this.hintTextR1F1 = 'Selecteaza',
     this.titleR1F2 = 'Tip credit',
     this.valueR1F2,
     required this.itemsR1F2,
     this.onChangedR1F2,
-    this.hintTextR1F2 = 'Selecteaza tipul',
+    this.hintTextR1F2 = 'Selecteaza',
     this.titleR2F1 = 'Sold',
     this.controllerR2F1,
-    this.hintTextR2F1 = 'Introduceti soldul',
+    this.hintTextR2F1 = '0',
     this.keyboardTypeR2F1 = TextInputType.number,
     this.titleR2F2 = 'Rata',
     this.controllerR2F2,
-    this.hintTextR2F2 = 'Introduceti rata',
+    this.hintTextR2F2 = '0',
     this.keyboardTypeR2F2 = TextInputType.number,
     this.titleR2F3 = 'Perioada',
     this.controllerR2F3,
     this.hintTextR2F3 = '0',
     this.keyboardTypeR2F3 = TextInputType.number,
+    this.suffixTextColorR2F3,
     this.containerColor,
     this.borderRadius,
     this.padding,
@@ -217,6 +221,7 @@ class _Form2State extends State<Form2> {
                         hintText: widget.hintTextR2F3,
                         keyboardType: widget.keyboardTypeR2F3,
                         suffixText: ' luni',
+                        suffixTextColor: widget.suffixTextColorR2F3,
                         enableCommaFormatting: false,
                         enableKTransformation: false,
                       ),

@@ -15,7 +15,7 @@ class AppTheme {
   AppTheme._(); // Constructor privat pentru a preveni instanțierea
 
   // Tema și culoarea curentă (valori implicite)
-  static AppThemeMode currentThemeMode = AppThemeMode.light;
+  static AppThemeMode currentThemeMode = AppThemeMode.auto;
   static AppThemeColor currentThemeColor = AppThemeColor.blue;
 
   /// Obține tema efectivă bazată pe setarea curentă și tema sistemului

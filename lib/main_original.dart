@@ -32,10 +32,6 @@ class DebugOptions {
   }
 }
 
-// Global flag to track Firebase initialization status
-bool _firebaseInitialized = false;
-bool _isOfflineMode = false;
-
 void main() async { 
   // Set an error handler for all Flutter errors
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -48,12 +44,52 @@ void main() async {
     // Initialize Flutter binding as early as possible
     WidgetsFlutterBinding.ensureInitialized(); 
     
-    try {
-      // Initialize Firebase based on platform with timeout
-      await _initializeFirebaseWithTimeout();
-    } catch (e) {
-      debugPrint('Firebase initialization failed: $e');
-      _isOfflineMode = true;
+    // Initialize Firebase based on platform
+    if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+      // Mobile-specific initialization
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      
+      // Configure Firestore settings for mobile platforms
+      FirebaseFirestore.instance.settings = Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+      
+      // Add platform-specific error handling for Firebase on mobile platforms
+      if (Platform.isAndroid) {
+        // Use correct approach for enabling Firebase logging
+        FirebaseFirestore.setLoggingEnabled(true);
+      }
+    } else {
+      // Web and desktop platforms
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      
+      // Web-specific settings
+      if (kIsWeb) {
+        try {
+          FirebaseFirestore.instance.settings = Settings(
+            persistenceEnabled: true,
+            cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+          );
+        } catch (e) {
+          debugPrint('Error enabling persistence: $e');
+          // Fall back to memory-only mode if persistence fails
+          FirebaseFirestore.instance.settings = Settings(
+            persistenceEnabled: false,
+            cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+          );
+        }
+      } else {
+        // Desktop platforms
+        FirebaseFirestore.instance.settings = Settings(
+          persistenceEnabled: true,
+          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+        );
+      }
     }
     
     // Set up global error handling for platform errors
@@ -63,85 +99,15 @@ void main() async {
       return true;
     };
     
-    // Initialize SettingsService early only if Firebase is available
-    if (_firebaseInitialized) {
-      try {
-        final settingsService = SettingsService();
-        await settingsService.initialize();
-      } catch (e) {
-        debugPrint('SettingsService initialization failed: $e');
-        _isOfflineMode = true;
-      }
-    }
+    // Initialize SettingsService early
+    final settingsService = SettingsService();
+    await settingsService.initialize();
     
     runApp(const MyApp());
   }, (error, stackTrace) {
     debugPrint('Caught error in runZonedGuarded: $error');
     debugPrint('$stackTrace');
-    _isOfflineMode = true;
-    runApp(const MyApp());
   });
-}
-
-Future<void> _initializeFirebaseWithTimeout() async {
-  try {
-    final initFuture = _initializeFirebase();
-    await initFuture.timeout(const Duration(seconds: 10));
-    _firebaseInitialized = true;
-  } catch (e) {
-    debugPrint('Firebase initialization timeout or error: $e');
-    _firebaseInitialized = false;
-    _isOfflineMode = true;
-  }
-}
-
-Future<void> _initializeFirebase() async {
-  if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-    // Mobile-specific initialization
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    
-    // Configure Firestore settings for mobile platforms
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: true,
-      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-    );
-    
-    // Add platform-specific error handling for Firebase on mobile platforms
-    if (Platform.isAndroid) {
-      // Use correct approach for enabling Firebase logging
-      FirebaseFirestore.setLoggingEnabled(true);
-    }
-  } else {
-    // Web and desktop platforms
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    
-    // Web-specific settings
-    if (kIsWeb) {
-      try {
-        FirebaseFirestore.instance.settings = const Settings(
-          persistenceEnabled: true,
-          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-        );
-      } catch (e) {
-        debugPrint('Error enabling persistence: $e');
-        // Fall back to memory-only mode if persistence fails
-        FirebaseFirestore.instance.settings = const Settings(
-          persistenceEnabled: false,
-          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-        );
-      }
-    } else {
-      // Desktop platforms
-      FirebaseFirestore.instance.settings = const Settings(
-        persistenceEnabled: true,
-        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-      );
-    }
-  }
 }
 
 class MyApp extends StatefulWidget {
@@ -157,17 +123,13 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Listen to theme changes only if Firebase is initialized
-    if (_firebaseInitialized) {
-      _settingsService.addListener(_onThemeChanged);
-    }
+    // Listen to theme changes
+    _settingsService.addListener(_onThemeChanged);
   }
 
   @override
   void dispose() {
-    if (_firebaseInitialized) {
-      _settingsService.removeListener(_onThemeChanged);
-    }
+    _settingsService.removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -208,121 +170,13 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         ),
-        home: _isOfflineMode ? const OfflineModeScreen() : const AuthWrapper(),
-      ),
-    );
-  }
-}
-
-class OfflineModeScreen extends StatelessWidget {
-  const OfflineModeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Broker App'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.cloud_off,
-              size: 120,
-              color: AppTheme.elementColor2,
-            ),
-            const SizedBox(height: 30),
-            Text(
-              'Broker App',
-              style: GoogleFonts.outfit(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.elementColor2,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Text(
-              'Mod Offline',
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                color: AppTheme.elementColor1,
-              ),
-            ),
-            const SizedBox(height: 40),
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 40),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Aplicația funcționează în mod offline',
-                      style: GoogleFonts.outfit(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.elementColor2,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      'Firebase nu este disponibil în acest moment. '
-                      'Verifică conexiunea la internet și încearcă din nou. '
-                      'Aplicația va funcționa complet odată ce Firebase este accesibil.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        color: AppTheme.elementColor1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Restart the app
-                    main();
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Încearcă din nou'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.elementColor2,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    textStyle: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-                      exit(0);
-                    }
-                  },
-                  icon: const Icon(Icons.exit_to_app),
-                  label: const Text('Ieșire'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    textStyle: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+        home: const AuthWrapper(),
+        // routes: { // Eliminat vechile rute
+        //   '/register': (context) => const RegisterScreen(),
+        //   '/login': (context) => const LoginScreen(),
+        //   '/token': (context) => const TokenScreen(),
+        //   '/reset_password': (context) => const ResetPasswordScreen(),
+        // },
       ),
     );
   }
@@ -342,16 +196,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void initState() {
     super.initState();
     // Listen to theme changes from SettingsService
-    if (_firebaseInitialized) {
-      _settingsService.addListener(_onSettingsChanged);
-    }
+    _settingsService.addListener(_onSettingsChanged);
   }
 
   @override
   void dispose() {
-    if (_firebaseInitialized) {
-      _settingsService.removeListener(_onSettingsChanged);
-    }
+    _settingsService.removeListener(_onSettingsChanged);
     super.dispose();
   }
 
@@ -365,10 +215,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_firebaseInitialized) {
-      return const OfflineModeScreen();
-    }
-
     return StreamBuilder<User?>( 
       stream: FirebaseAuth.instance.authStateChanges(), 
       builder: (context, snapshot) {
@@ -419,14 +265,6 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
   }
 
   Future<void> _fetchConsultantData() async {
-    if (!_firebaseInitialized) {
-      setState(() {
-        _isLoading = false;
-        _consultantData = null;
-      });
-      return;
-    }
-
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       if (mounted) {
@@ -435,6 +273,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
           _consultantData = null;
         });
       }
+      // Nu mai facem signOut aici, AuthWrapper va duce la AuthScreen dacă user e null
       return;
     }
 

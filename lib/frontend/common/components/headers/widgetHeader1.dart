@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A simple widget header displaying a single title.
@@ -44,7 +45,7 @@ class WidgetHeader1 extends StatelessWidget {
     final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
     final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
 
-    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
+    final TextStyle defaultTitleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeLarge,
       fontWeight: FontWeight.w600,
@@ -83,3 +84,4 @@ class WidgetHeader1 extends StatelessWidget {
     );
   }
 }
+

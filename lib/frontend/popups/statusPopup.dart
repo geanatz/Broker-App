@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader1.dart';
 import 'package:broker_app/frontend/common/components/fields/dropdownField1.dart';
@@ -463,7 +464,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                   Expanded(
                                     child: Text(
                                       'Informatii aditionale',
-                                      style: GoogleFonts.outfit(
+                                      style: SafeGoogleFonts.outfit(
                                         color: AppTheme.elementColor2,
                                         fontSize: AppTheme.fontSizeMedium,
                                         fontWeight: FontWeight.w600,
@@ -491,14 +492,14 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                   maxLines: null,
                                   expands: true,
                                   textAlignVertical: TextAlignVertical.top,
-                                  style: GoogleFonts.outfit(
+                                  style: SafeGoogleFonts.outfit(
                                     color: AppTheme.elementColor3,
                                     fontSize: AppTheme.fontSizeMedium,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: 'Introduceti informatii aditionale...',
-                                    hintStyle: GoogleFonts.outfit(
+                                    hintStyle: SafeGoogleFonts.outfit(
                                       color: AppTheme.elementColor3,
                                       fontSize: AppTheme.fontSizeMedium,
                                       fontWeight: FontWeight.w500,
@@ -526,7 +527,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                 onTap: _isLoading ? null : _saveClientStatus,
                 borderRadius: AppTheme.borderRadiusMedium,
                 buttonHeight: AppTheme.navButtonHeight,
-                textStyle: GoogleFonts.outfit(
+                textStyle: SafeGoogleFonts.outfit(
                   fontSize: AppTheme.fontSizeMedium,
                   fontWeight: FontWeight.w500,
                   color: AppTheme.elementColor2,
@@ -539,3 +540,4 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     );
   }
 } 
+

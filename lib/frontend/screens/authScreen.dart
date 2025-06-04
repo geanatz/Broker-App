@@ -37,13 +37,9 @@ class _AuthScreenState extends State<AuthScreen> {
     );
     if (mounted) {
       if (result['success']) {
-        // Navigarea către ecranul principal se face prin AuthWrapper din main.dart
-        // Aici putem afișa un mesaj sau pur și simplu lăsăm AuthWrapper să preia controlul
-        setState(() {
-          _successMessage = result['message'];
-          _errorMessage = null;
-        });
-        // Nu e nevoie să navigăm explicit aici, AuthWrapper va detecta schimbarea stării de autentificare
+        // Navigarea către ecranul principal se face automat prin AuthWrapper din main.dart
+        // Nu afișăm mesaj de succes deoarece utilizatorul va fi redirecționat imediat
+        // AuthWrapper va detecta schimbarea stării de autentificare și va naviga la MainScreen
       } else {
         setState(() {
           _errorMessage = result['message'];
@@ -177,9 +173,6 @@ class _AuthScreenState extends State<AuthScreen> {
         return const Center(child: CircularProgressIndicator()); 
     }
 
-    // Afișează popup-ul ca un dialog centrat
-    // Sau direct în corpul ecranului dacă preferi o abordare non-dialog
-    // Pentru a se potrivi descrierii "Absolută, centrată pe ecran", Dialog este potrivit.
     return popupToShow;
   }
 

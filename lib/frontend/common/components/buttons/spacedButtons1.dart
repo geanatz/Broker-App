@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 
 // Assuming _TextIconButton is defined (updated to use AppTheme)
@@ -48,7 +49,7 @@ class _TextIconButton extends StatelessWidget {
     final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
     final double effectiveInternalSpacing = internalSpacing ?? AppTheme.smallGap;
 
-    final TextStyle defaultTextStyle = GoogleFonts.outfit(
+    final TextStyle defaultTextStyle = SafeGoogleFonts.outfit(
       color: effectiveTextColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: AppTheme.fontWeightMedium,
@@ -157,7 +158,7 @@ class _SpacedButtonSingleSvgState extends State<SpacedButtonSingleSvg> {
     final double effectiveIconSize = widget.iconSize ?? AppTheme.iconSizeMedium;
     final double effectiveInternalSpacing = widget.internalSpacing ?? AppTheme.mediumGap;
     
-    final TextStyle defaultTextStyle = GoogleFonts.outfit(
+    final TextStyle defaultTextStyle = SafeGoogleFonts.outfit(
       color: effectiveTextColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: AppTheme.fontWeightMedium,
@@ -285,3 +286,4 @@ class SpacedButtonSingle extends StatelessWidget {
     );
   }
 }
+

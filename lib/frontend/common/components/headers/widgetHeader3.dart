@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A widget header displaying a title on the left and a trailing icon on the right.
@@ -66,7 +67,7 @@ class WidgetHeader3 extends StatelessWidget {
     final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
     final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
 
-    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
+    final TextStyle defaultTitleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeLarge,
       fontWeight: FontWeight.w600,
@@ -133,3 +134,4 @@ class WidgetHeader3 extends StatelessWidget {
     );
   }
 }
+

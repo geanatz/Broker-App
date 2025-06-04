@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../appTheme.dart';
 
 /// A widget header displaying a title on the left and an alternative
@@ -64,12 +65,12 @@ class WidgetHeader2 extends StatelessWidget {
     final double effectiveSpacing = spacing ?? AppTheme.mediumGap;
     final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
 
-    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
+    final TextStyle defaultTitleStyle = SafeGoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeLarge,
       fontWeight: FontWeight.w600,
     );
-    final TextStyle defaultAltTextStyle = GoogleFonts.outfit(
+    final TextStyle defaultAltTextStyle = SafeGoogleFonts.outfit(
       color: effectiveAltTextColor,
       fontSize: AppTheme.fontSizeMedium,
       fontWeight: FontWeight.w500,
@@ -122,3 +123,4 @@ class WidgetHeader2 extends StatelessWidget {
     );
   }
 }
+

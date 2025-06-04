@@ -2,6 +2,7 @@
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 
 /// A customizable item component with a pill shape, larger height,
@@ -54,7 +55,7 @@ class DarkItem2 extends StatelessWidget {
     final TextStyle titleStyle = TextStyle(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
-      fontFamily: GoogleFonts.outfit().fontFamily, // AppTheme.fontFamilyPrimary
+      fontFamily: SafeSafeGoogleFonts.fontFamily, // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
     );
 
@@ -115,3 +116,4 @@ class DarkItem2 extends StatelessWidget {
     return content;
   }
 }
+

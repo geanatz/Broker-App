@@ -24,7 +24,7 @@ extension CreditTypeExtension on CreditType {
   String get displayTitle {
     switch (this) {
       case CreditType.cardCumparaturi:
-        return 'Card de cumparaturi';
+        return 'Card cumparaturi';
       case CreditType.nevoi:
         return 'Nevoi personale';
       case CreditType.overdraft:
@@ -65,11 +65,11 @@ class CreditFormModel {
 
   CreditFormModel({
     String? id,
-    this.bank = 'Selecteaza banca',
-    this.creditType = 'Selecteaza tipul',
+    this.bank = 'Selecteaza',
+    this.creditType = 'Selecteaza',
     this.sold = '',
     this.consumat = '',
-    this.rateType = 'Selecteaza tipul',
+    this.rateType = 'Selecteaza',
     this.rata = '',
     this.perioada = '',
     this.isNew = true,
@@ -77,7 +77,8 @@ class CreditFormModel {
 
   /// Verifică dacă formularul are informații minime
   bool hasMinimumInfo() {
-    return bank != 'Selecteaza banca' && creditType != 'Selecteaza tipul';
+    return bank != 'Selecteaza' && bank != 'Selecteaza banca' && 
+           creditType != 'Selecteaza' && creditType != 'Selecteaza tipul';
   }
 
   /// Verifică dacă formularul este gol
@@ -114,15 +115,23 @@ class CreditFormModel {
   factory CreditFormModel.fromMap(Map<String, dynamic> map) {
     return CreditFormModel(
       id: map['id'],
-      bank: map['bank'] ?? 'Selecteaza banca',
-      creditType: map['creditType'] ?? 'Selecteaza tipul',
+      bank: _migrateOldPlaceholder(map['bank'] ?? 'Selecteaza'),
+      creditType: _migrateOldPlaceholder(map['creditType'] ?? 'Selecteaza'),
       sold: map['sold'] ?? '',
       consumat: map['consumat'] ?? '',
-      rateType: map['rateType'] ?? 'Selecteaza tipul',
+      rateType: _migrateOldPlaceholder(map['rateType'] ?? 'Selecteaza'),
       rata: map['rata'] ?? '',
       perioada: map['perioada'] ?? '',
       isNew: map['isNew'] ?? true,
     );
+  }
+
+  /// Migrează valorile placeholder vechi la noile valori
+  static String _migrateOldPlaceholder(String value) {
+    if (value == 'Selecteaza banca' || value == 'Selecteaza tipul') {
+      return 'Selecteaza';
+    }
+    return value;
   }
 
   @override
@@ -142,8 +151,8 @@ class IncomeFormModel {
 
   IncomeFormModel({
     String? id,
-    this.bank = 'Selecteaza banca',
-    this.incomeType = 'Selecteaza tipul',
+    this.bank = 'Selecteaza',
+    this.incomeType = 'Selecteaza',
     this.incomeAmount = '',
     this.vechime = '',
     this.isNew = true,
@@ -151,7 +160,8 @@ class IncomeFormModel {
 
   /// Verifică dacă formularul are informații minime
   bool hasMinimumInfo() {
-    return bank != 'Selecteaza banca' && incomeType != 'Selecteaza tipul';
+    return bank != 'Selecteaza' && bank != 'Selecteaza banca' && 
+           incomeType != 'Selecteaza' && incomeType != 'Selecteaza tipul';
   }
 
   /// Verifică dacă formularul este gol
@@ -182,8 +192,8 @@ class IncomeFormModel {
   factory IncomeFormModel.fromMap(Map<String, dynamic> map) {
     return IncomeFormModel(
       id: map['id'],
-      bank: map['bank'] ?? 'Selecteaza banca',
-      incomeType: map['incomeType'] ?? 'Selecteaza tipul',
+      bank: CreditFormModel._migrateOldPlaceholder(map['bank'] ?? 'Selecteaza'),
+      incomeType: CreditFormModel._migrateOldPlaceholder(map['incomeType'] ?? 'Selecteaza'),
       incomeAmount: map['incomeAmount'] ?? '',
       vechime: map['vechime'] ?? '',
       isNew: map['isNew'] ?? true,
@@ -230,7 +240,7 @@ class FormService extends ChangeNotifier {
   ];
 
   static const List<String> creditTypes = [
-    'Card de cumparaturi',
+    'Card cumparaturi',
     'Nevoi personale',
     'Overdraft',
     'Ipotecar',

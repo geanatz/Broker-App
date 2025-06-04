@@ -72,6 +72,9 @@ class Form1 extends StatefulWidget {
   /// Optional suffix text for the bottom-right input field
   final String? suffixTextR2F2;
 
+  /// Optional suffix text color for the bottom-right input field
+  final Color? suffixTextColorR2F2;
+
   // Container styling
   /// Optional background color for the outer container
   final Color? containerColor;
@@ -98,22 +101,23 @@ class Form1 extends StatefulWidget {
     this.valueR1F1,
     required this.itemsR1F1,
     this.onChangedR1F1,
-    this.hintTextR1F1 = 'Selecteaza banca',
+    this.hintTextR1F1 = 'Selecteaza',
     this.titleR1F2 = 'Tip credit',
     this.valueR1F2,
     required this.itemsR1F2,
     this.onChangedR1F2,
-    this.hintTextR1F2 = 'Selecteaza tipul',
+    this.hintTextR1F2 = 'Selecteaza',
     this.titleR2F1 = 'Sold',
     this.controllerR2F1,
-    this.hintTextR2F1 = 'Introduceti soldul',
+    this.hintTextR2F1 = '0',
     this.keyboardTypeR2F1 = TextInputType.number,
     this.suffixTextR2F1,
     this.titleR2F2 = 'Rata',
     this.controllerR2F2,
-    this.hintTextR2F2 = 'Introduceti rata',
+    this.hintTextR2F2 = '0',
     this.keyboardTypeR2F2 = TextInputType.number,
     this.suffixTextR2F2,
+    this.suffixTextColorR2F2,
     this.containerColor,
     this.borderRadius,
     this.padding,
@@ -202,6 +206,7 @@ class _Form1State extends State<Form1> {
                         enableCommaFormatting: widget.suffixTextR2F2 == null,
                         enableKTransformation: widget.suffixTextR2F2 == null,
                         suffixText: widget.suffixTextR2F2,
+                        suffixTextColor: widget.suffixTextColorR2F2,
                       ),
                     ),
                   ],
