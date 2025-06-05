@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../backend/services/calculatorService.dart';
 import '../common/appTheme.dart';

@@ -81,22 +81,25 @@ class _ClientsPaneState extends State<ClientsPane> {
       );
     }
 
-    return Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (int i = 0; i < clients.length; i++) ...[
-            _buildClientItem(clients[i]),
-            if (i < clients.length - 1) SizedBox(height: AppTheme.smallGap),
-          ],
-        ],
-      ),
-    );
+    // Pentru secțiunea Apeluri (care e Expanded), folosim ListView normal
+    // Pentru Reveniri și Recente (care sunt HUG), folosim ListView cu shrinkWrap
+    final bool isApeluri = category == ClientCategory.apeluri;
+    
+    if (isApeluri) {
+      return ListView.separated(
+        itemCount: clients.length,
+        separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
+        itemBuilder: (context, index) => _buildClientItem(clients[index]),
+      );
+    } else {
+      return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: clients.length,
+        separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
+        itemBuilder: (context, index) => _buildClientItem(clients[index]),
+      );
+    }
   }
 
   /// Construiește un item pentru un client
@@ -167,6 +170,9 @@ class _ClientsPaneState extends State<ClientsPane> {
       }
     }
     
+    // Pentru secțiunea Apeluri (care e Expanded), folosim o structură special adaptată
+    final bool isApeluri = category == ClientCategory.apeluri;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(8),
@@ -178,35 +184,45 @@ class _ClientsPaneState extends State<ClientsPane> {
         ),
         shadows: [AppTheme.widgetShadow],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Header pentru secțiune
-          if (category == ClientCategory.apeluri)
-            // Folosim WidgetHeader2 pentru Apeluri cu buton Editeaza
-            WidgetHeader2(
-              title: title,
-              altText: 'Editeaza',
-              onAltTextTap: widget.onClientsPopupRequested,
+      child: isApeluri 
+          ? Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Header pentru Apeluri
+                WidgetHeader2(
+                  title: title,
+                  altText: 'Editeaza',
+                  onAltTextTap: widget.onClientsPopupRequested,
+                ),
+                
+                SizedBox(height: AppTheme.smallGap),
+                
+                // Lista de clienți expandabilă pentru Apeluri
+                Expanded(child: _buildClientsList(category)),
+              ],
             )
-          else
-            // Folosim WidgetHeader3 pentru Reveniri și Recente (cu collapse)
-            WidgetHeader3(
-              title: title,
-              trailingIcon: isCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              onTrailingIconTap: toggleCallback,
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Header pentru Reveniri și Recente
+                WidgetHeader3(
+                  title: title,
+                  trailingIcon: isCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  onTrailingIconTap: toggleCallback,
+                ),
+                
+                if (!isCollapsed) ...[
+                  SizedBox(height: AppTheme.smallGap),
+                  
+                  // Lista de clienți pentru Reveniri și Recente
+                  _buildClientsList(category),
+                ],
+              ],
             ),
-          
-          if (!isCollapsed) ...[
-            SizedBox(height: AppTheme.smallGap),
-            
-            // Lista de clienți pentru această categorie
-            _buildClientsList(category),
-          ],
-        ],
-      ),
     );
   }
 

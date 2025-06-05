@@ -5,7 +5,6 @@ import 'package:broker_app/backend/services/formService.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
 import 'package:broker_app/backend/models/client_model.dart';
 import 'package:broker_app/frontend/common/components/forms/form1.dart';
-import 'package:broker_app/frontend/common/components/forms/form2.dart';
 import 'package:broker_app/frontend/common/components/forms/form3.dart';
 import 'package:broker_app/frontend/common/components/forms/formNew.dart';
 import 'package:broker_app/frontend/common/components/headers/widgetHeader2.dart';
@@ -226,13 +225,10 @@ class _FormAreaState extends State<FormArea> {
 
   /// Extrage doar valoarea numerică din câmpurile care pot conține "luni"
   String _extractNumericValue(String value, String fieldType) {
+    // Pentru câmpurile perioada și vechime, returnăm valoarea exact cum este
+    // pentru a permite formatul ani/luni (ex: 1/4, 2/7, 5/2)
     if (fieldType == 'perioada' || fieldType == 'vechime') {
-      // Extrage doar numerele din string (pentru câmpurile cu sufixe)
-      final numbers = RegExp(r'\d+').allMatches(value);
-      if (numbers.isNotEmpty) {
-        return numbers.first.group(0) ?? '';
-      }
-      return '';
+      return value;
     }
     // Pentru toate celelalte câmpuri, returnează valoarea exact cum este
     // pentru a nu interfera cu transformarea K și formatarea cu virgule
@@ -349,10 +345,14 @@ class _FormAreaState extends State<FormArea> {
             final isClient = clientType == 'client';
             
             if (mounted) {
-              // Remove commas before saving to get the clean numeric value
+              // Process value based on field type
               String cleanValue = value;
               if (field == 'sold' || field == 'rata' || field == 'consumat' || field == 'incomeAmount') {
+                // Remove commas for numeric fields
                 cleanValue = value.replaceAll(',', '');
+              } else if (field == 'perioada' || field == 'vechime') {
+                // Keep original format for period and seniority fields (allows "year/month" format)
+                cleanValue = value;
               }
               
               // Check if the value actually changed before saving
@@ -799,7 +799,7 @@ class _FormAreaState extends State<FormArea> {
   Widget _buildCreditForm(ClientModel client, CreditFormModel form, int index, bool isClient) {
     // Determină ce tipuri de câmpuri să afișeze în funcție de tipul de credit
     final showConsumat = form.creditType == 'Card cumparaturi' || form.creditType == 'Overdraft';
-    final showRataAndPeriod = form.creditType == 'Nevoi personale';
+    final showSoldRata = form.creditType == 'Nevoi personale';
     final showIpotecarFields = form.creditType == 'Ipotecar' || form.creditType == 'Prima casa';
 
     if (showIpotecarFields) {
@@ -843,7 +843,7 @@ class _FormAreaState extends State<FormArea> {
         
         titleR2F3: 'Perioada',
         controllerR2F3: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_perioada', form.perioada),
-        hintTextR2F3: '0',
+        hintTextR2F3: '0/0',
         keyboardTypeR2F3: TextInputType.text,
         suffixTextColorR2F3: AppTheme.elementColor2,
         
@@ -862,9 +862,9 @@ class _FormAreaState extends State<FormArea> {
         
         onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
-    } else if (showRataAndPeriod) {
-      // Folosește Form2 pentru Nevoi personale (5 câmpuri)
-      return Form2(
+    } else if (showSoldRata) {
+      // Folosește Form1 pentru Nevoi personale (4 câmpuri: Sold și Rata)
+      return Form1(
         titleR1F1: 'Banca',
         valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
         itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
@@ -901,12 +901,6 @@ class _FormAreaState extends State<FormArea> {
         hintTextR2F2: '0',
         keyboardTypeR2F2: TextInputType.number,
         
-        titleR2F3: 'Perioada',
-        controllerR2F3: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_perioada', form.perioada),
-        hintTextR2F3: '0',
-        keyboardTypeR2F3: TextInputType.text,
-        suffixTextColorR2F3: AppTheme.elementColor2,
-        
         onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
     } else {
@@ -938,7 +932,7 @@ class _FormAreaState extends State<FormArea> {
         },
         hintTextR1F2: 'Selecteaza',
         
-        titleR2F1: 'Sold',
+        titleR2F1: showConsumat ? 'Plafon' : 'Sold',
         controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_sold', form.sold),
         hintTextR2F1: '0',
         keyboardTypeR2F1: TextInputType.number,
@@ -990,10 +984,8 @@ class _FormAreaState extends State<FormArea> {
       
       titleR2F2: 'Vechime',
       controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_income_${index}_vechime', form.vechime),
-      hintTextR2F2: '0',
-      keyboardTypeR2F2: TextInputType.number,
-      suffixTextR2F2: ' luni',
-      suffixTextColorR2F2: AppTheme.elementColor2,
+      hintTextR2F2: '0/0',
+      keyboardTypeR2F2: TextInputType.text,
       
       onClose: () => _formService.removeIncomeForm(client.phoneNumber, index, isClient: isClient),
     );

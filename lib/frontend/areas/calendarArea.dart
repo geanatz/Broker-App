@@ -429,23 +429,31 @@ class CalendarAreaState extends State<CalendarArea> {
                 ),
                 const SizedBox(width: 16),
                 
-                // Sloturile pentru fiecare zi
-                ...List.generate(CalendarService.daysPerWeek, (dayIndex) {
-                  final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
-                  final meetingData = meetingsMap[slotKey];
-                  final docId = meetingsDocIds[slotKey];
-                  final isMeeting = meetingData != null;
-                  final isLastSlot = dayIndex == CalendarService.daysPerWeek - 1;
-                  
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(right: isLastSlot ? 0 : AppTheme.mediumGap),
-                      child: isMeeting 
-                          ? _buildMeetingSlot(meetingData, docId!)
-                          : _buildAvailableSlot(dayIndex, hourIndex),
-                    ),
-                  );
-                }),
+                // Sloturile pentru fiecare zi cu mărime egală
+                Expanded(
+                  child: Row(
+                    children: [
+                      for (int dayIndex = 0; dayIndex < CalendarService.daysPerWeek; dayIndex++) ...[
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
+                              final meetingData = meetingsMap[slotKey];
+                              final docId = meetingsDocIds[slotKey];
+                              final isMeeting = meetingData != null;
+                              
+                              return isMeeting 
+                                  ? _buildMeetingSlot(meetingData, docId!)
+                                  : _buildAvailableSlot(dayIndex, hourIndex);
+                            }
+                          ),
+                        ),
+                        if (dayIndex < CalendarService.daysPerWeek - 1) 
+                          SizedBox(width: AppTheme.mediumGap),
+                      ]
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

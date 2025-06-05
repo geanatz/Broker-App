@@ -75,9 +75,11 @@ class ClientsFirebaseService {
   /// Șterge toți clienții pentru un consultant specific
   Future<void> deleteAllClientsForConsultant(String consultantId) async {
     try {
-      final clients = await _unifiedService.getAllClients();
-      for (final client in clients) {
-        await _unifiedService.deleteClient(client.basicInfo.phoneNumber);
+      // Folosește metoda optimizată pentru ștergerea în lot
+      final success = await _unifiedService.deleteAllClients();
+      
+      if (!success) {
+        throw Exception('Failed to delete all clients in unified structure');
       }
     } catch (e) {
       throw Exception('Eroare la ștergerea tuturor clienților: $e');

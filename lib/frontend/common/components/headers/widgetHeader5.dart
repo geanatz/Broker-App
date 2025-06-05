@@ -1,7 +1,6 @@
 // lib/components/headers/widget_header5.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 

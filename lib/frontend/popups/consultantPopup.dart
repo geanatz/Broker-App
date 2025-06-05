@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import '../common/components/headers/widgetHeader1.dart';

@@ -1028,6 +1028,75 @@ class UnifiedClientService {
       return true; // Assume occupied on error for safety
     }
   }
+
+  /// Șterge toți clienții pentru consultantul curent în mod optimizat (batch operation)
+  Future<bool> deleteAllClients() async {
+    final collection = _clientsCollection;
+    if (collection == null) return false;
+
+    try {
+      // Obține toți clienții pentru consultantul curent
+      final snapshot = await collection.get();
+      
+      if (snapshot.docs.isEmpty) {
+        debugPrint('✅ No clients to delete');
+        return true;
+      }
+
+      // Folosește batch pentru ștergerea optimizată
+      final batch = _firestore.batch();
+      int batchCount = 0;
+      const maxBatchSize = 500; // Firestore limit pentru batch
+
+      for (final clientDoc in snapshot.docs) {
+        final phoneNumber = clientDoc.id;
+        
+        // Șterge meetings-urile clientului
+        final meetingsSnapshot = await _getMeetingsCollection(phoneNumber)?.get();
+        if (meetingsSnapshot != null) {
+          for (final meetingDoc in meetingsSnapshot.docs) {
+            batch.delete(meetingDoc.reference);
+            batchCount++;
+            
+            // Commit batch dacă ajungem la limită
+            if (batchCount >= maxBatchSize) {
+              await batch.commit();
+              batchCount = 0;
+            }
+          }
+        }
+
+        // Șterge documentele form (loan și income)
+        final formCollection = _getFormCollection(phoneNumber);
+        if (formCollection != null) {
+          batch.delete(formCollection.doc(_loanDocument));
+          batch.delete(formCollection.doc(_incomeDocument));
+          batchCount += 2;
+        }
+
+        // Șterge clientul
+        batch.delete(clientDoc.reference);
+        batchCount++;
+
+        // Commit batch dacă ajungem la limită
+        if (batchCount >= maxBatchSize) {
+          await batch.commit();
+          batchCount = 0;
+        }
+      }
+
+      // Commit ultimul batch dacă mai sunt operații rămase
+      if (batchCount > 0) {
+        await batch.commit();
+      }
+
+      debugPrint('✅ All clients deleted successfully (${snapshot.docs.length} clients)');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error deleting all clients: $e');
+      return false;
+    }
+  }
 }
 
 // Extension pentru ușurință în utilizare

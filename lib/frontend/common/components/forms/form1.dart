@@ -1,6 +1,7 @@
 // lib/components/forms/form_container1.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:broker_app/frontend/common/appTheme.dart'; // Import AppTheme instead of placeholder
 // import 'package:your_app/theme/app_theme.dart'; // Placeholder
 import '../fields/dropdownField1.dart';
@@ -133,6 +134,11 @@ class Form1 extends StatefulWidget {
 class _Form1State extends State<Form1> {
   bool _isHovered = false;
 
+  /// Custom input formatter for years/months format (e.g., "1/4", "2/7")
+  static final TextInputFormatter _yearsMonthsFormatter = FilteringTextInputFormatter.allow(
+    RegExp(r'[0-9/]'),
+  );
+
   @override
   Widget build(BuildContext context) {
     final Color effectiveContainerColor = widget.containerColor ?? AppTheme.containerColor1;
@@ -203,8 +209,9 @@ class _Form1State extends State<Form1> {
                         controller: widget.controllerR2F2,
                         hintText: widget.hintTextR2F2,
                         keyboardType: widget.keyboardTypeR2F2,
-                        enableCommaFormatting: widget.suffixTextR2F2 == null,
-                        enableKTransformation: widget.suffixTextR2F2 == null,
+                        enableCommaFormatting: widget.titleR2F2 == 'Vechime' ? false : (widget.suffixTextR2F2 == null),
+                        enableKTransformation: widget.titleR2F2 == 'Vechime' ? false : (widget.suffixTextR2F2 == null),
+                        inputFormatters: widget.titleR2F2 == 'Vechime' ? [_yearsMonthsFormatter] : null,
                         suffixText: widget.suffixTextR2F2,
                         suffixTextColor: widget.suffixTextColorR2F2,
                       ),

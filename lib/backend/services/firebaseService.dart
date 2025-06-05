@@ -433,7 +433,7 @@ class FirebaseFormService {
       consumedAmount: double.tryParse(credit['consumat']?.toString().replaceAll(',', '') ?? '0'),
       rateType: credit['rateType'] ?? '',
       monthlyPayment: double.tryParse(credit['rata']?.toString().replaceAll(',', '') ?? '0'),
-      remainingMonths: int.tryParse(credit['perioada']?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '0'),
+      remainingMonths: _parseYearMonthFormat(credit['perioada']?.toString()),
     );
   }
 
@@ -446,7 +446,7 @@ class FirebaseFormService {
       'consumat': _formatAmount(credit.consumedAmount),
       'rateType': credit.rateType,
       'rata': _formatAmount(credit.monthlyPayment),
-      'perioada': credit.remainingMonths != null ? credit.remainingMonths.toString() : '',
+      'perioada': _formatYearMonth(credit.remainingMonths),
       'isNew': false,
     };
   }
@@ -468,7 +468,7 @@ class FirebaseFormService {
       'bank': income.bank,
       'incomeType': income.incomeType,
       'incomeAmount': _formatAmount(income.monthlyAmount),
-      'vechime': income.seniority != null ? income.seniority.toString() : '',
+      'vechime': _formatYearMonth(income.seniority),
       'isNew': false,
     };
   }
@@ -485,22 +485,46 @@ class FirebaseFormService {
     }
   }
 
-  /// Parsează vechimea din string în luni
+  /// Parsează perioada din format "ani/luni" în luni totale pentru sistemul intern
+  int? _parseYearMonthFormat(String? period) {
+    if (period == null || period.isEmpty) return null;
+    
+    // Dacă contine "/", parseaza formatul ani/luni
+    if (period.contains('/')) {
+      final parts = period.split('/');
+      if (parts.length == 2) {
+        final years = int.tryParse(parts[0].trim()) ?? 0;
+        final months = int.tryParse(parts[1].trim()) ?? 0;
+        return years * 12 + months;
+      }
+    }
+    
+    // Dacă nu contine "/", încearcă să parseze ca număr simplu (luni)
+    return int.tryParse(period.replaceAll(RegExp(r'[^0-9]'), ''));
+  }
+
+  /// Convertește luni totale înapoi în format "ani/luni" pentru afișare
+  String _formatYearMonth(int? totalMonths) {
+    if (totalMonths == null || totalMonths == 0) return '';
+    
+    final years = totalMonths ~/ 12;
+    final months = totalMonths % 12;
+    
+    if (years == 0) {
+      return '0/$months';
+    } else if (months == 0) {
+      return '$years/0';
+    } else {
+      return '$years/$months';
+    }
+  }
+
+  /// Parsează vechimea din string în luni, cu suport pentru formatul ani/luni
   int? _parseVechime(String? vechime) {
     if (vechime == null || vechime.isEmpty) return null;
     
-    final numbers = RegExp(r'\d+').allMatches(vechime);
-    if (numbers.isEmpty) return null;
-    
-    final value = int.tryParse(numbers.first.group(0)!);
-    if (value == null) return null;
-    
-    // Convertește în luni dacă este specificat în ani
-    if (vechime.toLowerCase().contains('an')) {
-      return value * 12;
-    }
-    
-    return value;
+    // Folosește noua funcție pentru a parsa formatul ani/luni
+    return _parseYearMonthFormat(vechime);
   }
 }
 

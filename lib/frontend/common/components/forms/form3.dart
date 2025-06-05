@@ -1,6 +1,7 @@
 // lib/frontend/common/components/forms/form3.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../appTheme.dart';
 import '../fields/dropdownField1.dart';
 import '../fields/inputField1.dart';
@@ -80,6 +81,9 @@ class Form3 extends StatefulWidget {
   /// Optional suffix text color for the third input field (Perioada)
   final Color? suffixTextColorR2F3;
   
+  /// Optional suffix text for the third input field (Perioada)
+  final String? suffixTextR2F3;
+  
   /// Title for the fourth input field in second row
   final String titleR2F4;
   
@@ -140,6 +144,7 @@ class Form3 extends StatefulWidget {
     this.hintTextR2F3 = '0',
     this.keyboardTypeR2F3 = TextInputType.number,
     this.suffixTextColorR2F3,
+    this.suffixTextR2F3,
     this.titleR2F4 = 'Tip rata',
     this.valueR2F4,
     required this.itemsR2F4,
@@ -159,6 +164,11 @@ class Form3 extends StatefulWidget {
 
 class _Form3State extends State<Form3> {
   bool _isHovered = false;
+
+  /// Custom input formatter for years/months format (e.g., "1/4", "2/7")
+  static final TextInputFormatter _yearsMonthsFormatter = FilteringTextInputFormatter.allow(
+    RegExp(r'[0-9/]'),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -240,10 +250,11 @@ class _Form3State extends State<Form3> {
                         controller: widget.controllerR2F3,
                         hintText: widget.hintTextR2F3,
                         keyboardType: widget.keyboardTypeR2F3,
-                        suffixText: ' luni',
+                        suffixText: widget.suffixTextR2F3,
                         suffixTextColor: widget.suffixTextColorR2F3,
                         enableCommaFormatting: false,
                         enableKTransformation: false,
+                        inputFormatters: widget.titleR2F3 == 'Perioada' ? [_yearsMonthsFormatter] : null,
                       ),
                     ),
                     SizedBox(width: effectiveFieldSpacing),

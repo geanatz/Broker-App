@@ -13,6 +13,7 @@ import 'package:broker_app/frontend/popups/clientsPopup.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
 import 'package:broker_app/backend/models/client_model.dart';
 import 'package:broker_app/backend/services/settingsService.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Ecranul principal al aplicației care conține cele 3 coloane:
 /// - pane (stânga, lățime 312)
@@ -37,6 +38,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   AreaType _currentArea = AreaType.form;
   PaneType _currentPane = PaneType.clients;
   
+  // Keys for SharedPreferences
+  static const String _currentAreaKey = 'main_screen_current_area';
+  static const String _currentPaneKey = 'main_screen_current_pane';
+  
   // Consultant info
   late String _consultantName;
   late String _teamName;
@@ -57,14 +62,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   List<Client> _popupClients = [];
   Client? _selectedPopupClient;
   bool _isShowingClientListPopup = false;
-  bool _isShowingClientFormPopup = false;
-  Client? _editingClient;
   
   @override
   void initState() {
     super.initState();
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
+    
+    // Restore navigation state from SharedPreferences
+    _restoreNavigationState();
     
     // Sincronizează popup-ul cu datele din service
     _syncPopupWithService();
@@ -144,6 +150,41 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       setState(() {
         // Actualizează întreaga interfață când se schimbă tema
       });
+    }
+  }
+  
+  /// Restores navigation state from SharedPreferences
+  Future<void> _restoreNavigationState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final areaIndex = prefs.getInt(_currentAreaKey);
+      final paneIndex = prefs.getInt(_currentPaneKey);
+      
+      if (areaIndex != null && areaIndex < AreaType.values.length) {
+        _currentArea = AreaType.values[areaIndex];
+      }
+      
+      if (paneIndex != null && paneIndex < PaneType.values.length) {
+        _currentPane = PaneType.values[paneIndex];
+      }
+      
+      // Update UI if needed
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Error restoring navigation state: $e');
+    }
+  }
+  
+  /// Saves navigation state to SharedPreferences
+  Future<void> _saveNavigationState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_currentAreaKey, _currentArea.index);
+      await prefs.setInt(_currentPaneKey, _currentPane.index);
+    } catch (e) {
+      debugPrint('Error saving navigation state: $e');
     }
   }
   
@@ -238,7 +279,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             ),
             
                          // Client Popups overlay
-            if (_isShowingClientListPopup || _isShowingClientFormPopup)
+            if (_isShowingClientListPopup)
               _buildDualPopupOverlay(),
           ],
         ),
@@ -264,27 +305,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                 children: [
                   // Client List Popup (întotdeauna vizibil când e deschis)
                   if (_isShowingClientListPopup)
-                    ClientsPopup1(
+                    ClientsPopup(
                       clients: _popupClients,
                       selectedClient: _selectedPopupClient,
                       onClientSelected: _handleClientSelected,
                       onEditClient: _handleEditClient,
-                      onAddClient: _handleAddClient,
-                      onExtractClients: _handleExtractClients,
+                      onSaveClient: _handleSaveClient,
+                      onDeleteClient: () => _handleDeleteClient(_selectedPopupClient!),
                       onDeleteAllClients: _handleDeleteAllClients,
                     ),
                   
-                  // Spacing între popup-uri
-                  if (_isShowingClientListPopup && _isShowingClientFormPopup)
-                    const SizedBox(width: AppTheme.largeGap),
-                  
-                  // Client Form Popup (vizibil doar când se editează/adaugă)
-                  if (_isShowingClientFormPopup)
-                    ClientsPopup2(
-                      editingClient: _editingClient,
-                      onSaveClient: _handleSaveClient,
-                      onDeleteClient: _editingClient != null ? () => _handleDeleteClient(_editingClient!) : null,
-                    ),
+                  // Form-ul de editare e acum integrat în ClientsPopup
                 ],
               ),
             ),
@@ -298,12 +329,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       _currentArea = area;
     });
+    // Save navigation state
+    _saveNavigationState();
   }
   
   void _handlePaneChanged(PaneType pane) {
     setState(() {
       _currentPane = pane;
     });
+    
+    // Save navigation state
+    _saveNavigationState();
     
     // Refresh meetings when switching to meetings pane
     if (pane == PaneType.meetings) {
@@ -327,8 +363,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _closeAllPopups() {
     setState(() {
       _isShowingClientListPopup = false;
-      _isShowingClientFormPopup = false;
-      _editingClient = null;
     });
   }
   
@@ -342,32 +376,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Focus-ul din clientsPane rămâne independent de selecția din popup
   }
   
-  /// Handles edit client (double-tap on client)
+  /// Handles edit client (double-tap on client) - now handled internally by ClientsPopup
   void _handleEditClient(Client client) {
+    // The new ClientsPopup handles this internally
+    // Just focus the selected client
     setState(() {
-      // Menținem lista deschisă și adăugăm formularul
-      _isShowingClientFormPopup = true;
-      _editingClient = client; // setează clientul pentru editare
+      _selectedPopupClient = client;
     });
-  }
-  
-  /// Handles add client button press
-  void _handleAddClient() {
-    setState(() {
-      // Menținem lista deschisă și adăugăm formularul
-      _isShowingClientFormPopup = true;
-      _editingClient = null; // null pentru creare client nou
-    });
-  }
-  
-  /// Handles extract clients button press (coming soon)
-  void _handleExtractClients() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Extragerea clientilor din imagini - Coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
   }
   
   /// Handles delete all clients button press
@@ -414,52 +429,46 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   /// Handles saving a client (create or edit)
   void _handleSaveClient(Client client) async {
-    if (_editingClient == null) {
-      // Creează client nou
-      final newClientModel = ClientModel(
-        id: client.phoneNumber, // Folosește phoneNumber ca ID
-        name: client.name,
-        phoneNumber: client.phoneNumber,
-        status: ClientStatus.normal,
-        category: ClientCategory.apeluri, // Clienții noi merg în "Apeluri"
-      );
-      
-      await _clientService.addClient(newClientModel);
-    } else {
-      // Actualizează client existent
-      final existingClientModel = _clientService.clients.firstWhere(
-        (clientModel) => clientModel.phoneNumber == _editingClient!.phoneNumber, // Folosește phoneNumber pentru căutare
-      );
-      
+    // Try to find existing client by phone number
+    final existingClientModel = _clientService.clients.where(
+      (clientModel) => clientModel.phoneNumber == client.phoneNumber,
+    ).firstOrNull;
+
+    if (existingClientModel != null) {
+      // Update existing client
       final updatedClientModel = existingClientModel.copyWith(
         name: client.name,
         phoneNumber: client.phoneNumber,
       );
       
       await _clientService.updateClient(updatedClientModel);
+    } else {
+      // Create new client
+      final newClientModel = ClientModel(
+        id: client.phoneNumber, // Use phoneNumber as ID
+        name: client.name,
+        phoneNumber: client.phoneNumber,
+        status: ClientStatus.normal,
+        category: ClientCategory.apeluri, // New clients go to "Apeluri"
+      );
+      
+      await _clientService.addClient(newClientModel);
     }
-    
-    // Închide doar formularul, lista rămâne deschisă
-    setState(() {
-      _isShowingClientFormPopup = false;
-      _editingClient = null;
-    });
   }
   
   /// Handles deleting a client
   void _handleDeleteClient(Client client) async {
-    // Găsește clientul în lista de clienți
+    // Find the client in the list
     final clientModel = _clientService.clients.firstWhere(
-      (clientModel) => clientModel.phoneNumber == client.phoneNumber, // Folosește phoneNumber pentru căutare
+      (clientModel) => clientModel.phoneNumber == client.phoneNumber,
     );
     
-    // Șterge clientul folosind phoneNumber ca ID
+    // Delete the client using phoneNumber as ID
     await _clientService.removeClient(clientModel.phoneNumber);
     
-    // Închide doar formularul, lista rămâne deschisă
+    // Update selection after deletion
     setState(() {
-      _isShowingClientFormPopup = false;
-      _editingClient = null;
+      _selectedPopupClient = null;
     });
   }
 
