@@ -136,9 +136,11 @@ class ClientsFirebaseService {
   /// Convertește UnifiedClientModel în ClientModel pentru compatibilitate
   OldModel.ClientModel _convertToClientModel(UnifiedModel.UnifiedClientModel unifiedClient) {
     return OldModel.ClientModel(
-      id: unifiedClient.basicInfo.phoneNumber, // Folosește phoneNumber ca ID
+      id: unifiedClient.basicInfo.phoneNumber1, // Folosește phoneNumber1 ca ID
       name: unifiedClient.basicInfo.name,
-      phoneNumber: unifiedClient.basicInfo.phoneNumber,
+      phoneNumber1: unifiedClient.basicInfo.phoneNumber1,
+      phoneNumber2: unifiedClient.basicInfo.phoneNumber2,
+      coDebitorName: unifiedClient.basicInfo.coDebitorName,
       status: unifiedClient.currentStatus.isFocused ? OldModel.ClientStatus.focused : OldModel.ClientStatus.normal,
       category: _convertFromUnifiedCategory(unifiedClient.currentStatus.category),
       formData: {}, // FormData este gestionat separat în noua structură

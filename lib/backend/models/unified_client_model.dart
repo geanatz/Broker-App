@@ -85,27 +85,30 @@ class UnifiedClientModel {
 /// Informații de bază despre client
 class ClientBasicInfo {
   final String name;
-  final String phoneNumber;
+  final String phoneNumber1;
+  final String? phoneNumber2;
   final String? coDebitorName;
-  final String? coDebitorPhone;
   final String? email;
   final String? address;
 
   const ClientBasicInfo({
     required this.name,
-    required this.phoneNumber,
+    required this.phoneNumber1,
+    this.phoneNumber2,
     this.coDebitorName,
-    this.coDebitorPhone,
     this.email,
     this.address,
   });
 
+  /// Pentru compatibilitate cu codul existent
+  String get phoneNumber => phoneNumber1;
+
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'phoneNumber': phoneNumber,
+      'phoneNumber1': phoneNumber1,
+      'phoneNumber2': phoneNumber2,
       'coDebitorName': coDebitorName,
-      'coDebitorPhone': coDebitorPhone,
       'email': email,
       'address': address,
     };
@@ -114,11 +117,29 @@ class ClientBasicInfo {
   factory ClientBasicInfo.fromMap(Map<String, dynamic> map) {
     return ClientBasicInfo(
       name: map['name'] ?? '',
-      phoneNumber: map['phoneNumber'] ?? '',
+      phoneNumber1: map['phoneNumber1'] ?? map['phoneNumber'] ?? '', // Fallback pentru backward compatibility
+      phoneNumber2: map['phoneNumber2'],
       coDebitorName: map['coDebitorName'],
-      coDebitorPhone: map['coDebitorPhone'],
       email: map['email'],
       address: map['address'],
+    );
+  }
+
+  ClientBasicInfo copyWith({
+    String? name,
+    String? phoneNumber1,
+    String? phoneNumber2,
+    String? coDebitorName,
+    String? email,
+    String? address,
+  }) {
+    return ClientBasicInfo(
+      name: name ?? this.name,
+      phoneNumber1: phoneNumber1 ?? this.phoneNumber1,
+      phoneNumber2: phoneNumber2 ?? this.phoneNumber2,
+      coDebitorName: coDebitorName ?? this.coDebitorName,
+      email: email ?? this.email,
+      address: address ?? this.address,
     );
   }
 }

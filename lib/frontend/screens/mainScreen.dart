@@ -121,9 +121,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _popupClients = _clientService.clients.map((clientModel) {
       return Client(
         name: clientModel.name,
-        phoneNumber: clientModel.phoneNumber,
-        // Pentru popup, nu folosim co-debtor info din ClientModel
-        // dar o putem extinde în viitor
+        phoneNumber1: clientModel.phoneNumber1,
+        phoneNumber2: clientModel.phoneNumber2,
+        coDebitorName: clientModel.coDebitorName,
       );
     }).toList();
     
@@ -131,7 +131,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     if (_selectedPopupClient != null) {
       _selectedPopupClient = _popupClients.firstWhere(
         (client) => client.name == _selectedPopupClient!.name && 
-                   client.phoneNumber == _selectedPopupClient!.phoneNumber,
+                   client.phoneNumber1 == _selectedPopupClient!.phoneNumber1,
         orElse: () => _popupClients.isNotEmpty ? _popupClients.first : _selectedPopupClient!,
       );
     }
@@ -431,23 +431,27 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _handleSaveClient(Client client) async {
     // Try to find existing client by phone number
     final existingClientModel = _clientService.clients.where(
-      (clientModel) => clientModel.phoneNumber == client.phoneNumber,
+      (clientModel) => clientModel.phoneNumber1 == client.phoneNumber1,
     ).firstOrNull;
 
     if (existingClientModel != null) {
       // Update existing client
       final updatedClientModel = existingClientModel.copyWith(
         name: client.name,
-        phoneNumber: client.phoneNumber,
+        phoneNumber1: client.phoneNumber1,
+        phoneNumber2: client.phoneNumber2,
+        coDebitorName: client.coDebitorName,
       );
       
       await _clientService.updateClient(updatedClientModel);
     } else {
       // Create new client
       final newClientModel = ClientModel(
-        id: client.phoneNumber, // Use phoneNumber as ID
+        id: client.phoneNumber1, // Use phoneNumber1 as ID
         name: client.name,
-        phoneNumber: client.phoneNumber,
+        phoneNumber1: client.phoneNumber1,
+        phoneNumber2: client.phoneNumber2,
+        coDebitorName: client.coDebitorName,
         status: ClientStatus.normal,
         category: ClientCategory.apeluri, // New clients go to "Apeluri"
       );
@@ -460,11 +464,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _handleDeleteClient(Client client) async {
     // Find the client in the list
     final clientModel = _clientService.clients.firstWhere(
-      (clientModel) => clientModel.phoneNumber == client.phoneNumber,
+      (clientModel) => clientModel.phoneNumber1 == client.phoneNumber1,
     );
     
-    // Delete the client using phoneNumber as ID
-    await _clientService.removeClient(clientModel.phoneNumber);
+    // Delete the client using phoneNumber1 as ID
+    await _clientService.removeClient(clientModel.phoneNumber1);
     
     // Update selection after deletion
     setState(() {

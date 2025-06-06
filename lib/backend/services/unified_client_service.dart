@@ -125,9 +125,9 @@ class UnifiedClientService {
         consultantId: _currentUser?.uid ?? '',
         basicInfo: ClientBasicInfo(
           name: clientData['name'] ?? '',
-          phoneNumber: clientData['phoneNumber'] ?? phoneNumber,
+          phoneNumber1: clientData['phoneNumber1'] ?? clientData['phoneNumber'] ?? phoneNumber,
+          phoneNumber2: clientData['phoneNumber2'],
           coDebitorName: clientData['coDebitorName'],
-          coDebitorPhone: clientData['coDebitorPhone'],
           email: clientData['email'],
           address: clientData['address'],
         ),

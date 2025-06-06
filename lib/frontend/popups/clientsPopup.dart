@@ -11,39 +11,39 @@ import '../common/components/buttons/flexButtons2.dart';
 import '../common/components/buttons/flexButtons1.dart';
 import '../common/components/fields/inputField1.dart';
 import '../common/appTheme.dart';
-import 'basicOcrPopup.dart';
-// import 'ocrLoadingPopup.dart';
-// import 'ocrResultsPopup.dart';
-import '../../backend/ocr/ocrService.dart';
+import '../../backend/ocr/enhanceOcr.dart';
 import '../../backend/models/unified_client_model.dart';
 
 /// Client model to represent client data
 class Client {
   final String name;
-  final String phoneNumber;
+  final String phoneNumber1;
+  final String? phoneNumber2;
   final String? coDebitorName;
-  final String? coDebitorPhone;
 
   Client({
     required this.name, 
-    required this.phoneNumber,
+    required this.phoneNumber1,
+    this.phoneNumber2,
     this.coDebitorName,
-    this.coDebitorPhone,
   });
+
+  /// Pentru compatibilitate cu codul existent
+  String get phoneNumber => phoneNumber1;
   
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is Client &&
         other.name == name &&
-        other.phoneNumber == phoneNumber &&
-        other.coDebitorName == coDebitorName &&
-        other.coDebitorPhone == coDebitorPhone;
+        other.phoneNumber1 == phoneNumber1 &&
+        other.phoneNumber2 == phoneNumber2 &&
+        other.coDebitorName == coDebitorName;
   }
   
   @override
   int get hashCode {
-    return Object.hash(name, phoneNumber, coDebitorName, coDebitorPhone);
+    return Object.hash(name, phoneNumber1, phoneNumber2, coDebitorName);
   }
 }
 
@@ -119,7 +119,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       debugPrint('🔍 Deschide file picker pentru selecția imaginilor OCR...');
       
       // Verifică dacă Google Vision API este configurat
-      final ocrService = OcrService();
+      final ocrService = EnhanceOcr();
       if (!ocrService.isConfigured()) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -184,7 +184,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
 
     try {
-      final ocrService = OcrService();
+      final ocrService = EnhanceOcr();
       final results = await ocrService.processImages(
         _selectedImages,
         (progressUpdate) {
@@ -230,9 +230,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
         // Convertește UnifiedClientModel la Client și salvează
         final clientsToSave = ocrResult.contacts.map((contact) => Client(
           name: contact.basicInfo.name,
-          phoneNumber: contact.basicInfo.phoneNumber,
+          phoneNumber1: contact.basicInfo.phoneNumber1,
+          phoneNumber2: contact.basicInfo.phoneNumber2,
           coDebitorName: contact.basicInfo.coDebitorName,
-          coDebitorPhone: contact.basicInfo.coDebitorPhone,
         )).toList();
         
         // Notifică părintele despre salvarea clienților
@@ -280,9 +280,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
       consultantId: 'local', // ID consultant temporar
       basicInfo: ClientBasicInfo(
         name: client.name,
-        phoneNumber: client.phoneNumber,
+        phoneNumber1: client.phoneNumber1,
+        phoneNumber2: client.phoneNumber2,
         coDebitorName: client.coDebitorName,
-        coDebitorPhone: client.coDebitorPhone,
       ),
       formData: const ClientFormData(
         clientCredits: [],
@@ -379,9 +379,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
     if (result?.contacts != null && result!.contacts.isNotEmpty) {
       final clientsToSave = result.contacts.map((contact) => Client(
         name: contact.basicInfo.name,
-        phoneNumber: contact.basicInfo.phoneNumber,
+        phoneNumber1: contact.basicInfo.phoneNumber1,
+        phoneNumber2: contact.basicInfo.phoneNumber2,
         coDebitorName: contact.basicInfo.coDebitorName,
-        coDebitorPhone: contact.basicInfo.coDebitorPhone,
       )).toList();
       
       // Notifică părintele despre salvarea clienților
@@ -428,9 +428,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
         // Convertește UnifiedClientModel la Client
         return ocrResult!.contacts.map((contact) => Client(
           name: contact.basicInfo.name,
-          phoneNumber: contact.basicInfo.phoneNumber,
+          phoneNumber1: contact.basicInfo.phoneNumber1,
+          phoneNumber2: contact.basicInfo.phoneNumber2,
           coDebitorName: contact.basicInfo.coDebitorName,
-          coDebitorPhone: contact.basicInfo.coDebitorPhone,
         )).toList();
       }
       return [];
@@ -1029,17 +1029,17 @@ class ClientsPopup2 extends StatefulWidget {
 
 class _ClientsPopup2State extends State<ClientsPopup2> {
   late TextEditingController _nameController;
-  late TextEditingController _phoneController;
+  late TextEditingController _phoneController1;
+  late TextEditingController _phoneController2;
   late TextEditingController _coDebitorNameController;
-  late TextEditingController _coDebitorPhoneController;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.editingClient?.name ?? '');
-    _phoneController = TextEditingController(text: widget.editingClient?.phoneNumber ?? '');
+    _phoneController1 = TextEditingController(text: widget.editingClient?.phoneNumber1 ?? '');
+    _phoneController2 = TextEditingController(text: widget.editingClient?.phoneNumber2 ?? '');
     _coDebitorNameController = TextEditingController(text: widget.editingClient?.coDebitorName ?? '');
-    _coDebitorPhoneController = TextEditingController(text: widget.editingClient?.coDebitorPhone ?? '');
   }
 
   @override
@@ -1050,36 +1050,36 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
     if (oldWidget.editingClient != widget.editingClient) {
       // Actualizează textul din controlleri cu noile valori
       _nameController.text = widget.editingClient?.name ?? '';
-      _phoneController.text = widget.editingClient?.phoneNumber ?? '';
+      _phoneController1.text = widget.editingClient?.phoneNumber1 ?? '';
+      _phoneController2.text = widget.editingClient?.phoneNumber2 ?? '';
       _coDebitorNameController.text = widget.editingClient?.coDebitorName ?? '';
-      _coDebitorPhoneController.text = widget.editingClient?.coDebitorPhone ?? '';
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
+    _phoneController1.dispose();
+    _phoneController2.dispose();
     _coDebitorNameController.dispose();
-    _coDebitorPhoneController.dispose();
     super.dispose();
   }
 
   void _saveClient() {
-    if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) {
+    if (_nameController.text.trim().isEmpty || _phoneController1.text.trim().isEmpty) {
       // Show error or handle validation
       return;
     }
 
     final client = Client(
       name: _nameController.text.trim(),
-      phoneNumber: _phoneController.text.trim(),
+      phoneNumber1: _phoneController1.text.trim(),
+      phoneNumber2: _phoneController2.text.trim().isEmpty 
+          ? null 
+          : _phoneController2.text.trim(),
       coDebitorName: _coDebitorNameController.text.trim().isEmpty 
           ? null 
           : _coDebitorNameController.text.trim(),
-      coDebitorPhone: _coDebitorPhoneController.text.trim().isEmpty 
-          ? null 
-          : _coDebitorPhoneController.text.trim(),
     );
 
     widget.onSaveClient?.call(client);
@@ -1179,11 +1179,22 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                             
                             const SizedBox(height: AppTheme.smallGap),
                             
-                            // Client Phone Field
+                            // Client Phone 1 Field
                             InputField1(
-                              title: "Numar client",
-                              hintText: "Introdu numarul clientului",
-                              controller: _phoneController,
+                              title: "Telefon 1",
+                              hintText: "Introdu primul numar de telefon",
+                              controller: _phoneController1,
+                              keyboardType: TextInputType.phone,
+                              minWidth: 128,
+                            ),
+                            
+                            const SizedBox(height: AppTheme.smallGap),
+                            
+                            // Client Phone 2 Field (optional)
+                            InputField1(
+                              title: "Telefon 2 (optional)",
+                              hintText: "Introdu al doilea numar de telefon",
+                              controller: _phoneController2,
                               keyboardType: TextInputType.phone,
                               minWidth: 128,
                             ),
@@ -1192,20 +1203,9 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                             
                             // Co-debitor Name Field
                             InputField1(
-                              title: "Nume codebitor",
+                              title: "Nume codebitor (optional)",
                               hintText: "Introdu numele codebitorului",
                               controller: _coDebitorNameController,
-                              minWidth: 128,
-                            ),
-                            
-                            const SizedBox(height: AppTheme.smallGap),
-                            
-                            // Co-debitor Phone Field
-                            InputField1(
-                              title: "Numar codebitor",
-                              hintText: "Introdu numarul codebitorului",
-                              controller: _coDebitorPhoneController,
-                              keyboardType: TextInputType.phone,
                               minWidth: 128,
                             ),
                           ],
