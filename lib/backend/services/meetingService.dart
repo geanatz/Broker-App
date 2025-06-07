@@ -3,8 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'unified_client_service.dart';
-import '../models/unified_client_model.dart';
+import 'clientsService.dart';
 
 /// Tipul de întâlnire
 enum MeetingType {
@@ -64,7 +63,7 @@ class MeetingService {
   MeetingService._internal();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final UnifiedClientService _unifiedService = UnifiedClientService();
+  final ClientsFirebaseService _clientService = ClientsFirebaseService();
 
   User? get currentUser => _auth.currentUser;
 
@@ -89,9 +88,9 @@ class MeetingService {
       }
 
       // Verifică dacă clientul există, dacă nu îl creează
-      final existingClient = await _unifiedService.getClient(meetingData.phoneNumber);
-      if (existingClient == null) {
-        await _unifiedService.createClient(
+          final existingClient = await _clientService.getClient(meetingData.phoneNumber);
+    if (existingClient == null) {
+      await _clientService.createClient(
           phoneNumber: meetingData.phoneNumber,
           name: meetingData.clientName,
           source: 'meeting_service',
@@ -99,7 +98,7 @@ class MeetingService {
       }
 
       // Programează întâlnirea în noua structură
-      final success = await _unifiedService.scheduleMeeting(
+      final success = await _clientService.scheduleMeeting(
         meetingData.phoneNumber,
         meetingData.dateTime,
         description: meetingData.type == MeetingType.bureauDelete 
@@ -139,10 +138,10 @@ class MeetingService {
       }
 
       // Actualizează întâlnirea în noua structură
-      final success = await _unifiedService.updateMeeting(
+      final success = await _clientService.updateMeeting(
         meetingData.phoneNumber,
         meetingId,
-        meetingData.dateTime,
+        dateTime: meetingData.dateTime,
         description: meetingData.type == MeetingType.bureauDelete 
             ? 'Ștergere birou credit' 
             : 'Întâlnire programată',
@@ -169,7 +168,7 @@ class MeetingService {
 
     try {
       // Găsește întâlnirea în toate clientele consultantului
-      final allMeetings = await _unifiedService.getAllMeetings();
+      final allMeetings = await _clientService.getAllMeetings();
       final targetMeeting = allMeetings.firstWhere(
         (meeting) => meeting.id == meetingId,
         orElse: () => throw Exception('Meeting not found'),
@@ -182,7 +181,7 @@ class MeetingService {
       }
 
       // Șterge întâlnirea din noua structură
-      final success = await _unifiedService.deleteMeeting(phoneNumber, meetingId);
+      final success = await _clientService.deleteMeeting(phoneNumber, meetingId);
 
       if (success) {
         return {'success': true, 'message': 'Întâlnire ștearsă cu succes'};
@@ -206,15 +205,15 @@ class MeetingService {
       ];
 
       // Obține întâlnirile echipei pentru această dată din noua structură
-      final teamMeetingsForDate = await _unifiedService.getTeamMeetingsForDate(date);
+      final teamMeetingsForDate = await _clientService.getTeamMeetingsForDate(date);
       
       // Extrage orele ocupate (excluzând întâlnirea specificată dacă există)
       final Set<String> occupiedSlots = {};
       for (var meeting in teamMeetingsForDate) {
         // Skip the meeting we're editing
-        if (excludeId != null && meeting['meetingId'] == excludeId) continue;
+        if (excludeId != null && meeting.id == excludeId) continue;
         
-        final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
+        final meetingDateTime = meeting.dateTime;
         final timeSlot = DateFormat('HH:mm').format(meetingDateTime);
         occupiedSlots.add(timeSlot);
       }
@@ -232,7 +231,7 @@ class MeetingService {
     try {
       // Returnăm un stream care emite periodic datele din noua structură
       return Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
-        final allMeetings = await _unifiedService.getAllMeetings();
+        final allMeetings = await _clientService.getAllMeetings();
         
         // Filtrează întâlnirile pentru săptămâna specificată
         final weekMeetings = allMeetings.where((meeting) {
@@ -259,7 +258,7 @@ class MeetingService {
 
     try {
       return Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
-        final allMeetings = await _unifiedService.getAllMeetings();
+        final allMeetings = await _clientService.getAllMeetings();
         final now = DateTime.now();
         
         // Filtrează întâlnirile viitoare pentru consultantul curent
@@ -282,7 +281,7 @@ class MeetingService {
   /// Obține o întâlnire specifică din noua structură
   Future<MeetingData?> getMeeting(String meetingId) async {
     try {
-      final allMeetings = await _unifiedService.getAllMeetings();
+      final allMeetings = await _clientService.getAllMeetings();
       final targetMeeting = allMeetings.firstWhere(
         (meeting) => meeting.id == meetingId,
         orElse: () => throw Exception('Meeting not found'),
@@ -309,7 +308,7 @@ class MeetingService {
   /// Helper: verifică dacă un slot de timp este disponibil
   Future<bool> _isTimeSlotAvailable(DateTime dateTime, {String? excludePhoneNumber}) async {
     try {
-      return await _unifiedService.isTimeSlotAvailable(dateTime, excludePhoneNumber: excludePhoneNumber);
+      return await _clientService.isTimeSlotAvailable(dateTime, excludePhoneNumber: excludePhoneNumber);
     } catch (e) {
       debugPrint("❌ Error _isTimeSlotAvailable: $e");
       return false;

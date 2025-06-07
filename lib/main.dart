@@ -4,7 +4,8 @@ import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'firebase_options.dart';
+import 'package:broker_app/backend/services/firebaseService.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/screens/authScreen.dart';
 import 'package:broker_app/frontend/screens/mainScreen.dart';
@@ -12,6 +13,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultantService.dart';
 import 'package:broker_app/backend/services/settingsService.dart';
+import 'package:window_manager/window_manager.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -42,7 +44,26 @@ void main() async {
   // Run app in a guarded zone to catch all errors
   await runZonedGuarded(() async {
     // Initialize Flutter binding as early as possible
-    WidgetsFlutterBinding.ensureInitialized(); 
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Configure window manager for desktop platforms
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      await windowManager.ensureInitialized();
+      
+      WindowOptions windowOptions = const WindowOptions(
+        size: Size(1496, 904),
+        minimumSize: Size(1496, 904),
+        center: true,
+        backgroundColor: Colors.transparent,
+        skipTaskbar: false,
+        titleBarStyle: TitleBarStyle.normal,
+      );
+      
+      windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+      });
+    } 
     
     // Initialize Firebase based on platform
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
@@ -148,6 +169,16 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         title: 'Broker App',
         debugShowCheckedModeBanner: false,
+        locale: const Locale('ro', 'RO'),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('ro', 'RO'),
+          Locale('en', 'US'),
+        ],
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: AppTheme.elementColor2,

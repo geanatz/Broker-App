@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../models/unified_client_model.dart';
+import '../services/clientsService.dart';
 
 /// Service pentru parsarea contactelor din textul extras prin OCR
 /// Detectează nume și numere de telefon românești cu algoritmi robusti
@@ -242,8 +242,8 @@ class ParserOcr {
           additionalData: {},
         ),
         activities: [],
-        currentStatus: const ClientStatus(
-          category: ClientCategory.apeluri,
+        currentStatus: const UnifiedClientStatus(
+          category: UnifiedClientCategory.apeluri,
           isFocused: false,
           additionalInfo: 'Extras prin OCR',
         ),

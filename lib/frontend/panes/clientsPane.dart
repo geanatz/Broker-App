@@ -5,7 +5,7 @@ import '../common/components/headers/widgetHeader2.dart';
 import '../common/components/headers/widgetHeader3.dart';
 import '../common/components/items/darkItem7.dart';
 import '../common/components/items/lightItem7.dart';
-import '../../backend/models/client_model.dart';
+import '../../backend/services/clientsService.dart';
 import '../common/services/client_service.dart';
 import '../popups/statusPopup.dart';
 
@@ -81,23 +81,34 @@ class _ClientsPaneState extends State<ClientsPane> {
       );
     }
 
-    // Pentru secțiunea Apeluri (care e Expanded), folosim ListView normal
-    // Pentru Reveniri și Recente (care sunt HUG), folosim ListView cu shrinkWrap
     final bool isApeluri = category == ClientCategory.apeluri;
     
     if (isApeluri) {
+      // Pentru secțiunea Apeluri (care e Expanded), folosim ListView normal
       return ListView.separated(
         itemCount: clients.length,
         separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
         itemBuilder: (context, index) => _buildClientItem(clients[index]),
       );
     } else {
-      return ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: clients.length,
-        separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
-        itemBuilder: (context, index) => _buildClientItem(clients[index]),
+      // Pentru Reveniri și Recente, limitez la maxim 3 clienți vizibili
+      const int maxVisibleClients = 3;
+      const double itemHeight = 64.0; // Înălțime ajustată pentru LightItem7/DarkItem7 (56px + padding)
+      final double gapHeight = AppTheme.smallGap; // Folosesc valoarea exactă din temă
+      
+      // Calculez înălțimea necesară pentru maximum 3 clienți
+      final int itemsToShow = clients.length > maxVisibleClients ? maxVisibleClients : clients.length;
+      final double totalHeight = itemsToShow > 0 
+          ? (itemHeight * itemsToShow) + (gapHeight * (itemsToShow - 1))
+          : 60.0; // Fallback pentru empty state
+      
+      return SizedBox(
+        height: totalHeight,
+        child: ListView.separated(
+          itemCount: clients.length,
+          separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
+          itemBuilder: (context, index) => _buildClientItem(clients[index]),
+        ),
       );
     }
   }

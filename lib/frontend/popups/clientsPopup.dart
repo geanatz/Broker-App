@@ -12,7 +12,7 @@ import '../common/components/buttons/flexButtons1.dart';
 import '../common/components/fields/inputField1.dart';
 import '../common/appTheme.dart';
 import '../../backend/ocr/enhanceOcr.dart';
-import '../../backend/models/unified_client_model.dart';
+import '../../backend/services/clientsService.dart';
 
 /// Client model to represent client data
 class Client {
@@ -262,10 +262,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
   }
 
-  /// Salvează clienții din imaginea selectată (folosit în butonul din lista de clienți)
-  void _saveSelectedOcrClients() {
-    _saveOcrClients(); // Refolosește logica existentă
-  }
 
   /// Adaugă un client nou la lista de clienți extrași din imaginea selectată
   void _addClientToOcrResults(Client client) {
@@ -292,8 +288,8 @@ class _ClientsPopupState extends State<ClientsPopup> {
         additionalData: {},
       ),
       activities: [],
-      currentStatus: const ClientStatus(
-        category: ClientCategory.apeluri,
+      currentStatus: const UnifiedClientStatus(
+        category: UnifiedClientCategory.apeluri,
         isFocused: false,
         additionalInfo: 'Adaugat manual in lista extrasa',
       ),
@@ -346,7 +342,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
   /// Afișează popup de confirmare pentru salvarea clienților
   void _showSaveConfirmationDialog(String imagePath) {
     final result = _ocrResults![imagePath];
-    final clientCount = result?.contacts?.length ?? 0;
+    final clientCount = result?.contacts.length ?? 0;
     
     showDialog(
       context: context,
@@ -556,7 +552,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
             ),
           ] else if (_isOcrProcessing) ...[
             // Processing state
-            Container(
+            SizedBox(
               width: 40,
               height: 40,
               child: CircularProgressIndicator(
@@ -613,7 +609,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     final sortedResults = _ocrResults!.entries.toList()
       ..sort((a, b) => b.value.contactCount.compareTo(a.value.contactCount));
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: ListView.separated(
         shrinkWrap: true,

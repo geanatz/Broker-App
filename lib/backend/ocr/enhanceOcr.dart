@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'scannerOcr.dart';
 import 'filterOcr.dart';
 import 'parserOcr.dart';
-import '../models/unified_client_model.dart';
+import '../services/clientsService.dart';
 
 /// Service principal pentru procesarea OCR completă
 /// Orchestrează procesul complet: îmbunătățire → scanare → filtrare → parsare

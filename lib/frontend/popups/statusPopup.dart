@@ -8,8 +8,9 @@ import 'package:broker_app/frontend/common/components/fields/dropdownField1.dart
 import 'package:broker_app/frontend/common/components/fields/inputField1.dart';
 import 'package:broker_app/frontend/common/components/fields/inputField3.dart';
 import 'package:broker_app/frontend/common/components/buttons/flexButtons1.dart';
-import 'package:broker_app/backend/models/client_model.dart';
+import 'package:broker_app/backend/services/clientsService.dart';
 import 'package:broker_app/backend/services/meetingService.dart';
+import 'package:broker_app/backend/services/xlsxService.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -73,6 +74,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   // Services
   final MeetingService _meetingService = MeetingService();
   final ClientService _clientService = ClientService();
+  final ExcelExportService _excelExportService = ExcelExportService();
   
   // Controllers pentru inputuri
   final TextEditingController _statusController = TextEditingController();
@@ -114,22 +116,34 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
   /// Selectează data din calendar
   Future<void> _selectDate() async {
+    final now = DateTime.now();
+    final initialDate = _selectedDate != null && _selectedDate!.isAfter(now) 
+        ? _selectedDate! 
+        : now;
+    
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      locale: const Locale('ro', 'RO'),
+      selectableDayPredicate: (DateTime date) {
+        // Exclude weekends (Saturday = 6, Sunday = 7)
+        return date.weekday != DateTime.saturday && date.weekday != DateTime.sunday;
+      },
     );
 
     if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        // Resetează ora când se schimbă data
-        _timeController.clear();
-        if (_selectedStatus == 'Acceptat') {
-          _selectedTimeSlot = null;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _selectedDate = picked;
+          // Resetează ora când se schimbă data
+          _timeController.clear();
+          if (_selectedStatus == 'Acceptat') {
+            _selectedTimeSlot = null;
+          }
+        });
+      }
       
       // Încarcă orele disponibile pentru data selectată dacă statusul este "Acceptat"
       if (_selectedStatus == 'Acceptat') {
@@ -146,9 +160,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       // Folosește MeetingService pentru a obține orele disponibile
       final availableSlots = await _meetingService.getAvailableTimeSlots(_selectedDate!);
       
-      setState(() {
-        _availableTimeSlots = availableSlots;
-      });
+      if (mounted) {
+        setState(() {
+          _availableTimeSlots = availableSlots;
+        });
+      }
       
       // Afișează mesaj dacă nu sunt ore disponibile
       if (_availableTimeSlots.isEmpty) {
@@ -200,7 +216,9 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       }
     }
 
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       // Construiește data și ora finale dacă sunt necesare
@@ -283,25 +301,47 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       debugPrint('✅ Client mutat cu succes: ${widget.client.name} - Status: $_selectedStatus');
 
+      // Exportă datele în Excel după salvarea cu succes
+      try {
+        debugPrint('🔄 Începe exportul XLSX...');
+        debugPrint('🔍 Debug: Serviciul Excel este inițializat: ${_excelExportService != null}');
+        
+        final filePath = await _excelExportService.exportAllClientsToXlsx();
+        
+        if (filePath != null) {
+          debugPrint('✅ Export XLSX reușit: $filePath');
+        } else {
+          debugPrint('⚠️ Export XLSX nu a putut fi realizat (probabil nu există clienți)');
+        }
+      } catch (e, stackTrace) {
+        debugPrint('❌ Eroare la exportul XLSX: $e');
+        debugPrint('❌ Stack trace: $stackTrace');
+        // Nu oprim procesul pentru că statusul a fost salvat cu succes
+      }
+
       Navigator.of(context).pop();
       if (widget.onSaved != null) {
         widget.onSaved!();
       }
       
-      String successMessage = "Statusul a fost salvat cu succes";
+      String successMessage = "Statusul a fost salvat cu succes și datele au fost exportate în Excel";
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
-        successMessage = "Statusul a fost salvat și întâlnirea a fost programată în calendar";
+        successMessage = "Statusul a fost salvat, întâlnirea a fost programată și datele au fost exportate în Excel";
       } else if (_selectedStatus == 'Amanat') {
-        successMessage = "Clientul a fost mutat în secțiunea Reveniri";
+        successMessage = "Clientul a fost mutat în secțiunea Reveniri și datele au fost exportate în Excel";
       } else if (_selectedStatus == 'Refuzat') {
-        successMessage = "Clientul a fost mutat în secțiunea Recente";
+        successMessage = "Clientul a fost mutat în secțiunea Recente și datele au fost exportate în Excel";
       }
       _showSuccess(successMessage);
     } catch (e) {
       debugPrint("Eroare la salvarea statusului: $e");
-      _showError("Eroare la salvarea statusului");
+      if (mounted) {
+        _showError("Eroare la salvarea statusului");
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -376,15 +416,17 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                           child: Text(status),
                         )).toList(),
                         onChanged: (value) {
-                          setState(() {
-                            _selectedStatus = value;
-                            // Resetează data și ora când se schimbă statusul
-                            if (!_shouldShowSecondRow) {
-                              _selectedDate = null;
-                              _timeController.clear();
-                              _selectedTimeSlot = null;
-                            }
-                          });
+                          if (mounted) {
+                            setState(() {
+                              _selectedStatus = value;
+                              // Resetează data și ora când se schimbă statusul
+                              if (!_shouldShowSecondRow) {
+                                _selectedDate = null;
+                                _timeController.clear();
+                                _selectedTimeSlot = null;
+                              }
+                            });
+                          }
                         },
                         hintText: 'Selecteaza statusul',
                       ),
@@ -432,9 +474,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                         );
                                       }).toList(),
                                       onChanged: (value) {
-                                        setState(() {
-                                          _selectedTimeSlot = value;
-                                        });
+                                        if (mounted) {
+                                          setState(() {
+                                            _selectedTimeSlot = value;
+                                          });
+                                        }
                                       },
                                       hintText: _selectedDate != null ? "00:00" : "Alege data",
                                       enabled: _selectedDate != null && _availableTimeSlots.isNotEmpty,

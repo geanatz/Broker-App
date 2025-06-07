@@ -271,6 +271,9 @@ class SidebarService {
     ),
   ];
 
+  /// Butoane pentru funcții speciale (export etc.)
+  List<ButtonConfig> get specialButtons => [];
+
   // ========== LEGACY SUPPORT & ADAPTERS ==========
 
   /// Centralized list of all possible sidebar buttons (for backwards compatibility)

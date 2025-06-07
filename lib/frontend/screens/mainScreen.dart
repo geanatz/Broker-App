@@ -11,7 +11,7 @@ import 'package:broker_app/frontend/panes/calculatorPane.dart';
 import 'package:broker_app/frontend/panes/clientsPane.dart';
 import 'package:broker_app/frontend/popups/clientsPopup.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
-import 'package:broker_app/backend/models/client_model.dart';
+import 'package:broker_app/backend/services/clientsService.dart';
 import 'package:broker_app/backend/services/settingsService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,7 +56,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Settings service pentru actualizări în timp real ale temei
   final SettingsService _settingsService = SettingsService();
   
-  // Unified service for migration
+
   
   // State pentru popup-uri
   List<Client> _popupClients = [];
@@ -358,6 +358,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _selectedPopupClient = _popupClients.isNotEmpty ? _popupClients.first : null;
     });
   }
+
+
   
   /// Closes all popups
   void _closeAllPopups() {

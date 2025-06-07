@@ -104,7 +104,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   Future<void> _initializeData() async {
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
     if (isEditMode) {
       // Modul editare - încarcă datele întâlnirii existente
@@ -119,7 +121,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       }
     }
 
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _loadExistingMeeting() async {
@@ -152,33 +156,35 @@ class _MeetingPopupState extends State<MeetingPopup> {
         excludeId: widget.meetingId // Exclude current meeting when editing
       );
       
-      setState(() {
-        _availableTimeSlots = availableSlots;
+      if (mounted) {
+        setState(() {
+          _availableTimeSlots = availableSlots;
         
-        // In edit mode, ensure the current time slot is always available
-        if (isEditMode && _selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
-          _availableTimeSlots.add(_selectedTimeSlot!);
-          // Sort the list to keep it in chronological order
-          _availableTimeSlots.sort((a, b) {
-            final timeA = a.split(':');
-            final timeB = b.split(':');
-            final hourA = int.parse(timeA[0]);
-            final minuteA = int.parse(timeA[1]);
-            final hourB = int.parse(timeB[0]);
-            final minuteB = int.parse(timeB[1]);
-            
-            if (hourA != hourB) {
-              return hourA.compareTo(hourB);
-            }
-            return minuteA.compareTo(minuteB);
-          });
-        }
-        
-        // For create mode, reset selection if time slot is not available
-        if (!isEditMode && _selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
-          _selectedTimeSlot = null;
-        }
-      });
+          // In edit mode, ensure the current time slot is always available
+          if (isEditMode && _selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
+            _availableTimeSlots.add(_selectedTimeSlot!);
+            // Sort the list to keep it in chronological order
+            _availableTimeSlots.sort((a, b) {
+              final timeA = a.split(':');
+              final timeB = b.split(':');
+              final hourA = int.parse(timeA[0]);
+              final minuteA = int.parse(timeA[1]);
+              final hourB = int.parse(timeB[0]);
+              final minuteB = int.parse(timeB[1]);
+              
+              if (hourA != hourB) {
+                return hourA.compareTo(hourB);
+              }
+              return minuteA.compareTo(minuteB);
+            });
+          }
+          
+          // For create mode, reset selection if time slot is not available
+          if (!isEditMode && _selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
+            _selectedTimeSlot = null;
+          }
+        });
+      }
       
       // Afișează mesaj dacă nu sunt ore disponibile (only for create mode)
       if (!isEditMode && _availableTimeSlots.isEmpty) {
@@ -191,19 +197,31 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   Future<void> _selectDate() async {
+    final now = DateTime.now();
+    final initialDate = _selectedDate != null && _selectedDate!.isAfter(now) 
+        ? _selectedDate! 
+        : now;
+    
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      locale: const Locale('ro', 'RO'),
+      selectableDayPredicate: (DateTime date) {
+        // Exclude weekends (Saturday = 6, Sunday = 7)
+        return date.weekday != DateTime.saturday && date.weekday != DateTime.sunday;
+      },
     );
 
     if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        // Resetează ora când se schimbă data
-        _selectedTimeSlot = null;
-      });
+      if (mounted) {
+        setState(() {
+          _selectedDate = picked;
+          // Resetează ora când se schimbă data
+          _selectedTimeSlot = null;
+        });
+      }
       
       // Încarcă orele disponibile pentru noua dată
       await _loadAvailableTimeSlots();
@@ -222,7 +240,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       // Construiește data și ora finale
@@ -265,7 +285,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       debugPrint("Eroare la salvarea întâlnirii: $e");
       _showError("Eroare la salvarea întâlnirii");
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -301,7 +323,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       debugPrint("Attempting to delete meeting with ID: ${widget.meetingId}");
@@ -322,7 +346,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       debugPrint("Eroare la ștergerea întâlnirii: $e");
       _showError("Eroare la ștergerea întâlnirii");
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -421,7 +447,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                             );
                           }).toList(),
                           onChanged: (value) {
-                            if (value != null) {
+                            if (value != null && mounted) {
                               setState(() {
                                 _selectedType = value;
                               });
@@ -458,9 +484,11 @@ class _MeetingPopupState extends State<MeetingPopup> {
                                   );
                                 }).toList(),
                                 onChanged: (value) {
-                                  setState(() {
-                                    _selectedTimeSlot = value;
-                                  });
+                                  if (mounted) {
+                                    setState(() {
+                                      _selectedTimeSlot = value;
+                                    });
+                                  }
                                 },
                                 hintText: "Selecteaza ora",
                                 enabled: _selectedDate != null && _availableTimeSlots.isNotEmpty,

@@ -228,15 +228,76 @@ class FormService extends ChangeNotifier {
   final Map<String, bool> _showingClientIncomeForm = HashMap();
 
   // Constants
-  static const List<String> banks = [
+  static const List<String> incomeBanks = [
     'Alpha Bank',
-    'Raiffeisen Bank',
-    'BRD',
-    'BCR',
-    'ING Bank',
     'Banca Transilvania',
+    'BCR',
+    'BRD',
     'CEC Bank',
+    'Exim Bank',
+    'First Bank',
+    'Garanti Bank',
+    'Idea Bank',
+    'ING',
+    'ING Bank',
+    'Libra Bank',
     'OTP Bank',
+    'Patria Bank',
+    'Raiffeisen Bank',
+    'TBI Bank',
+    'UniCredit'
+  ];
+
+  static const List<String> creditBanks = [
+    'Alpha Bank',
+    'Axi IFN',
+    'Banca Românească',
+    'BCR',
+    'Best Credit',
+    'BNP Paribas Personal Finance',
+    'BRD',
+    'BRD Finance',
+    'BT',
+    'BT Direct',
+    'BT Leasing',
+    'CAR',
+    'CEC Bank',
+    'Cetelem',
+    'Credit Europe Bank',
+    'Credit24',
+    'Credex',
+    'Credius',
+    'Eco Finance',
+    'EximBank',
+    'Ferratum Bank',
+    'First Bank',
+    'Garanti Bank',
+    'Happy Credit',
+    'Hora Credit',
+    'iCredit',
+    'Idea Bank',
+    'IFN',
+    'ING',
+    'Intesa Sanpaolo',
+    'Leasing IFN',
+    'Libra Internet Bank',
+    'OTP Bank',
+    'OTP Leasing',
+    'Patria Bank',
+    'Pireus Bank',
+    'ProCredit Bank',
+    'Provident',
+    'Raiffeisen Bank',
+    'Raiffeisen Leasing',
+    'Revolut',
+    'Salt Bank',
+    'Simplu Credit',
+    'TBI Bank',
+    'UniCredit Bank',
+    'UniCredit Consumer Financing',
+    'UniCredit Leasing',
+    'Viva Credit',
+    'Volksbank'
   ];
 
   static const List<String> creditTypes = [
@@ -262,7 +323,10 @@ class FormService extends ChangeNotifier {
   ];
 
   // Getters
-  List<String> get availableBanks => banks;
+  @Deprecated('Use availableIncomeBanks or availableCreditBanks instead')
+  List<String> get availableBanks => incomeBanks;
+  List<String> get availableIncomeBanks => incomeBanks;
+  List<String> get availableCreditBanks => creditBanks;
   List<String> get availableCreditTypes => creditTypes;
   List<String> get availableRateTypes => rateTypes;
   List<String> get availableIncomeTypes => incomeTypes;

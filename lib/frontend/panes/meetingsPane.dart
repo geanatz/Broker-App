@@ -5,8 +5,8 @@ import 'dart:async';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/frontend/common/components/items/lightItem7.dart';
 import 'package:broker_app/frontend/common/components/items/darkItem7.dart';
-import '../../backend/services/unified_client_service.dart';
-import '../../backend/models/unified_client_model.dart';
+
+import '../../backend/services/clientsService.dart';
 
 /// Widget pentru panoul de intâlniri
 /// 
@@ -29,7 +29,7 @@ class MeetingsPane extends StatefulWidget {
 class MeetingsPaneState extends State<MeetingsPane> {
   // Firebase reference
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final UnifiedClientService _unifiedService = UnifiedClientService();
+  final ClientsFirebaseService _clientService = ClientsFirebaseService();
   
   // Formatter pentru date
   DateFormat? dateFormatter;
@@ -99,7 +99,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
       debugPrint("Loading upcoming meetings from unified structure for consultant: $currentUserId");
       
       // Obține toate întâlnirile din noua structură unificată
-      final allMeetings = await _unifiedService.getAllMeetings();
+      final allMeetings = await _clientService.getAllMeetings();
       final now = DateTime.now();
       
       // Filtrează doar întâlnirile viitoare
@@ -258,7 +258,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         final dateTime = meeting.dateTime;
         final clientName = meeting.additionalData?['clientName'] ?? 'Client necunoscut';
         final clientPhone = meeting.additionalData?['phoneNumber'] ?? '';
-        final meetingId = meeting.id ?? '';
+        final meetingId = meeting.id;
         
         // Calculează timpul rămas
         final timeUntil = _getTimeUntilMeeting(dateTime);

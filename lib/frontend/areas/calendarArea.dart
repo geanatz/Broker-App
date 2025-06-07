@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
 import 'package:broker_app/frontend/common/appTheme.dart';
 
 import 'package:broker_app/frontend/popups/meetingPopup.dart';
 import 'package:broker_app/backend/services/calendarService.dart';
-import 'package:broker_app/backend/services/unified_client_service.dart';
-import 'package:broker_app/backend/models/unified_client_model.dart';
+import 'package:broker_app/backend/services/clientsService.dart';
 import 'package:broker_app/frontend/common/components/texts/text2.dart';
 
 // Import the required components
@@ -37,7 +35,7 @@ class CalendarArea extends StatefulWidget {
 class CalendarAreaState extends State<CalendarArea> {
   // Services
   final CalendarService _calendarService = CalendarService();
-  final UnifiedClientService _unifiedService = UnifiedClientService();
+  final ClientsFirebaseService _clientService = ClientsFirebaseService();
   
   // Firebase references
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -109,31 +107,16 @@ class CalendarAreaState extends State<CalendarArea> {
       final DateTime endOfWeek = _calendarService.getEndOfWeekToDisplay(_currentWeekOffset);
       
       // Obține toate întâlnirile echipei din noua structură unificată
-      final allTeamMeetings = await _unifiedService.getAllTeamMeetings();
+      final allTeamMeetings = await _clientService.getAllTeamMeetings();
       
-      // Convertește din format raw în ClientActivity pentru compatibility
+      // Filtrează întâlnirile pentru săptămâna curentă
       final List<ClientActivity> weekMeetings = [];
       for (final meeting in allTeamMeetings) {
-        final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
+        final meetingDateTime = meeting.dateTime;
         
         // Filtrează întâlnirile pentru săptămâna curentă
         if (meetingDateTime.isAfter(startOfWeek) && meetingDateTime.isBefore(endOfWeek)) {
-          final activity = ClientActivity(
-            id: meeting['meetingId'] ?? '',
-            type: meeting['type'] == 'bureauDelete' 
-                ? ClientActivityType.bureauDelete 
-                : ClientActivityType.meeting,
-            dateTime: meetingDateTime,
-            description: meeting['description'] ?? 'Întâlnire',
-            additionalData: Map<String, dynamic>.from(meeting),
-            createdAt: meeting['createdAt'] != null 
-                ? (meeting['createdAt'] as Timestamp).toDate()
-                : DateTime.now(),
-            updatedAt: meeting['updatedAt'] != null 
-                ? (meeting['updatedAt'] as Timestamp).toDate()
-                : null,
-          );
-          weekMeetings.add(activity);
+          weekMeetings.add(meeting);
         }
       }
 
@@ -143,24 +126,7 @@ class CalendarAreaState extends State<CalendarArea> {
         setState(() {
           _cachedMeetings = weekMeetings;
           // Also update _allMeetings with all team meetings for navigation
-          _allMeetings = allTeamMeetings.map((meeting) {
-            final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
-            return ClientActivity(
-              id: meeting['meetingId'] ?? '',
-              type: meeting['type'] == 'bureauDelete' 
-                  ? ClientActivityType.bureauDelete 
-                  : ClientActivityType.meeting,
-              dateTime: meetingDateTime,
-              description: meeting['description'] ?? 'Întâlnire',
-              additionalData: Map<String, dynamic>.from(meeting),
-              createdAt: meeting['createdAt'] != null 
-                  ? (meeting['createdAt'] as Timestamp).toDate()
-                  : DateTime.now(),
-              updatedAt: meeting['updatedAt'] != null 
-                  ? (meeting['updatedAt'] as Timestamp).toDate()
-                  : null,
-            );
-          }).toList();
+          _allMeetings = allTeamMeetings;
           _isLoading = false;
         });
       }
@@ -594,27 +560,10 @@ class CalendarAreaState extends State<CalendarArea> {
     // If not found in cache, load all team meetings fresh
     if (targetMeeting == null) {
       try {
-        final allTeamMeetings = await _unifiedService.getAllTeamMeetings();
+        final allTeamMeetings = await _clientService.getAllTeamMeetings();
         
-        // Convert to ClientActivity list and update cache
-        final convertedMeetings = allTeamMeetings.map((meeting) {
-          final meetingDateTime = (meeting['dateTime'] as Timestamp).toDate();
-          return ClientActivity(
-            id: meeting['meetingId'] ?? '',
-            type: meeting['type'] == 'bureauDelete' 
-                ? ClientActivityType.bureauDelete 
-                : ClientActivityType.meeting,
-            dateTime: meetingDateTime,
-            description: meeting['description'] ?? 'Întâlnire',
-            additionalData: Map<String, dynamic>.from(meeting),
-            createdAt: meeting['createdAt'] != null 
-                ? (meeting['createdAt'] as Timestamp).toDate()
-                : DateTime.now(),
-            updatedAt: meeting['updatedAt'] != null 
-                ? (meeting['updatedAt'] as Timestamp).toDate()
-                : null,
-          );
-        }).toList();
+        // Update cache with loaded meetings
+        final convertedMeetings = allTeamMeetings;
         
         setState(() {
           _allMeetings = convertedMeetings;

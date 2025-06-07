@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:broker_app/frontend/common/appTheme.dart';
 import 'package:broker_app/backend/services/formService.dart';
 import 'package:broker_app/frontend/common/services/client_service.dart';
-import 'package:broker_app/backend/models/client_model.dart';
+import 'package:broker_app/backend/services/clientsService.dart';
 import 'package:broker_app/frontend/common/components/forms/form1.dart';
 import 'package:broker_app/frontend/common/components/forms/form3.dart';
 import 'package:broker_app/frontend/common/components/forms/formNew.dart';
@@ -666,18 +666,18 @@ class _FormAreaState extends State<FormArea> {
             key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_$_newCreditFormSelectedType'),
             titleF1: 'Banca',
             valueF1: _newCreditFormSelectedBank,
-            itemsF1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+            itemsF1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
               value: bank,
               child: Text(bank),
             )).toList(),
             onChangedF1: (value) {
               setState(() {
                 _newCreditFormSelectedBank = value;
-                print('DEBUG: Credit bank selected: $value');
+                debugPrint('DEBUG: Credit bank selected: $value');
               });
               // Check if both fields are completed and transform if needed
               if (value != null && _newCreditFormSelectedType != null) {
-                print('DEBUG: Both credit fields completed, transforming...');
+                debugPrint('DEBUG: Both credit fields completed, transforming...');
                 Future.microtask(() {
                   _transformCreditFormNew(client, value, _newCreditFormSelectedType!, isClient);
                 });
@@ -694,11 +694,11 @@ class _FormAreaState extends State<FormArea> {
             onChangedF2: (value) {
               setState(() {
                 _newCreditFormSelectedType = value;
-                print('DEBUG: Credit type selected: $value');
+                debugPrint('DEBUG: Credit type selected: $value');
               });
               // Check if both fields are completed and transform if needed
               if (value != null && _newCreditFormSelectedBank != null) {
-                print('DEBUG: Both credit fields completed, transforming...');
+                debugPrint('DEBUG: Both credit fields completed, transforming...');
                 Future.microtask(() {
                   _transformCreditFormNew(client, _newCreditFormSelectedBank!, value, isClient);
                 });
@@ -750,18 +750,18 @@ class _FormAreaState extends State<FormArea> {
             key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_$_newIncomeFormSelectedType'),
             titleF1: 'Banca',
             valueF1: _newIncomeFormSelectedBank,
-            itemsF1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+            itemsF1: FormService.incomeBanks.map((bank) => DropdownMenuItem<String>(
               value: bank,
               child: Text(bank),
             )).toList(),
             onChangedF1: (value) {
               setState(() {
                 _newIncomeFormSelectedBank = value;
-                print('DEBUG: Income bank selected: $value');
+                debugPrint('DEBUG: Income bank selected: $value');
               });
               // Check if both fields are completed and transform if needed
               if (value != null && _newIncomeFormSelectedType != null) {
-                print('DEBUG: Both income fields completed, transforming...');
+                debugPrint('DEBUG: Both income fields completed, transforming...');
                 Future.microtask(() {
                   _transformIncomeFormNew(client, value, _newIncomeFormSelectedType!, isClient);
                 });
@@ -778,11 +778,11 @@ class _FormAreaState extends State<FormArea> {
             onChangedF2: (value) {
               setState(() {
                 _newIncomeFormSelectedType = value;
-                print('DEBUG: Income type selected: $value');
+                debugPrint('DEBUG: Income type selected: $value');
               });
               // Check if both fields are completed and transform if needed
               if (value != null && _newIncomeFormSelectedBank != null) {
-                print('DEBUG: Both income fields completed, transforming...');
+                debugPrint('DEBUG: Both income fields completed, transforming...');
                 Future.microtask(() {
                   _transformIncomeFormNew(client, _newIncomeFormSelectedBank!, value, isClient);
                 });
@@ -807,7 +807,7 @@ class _FormAreaState extends State<FormArea> {
       return Form3(
         titleR1F1: 'Banca',
         valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
-        itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+        itemsR1F1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
         )).toList(),
@@ -867,7 +867,7 @@ class _FormAreaState extends State<FormArea> {
       return Form1(
         titleR1F1: 'Banca',
         valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
-        itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+        itemsR1F1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
         )).toList(),
@@ -908,7 +908,7 @@ class _FormAreaState extends State<FormArea> {
       return Form1(
         titleR1F1: 'Banca',
         valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
-        itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+        itemsR1F1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
         )).toList(),
@@ -953,7 +953,7 @@ class _FormAreaState extends State<FormArea> {
     return Form1(
       titleR1F1: 'Banca',
       valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
-      itemsR1F1: FormService.banks.map((bank) => DropdownMenuItem<String>(
+      itemsR1F1: FormService.incomeBanks.map((bank) => DropdownMenuItem<String>(
         value: bank,
         child: Text(bank),
       )).toList(),
@@ -993,22 +993,26 @@ class _FormAreaState extends State<FormArea> {
 
   /// Reset credit form selections
   void _resetCreditFormSelections() {
-    print('DEBUG: Resetting credit form selections');
-    setState(() {
-      _newCreditFormSelectedBank = null;
-      _newCreditFormSelectedType = null;
-      print('DEBUG: Credit selections reset to null');
-    });
+    debugPrint('DEBUG: Resetting credit form selections');
+    if (mounted) {
+      setState(() {
+        _newCreditFormSelectedBank = null;
+        _newCreditFormSelectedType = null;
+        debugPrint('DEBUG: Credit selections reset to null');
+      });
+    }
   }
 
   /// Reset income form selections
   void _resetIncomeFormSelections() {
-    print('DEBUG: Resetting income form selections');
-    setState(() {
-      _newIncomeFormSelectedBank = null;
-      _newIncomeFormSelectedType = null;
-      print('DEBUG: Income selections reset to null');
-    });
+    debugPrint('DEBUG: Resetting income form selections');
+    if (mounted) {
+      setState(() {
+        _newIncomeFormSelectedBank = null;
+        _newIncomeFormSelectedType = null;
+        debugPrint('DEBUG: Income selections reset to null');
+      });
+    }
   }
 
   /// Actualizează un câmp din formular
@@ -1077,7 +1081,7 @@ class _FormAreaState extends State<FormArea> {
 
   /// Transform credit form new based on selected bank and credit type
   void _transformCreditFormNew(ClientModel client, String bank, String creditType, bool isClient) {
-    print('DEBUG: Transforming credit form - Bank: $bank, Type: $creditType, IsClient: $isClient');
+    debugPrint('DEBUG: Transforming credit form - Bank: $bank, Type: $creditType, IsClient: $isClient');
     
     // Creează un formular nou cu datele selectate
     final newForm = CreditFormModel(
@@ -1090,7 +1094,7 @@ class _FormAreaState extends State<FormArea> {
         ? _formService.getClientCreditForms(client.phoneNumber)
         : _formService.getCoborrowerCreditForms(client.phoneNumber);
     
-    print('DEBUG: Current forms count: ${forms.length}');
+    debugPrint('DEBUG: Current forms count: ${forms.length}');
     
     // Găsește ultimul formular gol pentru a-l actualiza
     int lastEmptyIndex = forms.length - 1;
@@ -1101,7 +1105,7 @@ class _FormAreaState extends State<FormArea> {
       }
     }
     
-    print('DEBUG: Updating form at index: $lastEmptyIndex');
+    debugPrint('DEBUG: Updating form at index: $lastEmptyIndex');
     
     // Actualizează ultimul formular gol cu datele noi
     _formService.updateCreditForm(
@@ -1116,12 +1120,12 @@ class _FormAreaState extends State<FormArea> {
     
     // Reset selections to show a new clean FormNew
     _resetCreditFormSelections();
-    print('DEBUG: Credit form selections reset');
+    debugPrint('DEBUG: Credit form selections reset');
   }
 
   /// Transform income form new based on selected bank and income type
   void _transformIncomeFormNew(ClientModel client, String bank, String incomeType, bool isClient) {
-    print('DEBUG: Transforming income form - Bank: $bank, Type: $incomeType, IsClient: $isClient');
+    debugPrint('DEBUG: Transforming income form - Bank: $bank, Type: $incomeType, IsClient: $isClient');
     
     // Creează un formular nou cu datele selectate
     final newForm = IncomeFormModel(
@@ -1134,7 +1138,7 @@ class _FormAreaState extends State<FormArea> {
         ? _formService.getClientIncomeForms(client.phoneNumber)
         : _formService.getCoborrowerIncomeForms(client.phoneNumber);
     
-    print('DEBUG: Current forms count: ${forms.length}');
+    debugPrint('DEBUG: Current forms count: ${forms.length}');
     
     // Găsește ultimul formular gol pentru a-l actualiza
     int lastEmptyIndex = forms.length - 1;
@@ -1145,7 +1149,7 @@ class _FormAreaState extends State<FormArea> {
       }
     }
     
-    print('DEBUG: Updating form at index: $lastEmptyIndex');
+    debugPrint('DEBUG: Updating form at index: $lastEmptyIndex');
     
     // Actualizează ultimul formular gol cu datele noi
     _formService.updateIncomeForm(
@@ -1160,6 +1164,6 @@ class _FormAreaState extends State<FormArea> {
     
     // Reset selections to show a new clean FormNew
     _resetIncomeFormSelections();
-    print('DEBUG: Income form selections reset');
+    debugPrint('DEBUG: Income form selections reset');
   }
 }

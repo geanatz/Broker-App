@@ -73,6 +73,8 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     );
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -92,6 +94,12 @@ class _SidebarWidgetState extends State<SidebarWidget> {
           
           // Panes navigation section
           _buildPanesSection(),
+          
+          // Special functions section (doar dacă există butoane)
+          if (_sidebarService.specialButtons.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.mediumGap),
+            _buildSpecialSection(),
+          ],
         ],
       ),
     );
@@ -219,6 +227,44 @@ class _SidebarWidgetState extends State<SidebarWidget> {
     );
   }
 
+  /// Builds the special functions section
+  Widget _buildSpecialSection() {
+    final buttons = _sidebarService.specialButtons;
+    
+    if (buttons.isEmpty) {
+      return const SizedBox.shrink(); // Nu afișa secțiunea dacă nu sunt butoane
+    }
+    
+    return Column(
+      children: [
+        WidgetHeader3(
+          title: 'Functii',
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+        ),
+        const SizedBox(height: AppTheme.smallGap),
+        _buildSpecialButtons(),
+      ],
+    );
+  }
+
+  /// Builds the special function buttons
+  Widget _buildSpecialButtons() {
+    final buttons = _sidebarService.specialButtons;
+    
+    if (buttons.isEmpty) {
+      return const SizedBox.shrink(); // Nu afișa nimic dacă nu sunt butoane
+    }
+    
+    return Column(
+      children: [
+        for (int i = 0; i < buttons.length; i++) ...[
+          _buildSpecialNavigationButton(buttons[i]),
+          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
+        ],
+      ],
+    );
+  }
+
   /// Builds the area navigation buttons with collapse behavior
   Widget _buildAreaButtons() {
     final buttons = _sidebarService.areaButtons;
@@ -293,6 +339,22 @@ class _SidebarWidgetState extends State<SidebarWidget> {
         buttonHeight: AppTheme.navButtonHeight,
       );
     }
+  }
+
+  /// Builds a special function button 
+  Widget _buildSpecialNavigationButton(ButtonConfig button) {
+    return SpacedButtonSingleSvg(
+      text: button.title,
+      iconPath: button.iconPath,
+      onTap: () => _handleSpecialButtonClick(button),
+      borderRadius: AppTheme.borderRadiusMedium,
+      buttonHeight: AppTheme.navButtonHeight,
+    );
+  }
+
+  /// Handles special button clicks (like export)
+  void _handleSpecialButtonClick(ButtonConfig button) {
+    _sidebarService.handleButtonClick(button);
   }
 
   /// Determines if a button should appear as active

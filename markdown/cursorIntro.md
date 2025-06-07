@@ -51,4 +51,6 @@ Pentru fiecare task, voi descrie ce vreau să realizez, iar tu mă vei ghida în
 7. **Statistici și analize**: Performanță agenți
 8. **Google Drive**: Sincronizare automată
 
+**RESTRICȚIE IMPORTANTĂ DE TESTARE**: NU executa niciodată comezi de testare (precum `flutter run`, sau alte comenzi de rulare) fără permisiunea mea explicită. Eu mă voi ocupa personal de testarea aplicației și îți voi comunica eventualele probleme găsite. Rolul tău este să implementezi codul conform cerințelor, nu să testezi aplicația.
+
 Hai să construim împreună o aplicație financiară excepțională!
