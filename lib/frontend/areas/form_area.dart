@@ -2,6 +2,7 @@ import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:broker_app/backend/services/form_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/frontend/components/forms/form1.dart';
@@ -486,33 +487,56 @@ class _FormAreaState extends State<FormArea> {
   /// Construiește placeholder-ul când nu există client selectat
   Widget _buildNoClientSelectedPlaceholder() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.person_outline,
-            size: 64,
-            color: AppTheme.elementColor2,
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.largeGap),
+        clipBehavior: Clip.antiAlias,
+        decoration: ShapeDecoration(
+          color: AppTheme.popupBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
           ),
-          const SizedBox(height: AppTheme.mediumGap),
-          Text(
-            'Niciun client selectat',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeLarge,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.elementColor2,
+          shadows: [
+            BoxShadow(
+              color: Color(0x19000000),
+              blurRadius: 15,
+              offset: Offset(0, 0),
+              spreadRadius: 0,
+            )
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset(
+              'assets/userIcon.svg',
+              width: 64,
+              height: 64,
+              colorFilter: ColorFilter.mode(
+                AppTheme.elementColor2,
+                BlendMode.srcIn,
+              ),
             ),
-          ),
-          const SizedBox(height: AppTheme.smallGap),
-          Text(
-            'Selectați un client din panoul din stânga pentru a vedea formularul său',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeMedium,
-              color: AppTheme.elementColor1,
+            const SizedBox(height: AppTheme.mediumGap),
+            Text(
+              'Niciun client selectat',
+              style: TextStyle(
+                fontSize: AppTheme.fontSizeLarge,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.elementColor2,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppTheme.smallGap),
+            Text(
+              'Selectați un client din panoul din stânga pentru a vedea formularul său',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: AppTheme.fontSizeMedium,
+                color: AppTheme.elementColor1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

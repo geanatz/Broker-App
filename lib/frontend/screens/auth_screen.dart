@@ -64,6 +64,9 @@ class _AuthScreenState extends State<AuthScreen> {
     );
     if (mounted) {
       if (result['success']) {
+        // După înregistrare cu succes, delogăm utilizatorul (dacă a fost logat automat de Firebase)
+        await _authService.signOut();
+        
         setState(() {
           _successMessage = result['message'];
           _errorMessage = null;
