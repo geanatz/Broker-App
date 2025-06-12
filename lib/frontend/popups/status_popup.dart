@@ -300,20 +300,27 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       debugPrint('✅ Client mutat cu succes: ${widget.client.name} - Status: $_selectedStatus');
 
-      // Exportă datele în Excel după salvarea cu succes
+      // Salvează doar acest client în Excel după salvarea cu succes
       try {
-        debugPrint('🔄 Începe exportul XLSX...');
-        debugPrint('🔍 Debug: Serviciul Excel este inițializat: true');
+        debugPrint('🔄 Începe salvarea clientului în XLSX...');
         
-        final filePath = await _excelExportService.exportAllClientsToXlsx();
+        // Obține datele complete ale clientului folosind ClientsFirebaseService
+        final clientsService = ClientsFirebaseService();
+        final unifiedClient = await clientsService.getClient(widget.client.phoneNumber);
         
-        if (filePath != null) {
-          debugPrint('✅ Export XLSX reușit: $filePath');
+        if (unifiedClient != null) {
+          final filePath = await _excelExportService.saveClientToXlsx(unifiedClient);
+          
+          if (filePath != null) {
+            debugPrint('✅ Client salvat în XLSX: $filePath');
+          } else {
+            debugPrint('⚠️ Salvarea în XLSX nu a putut fi realizată');
+          }
         } else {
-          debugPrint('⚠️ Export XLSX nu a putut fi realizat (probabil nu există clienți)');
+          debugPrint('⚠️ Nu s-au putut obține datele complete ale clientului pentru XLSX');
         }
       } catch (e, stackTrace) {
-        debugPrint('❌ Eroare la exportul XLSX: $e');
+        debugPrint('❌ Eroare la salvarea clientului în XLSX: $e');
         debugPrint('❌ Stack trace: $stackTrace');
         // Nu oprim procesul pentru că statusul a fost salvat cu succes
       }
@@ -325,13 +332,13 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
       }
       
-      String successMessage = "Statusul a fost salvat cu succes și datele au fost exportate în Excel";
+      String successMessage = "Statusul a fost salvat cu succes și datele au fost salvate în clienti.xlsx";
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
-        successMessage = "Statusul a fost salvat, întâlnirea a fost programată și datele au fost exportate în Excel";
+        successMessage = "Statusul a fost salvat, întâlnirea a fost programată și datele au fost salvate în clienti.xlsx";
       } else if (_selectedStatus == 'Amanat') {
-        successMessage = "Clientul a fost mutat în secțiunea Reveniri și datele au fost exportate în Excel";
+        successMessage = "Clientul a fost mutat în secțiunea Reveniri și datele au fost salvate în clienti.xlsx";
       } else if (_selectedStatus == 'Refuzat') {
-        successMessage = "Clientul a fost mutat în secțiunea Recente și datele au fost exportate în Excel";
+        successMessage = "Clientul a fost mutat în secțiunea Recente și datele au fost salvate în clienti.xlsx";
       }
       _showSuccess(successMessage);
     } catch (e) {
@@ -348,22 +355,26 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
   /// Afișează mesaj de eroare
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Afișează mesaj de succes
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   @override

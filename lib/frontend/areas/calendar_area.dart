@@ -75,15 +75,19 @@ class CalendarAreaState extends State<CalendarArea> {
   Future<void> _initializeCalendar() async {
     try {
       await _calendarService.initialize();
-      setState(() {
-        _isInitialized = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
       await _loadMeetingsForCurrentWeek();
     } catch (e) {
       debugPrint('Error initializing calendar: $e');
-      setState(() {
-        _isInitialized = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
     }
   }
 
@@ -96,9 +100,11 @@ class CalendarAreaState extends State<CalendarArea> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       debugPrint("Loading team meetings from unified structure for week offset: $_currentWeekOffset");
@@ -143,25 +149,31 @@ class CalendarAreaState extends State<CalendarArea> {
 
   // Navigate to previous week
   void _navigateToPreviousWeek() {
-    setState(() {
-      _currentWeekOffset--;
-    });
+    if (mounted) {
+      setState(() {
+        _currentWeekOffset--;
+      });
+    }
     _loadMeetingsForCurrentWeek();
   }
   
   // Navigate to next week
   void _navigateToNextWeek() {
-    setState(() {
-      _currentWeekOffset++;
-    });
+    if (mounted) {
+      setState(() {
+        _currentWeekOffset++;
+      });
+    }
     _loadMeetingsForCurrentWeek();
   }
 
   // Navigate to current week
   void _navigateToCurrentWeek() {
-    setState(() {
-      _currentWeekOffset = 0;
-    });
+    if (mounted) {
+      setState(() {
+        _currentWeekOffset = 0;
+      });
+    }
     _loadMeetingsForCurrentWeek();
   }
 
@@ -490,6 +502,8 @@ class CalendarAreaState extends State<CalendarArea> {
 
   /// Afișează dialogul pentru crearea unei întâlniri noi
   void _showCreateMeetingDialog(int dayIndex, int hourIndex) {
+    if (!mounted) return;
+    
     try {
       final DateTime selectedDateTime = _calendarService.buildDateTimeFromIndices(
         _currentWeekOffset, 
@@ -521,6 +535,8 @@ class CalendarAreaState extends State<CalendarArea> {
 
   /// Afișează dialogul pentru editarea unei întâlniri existente
   void _showEditMeetingDialog(Map<String, dynamic> meetingData, String docId) {
+    if (!mounted) return;
+    
     try {
       showDialog(
         context: context,
@@ -565,9 +581,11 @@ class CalendarAreaState extends State<CalendarArea> {
         // Update cache with loaded meetings
         final convertedMeetings = allTeamMeetings;
         
-        setState(() {
-          _allMeetings = convertedMeetings;
-        });
+        if (mounted) {
+          setState(() {
+            _allMeetings = convertedMeetings;
+          });
+        }
         
         // Try to find the meeting again
         for (var meeting in _allMeetings) {
@@ -590,17 +608,23 @@ class CalendarAreaState extends State<CalendarArea> {
       
       // Navigate to the correct week if needed
       if (weekDifference != _currentWeekOffset) {
-        setState(() {
-          _currentWeekOffset = weekDifference;
-        });
+        if (mounted) {
+          setState(() {
+            _currentWeekOffset = weekDifference;
+          });
+        }
         await _loadMeetingsForCurrentWeek();
       }
       
       // Wait for frame to be built, then scroll and highlight
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToMeeting(targetMeeting!);
-        _highlightMeeting(meetingId);
-      });
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _scrollToMeeting(targetMeeting!);
+            _highlightMeeting(meetingId);
+          }
+        });
+      }
     } else {
       debugPrint('Meeting with id $meetingId not found');
     }
@@ -641,9 +665,11 @@ class CalendarAreaState extends State<CalendarArea> {
   
   /// Highlights a meeting for 1 second
   void _highlightMeeting(String meetingId) {
-    setState(() {
-      _highlightedMeetingId = meetingId;
-    });
+    if (mounted) {
+      setState(() {
+        _highlightedMeetingId = meetingId;
+      });
+    }
     
     // Remove highlight after 1 second
     _highlightTimer?.cancel();

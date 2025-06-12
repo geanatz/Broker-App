@@ -153,12 +153,14 @@ class AccountCreatedPopup extends StatelessWidget {
                   ),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: token));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Token copiat în clipboard'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Token copiat în clipboard'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   },
                   padding: const EdgeInsets.all(0),
                   splashRadius: 24,

@@ -147,6 +147,10 @@ class SidebarService {
   AreaType _currentArea = AreaType.form;
   PaneType? _currentPane = PaneType.clients;
   
+  // Debounce mechanism to prevent rapid clicks
+  DateTime? _lastClickTime;
+  static const Duration _clickDebounceDelay = Duration(milliseconds: 300);
+  
   // Getters for current state
   AreaType get currentArea => _currentArea;
   PaneType? get currentPane => _currentPane;
@@ -170,35 +174,64 @@ class SidebarService {
   /// Change the current area
   void changeArea(AreaType area) {
     if (_currentArea != area) {
+      debugPrint('🏠 SidebarService: Changing area from $_currentArea to $area');
       _currentArea = area;
       onAreaChanged(area);
+    } else {
+      debugPrint('🏠 SidebarService: Area $area already active, no change needed');
     }
   }
   
   /// Change the current pane
   void changePane(PaneType pane) {
     if (_currentPane != pane) {
+      debugPrint('📋 SidebarService: Changing pane from $_currentPane to $pane');
       _currentPane = pane;
       onPaneChanged(pane);
+    } else {
+      debugPrint('📋 SidebarService: Pane $pane already active, no change needed');
     }
+  }
+  
+  /// Synchronize area state without triggering callbacks (for state restoration)
+  void syncArea(AreaType area) {
+    _currentArea = area;
+  }
+  
+  /// Synchronize pane state without triggering callbacks (for state restoration)
+  void syncPane(PaneType pane) {
+    _currentPane = pane;
   }
   
   /// Handle button click based on its action type
   void handleButtonClick(ButtonConfig button) {
+    debugPrint('🔘 Button clicked: ${button.title} (${button.id}) - Action: ${button.actionType}');
+    
+    // Debounce rapid clicks
+    final now = DateTime.now();
+    if (_lastClickTime != null && now.difference(_lastClickTime!) < _clickDebounceDelay) {
+      debugPrint('🔘 Click ignored due to debounce');
+      return;
+    }
+    _lastClickTime = now;
+    
     switch (button.actionType) {
       case ActionType.navigateToArea:
         if (button.targetArea != null) {
+          debugPrint('🔘 Navigating to area: ${button.targetArea}');
           changeArea(button.targetArea!);
         }
         break;
       case ActionType.openPane:
         if (button.targetPane != null) {
+          debugPrint('🔘 Opening pane: ${button.targetPane}');
           changePane(button.targetPane!);
         }
         break;
       case ActionType.openPopup:
       case ActionType.special:
         if (button.popupAction != null) {
+          debugPrint('🔘 Executing special action');
           button.popupAction!();
         }
         break;

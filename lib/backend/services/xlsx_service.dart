@@ -12,6 +12,122 @@ class ExcelExportService {
 
   final ClientsFirebaseService _clientsService = ClientsFirebaseService();
 
+  /// Salvează un singur client în fișierul "clienti.xlsx"
+  /// Dacă fișierul există, îl editează. Dacă nu există, îl creează.
+  Future<String?> saveClientToXlsx(UnifiedClientModel client) async {
+    try {
+      debugPrint('📊 ExcelExportService: Salvez clientul ${client.basicInfo.name}...');
+      
+      // Obține calea către fișierul "clienti.xlsx"
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/clienti.xlsx';
+      final file = File(filePath);
+      
+      Excel excel;
+      
+      // Verifică dacă fișierul există
+      if (await file.exists()) {
+        debugPrint('📊 Fișierul clienti.xlsx există, îl editez...');
+        // Încarcă fișierul existent
+        final bytes = await file.readAsBytes();
+        excel = Excel.decodeBytes(bytes);
+        
+        // Șterge Sheet1 dacă încă există
+        if (excel.sheets.containsKey('Sheet1')) {
+          excel.delete('Sheet1');
+        }
+      } else {
+        debugPrint('📊 Fișierul clienti.xlsx nu există, îl creez...');
+        // Creează un fișier nou
+        excel = Excel.createExcel();
+        // Șterge sheet-ul implicit
+        excel.delete('Sheet1');
+      }
+      
+      // Determină luna pentru client
+      final updateDate = client.metadata.updatedAt;
+      final monthKey = DateFormat('MMMM yyyy').format(updateDate);
+      
+      debugPrint('📊 Adaug clientul în luna: $monthKey');
+      
+      // Obține sau creează sheet-ul pentru luna respectivă
+      Sheet sheet;
+      if (excel.sheets.containsKey(monthKey)) {
+        sheet = excel.sheets[monthKey]!;
+      } else {
+        // Creează sheet nou pentru această lună
+        sheet = excel[monthKey];
+        // Adaugă header-ul doar pentru sheet-uri noi
+        _addHeaderRow(sheet);
+      }
+      
+      // Verifică dacă clientul există deja în sheet
+      final existingRowIndex = _findClientRowInSheet(sheet, client);
+      
+      if (existingRowIndex != -1) {
+        debugPrint('📊 Clientul există deja, actualizez linia $existingRowIndex');
+        // Actualizează linia existentă
+        _addClientRow(sheet, client, existingRowIndex);
+      } else {
+        debugPrint('📊 Client nou, îl adaug la sfârșitul listei');
+        // Adaugă la sfârșitul listei
+        final nextRowIndex = _getNextAvailableRow(sheet);
+        _addClientRow(sheet, client, nextRowIndex);
+      }
+      
+      // Ajustează lățimea coloanelor
+      _adjustColumnWidths(sheet);
+      
+      // Salvează fișierul
+      final bytes = excel.encode();
+      if (bytes != null) {
+        await file.writeAsBytes(bytes);
+        debugPrint('✅ Clientul ${client.basicInfo.name} salvat în clienti.xlsx la: $filePath');
+        return filePath;
+      } else {
+        throw Exception('Nu s-au putut encode datele Excel');
+      }
+      
+    } catch (e) {
+      debugPrint('❌ Eroare la salvarea clientului în XLSX: $e');
+      return null;
+    }
+  }
+
+  /// Găsește rândul unui client existent în sheet
+  /// Returnează indexul rândului sau -1 dacă nu există
+  int _findClientRowInSheet(Sheet sheet, UnifiedClientModel client) {
+    final maxRows = sheet.maxRows;
+    
+    for (int row = 1; row < maxRows; row++) { // Start from row 1 (skip header)
+      final nameCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row));
+      final phoneCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row));
+      
+      // Verifică dacă numele și telefonul se potrivesc
+      if (nameCell.value != null && phoneCell.value != null) {
+        final cellName = nameCell.value.toString();
+        final cellPhone = phoneCell.value.toString();
+        
+        if (cellName == client.basicInfo.name && cellPhone == client.basicInfo.phoneNumber1) {
+          return row;
+        }
+      }
+    }
+    
+    return -1; // Nu s-a găsit
+  }
+
+  /// Găsește următorul rând disponibil într-un sheet
+  int _getNextAvailableRow(Sheet sheet) {
+    // Caută primul rând gol după header
+    for (int row = 1; ; row++) {
+      final nameCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row));
+      if (nameCell.value == null || nameCell.value.toString().isEmpty) {
+        return row;
+      }
+    }
+  }
+
   /// Exportă toate datele clienților în format XLSX
   Future<String?> exportAllClientsToXlsx() async {
     try {
@@ -69,7 +185,7 @@ class ExcelExportService {
       }
       
       // Salvează fișierul
-      final filePath = await _saveExcelFile(excel);
+      final filePath = await _saveExcelFileWithTimestamp(excel);
       return filePath;
       
     } catch (e) {
@@ -520,8 +636,8 @@ class ExcelExportService {
     }
   }
 
-  /// Salvează fișierul Excel și returnează path-ul
-  Future<String> _saveExcelFile(Excel excel) async {
+  /// Salvează fișierul Excel cu timestamp (pentru export complet)
+  Future<String> _saveExcelFileWithTimestamp(Excel excel) async {
     try {
       // Obține directorul pentru salvare
       final directory = await getApplicationDocumentsDirectory();
@@ -612,7 +728,7 @@ class ExcelExportService {
       _adjustColumnWidths(sheet);
       
       // Salvează fișierul
-      final filePath = await _saveExcelFile(excel);
+      final filePath = await _saveExcelFileWithTimestamp(excel);
       return filePath;
       
     } catch (e) {

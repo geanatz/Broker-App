@@ -180,10 +180,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       
       if (areaIndex != null && areaIndex < AreaType.values.length) {
         _currentArea = AreaType.values[areaIndex];
+        // Update SidebarService state to keep it in sync
+        _sidebarService.syncArea(_currentArea);
       }
       
       if (paneIndex != null && paneIndex < PaneType.values.length) {
         _currentPane = PaneType.values[paneIndex];
+        // Update SidebarService state to keep it in sync
+        _sidebarService.syncPane(_currentPane);
       }
       
       // Update UI if needed
@@ -233,9 +237,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void _navigateToMeeting(String meetingId) {
     // Switch to calendar area if not already there
     if (_currentArea != AreaType.calendar) {
-      setState(() {
-        _currentArea = AreaType.calendar;
-      });
+      // Use the SidebarService to change area to keep states in sync
+      _sidebarService.changeArea(AreaType.calendar);
     }
     
     // Navigate to the meeting in calendar with highlight
@@ -252,6 +255,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Periodically verify state consistency during builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _forceSyncStates();
+      }
+    });
+    
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -267,7 +277,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             children: [
               // Pane Column (stânga) - lățime fixă 312
               SizedBox(
-                width: 312,
+                width: 296,
                 child: _paneWidgets[_currentPane]!,
               ),
               
@@ -336,14 +346,21 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   void _handleAreaChanged(AreaType area) {
+    debugPrint('🔄 Area changed to: $area');
     setState(() {
       _currentArea = area;
     });
     // Save navigation state
     _saveNavigationState();
+    
+    // Force state sync after a short delay to handle any race conditions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _forceSyncStates();
+    });
   }
   
   void _handlePaneChanged(PaneType pane) {
+    debugPrint('🔄 Pane changed to: $pane');
     setState(() {
       _currentPane = pane;
     });
@@ -357,6 +374,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         _meetingsPaneKey.currentState?.refreshMeetings();
       });
     }
+    
+    // Force state sync after a short delay to handle any race conditions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _forceSyncStates();
+    });
   }
   
   /// Handles the clients popup request from sidebar
@@ -777,15 +799,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Determines if a button should appear as active
   bool _isButtonActive(ButtonConfig button) {
     if (button.actionType == ActionType.navigateToArea && button.targetArea != null) {
-      return _currentArea == button.targetArea;
+      return _sidebarService.currentArea == button.targetArea;
     } else if (button.actionType == ActionType.openPane && button.targetPane != null) {
-      return _currentPane == button.targetPane;
+      return _sidebarService.currentPane == button.targetPane;
     }
     return false;
   }
 
   /// Shows the consultant details popup
   void _showConsultantPopup() {
+    if (!mounted) return;
+    
     showDialog(
       context: context,
       builder: (context) => ConsultantPopup(
@@ -793,6 +817,31 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         teamName: _teamName,
       ),
     );
+  }
+
+  /// Forces complete state synchronization between MainScreen and SidebarService
+  void _forceSyncStates() {
+    debugPrint('🔄 Forcing state synchronization');
+    debugPrint('📊 MainScreen state: Area=$_currentArea, Pane=$_currentPane');
+    debugPrint('📊 SidebarService state: Area=${_sidebarService.currentArea}, Pane=${_sidebarService.currentPane}');
+    
+    // If states are out of sync, update MainScreen to match SidebarService (single source of truth)
+    bool needsUpdate = false;
+    if (_currentArea != _sidebarService.currentArea) {
+      debugPrint('⚠️ Area states out of sync, updating MainScreen');
+      _currentArea = _sidebarService.currentArea;
+      needsUpdate = true;
+    }
+    
+    if (_currentPane != _sidebarService.currentPane) {
+      debugPrint('⚠️ Pane states out of sync, updating MainScreen');
+      _currentPane = _sidebarService.currentPane ?? PaneType.clients;
+      needsUpdate = true;
+    }
+    
+    if (needsUpdate && mounted) {
+      setState(() {});
+    }
   }
 
 }
