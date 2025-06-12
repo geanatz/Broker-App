@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:broker_app/frontend/common/appTheme.dart';
+import 'package:broker_app/frontend/common/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:broker_app/backend/services/firebaseService.dart';
+import 'package:broker_app/backend/services/firebase_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
-import 'package:broker_app/frontend/screens/authScreen.dart';
-import 'package:broker_app/frontend/screens/mainScreen.dart';
+import 'package:broker_app/frontend/screens/auth_screen.dart';
+import 'package:broker_app/frontend/screens/main_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:broker_app/backend/services/consultantService.dart';
-import 'package:broker_app/backend/services/settingsService.dart';
+import 'package:broker_app/backend/services/consultant_service.dart';
+import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 // For DevTools inspection

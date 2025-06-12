@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
-import '../../appTheme.dart';
+import '../../app_theme.dart';
 
 /// A simple centered text component with customizable styling.
 /// 

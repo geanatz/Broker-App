@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:broker_app/frontend/common/appTheme.dart';
-import 'package:broker_app/frontend/popups/consultantPopup.dart';
-import 'package:broker_app/backend/services/sidebarService.dart';
-import 'package:broker_app/frontend/common/components/headers/widgetHeader3.dart';
-import 'package:broker_app/frontend/common/components/buttons/spacedButtons1.dart';
+import 'package:broker_app/frontend/common/app_theme.dart';
+import 'package:broker_app/frontend/popups/consultant_popup.dart';
+import 'package:broker_app/backend/services/sidebar_service.dart';
+import 'package:broker_app/frontend/common/components/headers/widget_header3.dart';
+import 'package:broker_app/frontend/common/components/buttons/spaced_buttons1.dart';
 
 /// Main sidebar widget that provides navigation and consultant information
 /// 

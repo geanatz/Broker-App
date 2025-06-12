@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../appTheme.dart';
-import '../fields/dropdownField1.dart';
-import '../fields/inputField1.dart';
+import '../../app_theme.dart';
+import '../fields/dropdown_field1.dart';
+import '../fields/input_field1.dart';
 
 /// A form container with 2 rows:
 /// - First row: 2 dropdown fields (Bank, Credit/Income Type)

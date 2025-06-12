@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../backend/services/clientsService.dart';
+import '../../../backend/services/clients_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 /// Service pentru gestionarea stării clienților în UI și sincronizarea datelor formularelor
