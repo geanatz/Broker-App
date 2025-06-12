@@ -1,17 +1,16 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
-import 'package:broker_app/frontend/common/app_theme.dart';
-import 'package:broker_app/frontend/common/components/headers/widget_header1.dart';
-import 'package:broker_app/frontend/common/components/fields/dropdown_field1.dart';
-import 'package:broker_app/frontend/common/components/fields/input_field1.dart';
-import 'package:broker_app/frontend/common/components/fields/input_field3.dart';
-import 'package:broker_app/frontend/common/components/buttons/flex_buttons1.dart';
+import 'package:broker_app/frontend/components/headers/widget_header1.dart';
+import 'package:broker_app/frontend/components/fields/dropdown_field1.dart';
+import 'package:broker_app/frontend/components/fields/input_field1.dart';
+import 'package:broker_app/frontend/components/fields/input_field3.dart';
+import 'package:broker_app/frontend/components/buttons/flex_buttons1.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/xlsx_service.dart';
-import 'package:broker_app/frontend/common/services/client_service.dart';
+
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
 class TimeInputFormatter extends TextInputFormatter {
@@ -73,7 +72,7 @@ class ClientSavePopup extends StatefulWidget {
 class _ClientSavePopupState extends State<ClientSavePopup> {
   // Services
   final MeetingService _meetingService = MeetingService();
-  final ClientService _clientService = ClientService();
+  final ClientUIService _clientService = ClientUIService();
   final ExcelExportService _excelExportService = ExcelExportService();
   
   // Controllers pentru inputuri
@@ -509,7 +508,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                   Expanded(
                                     child: Text(
                                       'Informatii aditionale',
-                                      style: SafeGoogleFonts.outfit(
+                                      style: AppTheme.safeOutfit(
                                         color: AppTheme.elementColor2,
                                         fontSize: AppTheme.fontSizeMedium,
                                         fontWeight: FontWeight.w600,
@@ -537,14 +536,14 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                   maxLines: null,
                                   expands: true,
                                   textAlignVertical: TextAlignVertical.top,
-                                  style: SafeGoogleFonts.outfit(
+                                  style: AppTheme.safeOutfit(
                                     color: AppTheme.elementColor3,
                                     fontSize: AppTheme.fontSizeMedium,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: 'Introduceti informatii aditionale...',
-                                    hintStyle: SafeGoogleFonts.outfit(
+                                    hintStyle: AppTheme.safeOutfit(
                                       color: AppTheme.elementColor3,
                                       fontSize: AppTheme.fontSizeMedium,
                                       fontWeight: FontWeight.w500,
@@ -572,7 +571,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                 onTap: _isLoading ? null : _saveClientStatus,
                 borderRadius: AppTheme.borderRadiusMedium,
                 buttonHeight: AppTheme.navButtonHeight,
-                textStyle: SafeGoogleFonts.outfit(
+                textStyle: AppTheme.safeOutfit(
                   fontSize: AppTheme.fontSizeMedium,
                   fontWeight: FontWeight.w500,
                   color: AppTheme.elementColor2,

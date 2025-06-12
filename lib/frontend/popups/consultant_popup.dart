@@ -1,9 +1,8 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
-import 'package:broker_app/frontend/common/app_theme.dart';
-import '../common/components/headers/widget_header1.dart';
-import '../common/components/buttons/flex_buttons1.dart';
+import '../components/headers/widget_header1.dart';
+import '../components/buttons/flex_buttons1.dart';
 
 /// Popup pentru afișarea detaliilor consultantului și opțiunii de deconectare
 class ConsultantPopup extends StatelessWidget {
@@ -114,7 +113,7 @@ class ConsultantPopup extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8.0), // 8px horizontal padding
           child: Text(
             title,
-            style: SafeGoogleFonts.outfit(
+            style: AppTheme.safeOutfit(
               fontSize: AppTheme.fontSizeMedium, // 17px
               fontWeight: FontWeight.w600, // large
               color: AppTheme.elementColor2, // #886699
@@ -131,7 +130,7 @@ class ConsultantPopup extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Text(
             value,
-            style: SafeGoogleFonts.outfit(
+            style: AppTheme.safeOutfit(
               fontSize: AppTheme.fontSizeMedium, // 17px
               fontWeight: FontWeight.w500, // medium
               color: AppTheme.elementColor3,
@@ -151,7 +150,7 @@ class ConsultantPopup extends StatelessWidget {
         onTap: () => _signOut(context),
         text: "Deconectare",
         iconPath: "assets/returnIcon.svg",
-        textStyle: SafeGoogleFonts.outfit(
+        textStyle: AppTheme.safeOutfit(
           fontSize: AppTheme.fontSizeMedium, // 17px
           fontWeight: FontWeight.w500, // medium
           color: AppTheme.elementColor2, // #886699

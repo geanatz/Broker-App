@@ -1,16 +1,16 @@
+import '../../app_theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../common/components/headers/widget_header1.dart';
-import '../common/components/items/light_item3.dart';
-import '../common/components/items/dark_item3.dart';
-import '../common/components/items/light_item7.dart';
-import '../common/components/items/dark_item7.dart';
-import '../common/components/buttons/flex_buttons3.dart';
-import '../common/components/buttons/flex_buttons2.dart';
-import '../common/components/buttons/flex_buttons1.dart';
-import '../common/components/fields/input_field1.dart';
-import '../common/app_theme.dart';
+import '../components/headers/widget_header1.dart';
+import '../components/items/light_item3.dart';
+import '../components/items/dark_item3.dart';
+import '../components/items/light_item7.dart';
+import '../components/items/dark_item7.dart';
+import '../components/buttons/flex_buttons3.dart';
+import '../components/buttons/flex_buttons2.dart';
+import '../components/buttons/flex_buttons1.dart';
+import '../components/fields/input_field1.dart';
 import '../../backend/ocr/enchance_ocr.dart';
 import '../../backend/services/clients_service.dart';
 

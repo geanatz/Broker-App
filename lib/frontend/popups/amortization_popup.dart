@@ -1,9 +1,8 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../backend/services/calculator_service.dart';
-import '../common/app_theme.dart';
 // Import components
-import '../common/components/headers/widget_header1.dart';
+import '../components/headers/widget_header1.dart';
 
 /// Widget pentru afișarea graficului de amortizare a unui credit
 /// 
@@ -92,7 +91,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Luna',
-                                  style: SafeGoogleFonts.outfit(
+                                  style: AppTheme.safeOutfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -107,7 +106,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Suma',
-                                  style: SafeGoogleFonts.outfit(
+                                  style: AppTheme.safeOutfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -122,7 +121,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Dobanda',
-                                  style: SafeGoogleFonts.outfit(
+                                  style: AppTheme.safeOutfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -137,7 +136,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Principal',
-                                  style: SafeGoogleFonts.outfit(
+                                  style: AppTheme.safeOutfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -152,7 +151,7 @@ class AmortizationPopup extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   'Sold',
-                                  style: SafeGoogleFonts.outfit(
+                                  style: AppTheme.safeOutfit(
                                     color: const Color(0xFF666699), // elementColor2
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -197,7 +196,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         '${entry.paymentNumber}',
-                                        style: SafeGoogleFonts.outfit(
+                                        style: AppTheme.safeOutfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -212,7 +211,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.payment.toStringAsFixed(2),
-                                        style: SafeGoogleFonts.outfit(
+                                        style: AppTheme.safeOutfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -227,7 +226,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.interestPayment.toStringAsFixed(2),
-                                        style: SafeGoogleFonts.outfit(
+                                        style: AppTheme.safeOutfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -242,7 +241,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.principalPayment.toStringAsFixed(2),
-                                        style: SafeGoogleFonts.outfit(
+                                        style: AppTheme.safeOutfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
@@ -257,7 +256,7 @@ class AmortizationPopup extends StatelessWidget {
                                       alignment: Alignment.centerLeft,
                                       child: Text(
                                         entry.remainingBalance.toStringAsFixed(2),
-                                        style: SafeGoogleFonts.outfit(
+                                        style: AppTheme.safeOutfit(
                                           color: const Color(0xFF4D4D80), // elementColor3
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,

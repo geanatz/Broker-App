@@ -1,19 +1,19 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
-import 'package:broker_app/frontend/common/app_theme.dart';
 
 import 'package:broker_app/frontend/popups/meeting_popup.dart';
 import 'package:broker_app/backend/services/calendar_service.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/frontend/common/components/texts/text2.dart';
+import 'package:broker_app/frontend/components/texts/text2.dart';
 
 // Import the required components
-import 'package:broker_app/frontend/common/components/headers/widget_header6.dart';
-import 'package:broker_app/frontend/common/components/items/outlined_item6.dart';
-import 'package:broker_app/frontend/common/components/items/dark_item4.dart';
-import 'package:broker_app/frontend/common/components/items/dark_item2.dart';
+import 'package:broker_app/frontend/components/headers/widget_header6.dart';
+import 'package:broker_app/frontend/components/items/outlined_item6.dart';
+import 'package:broker_app/frontend/components/items/dark_item4.dart';
+import 'package:broker_app/frontend/components/items/dark_item2.dart';
 
 /// Area pentru calendar care va fi afișată în cadrul ecranului principal.
 /// Această componentă respectă strict designul din Figma și folosește o abordare simplă pentru stabilitate.

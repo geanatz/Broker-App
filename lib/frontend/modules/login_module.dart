@@ -1,6 +1,6 @@
+import 'package:broker_app/app_theme.dart'; // Ajustează calea dacă e necesar
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import pentru SVG
-import 'package:broker_app/frontend/common/app_theme.dart'; // Ajustează calea dacă e necesar
 import 'package:broker_app/backend/services/auth_service.dart'; // Pentru getConsultantNames
 
 // Custom InkWell Button for consistent styling and hover effects

@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:broker_app/backend/services/form_service.dart';
-import 'package:broker_app/frontend/common/services/client_service.dart';
+import 'package:broker_app/backend/services/clients_service.dart';
 
 /// Serviciul pentru calculare credite
 /// 
@@ -8,7 +8,7 @@ import 'package:broker_app/frontend/common/services/client_service.dart';
 /// generarea graficului de amortizare
 class CalculatorService {
   static final FormService _formService = FormService();
-  static final ClientService _clientService = ClientService();
+  static final ClientUIService _clientService = ClientUIService();
 
   /// Calculează rata lunară pentru un credit
   /// 

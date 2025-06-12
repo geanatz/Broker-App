@@ -1,13 +1,12 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:broker_app/frontend/common/app_theme.dart';
-import 'package:broker_app/frontend/common/components/headers/widget_header1.dart';
-import 'package:broker_app/frontend/common/components/fields/input_field1.dart';
-import 'package:broker_app/frontend/common/components/fields/input_field3.dart';
-import 'package:broker_app/frontend/common/components/fields/dropdown_field1.dart';
-import 'package:broker_app/frontend/common/components/buttons/flex_buttons2.dart';
+import 'package:broker_app/frontend/components/headers/widget_header1.dart';
+import 'package:broker_app/frontend/components/fields/input_field1.dart';
+import 'package:broker_app/frontend/components/fields/input_field3.dart';
+import 'package:broker_app/frontend/components/fields/dropdown_field1.dart';
+import 'package:broker_app/frontend/components/buttons/flex_buttons2.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -532,7 +531,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                   spacing: AppTheme.smallGap,
                   borderRadius: AppTheme.borderRadiusMedium,
                   buttonHeight: 48.0,
-                  primaryButtonTextStyle: SafeGoogleFonts.outfit(
+                  primaryButtonTextStyle: AppTheme.safeOutfit(
                     fontSize: AppTheme.fontSizeMedium,
                     fontWeight: FontWeight.w500,
                   ),

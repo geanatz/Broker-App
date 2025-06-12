@@ -1,7 +1,10 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:broker_app/frontend/common/app_theme.dart';
-import 'package:broker_app/frontend/common/sidebar.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/backend/services/sidebar_service.dart';
+import 'package:broker_app/frontend/popups/consultant_popup.dart';
+import 'package:broker_app/frontend/components/headers/widget_header3.dart';
+import 'package:broker_app/frontend/components/buttons/spaced_buttons1.dart';
 import 'package:broker_app/frontend/areas/dashboard_area.dart';
 import 'package:broker_app/frontend/areas/form_area.dart';
 import 'package:broker_app/frontend/areas/calendar_area.dart';
@@ -10,7 +13,6 @@ import 'package:broker_app/frontend/panes/meetings_pane.dart';
 import 'package:broker_app/frontend/panes/calculator_pane.dart';
 import 'package:broker_app/frontend/panes/clients_pane.dart';
 import 'package:broker_app/frontend/popups/clients_popup.dart';
-import 'package:broker_app/frontend/common/services/client_service.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,12 +53,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey<MeetingsPaneState> _meetingsPaneKey = GlobalKey<MeetingsPaneState>();
   
   // Client service pentru gestionarea popup-urilor
-  final ClientService _clientService = ClientService();
+  final ClientUIService _clientService = ClientUIService();
   
   // Settings service pentru actualizări în timp real ale temei
   final SettingsService _settingsService = SettingsService();
   
-
+  // Sidebar service pentru navigare
+  late final SidebarService _sidebarService;
+  
+  // UI state pentru sidebar - secțiuni colapsabile
+  bool _isAreaSectionCollapsed = false;
+  bool _isPaneSectionCollapsed = false;
+  
+  // UI state pentru hover pe secțiunea consultant
+  bool _isConsultantSectionHovered = false;
   
   // State pentru popup-uri
   List<Client> _popupClients = [];
@@ -68,6 +78,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.initState();
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
+    
+    // Inițializează sidebar service
+    _sidebarService = SidebarService(
+      onAreaChanged: _handleAreaChanged,
+      onPaneChanged: _handlePaneChanged,
+      initialArea: _currentArea,
+      initialPane: _currentPane,
+    );
     
     // Restore navigation state from SharedPreferences
     _restoreNavigationState();
@@ -265,15 +283,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               const SizedBox(width: AppTheme.largeGap),
               
               // Sidebar Column (dreapta) - lățime fixă 224
-              SidebarWidget(
-                consultantName: _consultantName,
-                teamName: _teamName,
-                currentArea: _currentArea,
-                currentPane: _currentPane,
-                onAreaChanged: _handleAreaChanged,
-                onPaneChanged: _handlePaneChanged,
-                onClientsPopupRequested: _handleClientsPopupRequested,
-              ),
+              _buildSidebar(),
             ],
               ),
             ),
@@ -478,6 +488,311 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       _selectedPopupClient = null;
     });
+  }
+
+  // =================== SIDEBAR METHODS ===================
+
+  /// Builds the main sidebar widget
+  Widget _buildSidebar() {
+    return Container(
+      width: 224,
+      padding: const EdgeInsets.all(AppTheme.smallGap),
+      decoration: AppTheme.widgetDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Consultant information section
+          _buildConsultantSection(),
+          const SizedBox(height: AppTheme.mediumGap),
+          
+          // Areas navigation section
+          _buildAreasSection(),
+          const SizedBox(height: AppTheme.mediumGap),
+          
+          // Panes navigation section
+          _buildPanesSection(),
+          
+          // Special functions section (doar dacă există butoane)
+          if (_sidebarService.specialButtons.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.mediumGap),
+            _buildSpecialSection(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Builds the consultant information section with avatar and details
+  Widget _buildConsultantSection() {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isConsultantSectionHovered = true),
+      onExit: (_) => setState(() => _isConsultantSectionHovered = false),
+      child: GestureDetector(
+        onTap: _showConsultantPopup,
+        child: Container(
+          height: 63,
+          decoration: BoxDecoration(
+            color: _isConsultantSectionHovered ? AppTheme.containerColor2 : AppTheme.containerColor1,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 8, 7),
+            child: Row(
+              children: [
+                // Consultant information
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _consultantName,
+                        style: AppTheme.primaryTitleStyle.copyWith(
+                          color: _isConsultantSectionHovered ? AppTheme.elementColor3 : AppTheme.elementColor2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _teamName,
+                        style: AppTheme.secondaryTitleStyle.copyWith(
+                          color: _isConsultantSectionHovered ? AppTheme.elementColor2 : AppTheme.elementColor1,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Consultant avatar button
+                _buildConsultantAvatar(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the consultant avatar container
+  Widget _buildConsultantAvatar() {
+    return Container(
+      width: 48,
+      height: 47,
+      decoration: BoxDecoration(
+        color: AppTheme.containerColor2,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+      ),
+      child: Center(
+        child: SvgPicture.asset(
+          'assets/userIcon.svg',
+          width: AppTheme.iconSizeMedium,
+          height: AppTheme.iconSizeMedium,
+          colorFilter: ColorFilter.mode(
+            AppTheme.elementColor3,
+            BlendMode.srcIn,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds the areas navigation section with collapsible header
+  Widget _buildAreasSection() {
+    return Column(
+      children: [
+        WidgetHeader3(
+          title: 'Principal',
+          trailingIcon: _isAreaSectionCollapsed 
+              ? Icons.keyboard_arrow_up 
+              : Icons.keyboard_arrow_down,
+          onTrailingIconTap: () {
+            setState(() {
+              _isAreaSectionCollapsed = !_isAreaSectionCollapsed;
+            });
+          },
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+        ),
+        const SizedBox(height: AppTheme.smallGap),
+        _buildAreaButtons(),
+      ],
+    );
+  }
+
+  /// Builds the panes navigation section with collapsible header
+  Widget _buildPanesSection() {
+    return Column(
+      children: [
+        WidgetHeader3(
+          title: 'Secundar',
+          trailingIcon: _isPaneSectionCollapsed 
+              ? Icons.keyboard_arrow_up 
+              : Icons.keyboard_arrow_down,
+          onTrailingIconTap: () {
+            setState(() {
+              _isPaneSectionCollapsed = !_isPaneSectionCollapsed;
+            });
+          },
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+        ),
+        const SizedBox(height: AppTheme.smallGap),
+        _buildPaneButtons(),
+      ],
+    );
+  }
+
+  /// Builds the special functions section
+  Widget _buildSpecialSection() {
+    final buttons = _sidebarService.specialButtons;
+    
+    if (buttons.isEmpty) {
+      return const SizedBox.shrink(); // Nu afișa secțiunea dacă nu sunt butoane
+    }
+    
+    return Column(
+      children: [
+        WidgetHeader3(
+          title: 'Functii',
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+        ),
+        const SizedBox(height: AppTheme.smallGap),
+        _buildSpecialButtons(),
+      ],
+    );
+  }
+
+  /// Builds the special function buttons
+  Widget _buildSpecialButtons() {
+    final buttons = _sidebarService.specialButtons;
+    
+    if (buttons.isEmpty) {
+      return const SizedBox.shrink(); // Nu afișa nimic dacă nu sunt butoane
+    }
+    
+    return Column(
+      children: [
+        for (int i = 0; i < buttons.length; i++) ...[
+          _buildSpecialNavigationButton(buttons[i]),
+          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
+        ],
+      ],
+    );
+  }
+
+  /// Builds the area navigation buttons with collapse behavior
+  Widget _buildAreaButtons() {
+    final buttons = _sidebarService.areaButtons;
+    
+    if (_isAreaSectionCollapsed) {
+      // When collapsed, show only the active button
+      final activeButton = buttons.firstWhere(
+        (button) => button.targetArea == _currentArea,
+        orElse: () => buttons.first,
+      );
+      return _buildNavigationButton(activeButton);
+    }
+    
+    // When expanded, show all buttons with proper gap spacing
+    return Column(
+      children: [
+        for (int i = 0; i < buttons.length; i++) ...[
+          _buildNavigationButton(buttons[i]),
+          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
+        ],
+      ],
+    );
+  }
+
+  /// Builds the pane navigation buttons with collapse behavior
+  Widget _buildPaneButtons() {
+    final buttons = _sidebarService.paneButtons;
+    
+    if (_isPaneSectionCollapsed) {
+      // When collapsed, show only the active button
+      final activeButton = buttons.firstWhere(
+        (button) => button.targetPane == _currentPane,
+        orElse: () => buttons.first,
+      );
+      return _buildNavigationButton(activeButton);
+    }
+    
+    // When expanded, show all buttons with proper gap spacing
+    return Column(
+      children: [
+        for (int i = 0; i < buttons.length; i++) ...[
+          _buildNavigationButton(buttons[i]),
+          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
+        ],
+      ],
+    );
+  }
+
+  /// Builds a single navigation button with active state styling
+  Widget _buildNavigationButton(ButtonConfig button) {
+    bool isActive = _isButtonActive(button);
+    
+    if (isActive) {
+      // For active buttons, set explicit colors
+      return SpacedButtonSingleSvg(
+        text: button.title,
+        iconPath: button.iconPath,
+        onTap: () => _sidebarService.handleButtonClick(button),
+        backgroundColor: AppTheme.containerColor2,
+        textColor: AppTheme.elementColor3,
+        iconColor: AppTheme.elementColor3,
+        borderRadius: AppTheme.borderRadiusMedium,
+        buttonHeight: AppTheme.navButtonHeight,
+      );
+    } else {
+      // For inactive buttons, let the component handle hover states
+      return SpacedButtonSingleSvg(
+        text: button.title,
+        iconPath: button.iconPath,
+        onTap: () => _sidebarService.handleButtonClick(button),
+        borderRadius: AppTheme.borderRadiusMedium,
+        buttonHeight: AppTheme.navButtonHeight,
+      );
+    }
+  }
+
+  /// Builds a special function button 
+  Widget _buildSpecialNavigationButton(ButtonConfig button) {
+    return SpacedButtonSingleSvg(
+      text: button.title,
+      iconPath: button.iconPath,
+      onTap: () => _handleSpecialButtonClick(button),
+      borderRadius: AppTheme.borderRadiusMedium,
+      buttonHeight: AppTheme.navButtonHeight,
+    );
+  }
+
+  /// Handles special button clicks (like export)
+  void _handleSpecialButtonClick(ButtonConfig button) {
+    _sidebarService.handleButtonClick(button);
+  }
+
+  /// Determines if a button should appear as active
+  bool _isButtonActive(ButtonConfig button) {
+    if (button.actionType == ActionType.navigateToArea && button.targetArea != null) {
+      return _currentArea == button.targetArea;
+    } else if (button.actionType == ActionType.openPane && button.targetPane != null) {
+      return _currentPane == button.targetPane;
+    }
+    return false;
+  }
+
+  /// Shows the consultant details popup
+  void _showConsultantPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => ConsultantPopup(
+        consultantName: _consultantName,
+        teamName: _teamName,
+      ),
+    );
   }
 
 }

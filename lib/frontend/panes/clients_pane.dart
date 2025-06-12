@@ -1,12 +1,12 @@
+import '../../app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../common/app_theme.dart';
-import '../common/components/headers/widget_header2.dart';
-import '../common/components/headers/widget_header3.dart';
-import '../common/components/items/dark_item7.dart';
-import '../common/components/items/light_item7.dart';
+import '../components/headers/widget_header2.dart';
+import '../components/headers/widget_header3.dart';
+import '../components/items/dark_item7.dart';
+import '../components/items/light_item7.dart';
 import '../../backend/services/clients_service.dart';
-import '../common/services/client_service.dart';
+
 import '../popups/status_popup.dart';
 
 /// ClientsPane - Interfața pentru gestionarea apelurilor clienților
@@ -33,7 +33,7 @@ class ClientsPane extends StatefulWidget {
 }
 
 class _ClientsPaneState extends State<ClientsPane> {
-  final ClientService _clientService = ClientService();
+  final ClientUIService _clientService = ClientUIService();
   
   // Stări pentru collapse/expand secțiuni (doar pentru Reveniri și Recente)
   bool _isReveniriCollapsed = false;

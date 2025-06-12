@@ -1,6 +1,6 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
-import 'package:broker_app/frontend/common/services/client_service.dart';
+import 'package:broker_app/backend/services/clients_service.dart';
 import 'firebase_service.dart';
 
 /// Enum pentru diferitele tipuri de credite
@@ -214,7 +214,7 @@ class FormService extends ChangeNotifier {
   FormService._internal();
 
   // Services
-  final ClientService _clientService = ClientService();
+  final ClientUIService _clientService = ClientUIService();
   final FirebaseFormService _firebaseFormService = FirebaseFormService();
 
   // Form data storage per client

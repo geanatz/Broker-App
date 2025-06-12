@@ -1,7 +1,7 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:broker_app/frontend/common/app_theme.dart';
 
 /// Service pentru gestionarea setărilor aplicației per consultant
 /// Folosește SharedPreferences pentru persistența datelor și ChangeNotifier pentru actualizări în timp real

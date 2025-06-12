@@ -1,13 +1,13 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:broker_app/frontend/common/app_theme.dart';
 import 'package:broker_app/backend/services/form_service.dart';
-import 'package:broker_app/frontend/common/services/client_service.dart';
+
 import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/frontend/common/components/forms/form1.dart';
-import 'package:broker_app/frontend/common/components/forms/form3.dart';
-import 'package:broker_app/frontend/common/components/forms/form_new.dart';
-import 'package:broker_app/frontend/common/components/headers/widget_header2.dart';
+import 'package:broker_app/frontend/components/forms/form1.dart';
+import 'package:broker_app/frontend/components/forms/form3.dart';
+import 'package:broker_app/frontend/components/forms/form_new.dart';
+import 'package:broker_app/frontend/components/headers/widget_header2.dart';
 import 'package:intl/intl.dart';
 
 /// Area pentru formulare care va fi afișată în cadrul ecranului principal.
@@ -23,7 +23,7 @@ class FormArea extends StatefulWidget {
 class _FormAreaState extends State<FormArea> {
   // Services
   final FormService _formService = FormService();
-  final ClientService _clientService = ClientService();
+  final ClientUIService _clientService = ClientUIService();
   
   // Text controllers pentru input fields
   final Map<String, TextEditingController> _textControllers = {};

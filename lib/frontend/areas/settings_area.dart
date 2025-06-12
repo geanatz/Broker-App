@@ -1,10 +1,10 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:broker_app/frontend/common/app_theme.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
-import 'package:broker_app/frontend/common/components/headers/widget_header1.dart';
-import 'package:broker_app/frontend/common/components/headers/field_header1.dart';
-import 'package:broker_app/frontend/common/components/items/outlined_item6.dart';
-import 'package:broker_app/frontend/common/components/items/dark_item6.dart';
+import 'package:broker_app/frontend/components/headers/widget_header1.dart';
+import 'package:broker_app/frontend/components/headers/field_header1.dart';
+import 'package:broker_app/frontend/components/items/outlined_item6.dart';
+import 'package:broker_app/frontend/components/items/dark_item6.dart';
 
 /// Area pentru setări care urmează exact design-ul specificat
 /// Permite schimbarea modului light/dark și a culorii temei cu actualizări în timp real

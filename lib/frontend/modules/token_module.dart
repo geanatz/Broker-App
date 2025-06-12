@@ -1,7 +1,7 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:broker_app/frontend/common/app_theme.dart';
 
 class AccountCreatedPopup extends StatelessWidget {
   final String token;

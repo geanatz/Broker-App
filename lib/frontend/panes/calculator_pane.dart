@@ -1,14 +1,13 @@
+import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:broker_app/frontend/common/utils/safe_google_fonts.dart';
 import '../../backend/services/calculator_service.dart';
 import '../../backend/services/form_service.dart';
-import '../common/app_theme.dart';
 import '../popups/amortization_popup.dart';
 // Import components
-import '../common/components/headers/widget_header1.dart';
-import '../common/components/items/light_item3.dart';
-import '../common/components/buttons/flex_buttons2.dart';
+import '../components/headers/widget_header1.dart';
+import '../components/items/light_item3.dart';
+import '../components/buttons/flex_buttons2.dart';
 import 'package:intl/intl.dart';
 
 /// Widget pentru panoul de calculator de credit
@@ -259,7 +258,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 title,
-                style: SafeGoogleFonts.outfit(
+                style: AppTheme.safeOutfit(
                   color: AppTheme.elementColor2,
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
@@ -281,7 +280,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                 controller: controller,
                 keyboardType: keyboardType,
                 inputFormatters: formatters,
-                style: SafeGoogleFonts.outfit(
+                style: AppTheme.safeOutfit(
                   color: AppTheme.elementColor3,
                   fontSize: 17,
                   fontWeight: FontWeight.w500,
@@ -291,7 +290,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15 ),
                   border: InputBorder.none,
                   hintText: placeholderText,
-                  hintStyle: SafeGoogleFonts.outfit(
+                  hintStyle: AppTheme.safeOutfit(
                     color: AppTheme.elementColor3,
                     fontSize: 17,
                     fontWeight: FontWeight.w500,
@@ -482,12 +481,12 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
-                              titleStyle: SafeGoogleFonts.outfit(
+                              titleStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor2,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w500,
                               ),
-                              descriptionStyle: SafeGoogleFonts.outfit(
+                              descriptionStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor1,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
@@ -503,12 +502,12 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
-                              titleStyle: SafeGoogleFonts.outfit(
+                              titleStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor2,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w500,
                               ),
-                              descriptionStyle: SafeGoogleFonts.outfit(
+                              descriptionStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor1,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
@@ -524,12 +523,12 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
-                              titleStyle: SafeGoogleFonts.outfit(
+                              titleStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor2,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w500,
                               ),
-                              descriptionStyle: SafeGoogleFonts.outfit(
+                              descriptionStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor1,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
@@ -545,12 +544,12 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
-                              titleStyle: SafeGoogleFonts.outfit(
+                              titleStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor2,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w500,
                               ),
-                              descriptionStyle: SafeGoogleFonts.outfit(
+                              descriptionStyle: AppTheme.safeOutfit(
                                 color: AppTheme.elementColor1,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
@@ -576,7 +575,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
             spacing: AppTheme.smallGap,
             borderRadius: AppTheme.borderRadiusMedium,
             buttonHeight: 48.0,
-            primaryButtonTextStyle: SafeGoogleFonts.outfit(
+            primaryButtonTextStyle: AppTheme.safeOutfit(
               fontSize: AppTheme.fontSizeMedium,
               fontWeight: FontWeight.w500,
             ),
