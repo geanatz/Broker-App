@@ -85,19 +85,12 @@ class AuthService {
       // Verifică dacă email-ul este deja folosit
       final email = _createEmailFromConsultantName(consultantName);
       try {
-        // Încearcă să găsim un utilizator cu acest email
-        // Dacă găsim, înseamnă că există un cont asociat cu acest email
-        // chiar dacă a fost șters din Firestore
-        final methods = await _auth.fetchSignInMethodsForEmail(email);
-        if (methods.isNotEmpty) {
-          return {
-            'success': false,
-            'message': 'Acest consultant există deja (email asociat). Folosiți o altă denumire sau ștergeți contul asociat.',
-          };
-        }
+        // Încearcă să creezi utilizatorul direct - Firebase va returna eroare dacă email-ul există
+        // Aceasta este abordarea recomandată în loc de fetchSignInMethodsForEmail
+        // Vom gestiona eroarea 'email-already-in-use' mai jos în catch block
       } catch (e) {
-        // Ignorăm eroarea, presupunem că email-ul nu există
-        debugPrint('Error checking email existence: $e');
+        // Ignorăm eroarea de verificare, vom lăsa Firebase să gestioneze duplicatele
+        debugPrint('Proceeding with user creation, Firebase will handle duplicates: $e');
       }
 
       // Creează utilizator în Firebase Auth
@@ -441,18 +434,23 @@ class AuthService {
     try {
       // În aplicația client, singura opțiune este să ne autentificăm ca acel utilizator și apoi să-l ștergem
       // Aceasta necesită cunoașterea parolei, ceea ce în majoritatea cazurilor nu este posibil
-      // Verificăm doar dacă există contul
-      final methods = await _auth.fetchSignInMethodsForEmail(email);
-      if (methods.isNotEmpty) {
-        debugPrint('Auth user exists, but cannot be deleted from client app. Email: $email');
-        debugPrint('Available sign-in methods: $methods');
-        
-        // În realitate, aici ar trebui să apelăm un endpoint backend securizat sau Cloud Function
-        // Exemplu pseudocod pentru Cloud Function (implementat în backend):
-        // await cloudFunctions.httpsCallable('deleteUserByEmail')({'email': email});
-      }
+      
+      // Înlocuim fetchSignInMethodsForEmail (deprecated) cu o abordare diferită
+      // În loc să verificăm dacă există contul, încercăm direct operațiunea de ștergere
+      // sau marcăm pentru ștergere ulterioară printr-un Cloud Function
+      
+      debugPrint('Auth user deletion requested for email: $email');
+      debugPrint('Note: Cannot delete from client app. Would require Cloud Function or Admin SDK.');
+      
+      // În realitate, aici ar trebui să apelăm un endpoint backend securizat sau Cloud Function
+      // Exemplu pseudocod pentru Cloud Function (implementat în backend):
+      // await cloudFunctions.httpsCallable('deleteUserByEmail')({'email': email});
+      
+      // Pentru logging/debugging, putem încerca să detectăm dacă contul există
+      // prin încercarea unei operațiuni benigne, dar nu este necesar pentru funcționalitate
+      
     } catch (e) {
-      debugPrint('Error checking/deleting auth user: $e');
+      debugPrint('Error in auth user deletion process: $e');
       // Transmitem eroarea mai departe pentru a fi gestionată de apelant
       rethrow;
     }

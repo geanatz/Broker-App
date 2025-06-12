@@ -447,11 +447,11 @@ class FirebaseFormService {
   }
 
   /// Stream pentru a asculta schimbările în timp real pentru un client
-  Stream<DocumentSnapshot<Map<String, dynamic>>> streamClientFormData(String phoneNumber) {
+  Stream<Map<String, dynamic>?> streamClientFormData(String phoneNumber) {
     // Pentru compatibilitate, returnăm un stream care emite periodic datele clientului
     return Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
       final data = await loadClientFormData(phoneNumber);
-      return _MockDocumentSnapshot(data);
+      return data;
     });
   }
 
@@ -615,30 +615,4 @@ class FirebaseFormService {
   }
 }
 
-/// Mock DocumentSnapshot pentru compatibilitate cu stream-ul existent
-class _MockDocumentSnapshot implements DocumentSnapshot<Map<String, dynamic>> {
-  final Map<String, dynamic>? _data;
-  
-  _MockDocumentSnapshot(this._data);
-  
-  @override
-  Map<String, dynamic>? data() => _data;
-  
-  @override
-  bool get exists => _data != null;
-  
-  @override
-  String get id => _data?['phoneNumber'] ?? '';
-  
-  @override
-  DocumentReference<Map<String, dynamic>> get reference => throw UnimplementedError();
-  
-  @override
-  SnapshotMetadata get metadata => throw UnimplementedError();
-  
-  @override
-  dynamic get(Object field) => _data?[field];
-  
-  @override
-  dynamic operator [](Object field) => _data?[field];
-} 
+

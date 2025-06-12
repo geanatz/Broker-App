@@ -227,7 +227,7 @@ class MeetingService {
   }
 
   /// Obține întâlnirile pentru o săptămână din noua structură
-  Stream<QuerySnapshot> getMeetingsForWeek(DateTime startOfWeek, DateTime endOfWeek) {
+  Stream<List<MeetingData>> getMeetingsForWeek(DateTime startOfWeek, DateTime endOfWeek) {
     try {
       // Returnăm un stream care emite periodic datele din noua structură
       return Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
@@ -239,21 +239,31 @@ class MeetingService {
           return meetingDate.isAfter(startOfWeek) && meetingDate.isBefore(endOfWeek);
         }).toList();
 
-        // Convertește în format compatibil cu QuerySnapshot
-        return _MockQuerySnapshot(weekMeetings);
+        // Convertește în format MeetingData
+        return weekMeetings.map((meeting) => MeetingData(
+          id: meeting.id,
+          clientName: meeting.additionalData?['clientName'] ?? 'Client necunoscut',
+          phoneNumber: meeting.additionalData?['phoneNumber'] ?? '',
+          dateTime: meeting.dateTime,
+          type: meeting.type == ClientActivityType.bureauDelete 
+              ? MeetingType.bureauDelete 
+              : MeetingType.meeting,
+          consultantId: meeting.additionalData?['consultantId'] ?? '',
+          consultantName: meeting.additionalData?['consultantName'] ?? '',
+        )).toList();
       });
     } catch (e) {
       debugPrint("❌ Error creating getMeetingsForWeek stream: $e");
-      return Stream<QuerySnapshot>.empty();
+      return Stream<List<MeetingData>>.empty();
     }
   }
 
   /// Obține întâlnirile viitoare pentru consultantul curent din noua structură
-  Stream<QuerySnapshot> getUpcomingMeetings({int limit = 10}) {
+  Stream<List<MeetingData>> getUpcomingMeetings({int limit = 10}) {
     final user = currentUser;
     if (user == null) {
       debugPrint("❌ No authenticated user for getUpcomingMeetings");
-      return Stream<QuerySnapshot>.empty();
+      return Stream<List<MeetingData>>.empty();
     }
 
     try {
@@ -270,11 +280,22 @@ class MeetingService {
         // Sortează după dată
         upcomingMeetings.sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-        return _MockQuerySnapshot(upcomingMeetings);
+        // Convertește în format MeetingData
+        return upcomingMeetings.map((meeting) => MeetingData(
+          id: meeting.id,
+          clientName: meeting.additionalData?['clientName'] ?? 'Client necunoscut',
+          phoneNumber: meeting.additionalData?['phoneNumber'] ?? '',
+          dateTime: meeting.dateTime,
+          type: meeting.type == ClientActivityType.bureauDelete 
+              ? MeetingType.bureauDelete 
+              : MeetingType.meeting,
+          consultantId: meeting.additionalData?['consultantId'] ?? '',
+          consultantName: meeting.additionalData?['consultantName'] ?? '',
+        )).toList();
       });
     } catch (e) {
       debugPrint("❌ Error creating getUpcomingMeetings stream: $e");
-      return Stream<QuerySnapshot>.empty();
+      return Stream<List<MeetingData>>.empty();
     }
   }
 
@@ -330,64 +351,4 @@ class MeetingService {
   }
 }
 
-/// Mock QuerySnapshot pentru compatibilitate cu stream-urile existente
-class _MockQuerySnapshot implements QuerySnapshot<Map<String, dynamic>> {
-  final List<ClientActivity> _meetings;
-  
-  _MockQuerySnapshot(this._meetings);
-  
-  @override
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> get docs {
-    return _meetings.map((meeting) => _MockQueryDocumentSnapshot(meeting)).toList();
-  }
-  
-  @override
-  int get size => _meetings.length;
-  
-  @override
-  bool get isEmpty => _meetings.isEmpty;
-  
-  @override
-  SnapshotMetadata get metadata => throw UnimplementedError();
-  
-  @override
-  List<DocumentChange<Map<String, dynamic>>> get docChanges => throw UnimplementedError();
-}
 
-/// Mock QueryDocumentSnapshot pentru compatibilitate
-class _MockQueryDocumentSnapshot implements QueryDocumentSnapshot<Map<String, dynamic>> {
-  final ClientActivity _meeting;
-  
-  _MockQueryDocumentSnapshot(this._meeting);
-  
-  @override
-  Map<String, dynamic> data() {
-    return {
-      'clientName': _meeting.additionalData?['clientName'] ?? 'Client necunoscut',
-      'phoneNumber': _meeting.additionalData?['phoneNumber'] ?? '',
-      'dateTime': Timestamp.fromDate(_meeting.dateTime),
-      'type': _meeting.type == ClientActivityType.bureauDelete ? 'bureauDelete' : 'meeting',
-      'consultantId': _meeting.additionalData?['consultantId'] ?? '',
-      'consultantName': _meeting.additionalData?['consultantName'] ?? '',
-      'createdAt': Timestamp.fromDate(_meeting.createdAt),
-    };
-  }
-  
-  @override
-  String get id => _meeting.id;
-  
-  @override
-  bool get exists => true;
-  
-  @override
-  DocumentReference<Map<String, dynamic>> get reference => throw UnimplementedError();
-  
-  @override
-  SnapshotMetadata get metadata => throw UnimplementedError();
-  
-  @override
-  dynamic get(Object field) => data()[field];
-  
-  @override
-  dynamic operator [](Object field) => data()[field];
-}
