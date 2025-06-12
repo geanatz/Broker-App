@@ -153,11 +153,11 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
                 SizedBox(
                   height: 21,
                   child: Text(
-                    "Una calumea, nu ziua de nastere...",
+                    "Una calumea, nu ziua de nastere.",
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF927B9D),
+                      color: AppTheme.elementColor1,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

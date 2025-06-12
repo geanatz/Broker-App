@@ -11,25 +11,37 @@ enum AppThemeColor { red, yellow, green, cyan, blue, pink }
 /// Suportă schimbarea temei între light/dark/auto și 6 culori diferite:
 /// - red, yellow, green, cyan, blue, pink
 
-class AppTheme {
-  AppTheme._(); // Constructor privat pentru a preveni instanțierea
+class AppTheme extends ChangeNotifier {
+  static final AppTheme _instance = AppTheme._internal();
+  factory AppTheme() => _instance;
+  AppTheme._internal();
 
   // Tema și culoarea curentă (valori implicite)
-  static AppThemeMode currentThemeMode = AppThemeMode.auto;
-  static AppThemeColor currentThemeColor = AppThemeColor.blue;
+  static AppThemeMode _currentThemeMode = AppThemeMode.auto;
+  static AppThemeColor _currentThemeColor = AppThemeColor.blue;
+
+  // Getters pentru valorile curente
+  static AppThemeMode get currentThemeMode => _currentThemeMode;
+  static AppThemeColor get currentThemeColor => _currentThemeColor;
 
   /// Obține tema efectivă bazată pe setarea curentă și tema sistemului
   static AppThemeMode get effectiveThemeMode {
-    if (currentThemeMode == AppThemeMode.auto) {
+    if (_currentThemeMode == AppThemeMode.auto) {
       // Pentru modul auto, detectăm tema sistemului
       final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      // debugPrint('🎨 APP_THEME: Auto mode - detected brightness: $brightness');
       return brightness == Brightness.dark ? AppThemeMode.dark : AppThemeMode.light;
     }
-    return currentThemeMode;
+    // debugPrint('🎨 APP_THEME: Using manual mode: $currentThemeMode');
+    return _currentThemeMode;
   }
 
   /// Verifică dacă tema efectivă este dark
-  static bool get isDarkMode => effectiveThemeMode == AppThemeMode.dark;
+  static bool get isDarkMode {
+    final isDark = effectiveThemeMode == AppThemeMode.dark;
+    // debugPrint('🎨 APP_THEME: isDarkMode = $isDark');
+    return isDark;
+  }
 
   // ======== DIMENSIUNI ========
   
@@ -157,7 +169,7 @@ class AppTheme {
   // Culori pentru background gradient
   static Color get backgroundStart {
     if (isDarkMode) {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF5C3D5C);
         case AppThemeColor.yellow:
@@ -172,7 +184,7 @@ class AppTheme {
           return const Color(0xFF3D3D5C);
       }
     } else {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFFC2A4C2);
         case AppThemeColor.yellow:
@@ -191,7 +203,7 @@ class AppTheme {
 
   static Color get backgroundEnd {
     if (isDarkMode) {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF5C5C3D);
         case AppThemeColor.yellow:
@@ -206,7 +218,7 @@ class AppTheme {
           return const Color(0xFF5C3D3D);
       }
     } else {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFFC2C2A4);
         case AppThemeColor.yellow:
@@ -226,7 +238,7 @@ class AppTheme {
   // Culori pentru containere
   static Color get containerColor1 {
     if (isDarkMode) {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF3B2B2B);
         case AppThemeColor.yellow:
@@ -241,7 +253,7 @@ class AppTheme {
           return const Color(0xFF3B2B3B);
       }
     } else {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFFD4C4C4);
         case AppThemeColor.yellow:
@@ -260,7 +272,7 @@ class AppTheme {
 
   static Color get containerColor2 {
     if (isDarkMode) {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF532D2D);
         case AppThemeColor.yellow:
@@ -275,7 +287,7 @@ class AppTheme {
           return const Color(0xFF532D53);
       }
     } else {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFFD3ACAC);
         case AppThemeColor.yellow:
@@ -295,7 +307,7 @@ class AppTheme {
   // Culori pentru elemente
   static Color get elementColor1 {
     if (isDarkMode) {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF755757);
         case AppThemeColor.yellow:
@@ -310,7 +322,7 @@ class AppTheme {
           return const Color(0xFF755775);
       }
     } else {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFFA88A8A);
         case AppThemeColor.yellow:
@@ -330,7 +342,7 @@ class AppTheme {
   static Color get elementColor2 {
     // Pentru elementColor2, folosim aceleași culori pentru ambele teme
     // deoarece sunt suficient de vizibile pe fundaluri diferite
-    switch (currentThemeColor) {
+    switch (_currentThemeColor) {
       case AppThemeColor.red:
         return const Color(0xFF996666);
       case AppThemeColor.yellow:
@@ -348,7 +360,7 @@ class AppTheme {
 
   static Color get elementColor3 {
     if (isDarkMode) {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFFB28080);
         case AppThemeColor.yellow:
@@ -363,7 +375,7 @@ class AppTheme {
           return const Color(0xFFB280B2);
       }
     } else {
-      switch (currentThemeColor) {
+      switch (_currentThemeColor) {
         case AppThemeColor.red:
           return const Color(0xFF804D4D);
         case AppThemeColor.yellow:
@@ -484,8 +496,8 @@ class AppTheme {
   
   // Decorațiune pentru slot-uri rezervate în calendar
   static BoxDecoration get reservedSlotDecoration => BoxDecoration(
-    color: currentThemeColor == AppThemeColor.pink ? containerColor2 : 
-           (currentThemeMode == AppThemeMode.light ? const Color(0xFFC6ACD3) : const Color(0xFF532D53)),
+    color: _currentThemeColor == AppThemeColor.pink ? containerColor2 : 
+           (_currentThemeMode == AppThemeMode.light ? const Color(0xFFC6ACD3) : const Color(0xFF532D53)),
     borderRadius: BorderRadius.circular(borderRadiusSmall),
     boxShadow: [slotShadow],
   );
@@ -494,18 +506,42 @@ class AppTheme {
   
   /// Schimbă tema între Light și Dark
   static void toggleThemeMode() {
-    currentThemeMode = currentThemeMode == AppThemeMode.light 
+    _currentThemeMode = _currentThemeMode == AppThemeMode.light 
         ? AppThemeMode.dark 
         : AppThemeMode.light;
+    _instance.notifyListeners();
   }
   
   /// Setează tema specifică (Light sau Dark)
   static void setThemeMode(AppThemeMode mode) {
-    currentThemeMode = mode;
+    _currentThemeMode = mode;
+    _instance.notifyListeners();
   }
   
   /// Setează culoarea temei
   static void setThemeColor(AppThemeColor color) {
-    currentThemeColor = color;
+    _currentThemeColor = color;
+    _instance.notifyListeners();
+  }
+  
+  /// Forțează actualizarea detecției brightness-ului sistemului
+  static void refreshSystemBrightness() {
+    // This method forces a refresh of system brightness detection
+    // It's called when system theme changes are detected at app level
+    debugPrint('🎨 APP_THEME: Refreshing system brightness detection');
+    debugPrint('🎨 APP_THEME: Current mode: $currentThemeMode');
+    
+    if (currentThemeMode == AppThemeMode.auto) {
+      final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      debugPrint('🎨 APP_THEME: Auto mode active, system brightness: $brightness');
+      debugPrint('🎨 APP_THEME: Will use ${brightness == Brightness.dark ? 'DARK' : 'LIGHT'} theme');
+      debugPrint('🎨 APP_THEME: After refresh - isDarkMode: $isDarkMode');
+      debugPrint('🎨 APP_THEME: After refresh - popupBackground: $popupBackground');
+      
+      // Notify all listeners that theme might have changed
+      _instance.notifyListeners();
+    } else {
+      debugPrint('🎨 APP_THEME: Manual mode active: $currentThemeMode');
+    }
   }
 } 

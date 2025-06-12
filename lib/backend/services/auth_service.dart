@@ -59,8 +59,11 @@ class AuthService {
     required String team,
   }) async {
     try {
+      debugPrint('🟨 AUTH_SERVICE: Starting registration for: $consultantName');
+      
       // Verifică dacă parolele se potrivesc
       if (password != confirmPassword) {
+        debugPrint('🔴 AUTH_SERVICE: Passwords do not match');
         return {
           'success': false,
           'message': 'Parolele nu se potrivesc',
@@ -76,6 +79,7 @@ class AuthService {
       );
 
       if (consultantSnapshot.docs.isNotEmpty) {
+        debugPrint('🔴 AUTH_SERVICE: Consultant name already exists');
         return {
           'success': false,
           'message': 'Acest nume de consultant există deja',
@@ -84,6 +88,8 @@ class AuthService {
       
       // Verifică dacă email-ul este deja folosit
       final email = _createEmailFromConsultantName(consultantName);
+      debugPrint('🟨 AUTH_SERVICE: Created email: $email');
+      
       try {
         // Încearcă să creezi utilizatorul direct - Firebase va returna eroare dacă email-ul există
         // Aceasta este abordarea recomandată în loc de fetchSignInMethodsForEmail
@@ -93,14 +99,24 @@ class AuthService {
         debugPrint('Proceeding with user creation, Firebase will handle duplicates: $e');
       }
 
+      debugPrint('🟨 AUTH_SERVICE: Creating Firebase user...');
       // Creează utilizator în Firebase Auth
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      debugPrint('🟨 AUTH_SERVICE: Firebase user created: ${userCredential.user?.uid}');
+      debugPrint('🟨 AUTH_SERVICE: User email: ${userCredential.user?.email}');
+
+      // IMPORTANT: Facem signOut imediat pentru a preveni autentificarea automată
+      debugPrint('🟨 AUTH_SERVICE: Doing immediate signOut to prevent auto-login');
+      await _auth.signOut();
+      debugPrint('🟨 AUTH_SERVICE: Immediate signOut completed');
+
       // Generează token unic pentru resetarea parolei
       final token = _uuid.v4();
+      debugPrint('🟨 AUTH_SERVICE: Generated token: ${token.substring(0, 8)}...');
 
       // Salvează datele consultantului în Firestore, including token
       await _threadHandler.executeOnPlatformThread(() =>
@@ -113,12 +129,14 @@ class AuthService {
         })
       );
 
+      debugPrint('🟢 AUTH_SERVICE: Registration completed successfully');
       return {
         'success': true,
         'token': token,
         'message': 'Cont creat cu succes',
       };
     } on FirebaseAuthException catch (e) {
+      debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException: ${e.code} - ${e.message}');
       String message;
 
       switch (e.code) {
@@ -137,6 +155,7 @@ class AuthService {
         'message': message,
       };
     } catch (e) {
+      debugPrint('🔴 AUTH_SERVICE: General exception: $e');
       return {
         'success': false,
         'message': 'Eroare la crearea contului: $e',
@@ -471,6 +490,12 @@ class AuthService {
 
   // Sign out
   Future<void> signOut() async {
+    debugPrint('🟣 AUTH_SERVICE: signOut called');
+    debugPrint('🟣 AUTH_SERVICE: Current user before signOut: ${_auth.currentUser?.email ?? 'null'}');
+    
     await _auth.signOut();
+    
+    debugPrint('🟣 AUTH_SERVICE: signOut completed');
+    debugPrint('🟣 AUTH_SERVICE: Current user after signOut: ${_auth.currentUser?.email ?? 'null'}');
   }
 }

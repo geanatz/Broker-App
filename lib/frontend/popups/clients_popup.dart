@@ -70,6 +70,9 @@ class ClientsPopup extends StatefulWidget {
   /// Callback when "Delete All Clients" button is tapped
   final VoidCallback? onDeleteAllClients;
 
+  /// Callback when "Delete OCR Clients" from selected image is tapped  
+  final VoidCallback? onDeleteOcrClients;
+
   /// Callback when a client is selected
   final Function(Client)? onClientSelected;
 
@@ -91,6 +94,7 @@ class ClientsPopup extends StatefulWidget {
     this.onAddClient,
     this.onExtractClients,
     this.onDeleteAllClients,
+    this.onDeleteOcrClients,
     this.onClientSelected,
     this.onEditClient,
     this.onSaveClient,
@@ -328,6 +332,70 @@ class _ClientsPopupState extends State<ClientsPopup> {
     }
   }
 
+  /// Editează un client existent din lista de clienți extrași din imaginea selectată
+  void _updateClientInOcrResults(Client oldClient, Client newClient) {
+    if (_selectedOcrImagePath == null || _ocrResults == null) return;
+    
+    final ocrResult = _ocrResults![_selectedOcrImagePath];
+    if (ocrResult == null) return;
+    
+    setState(() {
+      // Găsește și actualizează clientul în lista de contacte
+      final updatedContacts = ocrResult.contacts.map((contact) {
+        // Identifică clientul de actualizat pe baza numelui și telefonului
+        if (contact.basicInfo.name == oldClient.name && 
+            contact.basicInfo.phoneNumber1 == oldClient.phoneNumber1) {
+          // Creează un nou UnifiedClientModel cu datele actualizate
+          return UnifiedClientModel(
+            id: contact.id, // Păstrează ID-ul original
+            consultantId: contact.consultantId,
+            basicInfo: ClientBasicInfo(
+              name: newClient.name,
+              phoneNumber1: newClient.phoneNumber1,
+              phoneNumber2: newClient.phoneNumber2,
+              coDebitorName: newClient.coDebitorName,
+            ),
+            formData: contact.formData,
+            activities: contact.activities,
+            currentStatus: const UnifiedClientStatus(
+              category: UnifiedClientCategory.apeluri,
+              isFocused: false,
+              additionalInfo: 'Editat in lista extrasa',
+            ),
+            metadata: ClientMetadata(
+              createdAt: contact.metadata.createdAt, // Păstrează data creării
+              updatedAt: DateTime.now(), // Actualizează data modificării
+              createdBy: contact.metadata.createdBy,
+              source: contact.metadata.source,
+              version: contact.metadata.version + 1, // Incrementează versiunea
+            ),
+          );
+        }
+        return contact; // Returnează contactul nemodificat
+      }).toList();
+      
+      // Actualizează rezultatul OCR cu lista modificată
+      _ocrResults![_selectedOcrImagePath!] = OcrImageResult(
+        success: ocrResult.success,
+        error: ocrResult.error,
+        imagePath: ocrResult.imagePath,
+        extractedText: ocrResult.extractedText,
+        contacts: updatedContacts,
+      );
+    });
+    
+    // Afișează mesaj de confirmare
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Client modificat in lista extrasa!'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   /// Gestionează click-ul pe item-ul imaginii OCR
   void _handleOcrImageTap(String imagePath) {
     if (_selectedOcrImagePath == imagePath) {
@@ -413,6 +481,42 @@ class _ClientsPopupState extends State<ClientsPopup> {
         }
       }
     });
+  }
+
+  /// Șterge imaginea OCR selectată complet (inclusiv item-ul din galerie)
+  void _deleteOcrClientsFromSelectedImage() {
+    if (_selectedOcrImagePath != null && _ocrResults != null) {
+      final result = _ocrResults![_selectedOcrImagePath];
+      if (result?.contacts != null) {
+        final clientCount = result!.contacts.length;
+        final imageName = result.imageName;
+        
+        // Șterge complet imaginea din rezultatele OCR și din lista de imagini selectate
+        setState(() {
+          _ocrResults!.remove(_selectedOcrImagePath!);
+          _selectedImages.removeWhere((image) => image.path == _selectedOcrImagePath);
+          _selectedOcrImagePath = null;
+          
+          // Dacă nu mai sunt imagini, trece la starea clientsOnly
+          if (_selectedImages.isEmpty) {
+            _currentState = PopupState.clientsOnly;
+          } else {
+            _currentState = PopupState.ocrOnly;
+          }
+        });
+        
+        // Afișează mesaj de confirmare
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Imaginea "$imageName" ștearsă complet ($clientCount clienți)'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
   }
 
   /// Returnează lista de clienți de afișat (ori clienții din imaginea OCR selectată, ori toți clienții)
@@ -710,31 +814,44 @@ class _ClientsPopupState extends State<ClientsPopup> {
             for (int i = 0; i < _selectedImages.length; i++) ...[
               GestureDetector(
                 onTap: () => _selectOcrImage(_selectedImages[i].path),
-      child: Container(
+                child: Container(
                   width: 56,
                   height: 56,
                   decoration: ShapeDecoration(
-                    color: _selectedOcrImagePath == _selectedImages[i].path
-                        ? AppTheme.elementColor1
-                        : AppTheme.containerColor2,
+                    color: AppTheme.containerColor2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.file(
-                      _selectedImages[i],
-                      fit: BoxFit.cover,
-                      width: 56,
-                      height: 56,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.image,
-                          color: AppTheme.elementColor2,
-                          size: 24,
-                        );
-                      },
+                    child: Stack(
+                      children: [
+                        // Imaginea
+                        Image.file(
+                          _selectedImages[i],
+                          fit: BoxFit.cover,
+                          width: 56,
+                          height: 56,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.image,
+                              color: AppTheme.elementColor2,
+                              size: 24,
+                            );
+                          },
+                        ),
+                        // Overlay negru pentru imaginile nefocusate
+                        if (_selectedOcrImagePath != _selectedImages[i].path)
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -882,8 +999,14 @@ class _ClientsPopupState extends State<ClientsPopup> {
                                    _selectedOcrImagePath != null;
           
           if (isInOcrMode) {
-            // Adaugă clientul la lista de clienți extrași din imaginea selectată
-            _addClientToOcrResults(client);
+            // Verifică dacă editează un client existent sau creează unul nou
+            if (_editingClient != null) {
+              // Editează clientul existent din lista OCR
+              _updateClientInOcrResults(_editingClient!, client);
+            } else {
+              // Adaugă un client nou la lista de clienți extrași din imaginea selectată
+              _addClientToOcrResults(client);
+            }
           } else {
             // Salvează clientul în lista principală
             widget.onSaveClient?.call(client);
@@ -976,7 +1099,11 @@ class _ClientsPopupState extends State<ClientsPopup> {
         primaryButtonIconPath: "assets/addIcon.svg",
         trailingIconPath: "assets/deleteIcon.svg",
         onPrimaryButtonTap: () => _openEditClient(),
-        onTrailingIconTap: widget.onDeleteAllClients,
+        onTrailingIconTap: () {
+          // Șterge complet imaginea OCR selectată (inclusiv item-ul din galerie)
+          _deleteOcrClientsFromSelectedImage();
+          widget.onDeleteOcrClients?.call();
+        },
         spacing: AppTheme.smallGap,
         borderRadius: AppTheme.borderRadiusMedium,
         buttonHeight: 48.0,

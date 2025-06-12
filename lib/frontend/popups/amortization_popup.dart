@@ -1,5 +1,6 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../backend/services/calculator_service.dart';
 // Import components
 import '../components/headers/widget_header1.dart';
@@ -15,6 +16,12 @@ class AmortizationPopup extends StatelessWidget {
     super.key,
     required this.schedule,
   });
+
+  /// Formatează un număr cu virgulă la fiecare 3 cifre, fără decimale
+  String _formatNumber(double value) {
+    final formatter = NumberFormat('#,###');
+    return formatter.format(value.round());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +52,7 @@ class AmortizationPopup extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: WidgetHeader1(
                   title: 'Amortizare',
-                  titleColor: const Color(0xFF8A8AA8), // elementColor1
+                  titleColor: AppTheme.elementColor1,
                   padding: EdgeInsets.zero,
                 ),
               ),
@@ -58,7 +65,7 @@ class AmortizationPopup extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(8),
                   decoration: ShapeDecoration(
-                    color: const Color(0xFFC4C4D4), // containerColor1
+                    color: AppTheme.containerColor1,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -68,17 +75,11 @@ class AmortizationPopup extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header row - using a custom row that matches the Figma design
+                      // Header row - fără container colorat conform designului
                       Container(
                         width: double.infinity,
-                        height: 40,
+                        height: 21,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: ShapeDecoration(
-                          color: const Color(0xFFACACD2), // containerColor2 - lighter purple for header
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -92,7 +93,7 @@ class AmortizationPopup extends StatelessWidget {
                                 child: Text(
                                   'Luna',
                                   style: AppTheme.safeOutfit(
-                                    color: const Color(0xFF666699), // elementColor2
+                                    color: AppTheme.elementColor2,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -105,9 +106,9 @@ class AmortizationPopup extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  'Suma',
+                                  'Rata',
                                   style: AppTheme.safeOutfit(
-                                    color: const Color(0xFF666699), // elementColor2
+                                    color: AppTheme.elementColor2,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -122,7 +123,7 @@ class AmortizationPopup extends StatelessWidget {
                                 child: Text(
                                   'Dobanda',
                                   style: AppTheme.safeOutfit(
-                                    color: const Color(0xFF666699), // elementColor2
+                                    color: AppTheme.elementColor2,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -137,7 +138,7 @@ class AmortizationPopup extends StatelessWidget {
                                 child: Text(
                                   'Principal',
                                   style: AppTheme.safeOutfit(
-                                    color: const Color(0xFF666699), // elementColor2
+                                    color: AppTheme.elementColor2,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -152,7 +153,7 @@ class AmortizationPopup extends StatelessWidget {
                                 child: Text(
                                   'Sold',
                                   style: AppTheme.safeOutfit(
-                                    color: const Color(0xFF666699), // elementColor2
+                                    color: AppTheme.elementColor2,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -177,9 +178,9 @@ class AmortizationPopup extends StatelessWidget {
                             return Container(
                               width: double.infinity,
                               height: 40,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: ShapeDecoration(
-                                color: const Color(0xFFACACD2), // containerColor2
+                                color: AppTheme.containerColor2,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -197,7 +198,7 @@ class AmortizationPopup extends StatelessWidget {
                                       child: Text(
                                         '${entry.paymentNumber}',
                                         style: AppTheme.safeOutfit(
-                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          color: AppTheme.elementColor3,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -210,9 +211,9 @@ class AmortizationPopup extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(horizontal: 8),
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        entry.payment.toStringAsFixed(2),
+                                        _formatNumber(entry.payment),
                                         style: AppTheme.safeOutfit(
-                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          color: AppTheme.elementColor3,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -225,9 +226,9 @@ class AmortizationPopup extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(horizontal: 8),
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        entry.interestPayment.toStringAsFixed(2),
+                                        _formatNumber(entry.interestPayment),
                                         style: AppTheme.safeOutfit(
-                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          color: AppTheme.elementColor3,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -240,9 +241,9 @@ class AmortizationPopup extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(horizontal: 8),
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        entry.principalPayment.toStringAsFixed(2),
+                                        _formatNumber(entry.principalPayment),
                                         style: AppTheme.safeOutfit(
-                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          color: AppTheme.elementColor3,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -255,9 +256,9 @@ class AmortizationPopup extends StatelessWidget {
                                       padding: const EdgeInsets.symmetric(horizontal: 8),
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        entry.remainingBalance.toStringAsFixed(2),
+                                        _formatNumber(entry.remainingBalance),
                                         style: AppTheme.safeOutfit(
-                                          color: const Color(0xFF4D4D80), // elementColor3
+                                          color: AppTheme.elementColor3,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w500,
                                         ),

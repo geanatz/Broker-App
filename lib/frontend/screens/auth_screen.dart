@@ -6,6 +6,7 @@ import 'package:broker_app/frontend/modules/register_module.dart';
 import 'package:broker_app/frontend/modules/verify_module.dart';
 import 'package:broker_app/frontend/modules/recovery__module.dart';
 import 'package:broker_app/frontend/modules/token_module.dart';
+import 'package:broker_app/backend/services/settings_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -21,13 +22,65 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _successMessage;
   String? _tempConsultantIdForPasswordReset; // Stochează ID-ul consultantului după verificarea tokenului
   String? _registrationToken; // Stochează token-ul generat la înregistrare
+  
+  // Settings service pentru detectarea schimbărilor de temă
+  final SettingsService _settingsService = SettingsService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Inițializează SettingsService
+    _initializeSettings();
+    
+    // Ascultă schimbările din SettingsService pentru actualizări în timp real ale temei
+    _settingsService.addListener(_onSettingsChanged);
+    
+    // Ascultă schimbările din AppTheme pentru actualizări automate ale UI-ului
+    AppTheme().addListener(_onAppThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _settingsService.removeListener(_onSettingsChanged);
+    AppTheme().removeListener(_onAppThemeChanged);
+    super.dispose();
+  }
+
+  /// Inițializează SettingsService
+  Future<void> _initializeSettings() async {
+    if (!_settingsService.isInitialized) {
+      await _settingsService.initialize();
+    }
+  }
+
+  /// Callback pentru schimbările din SettingsService
+  void _onSettingsChanged() {
+    if (mounted) {
+      debugPrint('🎨 AUTH_SCREEN: Settings changed, updating UI');
+      setState(() {
+        // Actualizează întreaga interfață când se schimbă tema
+      });
+    }
+  }
+
+  /// Callback pentru schimbările din AppTheme
+  void _onAppThemeChanged() {
+    if (mounted) {
+      debugPrint('🎨 AUTH_SCREEN: AppTheme changed, updating UI');
+      setState(() {
+        // Actualizează întreaga interfață când se schimbă AppTheme
+      });
+    }
+  }
 
   void _navigateTo(AuthStep step) {
+    debugPrint('🟦 AUTH_SCREEN: Navigating to step: $step');
     setState(() {
       _currentStep = step;
       _errorMessage = null; // Resetează erorile la navigare
       _successMessage = null; // Resetează mesajele de succes la navigare
     });
+    debugPrint('🟦 AUTH_SCREEN: Navigation completed to: $_currentStep');
   }
 
   Future<void> _handleLoginAttempt(String consultantName, String password) async {
@@ -56,29 +109,42 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _handleRegisterAttempt(String consultantName, String password, String confirmPassword, String team) async {
+    debugPrint('🔵 AUTH_SCREEN: Starting registration attempt for: $consultantName');
+    
     final result = await _authService.registerConsultant(
       consultantName: consultantName,
       password: password,
       confirmPassword: confirmPassword,
       team: team,
     );
+    
+    debugPrint('🔵 AUTH_SCREEN: Registration result: ${result['success']}');
+    if (result['token'] != null) {
+      debugPrint('🔵 AUTH_SCREEN: Token received: ${result['token'].substring(0, 8)}...');
+    }
+    
     if (mounted) {
       if (result['success']) {
-        // După înregistrare cu succes, delogăm utilizatorul (dacă a fost logat automat de Firebase)
-        await _authService.signOut();
+        debugPrint('🟡 AUTH_SCREEN: Registration successful, navigating to AccountCreated');
         
         setState(() {
           _successMessage = result['message'];
           _errorMessage = null;
           _registrationToken = result['token']; // Salvăm token-ul pentru afișare în popup
+          debugPrint('🔵 AUTH_SCREEN: Setting _registrationToken: ${_registrationToken?.substring(0, 8)}...');
           _navigateTo(AuthStep.accountCreated); // Navigăm la popup-ul de confirmare cont creat
         });
+        
+        debugPrint('🟢 AUTH_SCREEN: Navigation to AccountCreated completed');
       } else {
+        debugPrint('🔴 AUTH_SCREEN: Registration failed: ${result['message']}');
         setState(() {
           _errorMessage = result['message'];
           _successMessage = null;
         });
       }
+    } else {
+      debugPrint('🔴 AUTH_SCREEN: Widget not mounted after registration');
     }
   }
 
@@ -136,9 +202,11 @@ class _AuthScreenState extends State<AuthScreen> {
   }
   
   Widget _buildCurrentPopup() {
+    debugPrint('🟪 AUTH_SCREEN: Building popup for step: $_currentStep');
     Widget? popupToShow;
     switch (_currentStep) {
       case AuthStep.login:
+        debugPrint('🟪 AUTH_SCREEN: Building LoginPopup');
         popupToShow = LoginPopup(
           onLoginAttempt: _handleLoginAttempt,
           onGoToRegister: () => _navigateTo(AuthStep.registration),
@@ -146,30 +214,35 @@ class _AuthScreenState extends State<AuthScreen> {
         );
         break;
       case AuthStep.registration:
+        debugPrint('🟪 AUTH_SCREEN: Building RegisterPopup');
         popupToShow = RegisterPopup(
           onRegisterAttempt: _handleRegisterAttempt,
           onGoToLogin: () => _navigateTo(AuthStep.login),
         );
         break;
       case AuthStep.accountCreated:
+        debugPrint('🟪 AUTH_SCREEN: Building AccountCreatedPopup with token: ${_registrationToken?.substring(0, 8)}...');
         popupToShow = AccountCreatedPopup(
           token: _registrationToken ?? 'Token indisponibil',
           onContinue: () => _navigateTo(AuthStep.login),
         );
         break;
       case AuthStep.tokenEntry:
+        debugPrint('🟪 AUTH_SCREEN: Building TokenPopup');
         popupToShow = TokenPopup(
           onTokenSubmit: _handleTokenSubmit,
           onGoToLogin: () => _navigateTo(AuthStep.login),
         );
         break;
       case AuthStep.passwordReset:
+        debugPrint('🟪 AUTH_SCREEN: Building ResetPasswordPopup');
         popupToShow = ResetPasswordPopup(
           onResetPasswordAttempt: _handleResetPasswordAttempt,
           onGoToLogin: () => _navigateTo(AuthStep.login),
         );
         break;
       case AuthStep.initial: // Fallback sau stare inițială, ar trebui să ajungă la login
+        debugPrint('🟪 AUTH_SCREEN: Initial step, navigating to login');
         _navigateTo(AuthStep.login);
         // Returnează un placeholder sau un loading cât timp se face redirectarea în setState
         return const Center(child: CircularProgressIndicator()); 

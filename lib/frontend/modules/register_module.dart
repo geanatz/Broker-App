@@ -34,6 +34,14 @@ class _RegisterPopupState extends State<RegisterPopup> {
   bool _isConfirmPasswordInvalid = false;
   bool _isTeamInvalid = false;
 
+  @override
+  void initState() {
+    super.initState();
+    
+    // Ascultă schimbările din AppTheme pentru actualizări automate ale UI-ului
+    AppTheme().addListener(_onAppThemeChanged);
+  }
+
   void _attemptRegister() {
     // Resetăm stările de validare
     setState(() {
@@ -105,7 +113,18 @@ class _RegisterPopupState extends State<RegisterPopup> {
     _nameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    AppTheme().removeListener(_onAppThemeChanged);
     super.dispose();
+  }
+
+  /// Callback pentru schimbările din AppTheme
+  void _onAppThemeChanged() {
+    if (mounted) {
+      debugPrint('🎨 REGISTER_POPUP: AppTheme changed, updating UI');
+      setState(() {
+        // Actualizează UI-ul când se schimbă AppTheme
+      });
+    }
   }
 
   @override

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class AccountCreatedPopup extends StatelessWidget {
+class AccountCreatedPopup extends StatefulWidget {
   final String token;
   final VoidCallback onContinue;
 
@@ -14,9 +14,46 @@ class AccountCreatedPopup extends StatelessWidget {
   });
 
   @override
+  State<AccountCreatedPopup> createState() => _AccountCreatedPopupState();
+}
+
+class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
+  late TextEditingController _tokenController;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Ascultă schimbările din AppTheme pentru actualizări automate ale UI-ului
+    AppTheme().addListener(_onAppThemeChanged);
+
+    _tokenController = TextEditingController(text: widget.token);
+  }
+
+  @override
+  void dispose() {
+    _tokenController.dispose();
+    AppTheme().removeListener(_onAppThemeChanged);
+    super.dispose();
+  }
+
+  /// Callback pentru schimbările din AppTheme
+  void _onAppThemeChanged() {
+    if (mounted) {
+      debugPrint('🎨 TOKEN_POPUP: AppTheme changed, updating UI');
+      setState(() {
+        // Actualizează UI-ul când se schimbă AppTheme
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    debugPrint('🟫 TOKEN_MODULE: Building AccountCreatedPopup');
+    debugPrint('🟫 TOKEN_MODULE: Token: ${widget.token.substring(0, 8)}...');
+    
     const double popupWidth = 360.0;
-    const double popupHeight = 216.0;
+    const double popupHeight = 220.0;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -77,7 +114,7 @@ class AccountCreatedPopup extends StatelessWidget {
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF927B9D),
+                      color: AppTheme.elementColor1,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -134,7 +171,7 @@ class AccountCreatedPopup extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
                     child: Text(
-                      token,
+                      widget.token,
                       style: AppTheme.smallTextStyle.copyWith(
                         color: AppTheme.elementColor3,
                         fontSize: AppTheme.fontSizeMedium,
@@ -152,7 +189,7 @@ class AccountCreatedPopup extends StatelessWidget {
                     colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
                   ),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: token));
+                    Clipboard.setData(ClipboardData(text: widget.token));
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -182,7 +219,10 @@ class AccountCreatedPopup extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: TextButton(
-        onPressed: onContinue,
+        onPressed: () {
+          debugPrint('🟫 TOKEN_MODULE: Continue button pressed, calling onContinue');
+          widget.onContinue();
+        },
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),

@@ -88,6 +88,26 @@ class _LoginPopupState extends State<LoginPopup> {
   void initState() {
     super.initState();
     _fetchConsultantNames();
+    
+    // Ascultă schimbările din AppTheme pentru actualizări automate ale UI-ului
+    AppTheme().addListener(_onAppThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    AppTheme().removeListener(_onAppThemeChanged);
+    super.dispose();
+  }
+
+  /// Callback pentru schimbările din AppTheme
+  void _onAppThemeChanged() {
+    if (mounted) {
+      debugPrint('🎨 LOGIN_POPUP: AppTheme changed, updating UI');
+      setState(() {
+        // Actualizează UI-ul când se schimbă AppTheme
+      });
+    }
   }
 
   Future<void> _fetchConsultantNames() async {
@@ -137,12 +157,6 @@ class _LoginPopupState extends State<LoginPopup> {
     if (isValid) {
       widget.onLoginAttempt(_selectedConsultant!, _passwordController.text);
     }
-  }
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
   }
 
   @override

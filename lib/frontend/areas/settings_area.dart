@@ -129,11 +129,13 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeModeDisplayName(AppThemeMode.light),
                           svgAsset: 'assets/lightIcon.svg',
                           onTap: () => _changeThemeMode(AppThemeMode.light),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeModeDisplayName(AppThemeMode.light),
                           svgAsset: 'assets/lightIcon.svg',
                           onTap: () => _changeThemeMode(AppThemeMode.light),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
                 
@@ -146,11 +148,13 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeModeDisplayName(AppThemeMode.dark),
                           svgAsset: 'assets/darkIcon.svg',
                           onTap: () => _changeThemeMode(AppThemeMode.dark),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeModeDisplayName(AppThemeMode.dark),
                           svgAsset: 'assets/darkIcon.svg',
                           onTap: () => _changeThemeMode(AppThemeMode.dark),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
                 
@@ -163,11 +167,13 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeModeDisplayName(AppThemeMode.auto),
                           svgAsset: 'assets/systemIcon.svg',
                           onTap: () => _changeThemeMode(AppThemeMode.auto),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeModeDisplayName(AppThemeMode.auto),
                           svgAsset: 'assets/systemIcon.svg',
                           onTap: () => _changeThemeMode(AppThemeMode.auto),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
               ],
@@ -216,12 +222,14 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.red),
                           svgAsset: 'assets/colorIcon.svg',
                           onTap: () => _changeThemeColor(AppThemeColor.red),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.red),
                           svgAsset: 'assets/colorIcon.svg',
                           iconColor: AppTheme.elementColor2,
                           onTap: () => _changeThemeColor(AppThemeColor.red),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
                 
@@ -234,12 +242,14 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.yellow),
                           svgAsset: 'assets/colorIcon.svg',
                           onTap: () => _changeThemeColor(AppThemeColor.yellow),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.yellow),
                           svgAsset: 'assets/colorIcon.svg',
                           iconColor: AppTheme.elementColor2,
                           onTap: () => _changeThemeColor(AppThemeColor.yellow),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
                 
@@ -252,12 +262,14 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.green),
                           svgAsset: 'assets/colorIcon.svg',
                           onTap: () => _changeThemeColor(AppThemeColor.green),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.green),
                           svgAsset: 'assets/colorIcon.svg',
                           iconColor: AppTheme.elementColor2,
                           onTap: () => _changeThemeColor(AppThemeColor.green),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
               ],
@@ -282,12 +294,14 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.cyan),
                           svgAsset: 'assets/colorIcon.svg',
                           onTap: () => _changeThemeColor(AppThemeColor.cyan),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.cyan),
                           svgAsset: 'assets/colorIcon.svg',
                           iconColor: AppTheme.elementColor2,
                           onTap: () => _changeThemeColor(AppThemeColor.cyan),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
                 
@@ -300,12 +314,14 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.blue),
                           svgAsset: 'assets/colorIcon.svg',
                           onTap: () => _changeThemeColor(AppThemeColor.blue),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.blue),
                           svgAsset: 'assets/colorIcon.svg',
                           iconColor: AppTheme.elementColor2,
                           onTap: () => _changeThemeColor(AppThemeColor.blue),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
                 
@@ -318,12 +334,14 @@ class _SettingsAreaState extends State<SettingsArea> {
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.pink),
                           svgAsset: 'assets/colorIcon.svg',
                           onTap: () => _changeThemeColor(AppThemeColor.pink),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         )
                       : OutlinedItem6(
                           title: _settingsService.getThemeColorDisplayName(AppThemeColor.pink),
                           svgAsset: 'assets/colorIcon.svg',
                           iconColor: AppTheme.elementColor2,
                           onTap: () => _changeThemeColor(AppThemeColor.pink),
+                          mainBorderRadius: AppTheme.borderRadiusSmall,
                         ),
                 ),
               ],

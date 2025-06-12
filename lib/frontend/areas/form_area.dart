@@ -486,24 +486,26 @@ class _FormAreaState extends State<FormArea> {
 
   /// Construiește placeholder-ul când nu există client selectat
   Widget _buildNoClientSelectedPlaceholder() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.largeGap),
-        clipBehavior: Clip.antiAlias,
-        decoration: ShapeDecoration(
-          color: AppTheme.popupBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
-          ),
-          shadows: [
-            BoxShadow(
-              color: Color(0x19000000),
-              blurRadius: 15,
-              offset: Offset(0, 0),
-              spreadRadius: 0,
-            )
-          ],
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.largeGap),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: AppTheme.popupBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
         ),
+        shadows: [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 15,
+            offset: Offset(0, 0),
+            spreadRadius: 0,
+          )
+        ],
+      ),
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,

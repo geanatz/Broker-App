@@ -333,6 +333,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       onSaveClient: _handleSaveClient,
                       onDeleteClient: () => _handleDeleteClient(_selectedPopupClient!),
                       onDeleteAllClients: _handleDeleteAllClients,
+                      onDeleteOcrClients: _handleDeleteOcrClients,
                     ),
                   
                   // Form-ul de editare e acum integrat în ClientsPopup
@@ -461,6 +462,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         ),
       );
     }
+  }
+
+  /// Handles delete OCR image completely (removes item from gallery)
+  void _handleDeleteOcrClients() {
+    // Această metodă este apelată când se șterge complet imaginea OCR selectată
+    // Logica efectivă de ștergere se face în ClientsPopup prin _deleteOcrClientsFromSelectedImage()
+    // Aici putem adăuga logging sau alte acțiuni suplimentare dacă e necesar
+    debugPrint('🗑️ OCR image completely removed from gallery');
   }
   
   /// Handles saving a client (create or edit)

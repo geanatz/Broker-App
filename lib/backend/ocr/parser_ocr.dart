@@ -56,37 +56,60 @@ class ParserOcr {
     final phonePatterns = [
       // Format: +40 XXX XXX XXX
       RegExp(r'\+40\s*[0-9]\s*[0-9]{2}\s*[0-9]{3}\s*[0-9]{3}'),
-      // Format: 0XXX XXX XXX sau 0XXX.XXX.XXX
+      // Format: 0XXX XXX XXX sau 0XXX.XXX.XXX (standard 10 cifre)
       RegExp(r'0[0-9]\s*[0-9]{2}[\s\.]?[0-9]{3}[\s\.]?[0-9]{3}'),
+      // Format: 0XXX XXX XX (incomplet - 9 cifre)
+      RegExp(r'0[0-9]\s*[0-9]{2}[\s\.]?[0-9]{3}[\s\.]?[0-9]{2}(?!\d)'),
       // Format: XXX XXX XXX (fără prefix)
       RegExp(r'[0-9]{3}[\s\.]?[0-9]{3}[\s\.]?[0-9]{3}'),
       // Format compact: 0XXXXXXXXX
       RegExp(r'0[0-9]{9}'),
+      // Format compact incomplet: 0XXXXXXXX (9 cifre)
+      RegExp(r'0[0-9]{8}(?!\d)'),
     ];
+
+    debugPrint('📝 [ParserOcr] Analizez ${lines.length} linii pentru telefoane');
 
     for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       final line = lines[lineIndex];
+      debugPrint('📄 [ParserOcr] Linia $lineIndex: "$line"');
       
-      for (final pattern in phonePatterns) {
+      for (int patternIndex = 0; patternIndex < phonePatterns.length; patternIndex++) {
+        final pattern = phonePatterns[patternIndex];
         final matches = pattern.allMatches(line);
         
         for (final match in matches) {
           final rawPhone = match.group(0)!;
           final cleanPhone = _cleanPhoneNumber(rawPhone);
           
-          // Validează că e un număr de telefon valid
+          debugPrint('🔍 [ParserOcr] Pattern $patternIndex găsit: "$rawPhone" -> curățat: "$cleanPhone"');
+          
+          // Validează că e un număr de telefon valid (inclusiv incomplete)
           if (_isValidPhoneNumber(cleanPhone)) {
-            phones.add(PhoneDetection(
-              number: cleanPhone,
-              lineIndex: lineIndex,
-              position: match.start,
-              raw: rawPhone,
-            ));
-            
-            debugPrint('📞 [ParserOcr] Telefon găsit: $cleanPhone (linia $lineIndex)');
+            // Verifică dacă nu este deja în listă (evită duplicatele)
+            final existingPhone = phones.where((p) => p.number == cleanPhone).firstOrNull;
+            if (existingPhone == null) {
+              phones.add(PhoneDetection(
+                number: cleanPhone,
+                lineIndex: lineIndex,
+                position: match.start,
+                raw: rawPhone,
+              ));
+              
+              debugPrint('✅ [ParserOcr] Telefon valid adăugat: $cleanPhone (linia $lineIndex, pozitia ${match.start})');
+            } else {
+              debugPrint('⚠️ [ParserOcr] Telefon duplicat ignorat: $cleanPhone');
+            }
+          } else {
+            debugPrint('❌ [ParserOcr] Telefon invalid ignorat: $cleanPhone (raw: $rawPhone)');
           }
         }
       }
+    }
+
+    debugPrint('📞 [ParserOcr] Total telefoane detectate: ${phones.length}');
+    for (final phone in phones) {
+      debugPrint('   -> ${phone.number} (linia ${phone.lineIndex}, pozitia ${phone.position})');
     }
 
     return phones;
@@ -131,13 +154,20 @@ class ParserOcr {
     final contacts = <ContactDetection>[];
     final usedPhones = <PhoneDetection>{};
 
+    debugPrint('🔗 [ParserOcr] Începe asocierea: ${names.length} nume cu ${phones.length} telefoane');
+
     // Pentru fiecare nume, caută până la 2 telefoane apropiate
     for (final name in names) {
       final nearbyPhones = <PhoneDetection>[];
       
+      debugPrint('👤 [ParserOcr] Procesez numele: ${name.name} (linia ${name.lineIndex}, pozitia ${name.position})');
+      
       // Găsește toate telefoanele din proximitate
       for (final phone in phones) {
-        if (usedPhones.contains(phone)) continue;
+        if (usedPhones.contains(phone)) {
+          debugPrint('   📞 Telefon deja folosit: ${phone.number}');
+          continue;
+        }
 
         // Calculează distanța între nume și telefon
         int distance;
@@ -151,11 +181,18 @@ class ParserOcr {
                     (name.position + phone.position);
         }
 
+        debugPrint('   📞 Evaluez telefon: ${phone.number} (linia ${phone.lineIndex}, pozitia ${phone.position}) - distanta: $distance');
+
         // Adaugă telefoanele care sunt aproape (max 3 linii diferență)
         if (distance < 3000) {
           nearbyPhones.add(phone);
+          debugPrint('   ✅ Telefon aproape: ${phone.number}');
+        } else {
+          debugPrint('   ❌ Telefon prea departe: ${phone.number}');
         }
       }
+
+      debugPrint('   🎯 Telefoane apropiate găsite: ${nearbyPhones.length}');
 
       // Sortează telefoanele după distanță și ia primele 2
       nearbyPhones.sort((a, b) {
@@ -176,15 +213,19 @@ class ParserOcr {
         return distanceA.compareTo(distanceB);
       });
 
-      // Ia primele 2 telefoane (dacă există)
+      // Ia primele 2 telefoane (dacă există) și completează numerele incomplete
       final phone1 = nearbyPhones.isNotEmpty ? nearbyPhones[0] : null;
       final phone2 = nearbyPhones.length >= 2 ? nearbyPhones[1] : null;
 
       if (phone1 != null) {
+        // Completează numerele incomplete la 10 cifre
+        String finalPhone1 = _completePhoneNumber(phone1.number);
+        String? finalPhone2 = phone2 != null ? _completePhoneNumber(phone2.number) : null;
+
         contacts.add(ContactDetection(
           name: name.name,
-          phone1: phone1.number,
-          phone2: phone2?.number,
+          phone1: finalPhone1,
+          phone2: finalPhone2,
           confidence: _calculateConfidence(0), // Recalculează dacă e nevoie
         ));
         
@@ -193,7 +234,9 @@ class ParserOcr {
           usedPhones.add(phone2);
         }
         
-        debugPrint('🔗 [ParserOcr] Asociere: ${name.name} -> ${phone1.number}${phone2 != null ? ' + ${phone2.number}' : ''}');
+        debugPrint('✅ [ParserOcr] Asociere finalizată: ${name.name} -> $finalPhone1${finalPhone2 != null ? ' + $finalPhone2' : ''}');
+      } else {
+        debugPrint('❌ [ParserOcr] Nume fără telefoane: ${name.name}');
       }
     }
 
@@ -223,8 +266,12 @@ class ParserOcr {
   ) {
     final models = <UnifiedClientModel>[];
     
+    debugPrint('🔄 [ParserOcr] Convertesc ${contacts.length} contacte la UnifiedClientModel');
+    
     for (int i = 0; i < contacts.length; i++) {
       final contact = contacts[i];
+      
+      debugPrint('🔄 [ParserOcr] Contact $i: ${contact.name} -> telefon1: "${contact.phone1}", telefon2: "${contact.phone2}"');
       
       final model = UnifiedClientModel(
         id: 'ocr_${DateTime.now().millisecondsSinceEpoch}_$i',
@@ -272,8 +319,13 @@ class ParserOcr {
       clean = '0${clean.substring(3)}';
     }
     
-    // Asigură-te că începe cu 0 și are 10 cifre
+    // Asigură-te că începe cu 0 pentru numerele de 9 cifre
     if (!clean.startsWith('0') && clean.length == 9) {
+      clean = '0$clean';
+    }
+    
+    // Pentru numerele incomplete de 8 cifre, adaugă un 0 la început dacă nu are
+    if (!clean.startsWith('0') && clean.length == 8) {
       clean = '0$clean';
     }
     
@@ -282,8 +334,8 @@ class ParserOcr {
 
   /// Validează dacă e un număr de telefon valid
   bool _isValidPhoneNumber(String phone) {
-    // Trebuie să aibă exact 10 cifre și să înceapă cu 0
-    if (phone.length != 10 || !phone.startsWith('0')) {
+    // Acceptă numere cu 9 sau 10 cifre care încep cu 0
+    if ((phone.length != 9 && phone.length != 10) || !phone.startsWith('0')) {
       return false;
     }
     
@@ -296,7 +348,25 @@ class ParserOcr {
     }
     
     // Verifică că sunt doar cifre
-    return RegExp(r'^[0-9]+$').hasMatch(phone);
+    if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
+      return false;
+    }
+    
+    // Pentru numerele de 9 cifre, completează cu 0 la sfârșit pentru a face 10 cifre
+    return true;
+  }
+
+  /// Completează numerele de telefon incomplete la 10 cifre
+  String _completePhoneNumber(String phone) {
+    // Dacă numărul are doar 9 cifre, adaugă un 0 la sfârșit
+    if (phone.length == 9 && phone.startsWith('0')) {
+      final completed = '${phone}0';
+      debugPrint('📞 [ParserOcr] Completez numărul incomplet: $phone -> $completed');
+      return completed;
+    }
+    
+    // Dacă numărul are deja 10 cifre, îl returnez ca atare
+    return phone;
   }
 
   /// Validează dacă e un nume valid

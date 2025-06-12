@@ -138,7 +138,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final SettingsService _settingsService = SettingsService();
 
   @override
@@ -146,17 +146,48 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     // Listen to theme changes
     _settingsService.addListener(_onThemeChanged);
+    
+    // Listen to AppTheme changes
+    AppTheme().addListener(_onAppThemeChanged);
+    
+    // Listen to system brightness changes at app level
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     _settingsService.removeListener(_onThemeChanged);
+    AppTheme().removeListener(_onAppThemeChanged);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    // Update AppTheme when system brightness changes
+    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    debugPrint('🎨 MYAPP: System brightness changed to: $brightness');
+    debugPrint('🎨 MYAPP: Current theme mode: ${AppTheme.currentThemeMode}');
+    debugPrint('🎨 MYAPP: Settings service theme mode: ${_settingsService.currentThemeMode}');
+    debugPrint('🎨 MYAPP: AppTheme.isDarkMode: ${AppTheme.isDarkMode}');
+    debugPrint('🎨 MYAPP: AppTheme.popupBackground: ${AppTheme.popupBackground}');
+    debugPrint('🎨 MYAPP: AppTheme.containerColor1: ${AppTheme.containerColor1}');
+    
+    AppTheme.refreshSystemBrightness();
+    // Note: setState will be triggered by AppTheme listener
   }
 
   void _onThemeChanged() {
     setState(() {
       // Rebuild the app when theme changes
+    });
+  }
+
+  void _onAppThemeChanged() {
+    debugPrint('🎨 MYAPP: AppTheme changed, rebuilding entire app');
+    setState(() {
+      // Rebuild the entire app when AppTheme changes
     });
   }
 
@@ -249,16 +280,24 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return StreamBuilder<User?>( 
       stream: FirebaseAuth.instance.authStateChanges(), 
       builder: (context, snapshot) {
+        debugPrint('🔶 AUTH_WRAPPER: Stream builder called');
+        debugPrint('🔶 AUTH_WRAPPER: Connection state: ${snapshot.connectionState}');
+        debugPrint('🔶 AUTH_WRAPPER: Has data: ${snapshot.hasData}');
+        debugPrint('🔶 AUTH_WRAPPER: User: ${snapshot.data?.email ?? 'null'}');
+        
         if (snapshot.connectionState == ConnectionState.waiting) {
+          debugPrint('🔶 AUTH_WRAPPER: Showing loading indicator');
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
         
         if (snapshot.hasData) {
+          debugPrint('🔶 AUTH_WRAPPER: User is authenticated, showing MainAppWrapper');
           return const MainAppWrapper();
         }
         
+        debugPrint('🔶 AUTH_WRAPPER: User is not authenticated, showing AuthScreen');
         // When user is logged out, reset to default theme
         _resetToDefaultTheme();
         
@@ -296,8 +335,13 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
   }
 
   Future<void> _fetchConsultantData() async {
+    debugPrint('🔸 MAIN_APP_WRAPPER: Starting to fetch consultant data');
+    
     final currentUser = FirebaseAuth.instance.currentUser;
+    debugPrint('🔸 MAIN_APP_WRAPPER: Current user: ${currentUser?.email ?? 'null'}');
+    
     if (currentUser == null) {
+      debugPrint('🔸 MAIN_APP_WRAPPER: No current user, setting state to null');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -309,21 +353,27 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     }
 
     try {
+      debugPrint('🔸 MAIN_APP_WRAPPER: Getting consultant data from service');
       // Use ConsultantService instead of direct Firestore access
       final consultantService = ConsultantService();
       final consultantData = await consultantService.getCurrentConsultantData();
       
+      debugPrint('🔸 MAIN_APP_WRAPPER: Consultant data received: ${consultantData != null ? 'Data found' : 'No data'}');
+      
       if (!mounted) return;
 
       if (consultantData != null) {
+        debugPrint('🔸 MAIN_APP_WRAPPER: Reloading theme settings');
         // Reload theme settings for the current consultant
         await _settingsService.onConsultantChanged();
         
+        debugPrint('🔸 MAIN_APP_WRAPPER: Setting consultant data in state');
         setState(() {
           _consultantData = consultantData;
           _isLoading = false;
         });
       } else {
+        debugPrint('🔸 MAIN_APP_WRAPPER: No consultant data found, signing out user');
         // Dacă utilizatorul autentificat nu are date în Firestore, ar trebui deconectat
         // pentru a preveni o stare invalidă în aplicație.
         await FirebaseAuth.instance.signOut(); // Acest signOut va fi detectat de AuthWrapper
@@ -334,7 +384,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching consultant data: $e");
+      debugPrint("🔸 MAIN_APP_WRAPPER: Error fetching consultant data: $e");
       if (mounted) {
         setState(() {
           _consultantData = null;

@@ -474,12 +474,14 @@ class CalendarAreaState extends State<CalendarArea> {
             backgroundColor: backgroundColor,
             titleColor: AppTheme.elementColor3,
             descriptionColor: AppTheme.elementColor2,
+            borderRadius: AppTheme.borderRadiusSmall,
           )
         : DarkItem2(
             title: consultantName,
             onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
             backgroundColor: backgroundColor,
             titleColor: AppTheme.elementColor3,
+            borderRadius: AppTheme.borderRadiusSmall,
           ),
     );
   }
@@ -496,6 +498,7 @@ class CalendarAreaState extends State<CalendarArea> {
         mainBorderWidth: 4.0,
         titleColor: AppTheme.elementColor2,
         iconColor: AppTheme.elementColor2,
+        mainBorderRadius: AppTheme.borderRadiusSmall,
       ),
     );
   }
