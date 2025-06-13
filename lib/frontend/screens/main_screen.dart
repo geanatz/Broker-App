@@ -12,6 +12,7 @@ import 'package:broker_app/frontend/areas/settings_area.dart';
 import 'package:broker_app/frontend/panes/meetings_pane.dart';
 import 'package:broker_app/frontend/panes/calculator_pane.dart';
 import 'package:broker_app/frontend/panes/clients_pane.dart';
+import 'package:broker_app/frontend/panes/matcher_pane.dart';
 import 'package:broker_app/frontend/popups/clients_popup.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
@@ -230,7 +231,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       onNavigateToMeeting: _navigateToMeeting,
     ),
     PaneType.calculator: CalculatorPane(),
-    PaneType.matches: const PlaceholderWidget('Matches Pane', Colors.pink),
+    PaneType.matches: MatcherPane(),
   };
   
   /// Navigates to a specific meeting in the calendar
@@ -282,7 +283,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               ),
               
               // Spacing
-              const SizedBox(width: AppTheme.largeGap),
+              const SizedBox(width: AppTheme.mediumGap),
               
               // Area Column (centru) - lățime flexibilă
               Expanded(
@@ -290,7 +291,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               ),
               
               // Spacing
-              const SizedBox(width: AppTheme.largeGap),
+              const SizedBox(width: AppTheme.mediumGap),
               
               // Sidebar Column (dreapta) - lățime fixă 224
               _buildSidebar(),

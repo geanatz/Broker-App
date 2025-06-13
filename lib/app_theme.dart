@@ -46,22 +46,22 @@ class AppTheme extends ChangeNotifier {
   // ======== DIMENSIUNI ========
   
   // Dimensiuni pentru text
-  static const double fontSizeTiny = 13.0;    // Număr de apeluri
-  static const double fontSizeSmall = 15.0;   // Ora/Data întâlnirii
-  static const double fontSizeMedium = 17.0;  // Descrierea întâlnirii, Etichetele din calendar, Titlurile din navigație, Echipa
-  static const double fontSizeLarge = 19.0;   // Titlurile widget-urilor, Titlul întâlnirii, Consultant, Numele utilizatorului
-  static const double fontSizeHuge = 21.0;    // Pentru titluri mai mari (dacă e nevoie)
+  static const double fontSizeTiny = 13.0;
+  static const double fontSizeSmall = 15.0;
+  static const double fontSizeMedium = 17.0;
+  static const double fontSizeLarge = 19.0;
+  static const double fontSizeHuge = 21.0;
 
   // Border radius
-  static const double borderRadiusTiny = 8.0;      // Bara de încărcare
-  static const double borderRadiusSmall = 16.0;    // Slot-uri calendar, butoane navigație
-  static const double borderRadiusMedium = 24.0;   // Container calendar, câmpuri întâlniri
-  static const double borderRadiusLarge = 32.0;    // Widget-uri (Upcoming, Calendar, User, Nav), Avatar
-  static const double borderRadiusHuge = 40.0;     // (Nefolosit, dar disponibil)
+  static const double borderRadiusTiny = 8.0; 
+  static const double borderRadiusSmall = 16.0; 
+  static const double borderRadiusMedium = 24.0;
+  static const double borderRadiusLarge = 32.0; 
+  static const double borderRadiusHuge = 40.0;
 
   // Dimensiuni pentru icon-uri
-  static const double iconSizeSmall = 20.0;     // Icon schimbare calendar
-  static const double iconSizeMedium = 24.0;    // Icon-uri user/navigație
+  static const double iconSizeSmall = 20.0;
+  static const double iconSizeMedium = 24.0;
 
   // Spațieri
   static const double tinyGap = 4.0;
@@ -71,9 +71,9 @@ class AppTheme extends ChangeNotifier {
   static const double hugeGap = 32.0;
   
   // Alte dimensiuni
-  static const double slotBorderThickness = 4.0;  // Grosimea border-ului slot-ului disponibil
-  static const double iconBorderThickness = 2.0;  // Grosimea border-ului icon-urilor
-  static const double navButtonHeight = 48.0;     // Înălțimea butoanelor de navigare
+  static const double slotBorderThickness = 4.0;
+  static const double iconBorderThickness = 2.0;
+  static const double navButtonHeight = 48.0;
 
   // Font weight
   static const FontWeight fontWeightRegular = FontWeight.w400;

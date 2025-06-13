@@ -476,7 +476,7 @@ class _FormAreaState extends State<FormArea> {
         Expanded(
           child: _buildCreditSection(focusedClient),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: AppTheme.mediumGap),
         Expanded(
           child: _buildIncomeSection(focusedClient),
         ),

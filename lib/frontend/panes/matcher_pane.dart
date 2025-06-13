@@ -1,0 +1,337 @@
+import 'package:broker_app/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../backend/services/matcher_service.dart';
+import '../components/items/light_item7.dart';
+import '../components/items/dark_item7.dart';
+import '../components/headers/widget_header1.dart';
+import '../popups/bank_popup.dart';
+import 'package:intl/intl.dart';
+
+/// Pane pentru afisarea recomandarilor de banci
+/// 
+/// Aceasta componenta afiseaza interfata pentru analiza criteriilor de creditare
+/// si recomandarile de banci. Toata logica este gestionata in MatcherService.
+class MatcherPane extends StatefulWidget {
+  final Function? onClose;
+
+  const MatcherPane({
+    super.key,
+    this.onClose,
+  });
+
+  @override
+  State<MatcherPane> createState() => _MatcherPaneState();
+}
+
+class _MatcherPaneState extends State<MatcherPane> {
+  // Service pentru logica matcher-ului
+  final MatcherService _matcherService = MatcherService();
+  
+  // Controllere pentru input-uri
+  late final TextEditingController _ageController;
+  late final TextEditingController _ficoController;
+  
+  // Tine evidenta bancii cu popup deschis pentru focused state
+  String? _focusedBankName;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Initializeaza controlerele si service-ul
+    _ageController = _matcherService.ageController;
+    _ficoController = _matcherService.ficoController;
+    
+    // Asculta la schimbarile din service
+    _matcherService.addListener(_onMatcherServiceChanged);
+    
+    // Adauga listenere la controllere pentru actualizare automata
+    _ageController.addListener(() => _matcherService.updateRecommendations());
+    _ficoController.addListener(() => _matcherService.updateRecommendations());
+  }
+
+  @override
+  void dispose() {
+    _matcherService.removeListener(_onMatcherServiceChanged);
+    super.dispose();
+  }
+
+  /// Callback pentru schimbarile din MatcherService
+  void _onMatcherServiceChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  /// Afiseaza popup-ul cu detaliile unei banci
+  void _showBankDetailsPopup(BankCriteria bankCriteria) {
+    setState(() {
+      _focusedBankName = bankCriteria.bankName;
+    });
+    
+    showDialog(
+      context: context,
+      builder: (context) => BankPopup(
+        bankCriteria: bankCriteria,
+        matcherService: _matcherService,
+      ),
+    ).then((_) {
+      // Reseteaza focused state cand se inchide popup-ul
+      setState(() {
+        _focusedBankName = null;
+      });
+    });
+  }
+
+  /// Construieste un camp de input custom
+  Widget _buildInputField({
+    required String title,
+    required TextEditingController controller,
+    required String placeholder,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 128),
+      child: SizedBox(
+        width: double.infinity,
+        height: 72,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title area
+            Container(
+              width: double.infinity,
+              height: 21,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                title,
+                style: AppTheme.safeOutfit(
+                  color: AppTheme.elementColor2,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            
+            // Input area
+            Container(
+              width: double.infinity,
+              height: 48,
+              decoration: ShapeDecoration(
+                color: AppTheme.containerColor2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: TextField(
+                controller: controller,
+                keyboardType: keyboardType,
+                inputFormatters: inputFormatters,
+                style: AppTheme.safeOutfit(
+                  color: AppTheme.elementColor3,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  border: InputBorder.none,
+                  hintText: placeholder,
+                  hintStyle: AppTheme.safeOutfit(
+                    color: AppTheme.elementColor3,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final uiData = _matcherService.uiData;
+    final recommendations = uiData.recommendations;
+    final errorMessage = uiData.errorMessage;
+    
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.smallGap),
+      decoration: ShapeDecoration(
+        color: AppTheme.popupBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+        ),
+        shadows: const [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 15,
+            offset: Offset(0, 0),
+            spreadRadius: 0,
+          )
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header using WidgetHeader1 component (same as calculatorPane)
+          WidgetHeader1(
+            title: 'Recomandare',
+            titleColor: AppTheme.elementColor1,
+          ),
+          
+          // Same spacing as calculatorPane
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Content
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Form Container cu smallGap padding
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.smallGap),
+                  decoration: ShapeDecoration(
+                    color: AppTheme.containerColor1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Camp pentru varsta
+                      _buildInputField(
+                        title: 'Varsta',
+                        controller: _ageController,
+                        placeholder: '0',
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(3),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Camp pentru FICO
+                      _buildInputField(
+                        title: 'Fico',
+                        controller: _ficoController,
+                        placeholder: '0',
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(3),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: AppTheme.mediumGap),
+                
+                // Lista cu recomandari sau mesajul de eroare
+                Expanded(
+                  child: errorMessage != null
+                      ? Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: ShapeDecoration(
+                            color: AppTheme.containerColor1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              errorMessage,
+                              style: AppTheme.safeOutfit(
+                                color: AppTheme.elementColor1,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : recommendations.isEmpty
+                          ? Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: ShapeDecoration(
+                                color: AppTheme.containerColor1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Nu exista banci care sa indeplineasca criteriile clientului',
+                                  style: AppTheme.safeOutfit(
+                                    color: AppTheme.elementColor1,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              width: double.infinity,
+                              decoration: ShapeDecoration(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                              ),
+                              child: ListView.separated(
+                                itemCount: recommendations.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                                                                 itemBuilder: (context, index) {
+                                   final recommendation = recommendations[index];
+                                   final bankName = recommendation.bankCriteria.bankName;
+                                   final loanAmount = _matcherService.calculateLoanAmount(bankName);
+                                   final isFocused = _focusedBankName == bankName;
+                                   
+                                   if (isFocused) {
+                                     return DarkItem7(
+                                       title: bankName,
+                                       description: '${NumberFormat('#,###').format(loanAmount)} lei',
+                                       svgAsset: 'assets/viewIcon.svg',
+                                       onTap: () => _showBankDetailsPopup(recommendation.bankCriteria),
+                                     );
+                                   } else {
+                                     return LightItem7(
+                                       title: bankName,
+                                       description: '${NumberFormat('#,###').format(loanAmount)} lei',
+                                       svgAsset: 'assets/viewIcon.svg',
+                                       onTap: () => _showBankDetailsPopup(recommendation.bankCriteria),
+                                     );
+                                   }
+                                 },
+                              ),
+                            ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

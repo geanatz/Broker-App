@@ -73,7 +73,7 @@ class ConsultantPopup extends StatelessWidget {
   Widget _buildHeader() {
     return WidgetHeader1(
       title: "Detalii cont",
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+      titleColor: AppTheme.elementColor1,
     );
   }
 

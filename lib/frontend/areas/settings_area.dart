@@ -1,10 +1,14 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
+import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
 import 'package:broker_app/frontend/components/headers/field_header1.dart';
 import 'package:broker_app/frontend/components/items/outlined_item6.dart';
 import 'package:broker_app/frontend/components/items/dark_item6.dart';
+import 'package:broker_app/frontend/components/items/light_item7.dart';
+import 'package:broker_app/frontend/popups/bank_popup.dart';
+import 'package:intl/intl.dart';
 
 /// Area pentru setări care urmează exact design-ul specificat
 /// Permite schimbarea modului light/dark și a culorii temei cu actualizări în timp real
@@ -17,31 +21,44 @@ class SettingsArea extends StatefulWidget {
 
 class _SettingsAreaState extends State<SettingsArea> {
   final SettingsService _settingsService = SettingsService();
+  final MatcherService _matcherService = MatcherService();
 
   @override
   void initState() {
     super.initState();
     // Ascultă schimbările de la SettingsService pentru actualizări în timp real
     _settingsService.addListener(_onSettingsChanged);
-    // Asigură-te că service-ul este inițializat
+    _matcherService.addListener(_onMatcherServiceChanged);
+    // Asigură-te că service-urile sunt inițializate
     _initializeSettings();
   }
 
   @override
   void dispose() {
     _settingsService.removeListener(_onSettingsChanged);
+    _matcherService.removeListener(_onMatcherServiceChanged);
     super.dispose();
   }
 
-  /// Inițializează SettingsService dacă nu este deja inițializat
+  /// Inițializează serviciile dacă nu sunt deja inițializate
   Future<void> _initializeSettings() async {
     if (!_settingsService.isInitialized) {
       await _settingsService.initialize();
     }
+    await _matcherService.initialize();
   }
 
   /// Callback pentru schimbările din SettingsService
   void _onSettingsChanged() {
+    if (mounted) {
+      setState(() {
+        // UI-ul se va actualiza automat datorită setState
+      });
+    }
+  }
+
+  /// Callback pentru schimbările din MatcherService
+  void _onMatcherServiceChanged() {
     if (mounted) {
       setState(() {
         // UI-ul se va actualiza automat datorită setState
@@ -59,6 +76,17 @@ class _SettingsAreaState extends State<SettingsArea> {
     _settingsService.setThemeColor(color);
   }
 
+  /// Afișează popup-ul cu detaliile unei bănci
+  void _showBankDetailsPopup(BankCriteria bankCriteria) {
+    showDialog(
+      context: context,
+      builder: (context) => BankPopup(
+        bankCriteria: bankCriteria,
+        matcherService: _matcherService,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -70,24 +98,31 @@ class _SettingsAreaState extends State<SettingsArea> {
 
   /// Construiește conținutul setărilor conform design-ului specificat
   Widget _buildSettingsContent() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Widget Header
-        WidgetHeader1(title: 'Setari'),
-        
-        const SizedBox(height: AppTheme.smallGap),
-        
-        // Secțiunea pentru modul temei (Light/Dark/Auto)
-        _buildThemeModeSection(),
-        
-        const SizedBox(height: AppTheme.smallGap),
-        
-        // Secțiunea pentru culoarea temei
-        _buildThemeColorSection(),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Widget Header
+          WidgetHeader1(title: 'Setari'),
+          
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Secțiunea pentru modul temei (Light/Dark/Auto)
+          _buildThemeModeSection(),
+          
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Secțiunea pentru culoarea temei
+          _buildThemeColorSection(),
+          
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Secțiunea pentru băncile disponibile
+          _buildBanksSection(),
+        ],
+      ),
     );
   }
 
@@ -351,4 +386,50 @@ class _SettingsAreaState extends State<SettingsArea> {
       ),
     );
   }
+
+  /// Construiește secțiunea pentru băncile disponibile
+  Widget _buildBanksSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.smallGap),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: AppTheme.containerColor1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Field Header pentru bănci
+          FieldHeader1(title: 'Banci disponibile'),
+          
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Lista cu băncile folosind LightItem7
+          ...List.generate(
+            _matcherService.bankCriteriaList.length,
+            (index) {
+              final bankCriteria = _matcherService.bankCriteriaList[index];
+              
+              return Padding(
+                padding: EdgeInsets.only(bottom: index < _matcherService.bankCriteriaList.length - 1 ? 8.0 : 0),
+                child: LightItem7(
+                  title: bankCriteria.bankName,
+                  description: '${NumberFormat('#,###').format(bankCriteria.maxLoanAmount.toInt())} lei',
+                  svgAsset: 'assets/viewIcon.svg',
+                  onTap: () => _showBankDetailsPopup(bankCriteria),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+

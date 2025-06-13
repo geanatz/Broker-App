@@ -133,7 +133,9 @@ class _LightItem7State extends State<LightItem7> {
                   widget.svgAsset!,
                   width: 24.0,
                   height: 24.0,
-                  colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                  colorFilter: widget.iconColor == Colors.transparent 
+                      ? null 
+                      : ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
                   fit: BoxFit.contain,
                 )
               : widget.icon != null
