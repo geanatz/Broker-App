@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'clients_service.dart';
+import 'dashboard_service.dart';
 
 /// Tipul de întâlnire
 enum MeetingType {
@@ -113,6 +114,10 @@ class MeetingService {
 
       if (success) {
         debugPrint("✅ Meeting created successfully in unified structure for: ${meetingData.clientName}");
+        
+        // Notifică dashboard-ul că s-a programat o întâlnire
+        _notifyDashboardMeetingScheduled();
+        
         return {'success': true, 'message': 'Întâlnire creată cu succes'};
       } else {
         return {'success': false, 'message': 'Eroare la salvarea întâlnirii în noua structură'};
@@ -120,6 +125,16 @@ class MeetingService {
     } catch (e) {
       debugPrint("❌ Error createMeeting: $e");
       return {'success': false, 'message': 'Eroare la crearea întâlnirii: $e'};
+    }
+  }
+
+  /// Notifică dashboard-ul că s-a programat o întâlnire
+  void _notifyDashboardMeetingScheduled() {
+    try {
+      final dashboardService = DashboardService();
+      dashboardService.onMeetingScheduled();
+    } catch (e) {
+      debugPrint('Error notifying dashboard about scheduled meeting: $e');
     }
   }
 

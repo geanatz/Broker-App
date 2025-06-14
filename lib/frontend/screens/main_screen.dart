@@ -52,6 +52,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // GlobalKeys pentru componente
   final GlobalKey<CalendarAreaState> _calendarKey = GlobalKey<CalendarAreaState>();
   final GlobalKey<MeetingsPaneState> _meetingsPaneKey = GlobalKey<MeetingsPaneState>();
+  final GlobalKey<MatcherPaneState> _matcherPaneKey = GlobalKey<MatcherPaneState>();
   
   // Client service pentru gestionarea popup-urilor
   final ClientUIService _clientService = ClientUIService();
@@ -231,7 +232,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       onNavigateToMeeting: _navigateToMeeting,
     ),
     PaneType.calculator: CalculatorPane(),
-    PaneType.matches: MatcherPane(),
+    PaneType.matches: MatcherPane(
+      key: _matcherPaneKey,
+    ),
   };
   
   /// Navigates to a specific meeting in the calendar
@@ -374,6 +377,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     if (pane == PaneType.meetings) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _meetingsPaneKey.currentState?.refreshMeetings();
+      });
+    }
+    
+    // Refresh matcher data when switching to matches pane
+    if (pane == PaneType.matches) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _matcherPaneKey.currentState?.refreshData();
       });
     }
     

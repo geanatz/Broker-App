@@ -530,7 +530,7 @@ class _FormAreaState extends State<FormArea> {
             ),
             const SizedBox(height: AppTheme.smallGap),
             Text(
-              'Selectați un client din panoul din stânga pentru a vedea formularul său',
+              'Selectați un client din panoul de clienti pentru a vedea formularul clientului',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: AppTheme.fontSizeMedium,

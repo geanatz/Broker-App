@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'dashboard_service.dart';
 
 // =================== CLIENT MODELS ===================
 
@@ -1546,11 +1547,24 @@ class ClientUIService extends ChangeNotifier {
           focusClient(_clients.first.phoneNumber);
         }
         
+        // Notifică dashboard-ul despre clientul nou
+        _notifyDashboardClientAdded();
+        
         notifyListeners();
       }
     } catch (e) {
       debugPrint('Error adding client: $e');
       // Poți adăuga aici o notificare de eroare pentru utilizator
+    }
+  }
+
+  /// Notifică dashboard-ul că s-a adăugat un client nou
+  void _notifyDashboardClientAdded() {
+    try {
+      final dashboardService = DashboardService();
+      dashboardService.onClientAdded();
+    } catch (e) {
+      debugPrint('Error notifying dashboard about new client: $e');
     }
   }
   

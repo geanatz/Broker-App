@@ -145,7 +145,7 @@ class MatcherService extends ChangeNotifier {
   );
 
   // Date client
-  ClientGender _gender = ClientGender.male;
+  final ClientGender _gender = ClientGender.male;
 
   // Map pentru iconițele băncilor
   final Map<String, String> bankIcons = {
@@ -200,7 +200,10 @@ class MatcherService extends ChangeNotifier {
   Future<void> _loadClientData() async {
     try {
       final currentClient = _clientService.focusedClient;
+      debugPrint('🔍 MATCHER_SERVICE: Loading client data for: ${currentClient?.name ?? 'null'}');
+      
       if (currentClient == null) {
+        debugPrint('⚠️ MATCHER_SERVICE: No focused client found');
         _updateUIData(
           totalIncome: 0,
           errorMessage: 'Nu este selectat niciun client',
@@ -213,6 +216,8 @@ class MatcherService extends ChangeNotifier {
       final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
       final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
       
+      debugPrint('📊 MATCHER_SERVICE: Found ${clientIncomeForms.length} client income forms and ${coborrowerIncomeForms.length} coborrower income forms');
+      
       double totalIncome = 0;
       
       // Adaugă veniturile clientului
@@ -220,6 +225,7 @@ class MatcherService extends ChangeNotifier {
         if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
           final amount = double.tryParse(income.incomeAmount.replaceAll(',', '')) ?? 0;
           totalIncome += amount;
+          debugPrint('💰 MATCHER_SERVICE: Added client income: $amount lei');
         }
       }
       
@@ -228,8 +234,11 @@ class MatcherService extends ChangeNotifier {
         if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
           final amount = double.tryParse(income.incomeAmount.replaceAll(',', '')) ?? 0;
           totalIncome += amount;
+          debugPrint('💰 MATCHER_SERVICE: Added coborrower income: $amount lei');
         }
       }
+
+      debugPrint('💵 MATCHER_SERVICE: Total income calculated: $totalIncome lei');
 
       _updateUIData(
         totalIncome: totalIncome,
@@ -241,12 +250,12 @@ class MatcherService extends ChangeNotifier {
       _updateRecommendations();
 
     } catch (e) {
+      debugPrint('❌ MATCHER_SERVICE: Error loading client data: $e');
       _updateUIData(
         totalIncome: 0,
         errorMessage: 'Eroare la încărcarea datelor clientului: $e',
         recommendations: [],
       );
-      debugPrint('Error loading client data: $e');
     }
   }
 
@@ -350,6 +359,19 @@ class MatcherService extends ChangeNotifier {
   /// Callback pentru schimbarea valorii din câmpul FICO
   void onFicoChanged(String value) {
     _updateRecommendations();
+  }
+
+  /// Forțează actualizarea datelor clientului (pentru rezolvarea problemelor de sincronizare)
+  Future<void> refreshClientData() async {
+    debugPrint('🔄 MATCHER_SERVICE: Force refreshing client data...');
+    
+    // Așteaptă un pic pentru ca FormService să își termine încărcarea
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Reîncarcă datele clientului
+    await _loadClientData();
+    
+    debugPrint('✅ MATCHER_SERVICE: Client data refreshed');
   }
 
   @override

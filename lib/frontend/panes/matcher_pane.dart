@@ -21,10 +21,10 @@ class MatcherPane extends StatefulWidget {
   });
 
   @override
-  State<MatcherPane> createState() => _MatcherPaneState();
+  State<MatcherPane> createState() => MatcherPaneState();
 }
 
-class _MatcherPaneState extends State<MatcherPane> {
+class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   // Service pentru logica matcher-ului
   final MatcherService _matcherService = MatcherService();
   
@@ -34,6 +34,9 @@ class _MatcherPaneState extends State<MatcherPane> {
   
   // Tine evidenta bancii cu popup deschis pentru focused state
   String? _focusedBankName;
+  
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -49,10 +52,48 @@ class _MatcherPaneState extends State<MatcherPane> {
     // Adauga listenere la controllere pentru actualizare automata
     _ageController.addListener(() => _matcherService.updateRecommendations());
     _ficoController.addListener(() => _matcherService.updateRecommendations());
+    
+    // Adaugă observer pentru lifecycle
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Inițializează service-ul și forțează actualizarea datelor
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeMatcherService();
+    });
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Actualizează datele când aplicația revine în prim plan
+      _refreshData();
+    }
+  }
+  
+  /// Inițializează MatcherService și forțează actualizarea datelor
+  Future<void> _initializeMatcherService() async {
+    try {
+      await _matcherService.initialize();
+      // Forțează o actualizare după inițializare
+      await _matcherService.refreshClientData();
+    } catch (e) {
+      debugPrint('Error initializing MatcherService: $e');
+    }
+  }
+  
+  /// Actualizează datele (poate fi apelată manual)
+  Future<void> _refreshData() async {
+    try {
+      await _matcherService.refreshClientData();
+    } catch (e) {
+      debugPrint('Error refreshing matcher data: $e');
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _matcherService.removeListener(_onMatcherServiceChanged);
     super.dispose();
   }
@@ -157,6 +198,8 @@ class _MatcherPaneState extends State<MatcherPane> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    
     final uiData = _matcherService.uiData;
     final recommendations = uiData.recommendations;
     final errorMessage = uiData.errorMessage;
@@ -333,5 +376,10 @@ class _MatcherPaneState extends State<MatcherPane> {
         ],
       ),
     );
+  }
+
+  /// Metodă publică pentru actualizarea datelor din exterior
+  Future<void> refreshData() async {
+    await _refreshData();
   }
 }

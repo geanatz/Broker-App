@@ -160,9 +160,7 @@ class _BankPopupState extends State<BankPopup> {
                     controller: _minIncomeController,
                     hintText: 'Introduceți venitul minim',
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                    enableCommaFormatting: true,
                     suffixText: 'lei',
                     suffixTextColor: AppTheme.elementColor2,
                   ),
