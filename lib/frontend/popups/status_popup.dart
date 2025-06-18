@@ -51,9 +51,9 @@ class TimeInputFormatter extends TextInputFormatter {
   }
 }
 
-/// Popup pentru salvarea statusului discuției cu clientul
+/// Popup pentru salvarea statusului discutiei cu clientul
 class ClientSavePopup extends StatefulWidget {
-  /// Clientul pentru care se salvează statusul
+  /// Clientul pentru care se salveaza statusul
   final ClientModel client;
   
   /// Callback pentru salvare cu succes
@@ -82,11 +82,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   // State variables
   String? _selectedStatus;
   DateTime? _selectedDate;
-  String? _selectedTimeSlot; // Pentru dropdown-ul de ore când statusul este "Acceptat"
+  String? _selectedTimeSlot; // Pentru dropdown-ul de ore cand statusul este "Acceptat"
   List<String> _availableTimeSlots = [];
   bool _isLoading = false;
 
-  // Opțiunile pentru dropdown
+  // Optiunile pentru dropdown
   final List<String> _statusOptions = ['Acceptat', 'Amanat', 'Refuzat'];
 
   @override
@@ -102,7 +102,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     super.dispose();
   }
 
-  /// Generează sloturile de timp disponibile (similar cu meetingPopup)
+  /// Genereaza sloturile de timp disponibile (similar cu meetingPopup)
   void _generateTimeSlots() {
     _availableTimeSlots.clear();
     for (int hour = 8; hour <= 18; hour++) {
@@ -113,7 +113,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     }
   }
 
-  /// Selectează data din calendar
+  /// Selecteaza data din calendar
   Future<void> _selectDate() async {
     final now = DateTime.now();
     final initialDate = _selectedDate != null && _selectedDate!.isAfter(now) 
@@ -136,7 +136,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       if (mounted) {
         setState(() {
           _selectedDate = picked;
-          // Resetează ora când se schimbă data
+          // Reseteaza ora cand se schimba data
           _timeController.clear();
           if (_selectedStatus == 'Acceptat') {
             _selectedTimeSlot = null;
@@ -144,19 +144,19 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         });
       }
       
-      // Încarcă orele disponibile pentru data selectată dacă statusul este "Acceptat"
+      // Incarca orele disponibile pentru data selectata daca statusul este "Acceptat"
       if (_selectedStatus == 'Acceptat') {
         await _loadAvailableTimeSlotsForDate();
       }
     }
   }
 
-  /// Încarcă orele disponibile pentru data selectată
+  /// Incarca orele disponibile pentru data selectata
   Future<void> _loadAvailableTimeSlotsForDate() async {
     if (_selectedDate == null) return;
 
     try {
-      // Folosește MeetingService pentru a obține orele disponibile
+      // Foloseste MeetingService pentru a obtine orele disponibile
       final availableSlots = await _meetingService.getAvailableTimeSlots(_selectedDate!);
       
       if (mounted) {
@@ -165,52 +165,52 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         });
       }
       
-      // Afișează mesaj dacă nu sunt ore disponibile
+      // Afiseaza mesaj daca nu sunt ore disponibile
       if (_availableTimeSlots.isEmpty) {
-        _showError('Nu sunt ore disponibile în această dată');
+        _showError('Nu sunt ore disponibile in aceasta data');
       }
     } catch (e) {
-      debugPrint('Eroare la încărcarea orelor disponibile: $e');
-      _showError('Eroare la încărcarea orelor disponibile');
+      debugPrint('Eroare la incarcarea orelor disponibile: $e');
+      _showError('Eroare la incarcarea orelor disponibile');
     }
   }
 
-  /// Verifică dacă al doilea rând trebuie să fie vizibil
+  /// Verifica daca al doilea rand trebuie sa fie vizibil
   bool get _shouldShowSecondRow {
     return _selectedStatus == 'Acceptat' || _selectedStatus == 'Amanat';
   }
 
-  /// Generează textul pentru placeholder-ul datei (data curentă)
+  /// Genereaza textul pentru placeholder-ul datei (data curenta)
   String get _currentDateText {
     return DateFormat('dd/MM/yy').format(DateTime.now());
   }
 
-  /// Generează textul pentru placeholder-ul orei (ora curentă)
+  /// Genereaza textul pentru placeholder-ul orei (ora curenta)
   String get _currentTimeText {
     return DateFormat('HH:mm').format(DateTime.now());
   }
 
-  /// Salvează statusul clientului
+  /// Salveaza statusul clientului
   Future<void> _saveClientStatus() async {
     // Validare
     if (_selectedStatus == null) {
-      _showError("Selectează statusul discuției");
+      _showError("Selecteaza statusul discutiei");
       return;
     }
 
     if (_shouldShowSecondRow) {
       if (_selectedDate == null) {
-        _showError("Selectează o dată");
+        _showError("Selecteaza o data");
         return;
       }
 
       if (_selectedStatus == 'Amanat' && _timeController.text.trim().isEmpty) {
-        _showError("Introduceti ora pentru amânare");
+        _showError("Introduceti ora pentru amanare");
         return;
       }
 
       if (_selectedStatus == 'Acceptat' && (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty)) {
-        _showError("Selectați ora pentru întâlnire");
+        _showError("Selectati ora pentru intalnire");
         return;
       }
     }
@@ -220,11 +220,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     }
 
     try {
-      // Construiește data și ora finale dacă sunt necesare
+      // Construieste data si ora finale daca sunt necesare
       DateTime? finalDateTime;
       if (_shouldShowSecondRow && _selectedDate != null) {
         if (_selectedStatus == 'Amanat' && _timeController.text.trim().isNotEmpty) {
-          // Pentru amânat, folosește ora introdusă manual
+          // Pentru amanat, foloseste ora introdusa manual
           final timeParts = _timeController.text.trim().split(':');
           if (timeParts.length == 2) {
             finalDateTime = DateTime(
@@ -236,7 +236,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
             );
           }
         } else if (_selectedStatus == 'Acceptat' && _selectedTimeSlot != null) {
-          // Pentru acceptat, folosește ora selectată din dropdown
+          // Pentru acceptat, foloseste ora selectata din dropdown
           final timeParts = _selectedTimeSlot!.split(':');
           if (timeParts.length == 2) {
             finalDateTime = DateTime(
@@ -250,7 +250,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
       }
 
-      // Dacă statusul este "Acceptat", salvează întâlnirea în calendar
+      // Daca statusul este "Acceptat", salveaza intalnirea in calendar
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
         final meetingData = MeetingData(
           clientName: widget.client.name,
@@ -264,14 +264,14 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         final result = await _meetingService.createMeeting(meetingData);
         
         if (!result['success']) {
-          _showError(result['message'] ?? 'Eroare la salvarea întâlnirii');
+          _showError(result['message'] ?? 'Eroare la salvarea intalnirii');
           return;
         }
         
-        debugPrint('✅ Întâlnire salvată în calendar: ${widget.client.name} - $finalDateTime');
+        debugPrint('✅ Intalnire salvata in calendar: ${widget.client.name} - $finalDateTime');
       }
 
-      // Mută clientul în categoria corespunzătoare în funcție de status
+      // Muta clientul in categoria corespunzatoare in functie de status
       switch (_selectedStatus) {
         case 'Acceptat':
           await _clientService.moveClientToRecente(
@@ -300,11 +300,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       debugPrint('✅ Client mutat cu succes: ${widget.client.name} - Status: $_selectedStatus');
 
-      // Salvează doar acest client în Excel după salvarea cu succes
+      // Salveaza doar acest client in Excel dupa salvarea cu succes
       try {
-        debugPrint('🔄 Începe salvarea clientului în XLSX...');
+        debugPrint('🔄 Incepe salvarea clientului in XLSX...');
         
-        // Obține datele complete ale clientului folosind ClientsFirebaseService
+        // Obtine datele complete ale clientului folosind ClientsFirebaseService
         final clientsService = ClientsFirebaseService();
         final unifiedClient = await clientsService.getClient(widget.client.phoneNumber);
         
@@ -312,17 +312,17 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           final filePath = await _excelExportService.saveClientToXlsx(unifiedClient);
           
           if (filePath != null) {
-            debugPrint('✅ Client salvat în XLSX: $filePath');
+            debugPrint('✅ Client salvat in XLSX: $filePath');
           } else {
-            debugPrint('⚠️ Salvarea în XLSX nu a putut fi realizată');
+            debugPrint('⚠️ Salvarea in XLSX nu a putut fi realizata');
           }
         } else {
-          debugPrint('⚠️ Nu s-au putut obține datele complete ale clientului pentru XLSX');
+          debugPrint('⚠️ Nu s-au putut obtine datele complete ale clientului pentru XLSX');
         }
       } catch (e, stackTrace) {
-        debugPrint('❌ Eroare la salvarea clientului în XLSX: $e');
+        debugPrint('❌ Eroare la salvarea clientului in XLSX: $e');
         debugPrint('❌ Stack trace: $stackTrace');
-        // Nu oprim procesul pentru că statusul a fost salvat cu succes
+        // Nu oprim procesul pentru ca statusul a fost salvat cu succes
       }
 
       if (mounted) {
@@ -332,13 +332,13 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
       }
       
-      String successMessage = "Statusul a fost salvat cu succes și datele au fost salvate în clienti.xlsx";
+      String successMessage = "Statusul a fost salvat cu succes si datele au fost salvate in clienti.xlsx";
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
-        successMessage = "Statusul a fost salvat, întâlnirea a fost programată și datele au fost salvate în clienti.xlsx";
+        successMessage = "Statusul a fost salvat, intalnirea a fost programata si datele au fost salvate in clienti.xlsx";
       } else if (_selectedStatus == 'Amanat') {
-        successMessage = "Clientul a fost mutat în secțiunea Reveniri și datele au fost salvate în clienti.xlsx";
+        successMessage = "Clientul a fost mutat in sectiunea Reveniri si datele au fost salvate in clienti.xlsx";
       } else if (_selectedStatus == 'Refuzat') {
-        successMessage = "Clientul a fost mutat în secțiunea Recente și datele au fost salvate în clienti.xlsx";
+        successMessage = "Clientul a fost mutat in sectiunea Recente si datele au fost salvate in clienti.xlsx";
       }
       _showSuccess(successMessage);
     } catch (e) {
@@ -353,7 +353,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     }
   }
 
-  /// Afișează mesaj de eroare
+  /// Afiseaza mesaj de eroare
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -365,7 +365,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     }
   }
 
-  /// Afișează mesaj de succes
+  /// Afiseaza mesaj de succes
   void _showSuccess(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -385,7 +385,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         constraints: const BoxConstraints(minWidth: 360, minHeight: 376),
         child: Container(
           width: 360,
-          height: _shouldShowSecondRow ? 456 : 376, // Înălțime dinamică
+          height: _shouldShowSecondRow ? 456 : 376, // Inaltime dinamica
           padding: const EdgeInsets.all(8),
           decoration: ShapeDecoration(
             color: AppTheme.popupBackground,
@@ -403,7 +403,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
               
               const SizedBox(height: 8),
               
-              // Conținutul principal
+              // Continutul principal
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -419,7 +419,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Primul rând - Dropdown pentru status
+                      // Primul rand - Dropdown pentru status
                       DropdownField1<String>(
                         title: 'Status',
                         value: _selectedStatus,
@@ -431,7 +431,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                           if (mounted) {
                             setState(() {
                               _selectedStatus = value;
-                              // Resetează data și ora când se schimbă statusul
+                              // Reseteaza data si ora cand se schimba statusul
                               if (!_shouldShowSecondRow) {
                                 _selectedDate = null;
                                 _timeController.clear();
@@ -445,11 +445,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                       
                       const SizedBox(height: 8),
                       
-                      // Al doilea rând - Data și ora (condiționat)
+                      // Al doilea rand - Data si ora (conditionat)
                       if (_shouldShowSecondRow) ...[
                         Row(
                           children: [
-                            // Câmpul pentru dată - folosind InputField3 cu iconița calendar
+                            // Campul pentru data - folosind InputField3 cu iconita calendar
                             Expanded(
                               child: InputField3(
                                 title: _selectedStatus == 'Acceptat' ? 'Data intalnire' : 'Data amanare',
@@ -463,7 +463,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                             
                             const SizedBox(width: 8),
                             
-                            // Câmpul pentru oră - diferit pentru Acceptat vs Amanat
+                            // Campul pentru ora - diferit pentru Acceptat vs Amanat
                             Expanded(
                               child: _selectedStatus == 'Amanat'
                                   ? InputField1(
@@ -502,7 +502,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                         const SizedBox(height: 8),
                       ],
                       
-                      // Al treilea rând - Informații adiționale (permanent)
+                      // Al treilea rand - Informatii aditionale (permanent)
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

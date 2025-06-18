@@ -1,13 +1,14 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:broker_app/backend/services/dashboard_service.dart';
+import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../components/headers/widget_header6.dart';
 
 
-/// Area pentru dashboard care afișează statistici și clasamente pentru consultanți.
-/// Se ocupă exclusiv cu interfața și design-ul, logica fiind gestionată de DashboardService.
+/// Area pentru dashboard care afiseaza statistici si clasamente pentru consultanti.
+/// Se ocupa exclusiv cu interfata si design-ul, logica fiind gestionata de DashboardService.
 class DashboardArea extends StatefulWidget {
   const DashboardArea({super.key});
 
@@ -21,13 +22,8 @@ class _DashboardAreaState extends State<DashboardArea> {
   @override
   void initState() {
     super.initState();
-    _dashboardService = DashboardService();
-    _initializeDashboard();
-  }
-
-  /// Inițializează dashboard-ul
-  Future<void> _initializeDashboard() async {
-    await _dashboardService.loadDashboardData();
+    _dashboardService = SplashService().dashboardService;
+    // Nu mai facem _initializeDashboard() pentru că datele sunt deja încărcate în splash
   }
 
   @override
@@ -48,12 +44,12 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Construiește conținutul principal al dashboard-ului
+  /// Construieste continutul principal al dashboard-ului
   Widget _buildDashboardContent() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Coloana stângă - Clasamente
+        // Coloana stanga - Clasamente
         Expanded(
           flex: 2,
           child: Column(
@@ -65,7 +61,7 @@ class _DashboardAreaState extends State<DashboardArea> {
           ),
         ),
         const SizedBox(width: AppTheme.smallGap),
-        // Coloana dreaptă - Widget-uri informative
+        // Coloana dreapta - Widget-uri informative
         Expanded(
           flex: 1,
           child: Column(
@@ -78,7 +74,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Clasamentul consultanților (design Figma cu widgetHeader6)
+  /// Clasamentul consultantilor (design Figma cu widgetHeader6)
   Widget _buildConsultantsLeaderboard() {
     final consultants = _dashboardService.consultantsRanking;
     
@@ -171,7 +167,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTableHeader(['Pozitie', 'Nume', 'Formulare', 'Membri']),
+                    _buildTableHeader(['Pozitie', 'Nume', 'Membri', 'Formulare', 'Intalniri']),
                     const SizedBox(height: 8),
                     Expanded(
                       child: teams.isEmpty
@@ -188,9 +184,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-
-
-    /// Widget combinat pentru întâlniri și statistici (design din widgetStatistics.md)
+  /// Widget combinat pentru intalniri si statistici (design din widgetStatistics.md)
   Widget _buildCombinedMeetingsAndStatsWidget() {
     final meetings = _dashboardService.upcomingMeetings.take(5).toList(); // Maximum 5 meetings
     final stats = _dashboardService.consultantStats;
@@ -246,7 +240,7 @@ class _DashboardAreaState extends State<DashboardArea> {
             ),
             const SizedBox(height: 8),
             
-            // Meetings list (only if meetings exist, 0-5 meetings)
+            // Meetings list (daca exista)
             if (meetings.isNotEmpty) ...[
               ...meetings.map((meeting) => Container(
                 width: double.infinity,
@@ -265,51 +259,32 @@ class _DashboardAreaState extends State<DashboardArea> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: Container(
-                        clipBehavior: Clip.antiAlias,
-                        decoration: const BoxDecoration(),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              meeting.clientName,
-                              style: AppTheme.safeOutfit(
-                                color: AppTheme.elementColor2,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                      child: Text(
+                        meeting.clientName,
+                        style: AppTheme.safeOutfit(
+                          color: AppTheme.elementColor2,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Container(
+                    SizedBox(
                       width: 104,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: const BoxDecoration(),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            _extractPhoneFromMeeting(meeting),
-                            textAlign: TextAlign.right,
-                            style: AppTheme.safeOutfit(
-                              color: AppTheme.elementColor1,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        _extractPhoneFromMeeting(meeting),
+                        textAlign: TextAlign.right,
+                        style: AppTheme.safeOutfit(
+                          color: AppTheme.elementColor1,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
                 ),
               )),
+              const SizedBox(height: 8),
             ],
             
             // Statistics cards row
@@ -320,207 +295,100 @@ class _DashboardAreaState extends State<DashboardArea> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Clients card
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: ShapeDecoration(
-                        color: AppTheme.containerColor1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: SvgPicture.asset(
-                              'assets/userIcon.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                AppTheme.elementColor2,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 24,
-                                    clipBehavior: Clip.antiAlias,
-                                    decoration: const BoxDecoration(),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          '${stats?.currentClients ?? 0} clienti',
-                                          style: AppTheme.safeOutfit(
-                                            color: AppTheme.elementColor2,
-                                            fontSize: 19,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
                   // Forms card
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: ShapeDecoration(
-                        color: AppTheme.containerColor1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: SvgPicture.asset(
-                              'assets/formIcon.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                AppTheme.elementColor2,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 24,
-                                    clipBehavior: Clip.antiAlias,
-                                    decoration: const BoxDecoration(),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          '${stats?.formsCompletedThisMonth ?? 0} formulare',
-                                          style: AppTheme.safeOutfit(
-                                            color: AppTheme.elementColor2,
-                                            fontSize: 19,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildStatCard('assets/formIcon.svg', '${stats?.formsCompletedThisMonth ?? 0} formulare'),
                   const SizedBox(width: 10),
                   // Meetings card
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: ShapeDecoration(
-                        color: AppTheme.containerColor1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: SvgPicture.asset(
-                              'assets/meetingIcon.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                AppTheme.elementColor2,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 24,
-                                    clipBehavior: Clip.antiAlias,
-                                    decoration: const BoxDecoration(),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          '${stats?.totalMeetingsScheduled ?? 0} intalniri',
-                                          style: AppTheme.safeOutfit(
-                                            color: AppTheme.elementColor2,
-                                            fontSize: 19,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                  _buildStatCard('assets/meetingIcon.svg', '${stats?.totalMeetingsScheduled ?? 0} intalniri'),
+                ],
+              ),
+            ),
+            
+            // Duty agent section
+            if (_dashboardService.dutyAgent != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: ShapeDecoration(
+                  color: AppTheme.containerColor1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Agent curatenie',
+                      style: AppTheme.safeOutfit(
+                        color: AppTheme.elementColor2,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                ],
+                    Text(
+                      _dashboardService.dutyAgent ?? 'N/A',
+                      textAlign: TextAlign.right,
+                      style: AppTheme.safeOutfit(
+                        color: AppTheme.elementColor1,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Construieste un card de statistica reutilizabil
+  Widget _buildStatCard(String svgAsset, String text) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: ShapeDecoration(
+          color: AppTheme.containerColor1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: SvgPicture.asset(
+                svgAsset,
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  AppTheme.elementColor2,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: AppTheme.safeOutfit(
+                  color: AppTheme.elementColor2,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -528,8 +396,6 @@ class _DashboardAreaState extends State<DashboardArea> {
       ),
     );
   }
-
-
 
   /// Extrage numarul de telefon din meeting
   String _extractPhoneFromMeeting(UpcomingMeeting meeting) {
@@ -541,21 +407,21 @@ class _DashboardAreaState extends State<DashboardArea> {
     return meeting.id.length > 10 ? meeting.id.substring(0, 10) : meeting.id;
   }
 
-  /// Header pentru tabeluri
-  Widget _buildTableHeader(List<String> columns) {
+  /// Construieste header-ul pentru tabele
+  Widget _buildTableHeader(List<String> headers) {
     return Container(
       width: double.infinity,
       height: 21,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: columns.map((column) => Expanded(
+        children: headers.map((header) => Expanded(
           child: Container(
             height: 21,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             alignment: Alignment.centerLeft,
             child: Text(
-              column,
+              header,
               style: AppTheme.safeOutfit(
                 color: AppTheme.elementColor2,
                 fontSize: 15,
@@ -568,7 +434,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Tabelul consultanților
+  /// Tabelul consultantilor
   Widget _buildConsultantsTable(List<ConsultantRanking> consultants) {
     return ListView.separated(
       padding: EdgeInsets.zero,
@@ -608,39 +474,30 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Tabelul echipelor
+  /// Construieste tabelul pentru echipe
   Widget _buildTeamsTable(List<TeamRanking> teams) {
-    return ListView.separated(
-      padding: EdgeInsets.zero,
+    return ListView.builder(
       itemCount: teams.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final team = teams[index];
         return Container(
           width: double.infinity,
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          height: 48,
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: ShapeDecoration(
             color: AppTheme.containerColor2,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(24),
             ),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: _buildTableCell('${index + 1}'),
-              ),
-              Expanded(
-                child: _buildTableCell(team.name),
-              ),
-              Expanded(
-                child: _buildTableCell('${team.totalForms}'),
-              ),
-              Expanded(
-                child: _buildTableCell('${team.memberCount}'),
-              ),
+              _buildTableCell((index + 1).toString(), flex: 1),
+              _buildTableCell(team.teamName, flex: 3, isName: true),
+              _buildTableCell(team.memberCount.toString(), flex: 2),
+              _buildTableCell(team.formsCompleted.toString(), flex: 2),
+              _buildTableCell(team.meetingsHeld.toString(), flex: 2),
             ],
           ),
         );
@@ -648,18 +505,21 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Celulă pentru tabel
-  Widget _buildTableCell(String text) {
-    return Container(
-      height: 21,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      alignment: Alignment.centerLeft,
-      child: Text(
-        text,
-        style: AppTheme.safeOutfit(
-          color: AppTheme.elementColor3,
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
+  /// Construieste o celula de tabel
+  Widget _buildTableCell(String text, {int flex = 1, bool isName = false}) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        height: 21,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: AppTheme.safeOutfit(
+            color: isName ? AppTheme.elementColor2 : AppTheme.elementColor3,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -737,7 +597,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Starea goală
+  /// Starea goala
   Widget _buildEmptyState(String message) {
     return Center(
       child: Column(

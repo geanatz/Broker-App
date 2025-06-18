@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-/// Service pentru gestionarea setărilor aplicației per consultant
-/// Folosește SharedPreferences pentru persistența datelor și ChangeNotifier pentru actualizări în timp real
+/// Service pentru gestionarea setarilor aplicatiei per consultant
+/// Foloseste SharedPreferences pentru persistenta datelor si ChangeNotifier pentru actualizari in timp real
 class SettingsService extends ChangeNotifier {
   static final SettingsService _instance = SettingsService._internal();
   factory SettingsService() => _instance;
@@ -16,25 +16,25 @@ class SettingsService extends ChangeNotifier {
   static const String _themeModePrefix = 'theme_mode_';
   static const String _themeColorPrefix = 'theme_color_';
   
-  // Chei pentru tema implicită (pentru authScreen)
+  // Chei pentru tema implicita (pentru authScreen)
   static const String _defaultThemeModeKey = 'default_theme_mode';
   static const String _defaultThemeColorKey = 'default_theme_color';
 
-  // Stări interne
+  // Stari interne
   late AppThemeMode _currentThemeMode;
   late AppThemeColor _currentThemeColor;
   bool _isInitialized = false;
   String? _currentConsultantId;
 
-  /// Getteri pentru starea curentă
+  /// Getteri pentru starea curenta
   AppThemeMode get currentThemeMode => _currentThemeMode;
   AppThemeColor get currentThemeColor => _currentThemeColor;
   bool get isInitialized => _isInitialized;
 
-  /// Obține ID-ul consultantului curent
+  /// Obtine ID-ul consultantului curent
   String? get _consultantId => _auth.currentUser?.uid;
 
-  /// Inițializarea service-ului - se apelează la pornirea aplicației
+  /// Initializarea service-ului - se apeleaza la pornirea aplicatiei
   Future<void> initialize() async {
     if (_isInitialized) return;
 
@@ -47,18 +47,18 @@ class SettingsService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error initializing SettingsService: $e');
-      // În cazul unei erori, folosim valorile implicite
+      // In cazul unei erori, folosim valorile implicite
       await _setDefaultTheme();
       _isInitialized = true;
       notifyListeners();
     }
   }
 
-  /// Reîncarcă setările când se schimbă consultantul
+  /// Reincarca setarile cand se schimba consultantul
   Future<void> onConsultantChanged() async {
     final newConsultantId = _consultantId;
     
-    // Dacă consultantul s-a schimbat, încarcă noile setări
+    // Daca consultantul s-a schimbat, incarca noile setari
     if (newConsultantId != _currentConsultantId) {
       _currentConsultantId = newConsultantId;
       await _loadThemeSettings(newConsultantId);
@@ -77,12 +77,12 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
-  /// Încarcă setările pentru un consultant specific sau tema implicită
+  /// Incarca setarile pentru un consultant specific sau tema implicita
   Future<void> _loadThemeSettings(String? consultantId) async {
     final prefs = await SharedPreferences.getInstance();
     
     if (consultantId != null) {
-      // Încarcă setările specifice consultantului
+      // Incarca setarile specifice consultantului
       final themeModeIndex = prefs.getInt('$_themeModePrefix$consultantId');
       final themeColorIndex = prefs.getInt('$_themeColorPrefix$consultantId');
       
@@ -98,7 +98,7 @@ class SettingsService extends ChangeNotifier {
         _currentThemeColor = AppThemeColor.blue; // default pentru consultant nou
       }
     } else {
-      // Încarcă tema implicită pentru authScreen
+      // Incarca tema implicita pentru authScreen
       final themeModeIndex = prefs.getInt(_defaultThemeModeKey);
       final themeColorIndex = prefs.getInt(_defaultThemeColorKey);
       
@@ -116,7 +116,7 @@ class SettingsService extends ChangeNotifier {
     AppTheme.setThemeColor(_currentThemeColor);
   }
 
-  /// Setează tema implicită (auto + albastru)
+  /// Seteaza tema implicita (auto + albastru)
   Future<void> _setDefaultTheme() async {
     _currentThemeMode = AppThemeMode.auto;
     _currentThemeColor = AppThemeColor.blue;
@@ -125,7 +125,7 @@ class SettingsService extends ChangeNotifier {
     AppTheme.setThemeColor(_currentThemeColor);
   }
 
-  /// Schimbă modul temei pentru consultantul curent
+  /// Schimba modul temei pentru consultantul curent
   Future<void> setThemeMode(AppThemeMode mode) async {
     if (_currentThemeMode == mode) return;
 
@@ -133,16 +133,16 @@ class SettingsService extends ChangeNotifier {
     // Sync with AppTheme static variables
     AppTheme.setThemeMode(mode);
 
-    // Salvează în SharedPreferences
+    // Salveaza in SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       final consultantId = _consultantId;
       
       if (consultantId != null) {
-        // Salvează pentru consultantul curent
+        // Salveaza pentru consultantul curent
         await prefs.setInt('$_themeModePrefix$consultantId', mode.index);
       } else {
-        // Salvează ca temă implicită
+        // Salveaza ca tema implicita
         await prefs.setInt(_defaultThemeModeKey, mode.index);
       }
     } catch (e) {
@@ -152,7 +152,7 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Schimbă culoarea temei pentru consultantul curent
+  /// Schimba culoarea temei pentru consultantul curent
   Future<void> setThemeColor(AppThemeColor color) async {
     if (_currentThemeColor == color) return;
 
@@ -160,16 +160,16 @@ class SettingsService extends ChangeNotifier {
     // Sync with AppTheme static variables
     AppTheme.setThemeColor(color);
 
-    // Salvează în SharedPreferences
+    // Salveaza in SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       final consultantId = _consultantId;
       
       if (consultantId != null) {
-        // Salvează pentru consultantul curent
+        // Salveaza pentru consultantul curent
         await prefs.setInt('$_themeColorPrefix$consultantId', color.index);
       } else {
-        // Salvează ca temă implicită
+        // Salveaza ca tema implicita
         await prefs.setInt(_defaultThemeColorKey, color.index);
       }
     } catch (e) {
@@ -179,7 +179,7 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Alternează între light și dark
+  /// Alterneaza intre light si dark
   Future<void> toggleThemeMode() async {
     final newMode = _currentThemeMode == AppThemeMode.light 
         ? AppThemeMode.dark 
@@ -187,13 +187,13 @@ class SettingsService extends ChangeNotifier {
     await setThemeMode(newMode);
   }
 
-  /// Reset la setările implicite pentru consultantul curent
+  /// Reset la setarile implicite pentru consultantul curent
   Future<void> resetToDefaults() async {
     await setThemeMode(AppThemeMode.auto);
     await setThemeColor(AppThemeColor.blue);
   }
 
-  /// Șterge setările pentru un consultant specific (folosit la ștergerea contului)
+  /// Sterge setarile pentru un consultant specific (folosit la stergerea contului)
   Future<void> clearConsultantSettings(String consultantId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -204,7 +204,7 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
-  /// Obține numele afișat pentru un mod de temă
+  /// Obtine numele afisat pentru un mod de tema
   String getThemeModeDisplayName(AppThemeMode mode) {
     switch (mode) {
       case AppThemeMode.light:
@@ -216,7 +216,7 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
-  /// Obține numele afișat pentru o culoare de temă
+  /// Obtine numele afisat pentru o culoare de tema
   String getThemeColorDisplayName(AppThemeColor color) {
     switch (color) {
       case AppThemeColor.red:
@@ -234,22 +234,22 @@ class SettingsService extends ChangeNotifier {
     }
   }
 
-  /// Obține lista tuturor modurilor de temă disponibile
+  /// Obtine lista tuturor modurilor de tema disponibile
   List<AppThemeMode> getAllThemeModes() {
     return AppThemeMode.values;
   }
 
-  /// Obține lista tuturor culorilor de temă disponibile
+  /// Obtine lista tuturor culorilor de tema disponibile
   List<AppThemeColor> getAllThemeColors() {
     return AppThemeColor.values;
   }
 
-  /// Verifică dacă un mod de temă este selectat
+  /// Verifica daca un mod de tema este selectat
   bool isThemeModeSelected(AppThemeMode mode) {
     return _currentThemeMode == mode;
   }
 
-  /// Verifică dacă o culoare de temă este selectată
+  /// Verifica daca o culoare de tema este selectata
   bool isThemeColorSelected(AppThemeColor color) {
     return _currentThemeColor == color;
   }

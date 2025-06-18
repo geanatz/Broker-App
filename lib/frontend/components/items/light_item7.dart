@@ -38,17 +38,9 @@ class LightItem7 extends StatefulWidget {
   /// Defaults to AppTheme.elementColor3 for contrast.
   final Color? iconColor;
 
-  /// Optional custom background color for the icon's immediate container.
-  /// Defaults to AppTheme.containerColor2.
-  final Color? iconContainerColor;
-
   /// Optional custom border radius for the main container.
   /// Defaults to 24.0.
   final double? mainBorderRadius;
-
-  /// Optional custom border radius for the icon's container.
-  /// Defaults to 16.0.
-  final double? iconContainerBorderRadius;
 
   /// Optional size for the icon itself.
   /// Defaults to 24.0.
@@ -65,9 +57,7 @@ class LightItem7 extends StatefulWidget {
     this.titleColor,
     this.descriptionColor,
     this.iconColor,
-    this.iconContainerColor,
     this.mainBorderRadius,
-    this.iconContainerBorderRadius,
     this.iconSize,
   });
 
@@ -87,16 +77,13 @@ class _LightItem7State extends State<LightItem7> {
         (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2);
     final Color effectiveDescriptionColor = widget.descriptionColor ?? 
         (_isHovered ? AppTheme.elementColor2 : AppTheme.elementColor1);
-    final Color effectiveIconContainerColor = widget.iconContainerColor ?? AppTheme.containerColor2;
     final Color effectiveIconColor = widget.iconColor ?? 
         (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor3); // Icon always elementColor3
 
     final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
-    final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;
-    final double iconContainerSize = 48.0;
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
 
@@ -115,15 +102,9 @@ class _LightItem7State extends State<LightItem7> {
     final bool hasIcon = widget.svgAsset != null || widget.icon != null;
 
     Widget iconButton = hasIcon ? Container(
-      width: iconContainerSize,
-      height: iconContainerSize,
+      width: 48.0,
+      height: 48.0,
       padding: const EdgeInsets.all(12),
-      decoration: ShapeDecoration(
-        color: effectiveIconContainerColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-        ),
-      ),
       child: Center(
         child: SizedBox(
           width: 24.0,

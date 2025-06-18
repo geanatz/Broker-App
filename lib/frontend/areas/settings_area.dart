@@ -2,6 +2,7 @@ import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:broker_app/backend/services/matcher_service.dart';
+import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
 import 'package:broker_app/frontend/components/headers/field_header1.dart';
 import 'package:broker_app/frontend/components/items/outlined_item6.dart';
@@ -10,8 +11,8 @@ import 'package:broker_app/frontend/components/items/light_item7.dart';
 import 'package:broker_app/frontend/popups/bank_popup.dart';
 import 'package:intl/intl.dart';
 
-/// Area pentru setări care urmează exact design-ul specificat
-/// Permite schimbarea modului light/dark și a culorii temei cu actualizări în timp real
+/// Area pentru setari care urmeaza exact design-ul specificat
+/// Permite schimbarea modului light/dark si a culorii temei cu actualizari in timp real
 class SettingsArea extends StatefulWidget {
   const SettingsArea({super.key});
 
@@ -20,17 +21,19 @@ class SettingsArea extends StatefulWidget {
 }
 
 class _SettingsAreaState extends State<SettingsArea> {
-  final SettingsService _settingsService = SettingsService();
-  final MatcherService _matcherService = MatcherService();
+  late final SettingsService _settingsService;
+  late final MatcherService _matcherService;
 
   @override
   void initState() {
     super.initState();
-    // Ascultă schimbările de la SettingsService pentru actualizări în timp real
+    // Foloseste serviciile pre-incarcate din splash
+    _settingsService = SettingsService(); // SettingsService este un singleton, nu needs caching
+    _matcherService = SplashService().matcherService;
+    
+    // Asculta schimbarile de la SettingsService pentru actualizari in timp real
     _settingsService.addListener(_onSettingsChanged);
     _matcherService.addListener(_onMatcherServiceChanged);
-    // Asigură-te că service-urile sunt inițializate
-    _initializeSettings();
   }
 
   @override
@@ -40,43 +43,35 @@ class _SettingsAreaState extends State<SettingsArea> {
     super.dispose();
   }
 
-  /// Inițializează serviciile dacă nu sunt deja inițializate
-  Future<void> _initializeSettings() async {
-    if (!_settingsService.isInitialized) {
-      await _settingsService.initialize();
-    }
-    await _matcherService.initialize();
-  }
-
-  /// Callback pentru schimbările din SettingsService
+  /// Callback pentru schimbarile din SettingsService
   void _onSettingsChanged() {
     if (mounted) {
       setState(() {
-        // UI-ul se va actualiza automat datorită setState
+        // UI-ul se va actualiza automat datorita setState
       });
     }
   }
 
-  /// Callback pentru schimbările din MatcherService
+  /// Callback pentru schimbarile din MatcherService
   void _onMatcherServiceChanged() {
     if (mounted) {
       setState(() {
-        // UI-ul se va actualiza automat datorită setState
+        // UI-ul se va actualiza automat datorita setState
       });
     }
   }
 
-  /// Schimbă modul temei
+  /// Schimba modul temei
   void _changeThemeMode(AppThemeMode mode) {
     _settingsService.setThemeMode(mode);
   }
 
-  /// Schimbă culoarea temei
+  /// Schimba culoarea temei
   void _changeThemeColor(AppThemeColor color) {
     _settingsService.setThemeColor(color);
   }
 
-  /// Afișează popup-ul cu detaliile unei bănci
+  /// Afiseaza popup-ul cu detaliile unei banci
   void _showBankDetailsPopup(BankCriteria bankCriteria) {
     showDialog(
       context: context,
@@ -96,7 +91,7 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 
-  /// Construiește conținutul setărilor conform design-ului specificat
+  /// Construieste continutul setarilor conform design-ului specificat
   Widget _buildSettingsContent() {
     return SingleChildScrollView(
       child: Column(
@@ -109,24 +104,24 @@ class _SettingsAreaState extends State<SettingsArea> {
           
           const SizedBox(height: AppTheme.smallGap),
           
-          // Secțiunea pentru modul temei (Light/Dark/Auto)
+          // Sectiunea pentru modul temei (Light/Dark/Auto)
           _buildThemeModeSection(),
           
           const SizedBox(height: AppTheme.smallGap),
           
-          // Secțiunea pentru culoarea temei
+          // Sectiunea pentru culoarea temei
           _buildThemeColorSection(),
           
           const SizedBox(height: AppTheme.smallGap),
           
-          // Secțiunea pentru băncile disponibile
+          // Sectiunea pentru bancile disponibile
           _buildBanksSection(),
         ],
       ),
     );
   }
 
-  /// Construiește secțiunea pentru selectarea modului temei (Light/Dark/Auto)
+  /// Construieste sectiunea pentru selectarea modului temei (Light/Dark/Auto)
   Widget _buildThemeModeSection() {
     return Container(
       width: double.infinity,
@@ -148,7 +143,7 @@ class _SettingsAreaState extends State<SettingsArea> {
           
           const SizedBox(height: AppTheme.smallGap),
           
-          // Row cu opțiunile de temă
+          // Row cu optiunile de tema
           SizedBox(
             width: double.infinity,
             height: 64,
@@ -219,7 +214,7 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 
-  /// Construiește secțiunea pentru selectarea culorii temei
+  /// Construieste sectiunea pentru selectarea culorii temei
   Widget _buildThemeColorSection() {
     return Container(
       width: double.infinity,
@@ -387,7 +382,7 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 
-  /// Construiește secțiunea pentru băncile disponibile
+  /// Construieste sectiunea pentru bancile disponibile
   Widget _buildBanksSection() {
     return Container(
       width: double.infinity,
@@ -404,12 +399,12 @@ class _SettingsAreaState extends State<SettingsArea> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Field Header pentru bănci
+          // Field Header pentru banci
           FieldHeader1(title: 'Banci disponibile'),
           
           const SizedBox(height: AppTheme.smallGap),
           
-          // Lista cu băncile folosind LightItem7
+          // Lista cu bancile folosind LightItem7
           ...List.generate(
             _matcherService.bankCriteriaList.length,
             (index) {

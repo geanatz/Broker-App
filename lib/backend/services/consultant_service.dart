@@ -4,7 +4,16 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'firebase_service.dart';
 
-/// Service pentru gestionarea datelor consultanților
+/// Model pentru un consultant
+class Consultant {
+  final String id;
+  final String name;
+  final String team;
+
+  Consultant({required this.id, required this.name, required this.team});
+}
+
+/// Service pentru gestionarea datelor consultantilor
 class ConsultantService {
   // Singleton pattern
   static final ConsultantService _instance = ConsultantService._internal();
@@ -19,7 +28,7 @@ class ConsultantService {
   // Obtine utilizatorul curent
   User? get currentUser => _auth.currentUser;
 
-  /// Obține datele consultantului curent
+  /// Obtine datele consultantului curent
   Future<Map<String, dynamic>?> getCurrentConsultantData() async {
     final user = currentUser;
     if (user == null) return null;
@@ -39,7 +48,7 @@ class ConsultantService {
     }
   }
 
-  /// Obține datele consultantului specificat
+  /// Obtine datele consultantului specificat
   Future<Map<String, dynamic>?> getConsultantData(String consultantId) async {
     try {
       final consultantDoc = await _threadHandler.executeOnPlatformThread(
@@ -56,7 +65,7 @@ class ConsultantService {
     }
   }
 
-  /// Obține toți consultanții din aceeași echipă cu consultantul curent
+  /// Obtine toti consultantii din aceeasi echipa cu consultantul curent
   Future<List<Map<String, dynamic>>> getTeamConsultants() async {
     final currentConsultant = await getCurrentConsultantData();
     if (currentConsultant == null) return [];
@@ -67,7 +76,7 @@ class ConsultantService {
     return await getConsultantsByTeam(currentTeam);
   }
 
-  /// Obține toți consultanții dintr-o echipă specificată
+  /// Obtine toti consultantii dintr-o echipa specificata
   Future<List<Map<String, dynamic>>> getConsultantsByTeam(String teamName) async {
     try {
       final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
@@ -88,7 +97,7 @@ class ConsultantService {
     }
   }
 
-  /// Obține toate echipele disponibile
+  /// Obtine toate echipele disponibile
   Future<List<String>> getAllTeams() async {
     try {
       final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
@@ -106,6 +115,27 @@ class ConsultantService {
       return teams.toList()..sort();
     } catch (e) {
       debugPrint("Error fetching teams: $e");
+      return [];
+    }
+  }
+
+  /// Obtine toti consultantii
+  Future<List<Consultant>> getAllConsultants() async {
+    try {
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+        () => _firestore.collection(_collectionName).get()
+      );
+
+      return consultantsSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return Consultant(
+          id: doc.id,
+          name: data['name'] ?? 'Necunoscut',
+          team: data['team'] ?? '',
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint("Error fetching all consultants: $e");
       return [];
     }
   }

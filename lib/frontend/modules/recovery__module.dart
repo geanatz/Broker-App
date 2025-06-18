@@ -25,22 +25,22 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   bool _obscureConfirmPassword = true;
   String? _resetError;
   
-  // Adăugare stări pentru validare
+  // Adaugare stari pentru validare
   bool _isNewPasswordInvalid = false;
   bool _isConfirmPasswordInvalid = false;
 
   void _attemptResetPassword() {
-    // Resetăm stările de validare
+    // Resetam starile de validare
     setState(() {
       _isNewPasswordInvalid = false;
       _isConfirmPasswordInvalid = false;
       _resetError = null;
     });
     
-    // Validare manuală
+    // Validare manuala
     bool isValid = true;
     
-    // Validare parolă nouă
+    // Validare parola noua
     if (_newPasswordController.text.isEmpty) {
       setState(() {
         _isNewPasswordInvalid = true;
@@ -53,7 +53,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
       });
     }
     
-    // Validare confirmare parolă
+    // Validare confirmare parola
     if (_confirmPasswordController.text.isEmpty) {
       setState(() {
         _isConfirmPasswordInvalid = true;
@@ -66,7 +66,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
       });
     }
     
-    // Dacă totul e valid, trimitem datele
+    // Daca totul e valid, trimitem datele
     if (isValid) {
       widget.onResetPasswordAttempt(
         _newPasswordController.text,
@@ -197,8 +197,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
               obscureText: _obscureNewPassword,
               onToggleObscure: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Introdu noua parolă';
-                if (value.length < 6) return 'Parola trebuie să aibă minim 6 caractere';
+                if (value == null || value.isEmpty) return 'Introdu noua parola';
+                if (value.length < 6) return 'Parola trebuie sa aiba minim 6 caractere';
                 return null;
               },
               isInvalid: _isNewPasswordInvalid,
@@ -211,7 +211,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
               obscureText: _obscureConfirmPassword,
               onToggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Confirmă noua parolă';
+                if (value == null || value.isEmpty) return 'Confirma noua parola';
                 if (value != _newPasswordController.text) return 'Parolele nu se potrivesc';
                 return null;
               },
@@ -268,7 +268,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
               contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
               suffixIcon: suffixIcon,
             ),
-            validator: null, // Eliminăm validatorul standard
+            validator: null, // Eliminam validatorul standard
           ),
         ),
       ],

@@ -24,7 +24,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
   void initState() {
     super.initState();
     
-    // Ascultă schimbările din AppTheme pentru actualizări automate ale UI-ului
+    // Asculta schimbarile din AppTheme pentru actualizari automate ale UI-ului
     AppTheme().addListener(_onAppThemeChanged);
 
     _tokenController = TextEditingController(text: widget.token);
@@ -37,12 +37,12 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
     super.dispose();
   }
 
-  /// Callback pentru schimbările din AppTheme
+  /// Callback pentru schimbarile din AppTheme
   void _onAppThemeChanged() {
     if (mounted) {
       debugPrint('🎨 TOKEN_POPUP: AppTheme changed, updating UI');
       setState(() {
-        // Actualizează UI-ul când se schimbă AppTheme
+        // Actualizeaza UI-ul cand se schimba AppTheme
       });
     }
   }
@@ -193,7 +193,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Token copiat în clipboard'),
+                          content: Text('Token copiat in clipboard'),
                           duration: Duration(seconds: 2),
                         ),
                       );

@@ -9,14 +9,14 @@ import 'settings_service.dart';
 /// Enum pentru tipul de gen al clientului
 enum ClientGender { male, female }
 
-/// Model pentru criteriile de creditare ale unei bănci
+/// Model pentru criteriile de creditare ale unei banci
 class BankCriteria {
   final String bankName;
   double minIncome; // venitul minim necesar
-  int maxAgeMale; // vârsta maximă pentru bărbați
-  int maxAgeFemale; // vârsta maximă pentru femei
+  int maxAgeMale; // varsta maxima pentru barbati
+  int maxAgeFemale; // varsta maxima pentru femei
   double minFicoScore; // scorul FICO minim
-  double maxLoanAmount; // suma maximă de credit care poate fi acordată (în lei)
+  double maxLoanAmount; // suma maxima de credit care poate fi acordata (in lei)
 
   BankCriteria({
     required this.bankName,
@@ -27,7 +27,7 @@ class BankCriteria {
     required this.maxLoanAmount,
   });
 
-  /// Convertește la Map pentru salvare
+  /// Converteste la Map pentru salvare
   Map<String, dynamic> toMap() {
     return {
       'bankName': bankName,
@@ -39,7 +39,7 @@ class BankCriteria {
     };
   }
 
-  /// Creează din Map
+  /// Creeaza din Map
   factory BankCriteria.fromMap(Map<String, dynamic> map) {
     return BankCriteria(
       bankName: map['bankName'] ?? '',
@@ -57,7 +57,7 @@ class BankCriteria {
   }
 }
 
-/// Model pentru profilul unui client pentru analiza creditării
+/// Model pentru profilul unui client pentru analiza creditarii
 class ClientProfile {
   final double totalIncome;
   final int age;
@@ -81,7 +81,7 @@ class ClientProfile {
   }
 }
 
-/// Model pentru o recomandare de bancă
+/// Model pentru o recomandare de banca
 class BankRecommendation {
   final BankCriteria bankCriteria;
   final bool isEligible;
@@ -101,7 +101,7 @@ class BankRecommendation {
   }
 }
 
-/// Model pentru datele din interfață
+/// Model pentru datele din interfata
 class MatcherUIData {
   final List<BankRecommendation> recommendations;
   final String? errorMessage;
@@ -116,7 +116,7 @@ class MatcherUIData {
   });
 }
 
-/// Service pentru gestionarea criteriilor de creditare și recomandărilor
+/// Service pentru gestionarea criteriilor de creditare si recomandarilor
 class MatcherService extends ChangeNotifier {
   static final MatcherService _instance = MatcherService._internal();
   factory MatcherService() => _instance;
@@ -130,10 +130,10 @@ class MatcherService extends ChangeNotifier {
   // Prefixe pentru chei per consultant
   static const String _bankCriteriaPrefix = 'bank_criteria_';
   
-  // Lista de criterii pentru toate băncile
+  // Lista de criterii pentru toate bancile
   List<BankCriteria> _bankCriteriaList = [];
   
-  // Controllere pentru câmpurile de input
+  // Controllere pentru campurile de input
   final TextEditingController ageController = TextEditingController();
   final TextEditingController ficoController = TextEditingController();
   
@@ -147,12 +147,11 @@ class MatcherService extends ChangeNotifier {
   // Date client
   final ClientGender _gender = ClientGender.male;
 
-  // Map pentru iconițele băncilor
+  // Map pentru iconitele bancilor
   final Map<String, String> bankIcons = {
     'BCR': 'assets/bcrIcon.svg',
     'BRD': 'assets/brdIcon.svg',
     'Raiffeisen': 'assets/raiffeisenIcon.svg',
-    'UniCredit': 'assets/btIcon.svg', // Folosim BT pentru UniCredit temporar
     'ING': 'assets/ingIcon.svg',
     'Garanti': 'assets/garantiIcon.svg',
     'CEC': 'assets/cecIcon.svg',
@@ -164,10 +163,10 @@ class MatcherService extends ChangeNotifier {
   List<BankCriteria> get bankCriteriaList => List.unmodifiable(_bankCriteriaList);
   MatcherUIData get uiData => _uiData;
   
-  /// Obține ID-ul consultantului curent
+  /// Obtine ID-ul consultantului curent
   String? get _consultantId => _auth.currentUser?.uid;
 
-  /// Inițializează service-ul cu criteriile implicite
+  /// Initializeaza service-ul cu criteriile implicite
   Future<void> initialize() async {
     try {
       await _loadBankCriteria();
@@ -181,13 +180,13 @@ class MatcherService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error initializing MatcherService: $e');
-      // În cazul unei erori, folosim criteriile implicite
+      // In cazul unei erori, folosim criteriile implicite
       _setDefaultCriteria();
       notifyListeners();
     }
   }
 
-  /// Callback pentru schimbările din servicii
+  /// Callback pentru schimbarile din servicii
   void _onFormServiceChanged() {
     _loadClientData();
   }
@@ -196,7 +195,7 @@ class MatcherService extends ChangeNotifier {
     _loadClientData();
   }
 
-  /// Încarcă datele de bază ale clientului
+  /// Incarca datele de baza ale clientului
   Future<void> _loadClientData() async {
     try {
       final currentClient = _clientService.focusedClient;
@@ -212,7 +211,7 @@ class MatcherService extends ChangeNotifier {
         return;
       }
 
-      // Calculează venitul total din formulare
+      // Calculeaza venitul total din formulare
       final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
       final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
       
@@ -220,7 +219,7 @@ class MatcherService extends ChangeNotifier {
       
       double totalIncome = 0;
       
-      // Adaugă veniturile clientului
+      // Adauga veniturile clientului
       for (final income in clientIncomeForms) {
         if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
           final amount = double.tryParse(income.incomeAmount.replaceAll(',', '')) ?? 0;
@@ -229,7 +228,7 @@ class MatcherService extends ChangeNotifier {
         }
       }
       
-      // Adaugă veniturile coborrower-ului
+      // Adauga veniturile coborrower-ului
       for (final income in coborrowerIncomeForms) {
         if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
           final amount = double.tryParse(income.incomeAmount.replaceAll(',', '')) ?? 0;
@@ -242,33 +241,34 @@ class MatcherService extends ChangeNotifier {
 
       _updateUIData(
         totalIncome: totalIncome,
-        errorMessage: totalIncome <= 0 ? 'Nu există date de venit pentru client' : null,
+        errorMessage: totalIncome <= 0 ? 'Nu exista date de venit pentru client' : null,
         recommendations: [],
       );
 
-      // Actualizează automat recomandările dacă avem date complete
+      // Actualizeaza automat recomandarile daca avem date complete
       _updateRecommendations();
 
     } catch (e) {
       debugPrint('❌ MATCHER_SERVICE: Error loading client data: $e');
       _updateUIData(
         totalIncome: 0,
-        errorMessage: 'Eroare la încărcarea datelor clientului: $e',
+        errorMessage: 'Eroare la incarcarea datelor clientului: $e',
         recommendations: [],
       );
     }
   }
 
-  /// Actualizează recomandările bazate pe datele introduse
+  /// Actualizeaza recomandarile bazate pe datele introduse
   void updateRecommendations() {
     _updateRecommendations();
   }
 
   void _updateRecommendations() {
+    // Validare 1: Verifica daca clientul are venit
     if (_uiData.totalIncome <= 0) {
       _updateUIData(
         totalIncome: _uiData.totalIncome,
-        errorMessage: _uiData.errorMessage,
+        errorMessage: 'Nu exista date de venit pentru client',
         recommendations: [],
       );
       return;
@@ -277,10 +277,20 @@ class MatcherService extends ChangeNotifier {
     final ageText = ageController.text.trim();
     final ficoText = ficoController.text.trim();
 
-    if (ageText.isEmpty || ficoText.isEmpty) {
+    // Validare 2: Verifica daca varsta si fico sunt introduse
+    if (ageText.isEmpty || ageText == '0') {
       _updateUIData(
         totalIncome: _uiData.totalIncome,
-        errorMessage: _uiData.errorMessage,
+        errorMessage: 'Introduceti varsta clientului',
+        recommendations: [],
+      );
+      return;
+    }
+
+    if (ficoText.isEmpty || ficoText == '0') {
+      _updateUIData(
+        totalIncome: _uiData.totalIncome,
+        errorMessage: 'Introduceti scorul FICO al clientului',
         recommendations: [],
       );
       return;
@@ -292,13 +302,13 @@ class MatcherService extends ChangeNotifier {
     if (age == null || fico == null || age <= 0 || fico <= 0) {
       _updateUIData(
         totalIncome: _uiData.totalIncome,
-        errorMessage: _uiData.errorMessage,
+        errorMessage: 'Varsta si scorul FICO trebuie sa fie valori pozitive',
         recommendations: [],
       );
       return;
     }
 
-    // Creează profilul clientului
+    // Creeaza profilul clientului
     final clientProfile = ClientProfile(
       totalIncome: _uiData.totalIncome,
       age: age,
@@ -308,23 +318,34 @@ class MatcherService extends ChangeNotifier {
       phoneNumber: _clientService.focusedClient?.phoneNumber ?? '',
     );
 
-    // Generează recomandările
+    // Genereaza recomandarile
     final recommendations = generateRecommendations(clientProfile);
     
-    // Filtrează doar băncile eligibile
+    // Filtreaza doar bancile eligibile
     final eligibleRecommendations = recommendations.where((r) => r.isEligible).toList();
     
-    // Sortează după scor
+    // Validare 3: Verifica daca clientul indeplineste criteriile vreunei banci
+    if (eligibleRecommendations.isEmpty) {
+      _updateUIData(
+        totalIncome: _uiData.totalIncome,
+        errorMessage: 'Nu exista banci care sa indeplineasca criteriile clientului',
+        recommendations: [],
+      );
+      return;
+    }
+    
+    // Sorteaza dupa scor
     eligibleRecommendations.sort((a, b) => b.matchScore.compareTo(a.matchScore));
 
+    // Toate validarile au trecut, afiseaza recomandarile
     _updateUIData(
       totalIncome: _uiData.totalIncome,
-      errorMessage: _uiData.errorMessage,
+      errorMessage: null,
       recommendations: eligibleRecommendations,
     );
   }
 
-  /// Actualizează datele pentru UI
+  /// Actualizeaza datele pentru UI
   void _updateUIData({
     required double totalIncome,
     String? errorMessage,
@@ -340,35 +361,35 @@ class MatcherService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Calculează suma de credit pe care o poate oferi banca
+  /// Calculeaza suma de credit pe care o poate oferi banca
   double calculateLoanAmount(String bankName) {
-    // Găsește criteriile băncii și returnează suma maximă configurată
+    // Gaseste criteriile bancii si returneaza suma maxima configurata
     final criteria = getBankCriteria(bankName);
     if (criteria != null) {
       return criteria.maxLoanAmount;
     }
-    // Fallback pentru bănci necunoscute
+    // Fallback pentru banci necunoscute
     return 50000.0; // 50.000 lei fallback
   }
 
-  /// Callback pentru schimbarea valorii din câmpul de vârstă
+  /// Callback pentru schimbarea valorii din campul de varsta
   void onAgeChanged(String value) {
     _updateRecommendations();
   }
 
-  /// Callback pentru schimbarea valorii din câmpul FICO
+  /// Callback pentru schimbarea valorii din campul FICO
   void onFicoChanged(String value) {
     _updateRecommendations();
   }
 
-  /// Forțează actualizarea datelor clientului (pentru rezolvarea problemelor de sincronizare)
+  /// Forteaza actualizarea datelor clientului (pentru rezolvarea problemelor de sincronizare)
   Future<void> refreshClientData() async {
     debugPrint('🔄 MATCHER_SERVICE: Force refreshing client data...');
     
-    // Așteaptă un pic pentru ca FormService să își termine încărcarea
+    // Asteapta un pic pentru ca FormService sa isi termine incarcarea
     await Future.delayed(const Duration(milliseconds: 500));
     
-    // Reîncarcă datele clientului
+    // Reincarca datele clientului
     await _loadClientData();
     
     debugPrint('✅ MATCHER_SERVICE: Client data refreshed');
@@ -383,7 +404,7 @@ class MatcherService extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Încarcă criteriile băncilor din SharedPreferences
+  /// Incarca criteriile bancilor din SharedPreferences
   Future<void> _loadBankCriteria() async {
     final prefs = await SharedPreferences.getInstance();
     final consultantId = _consultantId;
@@ -403,7 +424,7 @@ class MatcherService extends ChangeNotifier {
           _setDefaultCriteria();
         }
       } else {
-        // Nu există criterii salvate, folosim criteriile implicite
+        // Nu exista criterii salvate, folosim criteriile implicite
         _setDefaultCriteria();
       }
     } else {
@@ -411,7 +432,7 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
-  /// Setează criteriile implicite pentru bănci
+  /// Seteaza criteriile implicite pentru banci
   void _setDefaultCriteria() {
     _bankCriteriaList = [
       BankCriteria(
@@ -466,7 +487,7 @@ class MatcherService extends ChangeNotifier {
     debugPrint('Set default bank criteria (${_bankCriteriaList.length} banks)');
   }
 
-  /// Salvează criteriile băncilor în SharedPreferences
+  /// Salveaza criteriile bancilor in SharedPreferences
   Future<void> _saveBankCriteria() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -484,7 +505,7 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
-  /// Actualizează criteriile pentru o bancă specifică
+  /// Actualizeaza criteriile pentru o banca specifica
   Future<void> updateBankCriteria(BankCriteria updatedCriteria) async {
     final index = _bankCriteriaList.indexWhere(
       (criteria) => criteria.bankName == updatedCriteria.bankName
@@ -501,7 +522,7 @@ class MatcherService extends ChangeNotifier {
     debugPrint('Updated criteria for bank: ${updatedCriteria.bankName}');
   }
 
-  /// Obține criteriile pentru o bancă specifică
+  /// Obtine criteriile pentru o banca specifica
   BankCriteria? getBankCriteria(String bankName) {
     try {
       return _bankCriteriaList.firstWhere(
@@ -512,34 +533,34 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
-  /// Analizează eligibilitatea unui client pentru o bancă specifică
+  /// Analizeaza eligibilitatea unui client pentru o banca specifica
   BankRecommendation analyzeClientEligibility(ClientProfile client, BankCriteria bankCriteria) {
     final List<String> failedCriteria = [];
     double matchScore = 100.0;
 
-    // Verifică venitul
+    // Verifica venitul
     if (client.totalIncome < bankCriteria.minIncome) {
       failedCriteria.add('Venit insuficient (${client.totalIncome.toStringAsFixed(0)} < ${bankCriteria.minIncome.toStringAsFixed(0)} lei)');
       matchScore -= 30;
     }
 
-    // Verifică vârsta în funcție de gen
+    // Verifica varsta in functie de gen
     final maxAge = client.gender == ClientGender.male 
         ? bankCriteria.maxAgeMale 
         : bankCriteria.maxAgeFemale;
     
     if (client.age > maxAge) {
-      failedCriteria.add('Vârstă prea mare (${client.age} > $maxAge ani)');
+      failedCriteria.add('Varsta prea mare (${client.age} > $maxAge ani)');
       matchScore -= 25;
     }
 
-    // Verifică scorul FICO
+    // Verifica scorul FICO
     if (client.ficoScore < bankCriteria.minFicoScore) {
       failedCriteria.add('Scor FICO insuficient (${client.ficoScore.toStringAsFixed(0)} < ${bankCriteria.minFicoScore.toStringAsFixed(0)})');
       matchScore -= 45;
     }
 
-    // Calculează bonus pentru supraîndeplinirea criteriilor
+    // Calculeaza bonus pentru supraindeplinirea criteriilor
     if (failedCriteria.isEmpty) {
       // Bonus pentru venit superior
       if (client.totalIncome > bankCriteria.minIncome * 1.5) {
@@ -552,7 +573,7 @@ class MatcherService extends ChangeNotifier {
       }
     }
 
-    // Asigură că scorul este între 0 și 100
+    // Asigura ca scorul este intre 0 si 100
     matchScore = matchScore.clamp(0.0, 100.0);
 
     final isEligible = failedCriteria.isEmpty;
@@ -565,14 +586,14 @@ class MatcherService extends ChangeNotifier {
     );
   }
 
-  /// Generează recomandări pentru toate băncile pentru un client
+  /// Genereaza recomandari pentru toate bancile pentru un client
   List<BankRecommendation> generateRecommendations(ClientProfile client) {
     final recommendations = _bankCriteriaList
         .map((criteria) => analyzeClientEligibility(client, criteria))
         .toList();
 
-    // Sortează recomandările: mai întâi băncile eligibile (după scor descrescător),
-    // apoi băncile neeligibile (după scor descrescător)
+    // Sorteaza recomandarile: mai intai bancile eligibile (dupa scor descrescator),
+    // apoi bancile neeligibile (dupa scor descrescator)
     recommendations.sort((a, b) {
       if (a.isEligible && !b.isEligible) return -1;
       if (!a.isEligible && b.isEligible) return 1;
@@ -595,7 +616,7 @@ class MatcherService extends ChangeNotifier {
     debugPrint('Reset bank criteria to defaults');
   }
 
-  /// Șterge toate criteriile pentru un consultant (folosit la ștergerea contului)
+  /// Sterge toate criteriile pentru un consultant (folosit la stergerea contului)
   Future<void> clearConsultantData(String consultantId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -606,7 +627,7 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
-  /// Actualizează datele când se schimbă consultantul
+  /// Actualizeaza datele cand se schimba consultantul
   Future<void> onConsultantChanged() async {
     await _loadBankCriteria();
     notifyListeners();

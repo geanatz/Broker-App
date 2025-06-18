@@ -12,93 +12,93 @@ class ExcelExportService {
 
   final ClientsFirebaseService _clientsService = ClientsFirebaseService();
 
-  /// Salvează un singur client în fișierul "clienti.xlsx"
-  /// Dacă fișierul există, îl editează. Dacă nu există, îl creează.
+  /// Salveaza un singur client in fisierul "clienti.xlsx"
+  /// Daca fisierul exista, il editeaza. Daca nu exista, il creeaza.
   Future<String?> saveClientToXlsx(UnifiedClientModel client) async {
     try {
       debugPrint('📊 ExcelExportService: Salvez clientul ${client.basicInfo.name}...');
       
-      // Obține calea către fișierul "clienti.xlsx"
+      // Obtine calea catre fisierul "clienti.xlsx"
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/clienti.xlsx';
       final file = File(filePath);
       
       Excel excel;
       
-      // Verifică dacă fișierul există
+      // Verifica daca fisierul exista
       if (await file.exists()) {
-        debugPrint('📊 Fișierul clienti.xlsx există, îl editez...');
-        // Încarcă fișierul existent
+        debugPrint('📊 Fisierul clienti.xlsx exista, il editez...');
+        // Incarca fisierul existent
         final bytes = await file.readAsBytes();
         excel = Excel.decodeBytes(bytes);
         
-        // Șterge Sheet1 dacă încă există
+        // Sterge Sheet1 daca inca exista
         if (excel.sheets.containsKey('Sheet1')) {
           excel.delete('Sheet1');
         }
       } else {
-        debugPrint('📊 Fișierul clienti.xlsx nu există, îl creez...');
-        // Creează un fișier nou fără Sheet1
+        debugPrint('📊 Fisierul clienti.xlsx nu exista, il creez...');
+        // Creeaza un fisier nou fara Sheet1
         excel = Excel.createExcel();
-        // Șterge sheet-ul implicit și toate sheet-urile existente
+        // Sterge sheet-ul implicit si toate sheet-urile existente
         final sheetsToDelete = List<String>.from(excel.sheets.keys);
         for (final sheetName in sheetsToDelete) {
           excel.delete(sheetName);
         }
       }
       
-      // Determină luna pentru client
+      // Determina luna pentru client
       final updateDate = client.metadata.updatedAt;
       final monthKey = DateFormat('MMMM yyyy').format(updateDate);
       
-      debugPrint('📊 Adaug clientul în luna: $monthKey');
+      debugPrint('📊 Adaug clientul in luna: $monthKey');
       
-      // Obține sau creează sheet-ul pentru luna respectivă
+      // Obtine sau creeaza sheet-ul pentru luna respectiva
       Sheet sheet;
       if (excel.sheets.containsKey(monthKey)) {
         sheet = excel.sheets[monthKey]!;
       } else {
-        // Creează sheet nou pentru această lună
+        // Creeaza sheet nou pentru aceasta luna
         sheet = excel[monthKey];
-        // Adaugă header-ul doar pentru sheet-uri noi
+        // Adauga header-ul doar pentru sheet-uri noi
         _addHeaderRow(sheet);
       }
       
-      // Verifică dacă clientul există deja în sheet
+      // Verifica daca clientul exista deja in sheet
       final existingRowIndex = _findClientRowInSheet(sheet, client);
       
       if (existingRowIndex != -1) {
-        debugPrint('📊 ACTUALIZARE: Clientul ${client.basicInfo.name} există deja pe linia $existingRowIndex - se actualizează datele');
-        // Actualizează linia existentă
+        debugPrint('📊 ACTUALIZARE: Clientul ${client.basicInfo.name} exista deja pe linia $existingRowIndex - se actualizeaza datele');
+        // Actualizeaza linia existenta
         _addClientRow(sheet, client, existingRowIndex);
       } else {
-        debugPrint('📊 CLIENT NOU: ${client.basicInfo.name} va fi adăugat pe un rând nou');
-        // Adaugă la sfârșitul listei
+        debugPrint('📊 CLIENT NOU: ${client.basicInfo.name} va fi adaugat pe un rand nou');
+        // Adauga la sfarsitul listei
         final nextRowIndex = _getNextAvailableRow(sheet);
         _addClientRow(sheet, client, nextRowIndex);
       }
       
-      // Ajustează lățimea coloanelor
+      // Ajusteaza latimea coloanelor
       _adjustColumnWidths(sheet);
       
-      // Salvează fișierul
+      // Salveaza fisierul
       final bytes = excel.encode();
       if (bytes != null) {
         await file.writeAsBytes(bytes);
-        debugPrint('✅ Clientul ${client.basicInfo.name} salvat în clienti.xlsx la: $filePath');
+        debugPrint('✅ Clientul ${client.basicInfo.name} salvat in clienti.xlsx la: $filePath');
         return filePath;
       } else {
         throw Exception('Nu s-au putut encode datele Excel');
       }
       
     } catch (e) {
-      debugPrint('❌ Eroare la salvarea clientului în XLSX: $e');
+      debugPrint('❌ Eroare la salvarea clientului in XLSX: $e');
       return null;
     }
   }
 
-  /// Găsește rândul unui client existent în sheet
-  /// Returnează indexul rândului sau -1 dacă nu există
+  /// Gaseste randul unui client existent in sheet
+  /// Returneaza indexul randului sau -1 daca nu exista
   int _findClientRowInSheet(Sheet sheet, UnifiedClientModel client) {
     final maxRows = sheet.maxRows;
     
@@ -106,27 +106,27 @@ class ExcelExportService {
       final nameCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row));
       final phoneCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row));
       
-      // Verifică dacă numele și telefonul se potrivesc
+      // Verifica daca numele si telefonul se potrivesc
       if (nameCell.value != null && phoneCell.value != null) {
         final cellName = nameCell.value.toString().trim();
         final cellPhone = phoneCell.value.toString().trim();
         
-        // Potrivire bazată pe telefon (criteriul principal) și nume
+        // Potrivire bazata pe telefon (criteriul principal) si nume
         if (cellPhone == client.basicInfo.phoneNumber1.trim() && 
             cellName == client.basicInfo.name.trim()) {
-          debugPrint('📊 Găsit client existent: $cellName ($cellPhone) pe rândul $row');
+          debugPrint('📊 Gasit client existent: $cellName ($cellPhone) pe randul $row');
           return row;
         }
       }
     }
     
-    debugPrint('📊 Client nou, nu există în sheet: ${client.basicInfo.name} (${client.basicInfo.phoneNumber1})');
-    return -1; // Nu s-a găsit
+    debugPrint('📊 Client nou, nu exista in sheet: ${client.basicInfo.name} (${client.basicInfo.phoneNumber1})');
+    return -1; // Nu s-a gasit
   }
 
-  /// Găsește următorul rând disponibil într-un sheet
+  /// Gaseste urmatorul rand disponibil intr-un sheet
   int _getNextAvailableRow(Sheet sheet) {
-    // Caută primul rând gol după header
+    // Cauta primul rand gol dupa header
     for (int row = 1; ; row++) {
       final nameCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row));
       if (nameCell.value == null || nameCell.value.toString().isEmpty) {
@@ -135,36 +135,36 @@ class ExcelExportService {
     }
   }
 
-  /// Exportă toate datele clienților în format XLSX
+  /// Exporta toate datele clientilor in format XLSX
   Future<String?> exportAllClientsToXlsx() async {
     try {
-      debugPrint('📊 ExcelExportService: Începe obținerea clienților...');
+      debugPrint('📊 ExcelExportService: Incepe obtinerea clientilor...');
       
-      // Obține toți clienții cu datele complete
+      // Obtine toti clientii cu datele complete
       final clients = await _clientsService.getAllClients();
       
-      debugPrint('📊 ExcelExportService: S-au obținut ${clients.length} clienți');
+      debugPrint('📊 ExcelExportService: S-au obtinut ${clients.length} clienti');
       
       if (clients.isEmpty) {
-        debugPrint('❌ Nu există clienți pentru export');
+        debugPrint('❌ Nu exista clienti pentru export');
         return null;
       }
 
-      // Creează un fișier Excel nou fără Sheet1
+      // Creeaza un fisier Excel nou fara Sheet1
       var excel = Excel.createExcel();
       
-      // Șterge toate sheet-urile implicite
+      // Sterge toate sheet-urile implicite
       final sheetsToDelete = List<String>.from(excel.sheets.keys);
       for (final sheetName in sheetsToDelete) {
         excel.delete(sheetName);
       }
       
-      // Grupează clienții pe luni în funcție de data actualizării
+      // Grupeaza clientii pe luni in functie de data actualizarii
       final clientsByMonth = <String, List<UnifiedClientModel>>{};
       
       for (final client in clients) {
         final updateDate = client.metadata.updatedAt;
-        // Folosește formatare simplă fără locale românesc pentru a evita eroarea
+        // Foloseste formatare simpla fara locale romanesc pentru a evita eroarea
         final monthKey = DateFormat('MMMM yyyy').format(updateDate);
         
         if (!clientsByMonth.containsKey(monthKey)) {
@@ -173,28 +173,28 @@ class ExcelExportService {
         clientsByMonth[monthKey]!.add(client);
       }
       
-      // Creează câte un sheet pentru fiecare lună
+      // Creeaza cate un sheet pentru fiecare luna
       for (final monthEntry in clientsByMonth.entries) {
         final monthName = monthEntry.key;
         final monthClients = monthEntry.value;
         
-        // Creează sheet-ul pentru luna respectivă
+        // Creeaza sheet-ul pentru luna respectiva
         Sheet sheet = excel[monthName];
         
-        // Adaugă header-ul (prima linie)
+        // Adauga header-ul (prima linie)
         _addHeaderRow(sheet);
         
-        // Adaugă datele clienților
+        // Adauga datele clientilor
         for (int i = 0; i < monthClients.length; i++) {
           final client = monthClients[i];
-          _addClientRow(sheet, client, i + 2); // +2 pentru că linia 1 e header
+          _addClientRow(sheet, client, i + 2); // +2 pentru ca linia 1 e header
         }
         
-        // Setează lățimea coloanelor pentru lizibilitate
+        // Seteaza latimea coloanelor pentru lizibilitate
         _adjustColumnWidths(sheet);
       }
       
-      // Salvează fișierul
+      // Salveaza fisierul
       final filePath = await _saveExcelFileWithTimestamp(excel);
       return filePath;
       
@@ -204,7 +204,7 @@ class ExcelExportService {
     }
   }
 
-  /// Adaugă header-ul (prima linie) în sheet
+  /// Adauga header-ul (prima linie) in sheet
   void _addHeaderRow(Sheet sheet) {
     final headers = [
       'Nume Client',
@@ -219,7 +219,7 @@ class ExcelExportService {
       final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
       cell.value = TextCellValue(headers[i]);
       
-      // Stilizează header-ul
+      // Stilizeaza header-ul
       cell.cellStyle = CellStyle(
         bold: true,
         fontSize: 12,
@@ -227,14 +227,14 @@ class ExcelExportService {
     }
   }
 
-  /// Adaugă datele unui client pe o linie (sau actualizează datele existente)
+  /// Adauga datele unui client pe o linie (sau actualizeaza datele existente)
   void _addClientRow(Sheet sheet, UnifiedClientModel client, int rowIndex) {
-    debugPrint('📊 Actualizez/adaug client pe rândul $rowIndex: ${client.basicInfo.name}');
+    debugPrint('📊 Actualizez/adaug client pe randul $rowIndex: ${client.basicInfo.name}');
     
-    // Curăță celulele existente pentru a evita date vechi parțiale
+    // Curata celulele existente pentru a evita date vechi partiale
     for (int col = 0; col < 6; col++) {
       final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rowIndex));
-      cell.value = null; // Curăță celula
+      cell.value = null; // Curata celula
     }
     
     // Coloana 1: Nume Client
@@ -266,30 +266,30 @@ class ExcelExportService {
     debugPrint('📊 Date formular codebitor actualizate: $coDebitorFormData');
   }
 
-  /// Formatează datele formularului (credite + venituri) pentru o persoană
+  /// Formateaza datele formularului (credite + venituri) pentru o persoana
   String _formatClientFormData(ClientFormData formData, {required bool isClient}) {
     final buffer = StringBuffer();
     
     final credits = isClient ? formData.clientCredits : formData.coDebitorCredits;
     final incomes = isClient ? formData.clientIncomes : formData.coDebitorIncomes;
     
-    // Adaugă veniturile cu formatarea specială
+    // Adauga veniturile cu formatarea speciala
     if (incomes.isNotEmpty) {
       for (final income in incomes) {
         if (buffer.isNotEmpty) {
           buffer.write('\n');
         }
         
-        // Formatează venitul conform specificațiilor
+        // Formateaza venitul conform specificatiilor
         final formattedIncome = _formatIncomeSpecial(income);
-        // Includem și veniturile incomplete pentru debug/informare
+        // Includem si veniturile incomplete pentru debug/informare
         buffer.write(formattedIncome);
       }
     }
     
-    // Adaugă creditele cu noua formatare specială
+    // Adauga creditele cu noua formatare speciala
     if (credits.isNotEmpty) {
-      // Separă creditele de venituri dacă există ambele
+      // Separa creditele de venituri daca exista ambele
       if (incomes.isNotEmpty) {
         buffer.write('\n');
       }
@@ -299,32 +299,32 @@ class ExcelExportService {
           buffer.write('\n');
         }
         
-        // Formatează creditul conform noului format special
+        // Formateaza creditul conform noului format special
         final formattedCredit = _formatCreditSpecial(credit);
-        // Includem și creditele incomplete pentru debug/informare
+        // Includem si creditele incomplete pentru debug/informare
         buffer.write(formattedCredit);
       }
     }
     
     if (credits.isEmpty && incomes.isEmpty) {
-      return 'Nu există date în formular';
+      return 'Nu exista date in formular';
     }
     
     return buffer.toString().trim();
   }
 
-  /// Formatează un venit în formatul special cerut
+  /// Formateaza un venit in formatul special cerut
   String _formatIncomeSpecial(IncomeData income) {
-    // Verifică dacă banca și tipul de venit sunt valide (nu "Selectează")
+    // Verifica daca banca si tipul de venit sunt valide (nu "Selecteaza")
     if (_isSelectValue(income.bank)) {
-      return 'Venit incomplet - selectează banca';
+      return 'Venit incomplet - selecteaza banca';
     }
     
     if (_isSelectValue(income.incomeType)) {
-      return 'Venit incomplet - selectează tipul';
+      return 'Venit incomplet - selecteaza tipul';
     }
     
-    // Determină tipul de venit și îl formatează conform specificațiilor
+    // Determina tipul de venit si il formateaza conform specificatiilor
     String incomeTypeFormatted;
     switch (income.incomeType.toLowerCase()) {
       case 'salariu':
@@ -340,49 +340,49 @@ class ExcelExportService {
         incomeTypeFormatted = income.incomeType.toLowerCase();
     }
     
-    // Formatează suma folosind formatul cu "k" pentru mii
+    // Formateaza suma folosind formatul cu "k" pentru mii
     String amountFormatted = '';
     if (income.monthlyAmount != null) {
       amountFormatted = _formatAmountWithK(income.monthlyAmount!);
     }
     
-    // Formatează banca (abrevieri conform exemplelor)
+    // Formateaza banca (abrevieri conform exemplelor)
     String bankFormatted = _formatBankName(income.bank);
     
-    // Formatează vechimea
+    // Formateaza vechimea
     String seniorityFormatted = _formatSeniority(income.seniority);
     
-    // Construiește formatul final: "tip suma(banca,vechime)"
+    // Construieste formatul final: "tip suma(banca,vechime)"
     return '$incomeTypeFormatted $amountFormatted($bankFormatted,$seniorityFormatted)';
   }
 
-  /// Formatează un credit în formatul special cerut
+  /// Formateaza un credit in formatul special cerut
   String _formatCreditSpecial(CreditData credit) {
-    // Verifică dacă banca și tipul de credit sunt valide (nu "Selectează")
+    // Verifica daca banca si tipul de credit sunt valide (nu "Selecteaza")
     if (_isSelectValue(credit.bank)) {
-      return 'Credit incomplet - selectează banca';
+      return 'Credit incomplet - selecteaza banca';
     }
     
     if (_isSelectValue(credit.creditType)) {
-      return 'Credit incomplet - selectează tipul';
+      return 'Credit incomplet - selecteaza tipul';
     }
     
-    // Formatează banca folosind aceeași logică ca la venituri
+    // Formateaza banca folosind aceeasi logica ca la venituri
     String bankFormatted = _formatBankName(credit.bank);
     
-    // Formatează tipul de credit
+    // Formateaza tipul de credit
     String creditTypeFormatted = _formatCreditType(credit.creditType);
     
-    // Determină care sume să folosească în funcție de tipul creditului
+    // Determina care sume sa foloseasca in functie de tipul creditului
     String amountsPart = _formatCreditAmounts(credit);
     
-    // Adaugă detalii suplimentare dacă există (tip rata, perioada)
+    // Adauga detalii suplimentare daca exista (tip rata, perioada)
     String detailsPart = _formatCreditDetails(credit);
     
-    // Construiește formatul final: "bancă-tip: sume(detalii)"
+    // Construieste formatul final: "banca-tip: sume(detalii)"
     String result = '$bankFormatted-$creditTypeFormatted: $amountsPart';
     
-    // Adaugă detaliile doar dacă există și nu sunt goale
+    // Adauga detaliile doar daca exista si nu sunt goale
     if (detailsPart.isNotEmpty && !_isSelectValue(detailsPart)) {
       result += '($detailsPart)';
     }
@@ -391,7 +391,7 @@ class ExcelExportService {
     return result;
   }
 
-  /// Formatează tipul de credit cu abrevieri
+  /// Formateaza tipul de credit cu abrevieri
   String _formatCreditType(String creditType) {
     switch (creditType.toLowerCase()) {
       case 'card cumparaturi':
@@ -405,8 +405,7 @@ class ExcelExportService {
       case 'overdraft':
         return 'ovd';
       case 'prima casa':
-      case 'prima casă':
-        return 'pc';
+      return 'pc';
       case 'auto':
       case 'leasing auto':
         return 'auto';
@@ -419,7 +418,7 @@ class ExcelExportService {
       case 'credit rapid':
         return 'rapid';
       default:
-        // Pentru alte tipuri, folosește primele 2-3 caractere
+        // Pentru alte tipuri, foloseste primele 2-3 caractere
         if (creditType.length > 3) {
           return creditType.substring(0, 3).toLowerCase();
         }
@@ -427,11 +426,11 @@ class ExcelExportService {
     }
   }
 
-  /// Formatează sumele creditului (sold/plafon - rata/consumat)
+  /// Formateaza sumele creditului (sold/plafon - rata/consumat)
   String _formatCreditAmounts(CreditData credit) {
     final creditTypeLower = credit.creditType.toLowerCase();
     
-    // Pentru carduri și overdraft folosim plafon-consumat
+    // Pentru carduri si overdraft folosim plafon-consumat
     if (creditTypeLower.contains('card') || creditTypeLower.contains('overdraft')) {
       String plafon = '';
       String consumat = '';
@@ -461,77 +460,77 @@ class ExcelExportService {
     }
   }
 
-  /// Formatează detaliile creditului (tip rata, perioada)
+  /// Formateaza detaliile creditului (tip rata, perioada)
   String _formatCreditDetails(CreditData credit) {
     final details = <String>[];
     
     debugPrint('📊 Credit details - rateType: "${credit.rateType}", remainingMonths: ${credit.remainingMonths}');
     
-    // Adaugă tipul ratei dacă există și nu este "Selectează"
+    // Adauga tipul ratei daca exista si nu este "Selecteaza"
     if (credit.rateType.isNotEmpty && 
         !_isSelectValue(credit.rateType)) {
       details.add(credit.rateType);
-      debugPrint('📊 Adăugat rateType: ${credit.rateType}');
+      debugPrint('📊 Adaugat rateType: ${credit.rateType}');
     } else {
-      debugPrint('📊 RateType ignorat - este selectează sau gol: "${credit.rateType}"');
+      debugPrint('📊 RateType ignorat - este selecteaza sau gol: "${credit.rateType}"');
     }
     
-    // Adaugă perioada dacă există
+    // Adauga perioada daca exista
     if (credit.remainingMonths != null && credit.remainingMonths! > 0) {
       final period = _formatPeriod(credit.remainingMonths!);
       details.add(period);
     }
     
-    // Pentru anumite tipuri de credit, nu afișa paranteze goale
+    // Pentru anumite tipuri de credit, nu afisa paranteze goale
     if (details.isEmpty) {
       final creditTypeLower = credit.creditType.toLowerCase();
-      debugPrint('📊 Nu există detalii pentru $creditTypeLower');
+      debugPrint('📊 Nu exista detalii pentru $creditTypeLower');
       
-      // Pentru carduri, overdraft și nevoi personale, nu e nevoie de detalii suplimentare
+      // Pentru carduri, overdraft si nevoi personale, nu e nevoie de detalii suplimentare
       if (creditTypeLower.contains('card') || 
           creditTypeLower.contains('overdraft') || 
           creditTypeLower.contains('nevoi personale')) {
-        debugPrint('📊 Tip de credit care nu necesită detalii - returnez gol');
-        return ''; // Nu afișa paranteze pentru aceste tipuri
+        debugPrint('📊 Tip de credit care nu necesita detalii - returnez gol');
+        return ''; // Nu afisa paranteze pentru aceste tipuri
       }
     }
     
     final result = details.join(',');
     debugPrint('📊 Detalii credit finale: "$result"');
     
-    // Verifică din nou pentru "Selectează" în rezultatul final
+    // Verifica din nou pentru "Selecteaza" in rezultatul final
     if (_isSelectValue(result)) {
-      debugPrint('📊 Rezultat final conține "Selectează" - returnez gol');
+      debugPrint('📊 Rezultat final contine "Selecteaza" - returnez gol');
       return '';
     }
     
     return result;
   }
 
-  /// Verifică dacă o valoare este "Selectează" în diverse variante
+  /// Verifica daca o valoare este "Selecteaza" in diverse variante
   bool _isSelectValue(String value) {
     final lowerValue = value.toLowerCase().trim();
-    return lowerValue == 'selectează' || 
+    return lowerValue == 'selecteaza' || 
            lowerValue == 'selecteaza' || 
            lowerValue == 'selecteaza' ||
            lowerValue == 'select' ||
            lowerValue.isEmpty;
   }
 
-  /// Formatează o sumă cu "k" pentru mii (5500 -> 5,5k)
+  /// Formateaza o suma cu "k" pentru mii (5500 -> 5,5k)
   String _formatAmountWithK(double amount) {
     if (amount >= 1000) {
       double amountInK = amount / 1000;
       
-      // Dacă este număr întreg de mii, nu afișa zecimale
+      // Daca este numar intreg de mii, nu afisa zecimale
       if (amountInK == amountInK.toInt()) {
         return '${amountInK.toInt()}k';
       } else {
-        // Afișează cu o zecimală și folosește virgulă în loc de punct
+        // Afiseaza cu o zecimala si foloseste virgula in loc de punct
         return '${amountInK.toStringAsFixed(1).replaceAll('.', ',')}k';
       }
     } else {
-      // Pentru sume sub 1000, afișează normal
+      // Pentru sume sub 1000, afiseaza normal
       if (amount == amount.toInt()) {
         return amount.toInt().toString();
       } else {
@@ -540,7 +539,7 @@ class ExcelExportService {
     }
   }
 
-  /// Formatează perioada în ani/luni
+  /// Formateaza perioada in ani/luni
   String _formatPeriod(int totalMonths) {
     if (totalMonths < 12) {
       return '${totalMonths}luni';
@@ -554,10 +553,10 @@ class ExcelExportService {
     }
   }
 
-  /// Formatează numele băncii conform abrevierilor din exemple
+  /// Formateaza numele bancii conform abrevierilor din exemple
   String _formatBankName(String bankName) {
     switch (bankName.toLowerCase()) {
-      // Bănci comune
+      // Banci comune
       case 'alpha bank':
         return 'alpha';
       case 'banca transilvania':
@@ -590,7 +589,7 @@ class ExcelExportService {
       case 'unicredit bank':
         return 'unicredit';
       
-      // Bănci specifice pentru venituri
+      // Banci specifice pentru venituri
       case 'exim bank':
       case 'eximbank':
         return 'exim';
@@ -598,10 +597,10 @@ class ExcelExportService {
       case 'libra internet bank':
         return 'libra';
       
-      // Bănci specifice pentru credite
+      // Banci specifice pentru credite
       case 'axi ifn':
         return 'axi';
-      case 'banca românească':
+      case 'banca romaneasca':
         return 'br';
       case 'best credit':
         return 'best';
@@ -667,7 +666,7 @@ class ExcelExportService {
         return 'volks';
       
       default:
-        // Pentru alte bănci, folosește primele 3-4 caractere în lowercase
+        // Pentru alte banci, foloseste primele 3-4 caractere in lowercase
         if (bankName.length > 4) {
           return bankName.substring(0, 4).toLowerCase();
         }
@@ -675,7 +674,7 @@ class ExcelExportService {
     }
   }
 
-  /// Formatează vechimea în formatul cerut (ani/luni)
+  /// Formateaza vechimea in formatul cerut (ani/luni)
   String _formatSeniority(int? seniorityInMonths) {
     if (seniorityInMonths == null || seniorityInMonths == 0) {
       return '0luni';
@@ -685,7 +684,7 @@ class ExcelExportService {
       // Doar luni
       return '${seniorityInMonths}luni';
     } else if (seniorityInMonths % 12 == 0) {
-      // Ani întregi
+      // Ani intregi
       final years = seniorityInMonths ~/ 12;
       if (years == 1) {
         return '1an';  // Singular pentru 1 an
@@ -693,7 +692,7 @@ class ExcelExportService {
         return '${years}ani';
       }
     } else {
-      // Ani și luni - conform exemplelor, afișăm doar anii
+      // Ani si luni - conform exemplelor, afisam doar anii
       final years = seniorityInMonths ~/ 12;
       if (years == 1) {
         return '1an';
@@ -703,9 +702,9 @@ class ExcelExportService {
     }
   }
 
-  /// Ajustează lățimea coloanelor pentru lizibilitate
+  /// Ajusteaza latimea coloanelor pentru lizibilitate
   void _adjustColumnWidths(Sheet sheet) {
-    // Setează lățimi optime pentru fiecare coloană
+    // Seteaza latimi optime pentru fiecare coloana
     final columnWidths = [
       20.0, // Nume Client
       15.0, // Telefon Client
@@ -720,35 +719,35 @@ class ExcelExportService {
     }
   }
 
-  /// Salvează fișierul Excel cu timestamp (pentru export complet)
+  /// Salveaza fisierul Excel cu timestamp (pentru export complet)
   Future<String> _saveExcelFileWithTimestamp(Excel excel) async {
     try {
-      // Obține directorul pentru salvare
+      // Obtine directorul pentru salvare
       final directory = await getApplicationDocumentsDirectory();
       
-      // Creează numele fișierului cu timestamp
+      // Creeaza numele fisierului cu timestamp
       final timestamp = DateFormat('dd-MM-yyyy_HH-mm-ss').format(DateTime.now());
       final fileName = 'export_clienti_$timestamp.xlsx';
       final filePath = '${directory.path}/$fileName';
       
-      // Salvează fișierul
+      // Salveaza fisierul
       final file = File(filePath);
       final bytes = excel.encode();
       
       if (bytes != null) {
         await file.writeAsBytes(bytes);
-        debugPrint('✅ Fișier Excel salvat la: $filePath');
+        debugPrint('✅ Fisier Excel salvat la: $filePath');
         return filePath;
       } else {
         throw Exception('Nu s-au putut encode datele Excel');
       }
     } catch (e) {
-      debugPrint('❌ Eroare la salvarea fișierului Excel: $e');
+      debugPrint('❌ Eroare la salvarea fisierului Excel: $e');
       rethrow;
     }
   }
 
-  /// Obține lista de luni disponibile pentru export
+  /// Obtine lista de luni disponibile pentru export
   Future<List<String>> getAvailableMonths() async {
     try {
       final clients = await _clientsService.getAllClients();
@@ -762,25 +761,25 @@ class ExcelExportService {
       
       final sortedMonths = months.toList();
       sortedMonths.sort((a, b) {
-        // Sortează lunile în ordine cronologică
+        // Sorteaza lunile in ordine cronologica
         final dateA = DateFormat('MMMM yyyy').parse(a);
         final dateB = DateFormat('MMMM yyyy').parse(b);
-        return dateB.compareTo(dateA); // Descrescător (cele mai recente primul)
+        return dateB.compareTo(dateA); // Descrescator (cele mai recente primul)
       });
       
       return sortedMonths;
     } catch (e) {
-      debugPrint('❌ Eroare la obținerea lunilor disponibile: $e');
+      debugPrint('❌ Eroare la obtinerea lunilor disponibile: $e');
       return [];
     }
   }
 
-  /// Exportă doar clienții dintr-o lună specifică
+  /// Exporta doar clientii dintr-o luna specifica
   Future<String?> exportClientsForMonth(String monthName) async {
     try {
       final clients = await _clientsService.getAllClients();
       
-      // Filtrează clienții pentru luna specificată
+      // Filtreaza clientii pentru luna specificata
       final monthClients = clients.where((client) {
         final updateDate = client.metadata.updatedAt;
         final clientMonth = DateFormat('MMMM yyyy').format(updateDate);
@@ -788,35 +787,35 @@ class ExcelExportService {
       }).toList();
       
       if (monthClients.isEmpty) {
-        debugPrint('❌ Nu există clienți pentru luna $monthName');
+        debugPrint('❌ Nu exista clienti pentru luna $monthName');
         return null;
       }
 
-      // Creează un fișier Excel nou fără Sheet1
+      // Creeaza un fisier Excel nou fara Sheet1
       var excel = Excel.createExcel();
       
-      // Șterge toate sheet-urile implicite
+      // Sterge toate sheet-urile implicite
       final sheetsToDelete = List<String>.from(excel.sheets.keys);
       for (final sheetName in sheetsToDelete) {
         excel.delete(sheetName);
       }
       
-      // Creează sheet-ul pentru luna respectivă
+      // Creeaza sheet-ul pentru luna respectiva
       Sheet sheet = excel[monthName];
       
-      // Adaugă header-ul
+      // Adauga header-ul
       _addHeaderRow(sheet);
       
-      // Adaugă datele clienților
+      // Adauga datele clientilor
       for (int i = 0; i < monthClients.length; i++) {
         final client = monthClients[i];
         _addClientRow(sheet, client, i + 2);
       }
       
-      // Ajustează lățimea coloanelor
+      // Ajusteaza latimea coloanelor
       _adjustColumnWidths(sheet);
       
-      // Salvează fișierul
+      // Salveaza fisierul
       final filePath = await _saveExcelFileWithTimestamp(excel);
       return filePath;
       

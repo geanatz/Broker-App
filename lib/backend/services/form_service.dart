@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'firebase_service.dart';
-import 'dashboard_service.dart';
 
 /// Enum pentru diferitele tipuri de credite
 enum CreditType { 
@@ -625,25 +624,10 @@ class FormService extends ChangeNotifier {
         showingClientIncomeForm: isShowingClientIncomeForm(clientId),
       );
 
-      // Notifică dashboard-ul că s-a completat un formular
-      if (success) {
-        _notifyDashboardFormCompleted();
-      }
-
       return success;
     } catch (e) {
       debugPrint('Error saving form data for client $clientId: $e');
       return false;
-    }
-  }
-
-  /// Notifică dashboard-ul că s-a completat un formular
-  void _notifyDashboardFormCompleted() {
-    try {
-      final dashboardService = DashboardService();
-      dashboardService.onFormCompleted();
-    } catch (e) {
-      debugPrint('Error notifying dashboard about completed form: $e');
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:broker_app/app_theme.dart';
 // lib/components/items/dark_item2.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A customizable item component with a pill shape, larger height,
 /// and a single, vertically centered title.
@@ -49,10 +50,9 @@ class DarkItem2 extends StatelessWidget {
     final double effectiveItemHeight = itemHeight ?? 64.0; // AppTheme.itemHeightLarge
 
     // Text Style (Consider moving to AppTheme)
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
-      fontFamily: AppTheme.fontFamily, // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
     );
 

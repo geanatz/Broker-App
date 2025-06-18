@@ -27,17 +27,9 @@ class LightItem6 extends StatelessWidget {
   /// Defaults to AppTheme.elementColor3 (0xFF4D4D80) for contrast on icon container.
   final Color? iconColor;
 
-  /// Optional custom background color for the icon's immediate container.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2).
-  final Color? iconContainerColor;
-
   /// Optional custom border radius for the main container.
   /// Defaults to 24.0.
   final double? mainBorderRadius;
-
-  /// Optional custom border radius for the icon's container.
-  /// Defaults to 16.0.
-  final double? iconContainerBorderRadius;
 
   /// Optional size for the icon itself.
   /// Defaults to 24.0.
@@ -51,9 +43,7 @@ class LightItem6 extends StatelessWidget {
     this.backgroundColor,
     this.titleColor,
     this.iconColor,
-    this.iconContainerColor,
     this.mainBorderRadius,
-    this.iconContainerBorderRadius,
     this.iconSize,
   });
 
@@ -62,15 +52,12 @@ class LightItem6 extends StatelessWidget {
     // --- Placeholder Values / Hardcoded Defaults ---
     final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
     final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveIconContainerColor = iconContainerColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
     final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3 (for contrast)
 
     final double effectiveMainBorderRadius = mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
-    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
     final double itemHeight = 64.0; // AppTheme.itemHeightLarge
     final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
     final double internalSpacing = 16.0; // AppTheme.mediumGap
-    final double iconContainerSize = 48.0;
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
 
@@ -113,14 +100,9 @@ class LightItem6 extends StatelessWidget {
           if (icon != null) ...[
             SizedBox(width: internalSpacing),
             Container(
-              width: iconContainerSize,
-              height: iconContainerSize,
-              decoration: ShapeDecoration(
-                color: effectiveIconContainerColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-                ),
-              ),
+              width: 48.0,
+              height: 48.0,
+              padding: const EdgeInsets.all(12),
               child: Center(
                 child: Icon(
                   icon,

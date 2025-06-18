@@ -2,6 +2,7 @@
 // lib/components/items/dark_item5.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A customizable item component with a primary title on the left
 /// and an optional icon on the right.
@@ -63,10 +64,9 @@ class DarkItem5 extends StatelessWidget {
     final double internalSpacing = 16.0; // AppTheme.mediumGap (original spacing: 16 on Row)
 
     // Text Style (Consider moving to AppTheme)
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
 

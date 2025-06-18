@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Enumerări pentru teme și culori - definite în afara clasei pentru a fi accesibile din alte părți
+// Enumerari pentru teme si culori - definite in afara clasei pentru a fi accesibile din alte parti
 enum AppThemeMode { light, dark, auto }
 enum AppThemeColor { red, yellow, green, cyan, blue, pink }
 
-/// Clasa AppTheme conține toate culorile, dimensiunile, stilurile și variabilele de design
-/// folosite în întreaga aplicație, pentru a asigura consistența designului.
+/// Clasa AppTheme contine toate culorile, dimensiunile, stilurile si variabilele de design
+/// folosite in intreaga aplicatie, pentru a asigura consistenta designului.
 /// 
-/// Suportă schimbarea temei între light/dark/auto și 6 culori diferite:
+/// Suporta schimbarea temei intre light/dark/auto si 6 culori diferite:
 /// - red, yellow, green, cyan, blue, pink
 
 class AppTheme extends ChangeNotifier {
@@ -16,7 +16,7 @@ class AppTheme extends ChangeNotifier {
   factory AppTheme() => _instance;
   AppTheme._internal();
 
-  // Tema și culoarea curentă (valori implicite)
+  // Tema si culoarea curenta (valori implicite)
   static AppThemeMode _currentThemeMode = AppThemeMode.auto;
   static AppThemeColor _currentThemeColor = AppThemeColor.blue;
 
@@ -24,10 +24,10 @@ class AppTheme extends ChangeNotifier {
   static AppThemeMode get currentThemeMode => _currentThemeMode;
   static AppThemeColor get currentThemeColor => _currentThemeColor;
 
-  /// Obține tema efectivă bazată pe setarea curentă și tema sistemului
+  /// Obtine tema efectiva bazata pe setarea curenta si tema sistemului
   static AppThemeMode get effectiveThemeMode {
     if (_currentThemeMode == AppThemeMode.auto) {
-      // Pentru modul auto, detectăm tema sistemului
+      // Pentru modul auto, detectam tema sistemului
       final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
       // debugPrint('🎨 APP_THEME: Auto mode - detected brightness: $brightness');
       return brightness == Brightness.dark ? AppThemeMode.dark : AppThemeMode.light;
@@ -36,7 +36,7 @@ class AppTheme extends ChangeNotifier {
     return _currentThemeMode;
   }
 
-  /// Verifică dacă tema efectivă este dark
+  /// Verifica daca tema efectiva este dark
   static bool get isDarkMode {
     final isDark = effectiveThemeMode == AppThemeMode.dark;
     // debugPrint('🎨 APP_THEME: isDarkMode = $isDark');
@@ -63,7 +63,7 @@ class AppTheme extends ChangeNotifier {
   static const double iconSizeSmall = 20.0;
   static const double iconSizeMedium = 24.0;
 
-  // Spațieri
+  // Spatieri
   static const double tinyGap = 4.0;
   static const double smallGap = 8.0;
   static const double mediumGap = 16.0;
@@ -340,7 +340,7 @@ class AppTheme extends ChangeNotifier {
   }
 
   static Color get elementColor2 {
-    // Pentru elementColor2, folosim aceleași culori pentru ambele teme
+    // Pentru elementColor2, folosim aceleasi culori pentru ambele teme
     // deoarece sunt suficient de vizibile pe fundaluri diferite
     switch (_currentThemeColor) {
       case AppThemeColor.red:
@@ -469,32 +469,32 @@ class AppTheme extends ChangeNotifier {
     stops: const [0.0, 1.0],
   );
 
-  // Decorațiune pentru widget-uri
+  // Decoratiune pentru widget-uri
   static BoxDecoration get widgetDecoration => BoxDecoration(
     color: widgetBackground,
     borderRadius: BorderRadius.circular(borderRadiusLarge),
     boxShadow: [widgetShadow],
   );
 
-  // Decorațiune pentru popup-uri
+  // Decoratiune pentru popup-uri
   static BoxDecoration get popupDecoration => BoxDecoration(
     color: popupBackground,
     borderRadius: BorderRadius.circular(borderRadiusLarge),
   );
 
-  // Decorațiune pentru container-ul principal (de nivel 1)
+  // Decoratiune pentru container-ul principal (de nivel 1)
   static BoxDecoration get container1Decoration => BoxDecoration(
     color: containerColor1,
     borderRadius: BorderRadius.circular(borderRadiusMedium),
   );
 
-  // Decorațiune pentru container-ul secundar (de nivel 2) 
+  // Decoratiune pentru container-ul secundar (de nivel 2) 
   static BoxDecoration get container2Decoration => BoxDecoration(
     color: containerColor2,
     borderRadius: BorderRadius.circular(borderRadiusSmall),
   );
   
-  // Decorațiune pentru slot-uri rezervate în calendar
+  // Decoratiune pentru slot-uri rezervate in calendar
   static BoxDecoration get reservedSlotDecoration => BoxDecoration(
     color: _currentThemeColor == AppThemeColor.pink ? containerColor2 : 
            (_currentThemeMode == AppThemeMode.light ? const Color(0xFFC6ACD3) : const Color(0xFF532D53)),
@@ -504,7 +504,7 @@ class AppTheme extends ChangeNotifier {
 
   // ======== METODE PENTRU SCHIMBAREA TEMEI ========
   
-  /// Schimbă tema între Light și Dark
+  /// Schimba tema intre Light si Dark
   static void toggleThemeMode() {
     _currentThemeMode = _currentThemeMode == AppThemeMode.light 
         ? AppThemeMode.dark 
@@ -512,19 +512,19 @@ class AppTheme extends ChangeNotifier {
     _instance.notifyListeners();
   }
   
-  /// Setează tema specifică (Light sau Dark)
+  /// Seteaza tema specifica (Light sau Dark)
   static void setThemeMode(AppThemeMode mode) {
     _currentThemeMode = mode;
     _instance.notifyListeners();
   }
   
-  /// Setează culoarea temei
+  /// Seteaza culoarea temei
   static void setThemeColor(AppThemeColor color) {
     _currentThemeColor = color;
     _instance.notifyListeners();
   }
   
-  /// Forțează actualizarea detecției brightness-ului sistemului
+  /// Forteaza actualizarea detectiei brightness-ului sistemului
   static void refreshSystemBrightness() {
     // This method forces a refresh of system brightness detection
     // It's called when system theme changes are detected at app level

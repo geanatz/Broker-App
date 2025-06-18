@@ -2,6 +2,7 @@ import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../backend/services/matcher_service.dart';
+import '../../backend/services/splash_service.dart';
 import '../components/items/light_item7.dart';
 import '../components/items/dark_item7.dart';
 import '../components/headers/widget_header1.dart';
@@ -26,7 +27,7 @@ class MatcherPane extends StatefulWidget {
 
 class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   // Service pentru logica matcher-ului
-  final MatcherService _matcherService = MatcherService();
+  late final MatcherService _matcherService;
   
   // Controllere pentru input-uri
   late final TextEditingController _ageController;
@@ -42,6 +43,9 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
   void initState() {
     super.initState();
     
+    // Foloseste serviciul pre-incarcat din splash
+    _matcherService = SplashService().matcherService;
+    
     // Initializeaza controlerele si service-ul
     _ageController = _matcherService.ageController;
     _ficoController = _matcherService.ficoController;
@@ -53,12 +57,12 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
     _ageController.addListener(() => _matcherService.updateRecommendations());
     _ficoController.addListener(() => _matcherService.updateRecommendations());
     
-    // Adaugă observer pentru lifecycle
+    // Adauga observer pentru lifecycle
     WidgetsBinding.instance.addObserver(this);
     
-    // Inițializează service-ul și forțează actualizarea datelor
+    // Service-ul este deja initializat in splash, doar sincronizăm datele
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeMatcherService();
+      _refreshData();
     });
   }
   
@@ -66,23 +70,12 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // Actualizează datele când aplicația revine în prim plan
+      // Actualizeaza datele cand aplicatia revine in prim plan
       _refreshData();
     }
   }
   
-  /// Inițializează MatcherService și forțează actualizarea datelor
-  Future<void> _initializeMatcherService() async {
-    try {
-      await _matcherService.initialize();
-      // Forțează o actualizare după inițializare
-      await _matcherService.refreshClientData();
-    } catch (e) {
-      debugPrint('Error initializing MatcherService: $e');
-    }
-  }
-  
-  /// Actualizează datele (poate fi apelată manual)
+  /// Actualizeaza datele (poate fi apelata manual)
   Future<void> _refreshData() async {
     try {
       await _matcherService.refreshClientData();
@@ -292,54 +285,36 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                 // Lista cu recomandari sau mesajul de eroare
                 Expanded(
                   child: errorMessage != null
-                      ? Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: ShapeDecoration(
-                            color: AppTheme.containerColor1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      ? Align(
+                          alignment: Alignment.topCenter,
+                          child: Text(
+                            errorMessage,
+                            style: AppTheme.safeOutfit(
+                              color: AppTheme.elementColor1,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              errorMessage,
-                              style: AppTheme.safeOutfit(
-                                color: AppTheme.elementColor1,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                            textAlign: TextAlign.center,
                           ),
                         )
                       : recommendations.isEmpty
-                          ? Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: ShapeDecoration(
-                                color: AppTheme.containerColor1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                          ? Align(
+                              alignment: Alignment.topCenter,
+                              child: Text(
+                                'Nu exista banci care sa indeplineasca criteriile clientului',
+                                style: AppTheme.safeOutfit(
+                                  color: AppTheme.elementColor1,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'Nu exista banci care sa indeplineasca criteriile clientului',
-                                  style: AppTheme.safeOutfit(
-                                    color: AppTheme.elementColor1,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
+                                textAlign: TextAlign.center,
                               ),
                             )
                           : Container(
                               width: double.infinity,
                               decoration: ShapeDecoration(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
                                 ),
                               ),
                               child: ListView.separated(
@@ -378,7 +353,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
     );
   }
 
-  /// Metodă publică pentru actualizarea datelor din exterior
+  /// Metoda publica pentru actualizarea datelor din exterior
   Future<void> refreshData() async {
     await _refreshData();
   }

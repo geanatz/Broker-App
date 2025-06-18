@@ -4,12 +4,12 @@ import 'package:intl/date_symbol_data_local.dart';
 
 /// Service pentru gestionarea logicii calendarului
 /// 
-/// Această clasă gestionează toate operațiunile legate de calendar:
-/// - Calcularea săptămânilor de lucru
+/// Aceasta clasa gestioneaza toate operatiunile legate de calendar:
+/// - Calcularea saptamanilor de lucru
 /// - Formatarea datelor
-/// - Navigarea între săptămâni
+/// - Navigarea intre saptamani
 /// - Validarea sloturilor de timp
-/// - Constante pentru afișarea calendarului
+/// - Constante pentru afisarea calendarului
 class CalendarService {
   static final CalendarService _instance = CalendarService._internal();
   factory CalendarService() => _instance;
@@ -39,7 +39,7 @@ class CalendarService {
   DateFormat? _dateFormatter;
   bool _isInitialized = false;
 
-  /// Inițializează serviciul de calendar cu formatarea pentru limba română
+  /// Initializeaza serviciul de calendar cu formatarea pentru limba romana
   Future<void> initialize() async {
     if (_isInitialized) return;
     
@@ -56,7 +56,7 @@ class CalendarService {
     }
   }
 
-  /// Returnează formatterul pentru date
+  /// Returneaza formatterul pentru date
   DateFormat get dateFormatter {
     if (!_isInitialized || _dateFormatter == null) {
       _dateFormatter = DateFormat('d MMM');
@@ -64,66 +64,66 @@ class CalendarService {
     return _dateFormatter!;
   }
 
-  /// Calculează prima zi (Luni) a săptămânii de afișat
+  /// Calculeaza prima zi (Luni) a saptamanii de afisat
   /// 
-  /// [weekOffset] - offset-ul săptămânii (0 = săptămâna curentă, -1 = săptămâna trecută, etc.)
+  /// [weekOffset] - offset-ul saptamanii (0 = saptamana curenta, -1 = saptamana trecuta, etc.)
   DateTime getStartOfWeekToDisplay(int weekOffset) {
     final now = DateTime.now();
     final currentWeekday = now.weekday; // Monday = 1, Sunday = 7
 
     DateTime baseMonday;
     
-    // Dacă este Sâmbătă (6) sau Duminică (7)
+    // Daca este Sambata (6) sau Duminica (7)
     if (currentWeekday >= DateTime.saturday) {
-      // Calculează zilele până la următoarea Luni
+      // Calculeaza zilele pana la urmatoarea Luni
       final daysUntilNextMonday = 8 - currentWeekday;
-      // Obține data următoarei Luni
+      // Obtine data urmatoarei Luni
       final nextMonday = now.add(Duration(days: daysUntilNextMonday));
-      // Setează baseMonday la începutul acelei Luni
+      // Seteaza baseMonday la inceputul acelei Luni
       baseMonday = DateTime(nextMonday.year, nextMonday.month, nextMonday.day);
     } else {
-      // Dacă este Luni-Vineri, obține Luni din săptămâna curentă
+      // Daca este Luni-Vineri, obtine Luni din saptamana curenta
       final currentMonday = now.subtract(Duration(days: currentWeekday - 1));
-      // Setează baseMonday la începutul acelei Luni
+      // Seteaza baseMonday la inceputul acelei Luni
       baseMonday = DateTime(currentMonday.year, currentMonday.month, currentMonday.day);
     }
     
-    // Aplică offset-ul săptămânii
+    // Aplica offset-ul saptamanii
     return baseMonday.add(Duration(days: 7 * weekOffset));
   }
 
-  /// Calculează sfârșitul săptămânii de lucru (Vineri)
+  /// Calculeaza sfarsitul saptamanii de lucru (Vineri)
   DateTime getEndOfWeekToDisplay(int weekOffset) {
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
     return startOfWeek.add(Duration(days: daysPerWeek - 1, hours: 23, minutes: 59));
   }
 
-  /// Generează lista de date pentru săptămâna curentă
+  /// Genereaza lista de date pentru saptamana curenta
   List<String> getWeekDates(int weekOffset) {
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
     return List.generate(daysPerWeek, (index) {
       final date = startOfWeek.add(Duration(days: index));
-      return dateFormatter.format(date).split(' ').first; // Doar numărul zilei
+      return dateFormatter.format(date).split(' ').first; // Doar numarul zilei
     });
   }
 
-  /// Returnează informațiile despre luna și anul curent
+  /// Returneaza informatiile despre luna si anul curent
   String getMonthYearString(int weekOffset) {
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
     final formatted = dateFormatter.format(startOfWeek).split(' ');
     return formatted.length > 1 
         ? formatted.sublist(1).join(' ') 
-        : ''; // Luna și potențial anul
+        : ''; // Luna si potential anul
   }
 
-  /// Generează intervalul de date pentru afișare (ex: "1-5 Dec")
+  /// Genereaza intervalul de date pentru afisare (ex: "1-5 Dec")
   String getDateInterval(int weekOffset) {
     final weekDates = getWeekDates(weekOffset);
     final monthYear = getMonthYearString(weekOffset);
     return "${weekDates.first}-${weekDates.last} $monthYear";
   }
 
-  /// Verifică dacă o dată este în săptămâna de lucru curentă
+  /// Verifica daca o data este in saptamana de lucru curenta
   bool isDateInCurrentWorkWeek(DateTime date, int weekOffset) {
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
     final endOfWeek = getEndOfWeekToDisplay(weekOffset);
@@ -132,31 +132,31 @@ class CalendarService {
            date.isBefore(endOfWeek.add(const Duration(days: 1)));
   }
 
-  /// Calculează indexul zilei pentru o dată dată (0-4 pentru Luni-Vineri)
+  /// Calculeaza indexul zilei pentru o data data (0-4 pentru Luni-Vineri)
   int? getDayIndexForDate(DateTime date, int weekOffset) {
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
     final dayDifference = date.difference(startOfWeek).inDays;
     
     if (dayDifference < 0 || dayDifference >= daysPerWeek) {
-      return null; // Data nu este în săptămâna de lucru
+      return null; // Data nu este in saptamana de lucru
     }
     
     return dayDifference;
   }
 
-  /// Calculează indexul orei pentru o dată dată
+  /// Calculeaza indexul orei pentru o data data
   int getHourIndexForDateTime(DateTime dateTime) {
     final timeString = DateFormat('HH:mm').format(dateTime);
     final index = workingHours.indexOf(timeString);
     return index == -1 ? -1 : index;
   }
 
-  /// Generează cheia slotului pentru maparea întâlnirilor
+  /// Genereaza cheia slotului pentru maparea intalnirilor
   String generateSlotKey(int dayIndex, int hourIndex) {
     return '$dayIndex-$hourIndex';
   }
 
-  /// Parsează cheia slotului înapoi în indexuri
+  /// Parseaza cheia slotului inapoi in indexuri
   Map<String, int>? parseSlotKey(String slotKey) {
     final parts = slotKey.split('-');
     if (parts.length != 2) return null;
@@ -172,7 +172,7 @@ class CalendarService {
     };
   }
 
-  /// Construiește un DateTime complet din indici de zi și oră
+  /// Construieste un DateTime complet din indici de zi si ora
   DateTime buildDateTimeFromIndices(int weekOffset, int dayIndex, int hourIndex) {
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
     final selectedDate = startOfWeek.add(Duration(days: dayIndex));
@@ -188,29 +188,29 @@ class CalendarService {
     );
   }
 
-  /// Verifică dacă o oră este în programul de lucru
+  /// Verifica daca o ora este in programul de lucru
   bool isValidWorkingHour(String hour) {
     return workingHours.contains(hour);
   }
 
-  /// Verifică dacă o zi este în săptămâna de lucru (Luni-Vineri)
+  /// Verifica daca o zi este in saptamana de lucru (Luni-Vineri)
   bool isValidWorkingDay(DateTime date) {
     final weekday = date.weekday;
     return weekday >= DateTime.monday && weekday <= DateTime.friday;
   }
 
-  /// Calculează prima zi a săptămânii pentru o dată specifică
+  /// Calculeaza prima zi a saptamanii pentru o data specifica
   DateTime getStartOfWeekForDate(DateTime date) {
     final weekday = date.weekday; // Monday = 1, Sunday = 7
     DateTime monday;
     
     if (weekday >= DateTime.saturday) {
-      // Dacă este Sâmbătă sau Duminică, obține următoarea Luni
+      // Daca este Sambata sau Duminica, obtine urmatoarea Luni
       final daysUntilNextMonday = 8 - weekday;
       final nextMonday = date.add(Duration(days: daysUntilNextMonday));
       monday = DateTime(nextMonday.year, nextMonday.month, nextMonday.day);
     } else {
-      // Dacă este Luni-Vineri, obține Luni din săptămâna curentă
+      // Daca este Luni-Vineri, obtine Luni din saptamana curenta
       final currentMonday = date.subtract(Duration(days: weekday - 1));
       monday = DateTime(currentMonday.year, currentMonday.month, currentMonday.day);
     }
@@ -218,7 +218,7 @@ class CalendarService {
     return monday;
   }
 
-  /// Calculează offset-ul săptămânii pentru o dată specifică în raport cu săptămâna curentă
+  /// Calculeaza offset-ul saptamanii pentru o data specifica in raport cu saptamana curenta
   int getWeekOffsetForDate(DateTime date) {
     final dateWeekStart = getStartOfWeekForDate(date);
     final currentWeekStart = getStartOfWeekToDisplay(0);
@@ -226,10 +226,10 @@ class CalendarService {
     return weekDifference;
   }
 
-  /// Verifică dacă serviciul este inițializat
+  /// Verifica daca serviciul este initializat
   bool get isInitialized => _isInitialized;
 
-  /// Resetează starea serviciului (util pentru testing)
+  /// Reseteaza starea serviciului (util pentru testing)
   void reset() {
     _isInitialized = false;
     _dateFormatter = null;

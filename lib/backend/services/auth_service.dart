@@ -6,25 +6,25 @@ import 'dart:async';
 import 'firebase_service.dart';
 import 'settings_service.dart';
 
-/// Enum pentru a defini stările/pașii posibili ai ecranului de autentificare.
-/// Aceasta va controla ce popup este afișat.
+/// Enum pentru a defini starile/pasii posibili ai ecranului de autentificare.
+/// Aceasta va controla ce popup este afisat.
 enum AuthStep {
-  /// Starea inițială sau nedefinită.
+  /// Starea initiala sau nedefinita.
   initial,
 
-  /// Afișează popup-ul de login.
+  /// Afiseaza popup-ul de login.
   login,
 
-  /// Afișează popup-ul de înregistrare.
+  /// Afiseaza popup-ul de inregistrare.
   registration,
   
-  /// Afișează popup-ul de confirmare a creării contului și afișare token.
+  /// Afiseaza popup-ul de confirmare a crearii contului si afisare token.
   accountCreated,
 
-  /// Afișează popup-ul pentru introducerea token-ului de resetare a parolei.
+  /// Afiseaza popup-ul pentru introducerea token-ului de resetare a parolei.
   tokenEntry,
 
-  /// Afișează popup-ul pentru setarea unei noi parole după validarea token-ului.
+  /// Afiseaza popup-ul pentru setarea unei noi parole dupa validarea token-ului.
   passwordReset,
 }
 
@@ -46,8 +46,8 @@ class AuthService {
 
   // Create email from consultant name (for Firebase Auth)
   String _createEmailFromConsultantName(String consultantName) {
-    // Transformă numele consultantului într-un email valid pentru Firebase Auth
-    // Înlocuiește spațiile cu underscore și adaugă un domeniu
+    // Transforma numele consultantului intr-un email valid pentru Firebase Auth
+    // Inlocuieste spatiile cu underscore si adauga un domeniu
     return '${consultantName.trim().replaceAll(' ', '_').toLowerCase()}@brokerapp.dev';
   }
 
@@ -61,7 +61,7 @@ class AuthService {
     try {
       debugPrint('🟨 AUTH_SERVICE: Starting registration for: $consultantName');
       
-      // Verifică dacă parolele se potrivesc
+      // Verifica daca parolele se potrivesc
       if (password != confirmPassword) {
         debugPrint('🔴 AUTH_SERVICE: Passwords do not match');
         return {
@@ -70,7 +70,7 @@ class AuthService {
         };
       }
 
-      // Verifică dacă numele consultantului este unic
+      // Verifica daca numele consultantului este unic
       final consultantSnapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore
           .collection(_consultantsCollection)
@@ -82,25 +82,25 @@ class AuthService {
         debugPrint('🔴 AUTH_SERVICE: Consultant name already exists');
         return {
           'success': false,
-          'message': 'Acest nume de consultant există deja',
+          'message': 'Acest nume de consultant exista deja',
         };
       }
       
-      // Verifică dacă email-ul este deja folosit
+      // Verifica daca email-ul este deja folosit
       final email = _createEmailFromConsultantName(consultantName);
       debugPrint('🟨 AUTH_SERVICE: Created email: $email');
       
       try {
-        // Încearcă să creezi utilizatorul direct - Firebase va returna eroare dacă email-ul există
-        // Aceasta este abordarea recomandată în loc de fetchSignInMethodsForEmail
-        // Vom gestiona eroarea 'email-already-in-use' mai jos în catch block
+        // Incearca sa creezi utilizatorul direct - Firebase va returna eroare daca email-ul exista
+        // Aceasta este abordarea recomandata in loc de fetchSignInMethodsForEmail
+        // Vom gestiona eroarea 'email-already-in-use' mai jos in catch block
       } catch (e) {
-        // Ignorăm eroarea de verificare, vom lăsa Firebase să gestioneze duplicatele
+        // Ignoram eroarea de verificare, vom lasa Firebase sa gestioneze duplicatele
         debugPrint('Proceeding with user creation, Firebase will handle duplicates: $e');
       }
 
       debugPrint('🟨 AUTH_SERVICE: Creating Firebase user...');
-      // Creează utilizator în Firebase Auth
+      // Creeaza utilizator in Firebase Auth
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -109,16 +109,16 @@ class AuthService {
       debugPrint('🟨 AUTH_SERVICE: Firebase user created: ${userCredential.user?.uid}');
       debugPrint('🟨 AUTH_SERVICE: User email: ${userCredential.user?.email}');
 
-      // IMPORTANT: Facem signOut imediat pentru a preveni autentificarea automată
+      // IMPORTANT: Facem signOut imediat pentru a preveni autentificarea automata
       debugPrint('🟨 AUTH_SERVICE: Doing immediate signOut to prevent auto-login');
       await _auth.signOut();
       debugPrint('🟨 AUTH_SERVICE: Immediate signOut completed');
 
-      // Generează token unic pentru resetarea parolei
+      // Genereaza token unic pentru resetarea parolei
       final token = _uuid.v4();
       debugPrint('🟨 AUTH_SERVICE: Generated token: ${token.substring(0, 8)}...');
 
-      // Salvează datele consultantului în Firestore, including token
+      // Salveaza datele consultantului in Firestore, including token
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(userCredential.user!.uid).set({
           'name': consultantName,
@@ -141,10 +141,10 @@ class AuthService {
 
       switch (e.code) {
         case 'weak-password':
-          message = 'Parola este prea slabă';
+          message = 'Parola este prea slaba';
           break;
         case 'email-already-in-use':
-          message = 'Acest consultant există deja (email asociat)';
+          message = 'Acest consultant exista deja (email asociat)';
           break;
         default:
           message = 'Eroare la crearea contului: ${e.message}';
@@ -168,8 +168,9 @@ class AuthService {
     required String consultantName,
     required String password,
   }) async {
+    debugPrint('🔵 AUTH_SERVICE: Starting loginConsultant for: $consultantName');
     try {
-      // În primul rând, verificăm dacă există un consultant cu acest nume
+      // In primul rand, verificam daca exista un consultant cu acest nume
       final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore
           .collection(_consultantsCollection)
@@ -180,11 +181,11 @@ class AuthService {
       if (consultantsSnapshot.docs.isEmpty) {
         return {
           'success': false,
-          'message': 'Consultant negăsit',
+          'message': 'Consultant negasit',
         };
       }
       
-      // Luăm cel mai recent document (în caz că există mai multe cu același nume)
+      // Luam cel mai recent document (in caz ca exista mai multe cu acelasi nume)
       DocumentSnapshot? mostRecentDoc;
       Timestamp? mostRecentTime;
       
@@ -206,50 +207,56 @@ class AuthService {
       // If loop didn't find any with timestamp, use the first doc as fallback
       mostRecentDoc ??= consultantsSnapshot.docs.first;
       
-      // Obținem ID-ul consultantului și alte date utile
+      // Obtinem ID-ul consultantului si alte date utile
       final consultantData = mostRecentDoc.data() as Map<String, dynamic>;
       
-      // Încercăm să extragem email-ul stocat, dacă există
+      // Incercam sa extragem email-ul stocat, daca exista
       String? storedEmail = consultantData['email'] as String?;
       String emailToUse;
       
       if (storedEmail != null && storedEmail.isNotEmpty) {
-        // Folosim email-ul stocat explicit în document
+        // Folosim email-ul stocat explicit in document
         emailToUse = storedEmail;
       } else {
-        // Generăm email-ul standard (fallback if email wasn't stored during registration)
+        // Generam email-ul standard (fallback if email wasn't stored during registration)
         debugPrint("Warning: Email not found in consultant document, generating from name.");
         emailToUse = _createEmailFromConsultantName(consultantName);
       }
       
-      // Încercăm autentificarea cu acest email și parolă în Firebase Auth
+      // Incercam autentificarea cu acest email si parola in Firebase Auth
+      debugPrint('🔵 AUTH_SERVICE: Attempting Firebase signIn with email: $emailToUse');
       try {
         await _auth.signInWithEmailAndPassword(
           email: emailToUse,
           password: password,
         );
         
-        // Autentificare reușită - Nu returnăm mesaj de succes pentru că utilizatorul va fi navigat automat
-        // AuthWrapper va detecta schimbarea și va naviga la MainScreen
+        debugPrint('🟢 AUTH_SERVICE: Firebase signIn successful for: $consultantName');
+        debugPrint('🟢 AUTH_SERVICE: Current user after signIn: ${_auth.currentUser?.email ?? 'null'}');
+        
+        // Autentificare reusita - Nu returnam mesaj de succes pentru ca utilizatorul va fi navigat automat
+        // AuthWrapper va detecta schimbarea si va naviga la MainScreen
         return {
           'success': true,
           'consultantData': consultantData,
         };
       } catch (authError) {
-        // Dacă eșuează cu email-ul specific, verificăm dacă există token pentru resetare
+        debugPrint('🔴 AUTH_SERVICE: Firebase signIn failed: $authError');
+        // Daca esueaza cu email-ul specific, verificam daca exista token pentru resetare
         if (authError is FirebaseAuthException) {
+          debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException code: ${authError.code}');
           if (authError.code == 'user-not-found' || authError.code == 'wrong-password') {
             // Check if consultant document has token
             if (consultantData.containsKey('token')) {
               return {
                 'success': false,
-                'message': 'Parolă incorectă sau cont resetat. Verifică credențialele sau folosește token-ul pentru a reseta parola.',
+                'message': 'Parola incorecta sau cont resetat. Verifica credentialele sau foloseste token-ul pentru a reseta parola.',
                 'resetEnabled': true,
               };
             } else {
               return {
                 'success': false,
-                'message': 'Credențiale invalide. Verifică numele și parola.',
+                'message': 'Credentiale invalide. Verifica numele si parola.',
               };
             }
           }
@@ -274,7 +281,7 @@ class AuthService {
   // Verify token and get consultant ID
   Future<Map<String, dynamic>> verifyToken(String token) async {
     try {
-      // Caută token-ul în documentele consultant
+      // Cauta token-ul in documentele consultant
       final consultantSnapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore
           .collection(_consultantsCollection)
@@ -289,7 +296,7 @@ class AuthService {
         };
       }
 
-      // Obține ID-ul consultantului asociat cu token-ul
+      // Obtine ID-ul consultantului asociat cu token-ul
       final consultantDoc = consultantSnapshot.docs.first;
       final consultantId = consultantDoc.id;
 
@@ -319,7 +326,7 @@ class AuthService {
     }
 
     try {
-      // Obține datele consultantului
+      // Obtine datele consultantului
       final consultantDoc = await _threadHandler.executeOnPlatformThread(() =>
         _firestore
           .collection(_consultantsCollection)
@@ -330,7 +337,7 @@ class AuthService {
       if (!consultantDoc.exists) {
         return {
           'success': false,
-          'message': 'Consultant negăsit',
+          'message': 'Consultant negasit',
         };
       }
 
@@ -340,7 +347,7 @@ class AuthService {
       if (email == null || email.isEmpty) {
         return {
           'success': false,
-          'message': 'Email consultant lipsă',
+          'message': 'Email consultant lipsa',
         };
       }
 
@@ -353,7 +360,7 @@ class AuthService {
 
       return {
         'success': true,
-        'message': 'Token valid. Resetarea parolei necesită implementare backend/cloud function sau flux Firebase standard (email).',
+        'message': 'Token valid. Resetarea parolei necesita implementare backend/cloud function sau flux Firebase standard (email).',
       };
     } catch (e) {
       return {
@@ -363,10 +370,10 @@ class AuthService {
     }
   }
 
-  // Șterge un consultant după nume
+  // Sterge un consultant dupa nume
   Future<Map<String, dynamic>> deleteConsultantByName(String consultantName) async {
     try {
-      // Pasul 1: Găsește consultantul în Firestore după nume
+      // Pasul 1: Gaseste consultantul in Firestore dupa nume
       final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore
           .collection(_consultantsCollection)
@@ -377,11 +384,11 @@ class AuthService {
       if (consultantsSnapshot.docs.isEmpty) {
         return {
           'success': false,
-          'message': 'Consultant negăsit',
+          'message': 'Consultant negasit',
         };
       }
       
-      // Luăm cel mai recent document cu numele specificat
+      // Luam cel mai recent document cu numele specificat
       DocumentSnapshot? mostRecentDoc;
       Timestamp? mostRecentTime;
       
@@ -403,7 +410,7 @@ class AuthService {
       final consultantDoc = mostRecentDoc;
       final consultantId = consultantDoc.id;
       
-      // Pasul 2: Șterge setările temei pentru consultantul respectiv
+      // Pasul 2: Sterge setarile temei pentru consultantul respectiv
       try {
         final settingsService = SettingsService();
         await settingsService.clearConsultantSettings(consultantId);
@@ -412,65 +419,65 @@ class AuthService {
         // Continue with deletion even if settings clearing fails
       }
       
-      // Pasul 3: Șterge documentul din Firestore
+      // Pasul 3: Sterge documentul din Firestore
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(consultantDoc.id).delete()
       );
       
-      // Pasul 4: Șterge utilizatorul din Firebase Auth dacă avem email-ul
+      // Pasul 4: Sterge utilizatorul din Firebase Auth daca avem email-ul
       final consultantData = consultantDoc.data() as Map<String, dynamic>;
       final email = consultantData['email'] as String?;
       
       if (email != null && email.isNotEmpty) {
-        // Salvăm email-ul pentru verificări viitoare
+        // Salvam email-ul pentru verificari viitoare
         await deleteAuthUserByEmail(email);
         return {
           'success': true,
-          'message': 'Consultant șters cu succes',
+          'message': 'Consultant sters cu succes',
         };
       } else {
-        // Dacă nu avem email, folosim email-ul generat
+        // Daca nu avem email, folosim email-ul generat
         final generatedEmail = _createEmailFromConsultantName(consultantName);
         await deleteAuthUserByEmail(generatedEmail);
         return {
           'success': true,
-          'message': 'Consultant șters, dar nu s-a găsit email-ul în document. S-a încercat ștergerea utilizatorului bazat pe email-ul generat.',
+          'message': 'Consultant sters, dar nu s-a gasit email-ul in document. S-a incercat stergerea utilizatorului bazat pe email-ul generat.',
         };
       }
     } catch (e) {
       debugPrint("Error deleting consultant: $e");
       return {
         'success': false,
-        'message': 'Eroare la ștergerea consultantului: $e',
+        'message': 'Eroare la stergerea consultantului: $e',
       };
     }
   }
   
-  // Metodă ajutătoare pentru a șterge un utilizator din Firebase Auth după email
-  // Notă: Această metodă este pentru Firebase Admin SDK și NU va funcționa direct în aplicația client
-  // Este inclusă ca referință pentru implementare backend/cloud functions
+  // Metoda ajutatoare pentru a sterge un utilizator din Firebase Auth dupa email
+  // Nota: Aceasta metoda este pentru Firebase Admin SDK si NU va functiona direct in aplicatia client
+  // Este inclusa ca referinta pentru implementare backend/cloud functions
   Future<void> deleteAuthUserByEmail(String email) async {
     try {
-      // În aplicația client, singura opțiune este să ne autentificăm ca acel utilizator și apoi să-l ștergem
-      // Aceasta necesită cunoașterea parolei, ceea ce în majoritatea cazurilor nu este posibil
+      // In aplicatia client, singura optiune este sa ne autentificam ca acel utilizator si apoi sa-l stergem
+      // Aceasta necesita cunoasterea parolei, ceea ce in majoritatea cazurilor nu este posibil
       
-      // Înlocuim fetchSignInMethodsForEmail (deprecated) cu o abordare diferită
-      // În loc să verificăm dacă există contul, încercăm direct operațiunea de ștergere
-      // sau marcăm pentru ștergere ulterioară printr-un Cloud Function
+      // Inlocuim fetchSignInMethodsForEmail (deprecated) cu o abordare diferita
+      // In loc sa verificam daca exista contul, incercam direct operatiunea de stergere
+      // sau marcam pentru stergere ulterioara printr-un Cloud Function
       
       debugPrint('Auth user deletion requested for email: $email');
       debugPrint('Note: Cannot delete from client app. Would require Cloud Function or Admin SDK.');
       
-      // În realitate, aici ar trebui să apelăm un endpoint backend securizat sau Cloud Function
-      // Exemplu pseudocod pentru Cloud Function (implementat în backend):
+      // In realitate, aici ar trebui sa apelam un endpoint backend securizat sau Cloud Function
+      // Exemplu pseudocod pentru Cloud Function (implementat in backend):
       // await cloudFunctions.httpsCallable('deleteUserByEmail')({'email': email});
       
-      // Pentru logging/debugging, putem încerca să detectăm dacă contul există
-      // prin încercarea unei operațiuni benigne, dar nu este necesar pentru funcționalitate
+      // Pentru logging/debugging, putem incerca sa detectam daca contul exista
+      // prin incercarea unei operatiuni benigne, dar nu este necesar pentru functionalitate
       
     } catch (e) {
       debugPrint('Error in auth user deletion process: $e');
-      // Transmitem eroarea mai departe pentru a fi gestionată de apelant
+      // Transmitem eroarea mai departe pentru a fi gestionata de apelant
       rethrow;
     }
   }

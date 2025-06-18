@@ -329,7 +329,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     );
   }
 
-  /// Calculează 40% din totalul veniturilor pentru clientul activ
+  /// Calculeaza 40% din totalul veniturilor pentru clientul activ
   void _calculateIncomePercentage() {
     final percentage = CalculatorService.calculateIncomePercentage();
     

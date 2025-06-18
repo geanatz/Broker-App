@@ -5,10 +5,10 @@ import '../../backend/services/calculator_service.dart';
 // Import components
 import '../components/headers/widget_header1.dart';
 
-/// Widget pentru afișarea graficului de amortizare a unui credit
+/// Widget pentru afisarea graficului de amortizare a unui credit
 /// 
-/// Acest popup afișează un tabel cu informații detaliate despre fiecare rată lunară,
-/// incluzând suma plătită, dobânda, principalul și soldul rămas.
+/// Acest popup afiseaza un tabel cu informatii detaliate despre fiecare rata lunara,
+/// incluzand suma platita, dobanda, principalul si soldul ramas.
 class AmortizationPopup extends StatelessWidget {
   final List<AmortizationEntry> schedule;
 
@@ -17,7 +17,7 @@ class AmortizationPopup extends StatelessWidget {
     required this.schedule,
   });
 
-  /// Formatează un număr cu virgulă la fiecare 3 cifre, fără decimale
+  /// Formateaza un numar cu virgula la fiecare 3 cifre, fara decimale
   String _formatNumber(double value) {
     final formatter = NumberFormat('#,###');
     return formatter.format(value.round());
@@ -75,7 +75,7 @@ class AmortizationPopup extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header row - fără container colorat conform designului
+                      // Header row - fara container colorat conform designului
                       Container(
                         width: double.infinity,
                         height: 21,

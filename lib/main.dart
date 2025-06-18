@@ -8,7 +8,7 @@ import 'package:broker_app/backend/services/firebase_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/screens/auth_screen.dart';
-import 'package:broker_app/frontend/screens/main_screen.dart';
+import 'package:broker_app/frontend/screens/splash_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
@@ -253,17 +253,38 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   final SettingsService _settingsService = SettingsService();
+  late StreamSubscription<User?> _authSubscription;
+  User? _lastKnownUser;
 
   @override
   void initState() {
     super.initState();
     // Listen to theme changes from SettingsService
     _settingsService.addListener(_onSettingsChanged);
+    
+    // Listener manual optimizat - doar când se schimbă efectiv starea
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      debugPrint('🔶 AUTH_WRAPPER: Manual auth listener triggered - User: ${user?.email ?? 'null'}');
+      
+      // Doar dacă utilizatorul s-a schimbat efectiv
+      if (_lastKnownUser?.uid != user?.uid) {
+        _lastKnownUser = user;
+        debugPrint('🔶 AUTH_WRAPPER: Auth state actually changed, forcing setState');
+        if (mounted) {
+          setState(() {
+            // Force rebuild when auth state actually changes
+          });
+        }
+      } else {
+        debugPrint('🔶 AUTH_WRAPPER: Same user, skipping setState');
+      }
+    });
   }
 
   @override
   void dispose() {
     _settingsService.removeListener(_onSettingsChanged);
+    _authSubscription.cancel();
     super.dispose();
   }
 
@@ -277,6 +298,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    // Simplificam folosind doar authStateChanges pentru consistency
     return StreamBuilder<User?>( 
       stream: FirebaseAuth.instance.authStateChanges(), 
       builder: (context, snapshot) {
@@ -284,6 +306,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         debugPrint('🔶 AUTH_WRAPPER: Connection state: ${snapshot.connectionState}');
         debugPrint('🔶 AUTH_WRAPPER: Has data: ${snapshot.hasData}');
         debugPrint('🔶 AUTH_WRAPPER: User: ${snapshot.data?.email ?? 'null'}');
+        debugPrint('🔶 AUTH_WRAPPER: Direct current user check: ${FirebaseAuth.instance.currentUser?.email ?? 'null'}');
         
         if (snapshot.connectionState == ConnectionState.waiting) {
           debugPrint('🔶 AUTH_WRAPPER: Showing loading indicator');
@@ -292,7 +315,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
         
-        if (snapshot.hasData) {
+        // Folosim datele din stream ca sursă primară de adevăr
+        final streamUser = snapshot.data;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        
+        // Verificare dublă - considerăm utilizatorul autentificat doar dacă ambele confirmă
+        final hasUser = streamUser != null && currentUser != null;
+        
+        debugPrint('🔶 AUTH_WRAPPER: hasUser calculation: streamUser!=null=${streamUser != null}, currentUser!=null=${currentUser != null}, hasUser=$hasUser');
+        
+        if (hasUser) {
           debugPrint('🔶 AUTH_WRAPPER: User is authenticated, showing MainAppWrapper');
           return const MainAppWrapper();
         }
@@ -301,7 +333,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // When user is logged out, reset to default theme
         _resetToDefaultTheme();
         
-        return const AuthScreen(); // Navighează la noul AuthScreen
+        return const AuthScreen(); // Navigheaza la noul AuthScreen
       },
     );
   }
@@ -348,7 +380,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
           _consultantData = null;
         });
       }
-      // Nu mai facem signOut aici, AuthWrapper va duce la AuthScreen dacă user e null
+      // Nu mai facem signOut aici, AuthWrapper va duce la AuthScreen daca user e null
       return;
     }
 
@@ -374,8 +406,8 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         });
       } else {
         debugPrint('🔸 MAIN_APP_WRAPPER: No consultant data found, signing out user');
-        // Dacă utilizatorul autentificat nu are date în Firestore, ar trebui deconectat
-        // pentru a preveni o stare invalidă în aplicație.
+        // Daca utilizatorul autentificat nu are date in Firestore, ar trebui deconectat
+        // pentru a preveni o stare invalida in aplicatie.
         await FirebaseAuth.instance.signOut(); // Acest signOut va fi detectat de AuthWrapper
         // setState-ul de mai jos nu va mai fi relevant imediat, dar e bun ca fallback.
         setState(() {
@@ -389,7 +421,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         setState(() {
           _consultantData = null;
           _isLoading = false;
-          // Consideră deconectarea și aici în caz de eroare la fetch
+          // Considera deconectarea si aici in caz de eroare la fetch
           // await FirebaseAuth.instance.signOut();
         });
       }
@@ -405,25 +437,21 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     }
 
     if (_consultantData == null) {
-      // Această stare nu ar trebui atinsă dacă AuthWrapper funcționează corect
-      // și dacă _fetchConsultantData deconectează user-ul dacă nu are date.
-      // Ca fallback, afișăm un mesaj și AuthWrapper ar trebui să intervină.
+      // Aceasta stare nu ar trebui atinsa daca AuthWrapper functioneaza corect
+      // si daca _fetchConsultantData deconecteaza user-ul daca nu are date.
+      // Ca fallback, afisam un mesaj si AuthWrapper ar trebui sa intervina.
       debugPrint("MainAppWrapper: _consultantData is null, user should be redirected to AuthScreen by AuthWrapper.");
       return Scaffold(
         body: Center(
-          child: Text("Date consultant indisponibile. Redirecționare...",
+          child: Text("Date consultant indisponibile. Redirectionare...",
              style: TextStyle(color: AppTheme.elementColor2)),
         ),
       );
     }
 
-    final String consultantName = _consultantData!['name'] ?? 'Consultant';
-    final String teamName = _consultantData!['team'] ?? 'Echipa';
-
-    // Pass consultant data to MainScreen
-    return MainScreen(
-      consultantName: consultantName,
-      teamName: teamName,
+    // Pass consultant data to SplashScreen which will pre-load services
+    return SplashScreen(
+      consultantData: _consultantData!,
     );
   }
 }

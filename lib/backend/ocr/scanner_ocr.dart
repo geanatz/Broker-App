@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Service pentru extragerea textului din imagini folosind Google Vision API
-/// Implementare robustă și simplă care funcționează garantat
+/// Implementare robusta si simpla care functioneaza garantat
 class ScannerOcr {
   // API Key pentru Google Vision API
   static const String _apiKey = 'AIzaSyBHSucNUjWno77uW9dto-Xkg5X0a_f4NTI';
@@ -15,37 +15,37 @@ class ScannerOcr {
   factory ScannerOcr() => _instance;
   ScannerOcr._internal();
 
-  /// Verifică dacă API-ul este configurat
+  /// Verifica daca API-ul este configurat
   bool isConfigured() {
     return _apiKey.isNotEmpty && _apiKey != 'YOUR_API_KEY_HERE';
   }
 
-  /// Extrage textul din imagine - metoda principală
+  /// Extrage textul din imagine - metoda principala
   Future<ScanResult> extractTextFromImage(File imageFile) async {
-    debugPrint('🔍 [ScannerOcr] Începe scanarea: ${imageFile.path}');
+    debugPrint('🔍 [ScannerOcr] Incepe scanarea: ${imageFile.path}');
     
     try {
-      // 1. Validează fișierul
+      // 1. Valideaza fisierul
       if (!await imageFile.exists()) {
-        return ScanResult.error('Fișierul nu există', imageFile.path);
+        return ScanResult.error('Fisierul nu exista', imageFile.path);
       }
 
-      // 2. Verifică mărimea (max 10MB pentru Google Vision)
+      // 2. Verifica marimea (max 10MB pentru Google Vision)
       final fileSize = await imageFile.length();
       final maxSize = 10 * 1024 * 1024; // 10MB
       
       if (fileSize > maxSize) {
         final sizeMB = (fileSize / 1024 / 1024).toStringAsFixed(2);
-        return ScanResult.error('Fișier prea mare: ${sizeMB}MB (max 10MB)', imageFile.path);
+        return ScanResult.error('Fisier prea mare: ${sizeMB}MB (max 10MB)', imageFile.path);
       }
 
-      debugPrint('📊 [ScannerOcr] Mărime fișier: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB');
+      debugPrint('📊 [ScannerOcr] Marime fisier: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB');
 
-      // 3. Citește și encodează imaginea
+      // 3. Citeste si encodeaza imaginea
       final imageBytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(imageBytes);
 
-      debugPrint('✅ [ScannerOcr] Imagine encodată Base64: ${base64Image.length} caractere');
+      debugPrint('✅ [ScannerOcr] Imagine encodata Base64: ${base64Image.length} caractere');
 
       // 4. Trimite request la Google Vision API
       final extractedText = await _callGoogleVisionAPI(base64Image);
@@ -56,8 +56,8 @@ class ScannerOcr {
         
         return ScanResult.success(extractedText, imageFile.path);
       } else {
-        debugPrint('⚠️ [ScannerOcr] Nu s-a găsit text în imagine');
-        return ScanResult.error('Nu s-a găsit text în imagine', imageFile.path);
+        debugPrint('⚠️ [ScannerOcr] Nu s-a gasit text in imagine');
+        return ScanResult.error('Nu s-a gasit text in imagine', imageFile.path);
       }
 
     } catch (e) {
@@ -66,12 +66,12 @@ class ScannerOcr {
     }
   }
 
-  /// Apelează Google Vision API pentru extragerea textului
+  /// Apeleaza Google Vision API pentru extragerea textului
   Future<String?> _callGoogleVisionAPI(String base64Image) async {
     try {
       debugPrint('🌐 [ScannerOcr] Trimit request la Google Vision API...');
 
-      // Request body simplu și robust
+      // Request body simplu si robust
       final requestBody = {
         'requests': [
           {
@@ -85,7 +85,7 @@ class ScannerOcr {
               }
             ],
             'imageContext': {
-              'languageHints': ['ro', 'en'], // Română și engleză
+              'languageHints': ['ro', 'en'], // Romana si engleza
             }
           }
         ]
@@ -104,7 +104,7 @@ class ScannerOcr {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        debugPrint('📦 [ScannerOcr] Răspuns primit de la API');
+        debugPrint('📦 [ScannerOcr] Raspuns primit de la API');
         
         return _extractTextFromResponse(responseData);
       } else {
@@ -119,32 +119,32 @@ class ScannerOcr {
     }
   }
 
-  /// Extrage textul din răspunsul Google Vision API
+  /// Extrage textul din raspunsul Google Vision API
   String? _extractTextFromResponse(Map<String, dynamic> responseData) {
     try {
-      debugPrint('🔍 [ScannerOcr] Procesez răspunsul API...');
+      debugPrint('🔍 [ScannerOcr] Procesez raspunsul API...');
 
-      // Verifică dacă există responses
+      // Verifica daca exista responses
       if (!responseData.containsKey('responses')) {
-        debugPrint('❌ [ScannerOcr] Nu există responses în răspuns');
+        debugPrint('❌ [ScannerOcr] Nu exista responses in raspuns');
         return null;
       }
 
       final responses = responseData['responses'] as List;
       if (responses.isEmpty) {
-        debugPrint('❌ [ScannerOcr] Lista responses este goală');
+        debugPrint('❌ [ScannerOcr] Lista responses este goala');
         return null;
       }
 
       final firstResponse = responses[0] as Map<String, dynamic>;
 
-      // Verifică dacă există erori
+      // Verifica daca exista erori
       if (firstResponse.containsKey('error')) {
-        debugPrint('❌ [ScannerOcr] Eroare în răspuns: ${firstResponse['error']}');
+        debugPrint('❌ [ScannerOcr] Eroare in raspuns: ${firstResponse['error']}');
         return null;
       }
 
-      // Încearcă să extragă textul din textAnnotations
+      // Incearca sa extraga textul din textAnnotations
       if (firstResponse.containsKey('textAnnotations')) {
         final textAnnotations = firstResponse['textAnnotations'] as List;
         
@@ -153,30 +153,30 @@ class ScannerOcr {
           
           if (firstAnnotation.containsKey('description')) {
             final text = firstAnnotation['description'] as String;
-            debugPrint('✅ [ScannerOcr] Text găsit în textAnnotations: ${text.length} caractere');
+            debugPrint('✅ [ScannerOcr] Text gasit in textAnnotations: ${text.length} caractere');
             return _cleanText(text);
           }
         }
       }
 
-      debugPrint('⚠️ [ScannerOcr] Nu s-a găsit text în răspuns');
+      debugPrint('⚠️ [ScannerOcr] Nu s-a gasit text in raspuns');
       return null;
 
     } catch (e) {
-      debugPrint('❌ [ScannerOcr] Eroare la procesarea răspunsului: $e');
+      debugPrint('❌ [ScannerOcr] Eroare la procesarea raspunsului: $e');
       return null;
     }
   }
 
-  /// Curăță textul extras de caractere nedorite
+  /// Curata textul extras de caractere nedorite
   String _cleanText(String text) {
-    // Înlocuiește break-uri de linie multiple cu una singură
+    // Inlocuieste break-uri de linie multiple cu una singura
     String cleaned = text.replaceAll(RegExp(r'\n+'), '\n');
     
-    // Elimină spațiile extra
+    // Elimina spatiile extra
     cleaned = cleaned.replaceAll(RegExp(r' +'), ' ');
     
-    // Elimină tab-urile
+    // Elimina tab-urile
     cleaned = cleaned.replaceAll('\t', ' ');
     
     // Trim
@@ -185,19 +185,19 @@ class ScannerOcr {
     return cleaned;
   }
 
-  /// Procesează multiple imagini secvențial
+  /// Proceseaza multiple imagini secvential
   Future<List<ScanResult>> scanMultipleImages(
     List<File> imageFiles,
     Function(ScanProgress)? onProgress,
   ) async {
-    debugPrint('🔍 Începe scanarea pentru ${imageFiles.length} imagini');
+    debugPrint('🔍 Incepe scanarea pentru ${imageFiles.length} imagini');
     
     final results = <ScanResult>[];
     
     for (int i = 0; i < imageFiles.length; i++) {
-      debugPrint('🔄 Scanează imaginea ${i + 1}/${imageFiles.length}');
+      debugPrint('🔄 Scaneaza imaginea ${i + 1}/${imageFiles.length}');
       
-      // Notifică progresul
+      // Notifica progresul
       onProgress?.call(ScanProgress(
         currentImage: i + 1,
         totalImages: imageFiles.length,
@@ -208,23 +208,23 @@ class ScannerOcr {
       final result = await extractTextFromImage(imageFiles[i]);
       results.add(result);
       
-      // Delay între imagini pentru a nu supraîncărca API-ul
+      // Delay intre imagini pentru a nu supraincarca API-ul
       if (i < imageFiles.length - 1) {
         await Future.delayed(const Duration(milliseconds: 500));
       }
     }
     
-    debugPrint('✅ Scanare finalizată pentru toate imaginile');
+    debugPrint('✅ Scanare finalizata pentru toate imaginile');
     return results;
   }
 
-  /// Obține numele imaginii din calea completă
+  /// Obtine numele imaginii din calea completa
   String _getImageName(File imageFile) {
     return imageFile.path.split('/').last.split('\\').last;
   }
 }
 
-/// Rezultatul operației de scanare
+/// Rezultatul operatiei de scanare
 class ScanResult {
   final bool success;
   final String? extractedText;
@@ -269,7 +269,7 @@ class ScanResult {
   }
 }
 
-/// Progresul scanării
+/// Progresul scanarii
 class ScanProgress {
   final int currentImage;
   final int totalImages;
@@ -295,7 +295,7 @@ class ScanProgress {
   double get progress => currentImage / totalImages;
 }
 
-/// Fazele scanării
+/// Fazele scanarii
 enum ScanPhase {
   extractingText,
 }

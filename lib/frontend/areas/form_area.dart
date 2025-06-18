@@ -2,6 +2,7 @@ import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:broker_app/backend/services/form_service.dart';
+import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:broker_app/backend/services/clients_service.dart';
@@ -11,9 +12,9 @@ import 'package:broker_app/frontend/components/forms/form_new.dart';
 import 'package:broker_app/frontend/components/headers/widget_header2.dart';
 import 'package:intl/intl.dart';
 
-/// Area pentru formulare care va fi afișată în cadrul ecranului principal.
-/// Această componentă înlocuiește vechiul FormScreen păstrând funcționalitatea
-/// dar fiind adaptată la noua structură a aplicației.
+/// Area pentru formulare care va fi afisata in cadrul ecranului principal.
+/// Aceasta componenta inlocuieste vechiul FormScreen pastrand functionalitatea
+/// dar fiind adaptata la noua structura a aplicatiei.
 class FormArea extends StatefulWidget {
   const FormArea({super.key});
 
@@ -23,8 +24,8 @@ class FormArea extends StatefulWidget {
 
 class _FormAreaState extends State<FormArea> {
   // Services
-  final FormService _formService = FormService();
-  final ClientUIService _clientService = ClientUIService();
+  late final FormService _formService;
+  late final ClientUIService _clientService;
   
   // Text controllers pentru input fields
   final Map<String, TextEditingController> _textControllers = {};
@@ -59,14 +60,17 @@ class _FormAreaState extends State<FormArea> {
     super.dispose();
   }
 
-  /// Inițializează serviciile
+  /// Initializeaza serviciile
   Future<void> _initializeServices() async {
-    await _formService.initialize();
+    // Foloseste serviciile pre-incarcate din splash
+    _formService = SplashService().formService;
+    _clientService = SplashService().clientUIService;
+    
     _formService.addListener(_onFormServiceChanged);
     _clientService.addListener(_onClientServiceChanged);
     _previousClient = _clientService.focusedClient;
     
-    // Încarcă datele pentru clientul curent dacă există
+    // Incarca datele pentru clientul curent daca exista
     final currentClient = _clientService.focusedClient;
     if (currentClient != null) {
       await _loadFormDataForCurrentClient();
@@ -95,47 +99,47 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
-  /// Callback pentru schimbările din FormService
+  /// Callback pentru schimbarile din FormService
   void _onFormServiceChanged() {
     if (mounted) {
       setState(() {});
     }
   }
 
-  /// Callback pentru schimbările din ClientService
+  /// Callback pentru schimbarile din ClientService
   void _onClientServiceChanged() {
     _handleClientChange();
   }
 
-  /// Gestionează schimbarea clientului
+  /// Gestioneaza schimbarea clientului
   Future<void> _handleClientChange() async {
     final currentClient = _clientService.focusedClient;
     
-    // Salvează datele clientului anterior dacă există
+    // Salveaza datele clientului anterior daca exista
     if (_previousClient != null && currentClient?.phoneNumber != _previousClient?.phoneNumber) {
       debugPrint('Saving data for previous client: ${_previousClient!.name} (${_previousClient!.phoneNumber})');
       await _saveFormDataForClient(_previousClient!);
     }
     
-    // Curăță controller-ele pentru noul client
+    // Curata controller-ele pentru noul client
     _disposeControllers();
     
-    // Încarcă datele pentru noul client
+    // Incarca datele pentru noul client
     if (currentClient != null) {
       debugPrint('Loading data for new client: ${currentClient.name} (${currentClient.phoneNumber})');
       await _loadFormDataForCurrentClient();
     }
     
-    // Actualizează referința clientului anterior
+    // Actualizeaza referinta clientului anterior
     _previousClient = currentClient;
     
-    // Actualizează UI-ul
+    // Actualizeaza UI-ul
     if (mounted) {
       setState(() {});
     }
   }
 
-  /// Încarcă datele formularului pentru clientul curent
+  /// Incarca datele formularului pentru clientul curent
   Future<void> _loadFormDataForCurrentClient() async {
     final currentClient = _clientService.focusedClient;
     if (currentClient != null) {
@@ -161,7 +165,7 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
-  /// Salvează datele formularului pentru un client specific
+  /// Salveaza datele formularului pentru un client specific
   Future<void> _saveFormDataForClient(ClientModel client) async {
     debugPrint('Manually saving form data for client: ${client.name} (${client.phoneNumber})');
     
@@ -190,7 +194,7 @@ class _FormAreaState extends State<FormArea> {
     final RenderObject? overlay = Overlay.of(context).context.findRenderObject();
     if (overlay == null) return;
 
-    final String deleteLabel = isCreditForm ? 'Șterge credit' : 'Șterge venit';
+    final String deleteLabel = isCreditForm ? 'Sterge credit' : 'Sterge venit';
     
     final result = await showMenu<String>(
       context: context,
@@ -224,19 +228,19 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
-  /// Extrage doar valoarea numerică din câmpurile care pot conține "luni"
+  /// Extrage doar valoarea numerica din campurile care pot contine "luni"
   String _extractNumericValue(String value, String fieldType) {
-    // Pentru câmpurile perioada și vechime, returnăm valoarea exact cum este
+    // Pentru campurile perioada si vechime, returnam valoarea exact cum este
     // pentru a permite formatul ani/luni (ex: 1/4, 2/7, 5/2)
     if (fieldType == 'perioada' || fieldType == 'vechime') {
       return value;
     }
-    // Pentru toate celelalte câmpuri, returnează valoarea exact cum este
-    // pentru a nu interfera cu transformarea K și formatarea cu virgule
+    // Pentru toate celelalte campuri, returneaza valoarea exact cum este
+    // pentru a nu interfera cu transformarea K si formatarea cu virgule
     return value;
   }
 
-  /// Obține controller-ul pentru un field specific
+  /// Obtine controller-ul pentru un field specific
   TextEditingController _getController(String key) {
     if (!_textControllers.containsKey(key)) {
       _textControllers[key] = TextEditingController();
@@ -244,9 +248,9 @@ class _FormAreaState extends State<FormArea> {
     return _textControllers[key]!;
   }
 
-  /// Formatează o valoare numerică cu virgule pentru afișare
+  /// Formateaza o valoare numerica cu virgule pentru afisare
   String _formatValueForDisplay(String value, String fieldType) {
-    // Aplică formatarea cu virgule doar pentru câmpurile numerice
+    // Aplica formatarea cu virgule doar pentru campurile numerice
     if (fieldType == 'sold' || fieldType == 'rata' || fieldType == 'consumat' || fieldType == 'incomeAmount') {
       if (value.isNotEmpty && value != '0') {
         try {
@@ -270,12 +274,12 @@ class _FormAreaState extends State<FormArea> {
     return value;
   }
 
-  /// Setează textul controller-ului doar dacă este necesar
+  /// Seteaza textul controller-ului doar daca este necesar
   /// Aceasta previne suprascrierea valorilor introduse de utilizator
   TextEditingController _getControllerWithText(String key, String modelValue) {
     final controller = _getController(key);
     
-    // Extrage tipul de câmp din key pentru a determina dacă trebuie să extracem doar valoarea numerică
+    // Extrage tipul de camp din key pentru a determina daca trebuie sa extracem doar valoarea numerica
     // New format: phoneNumber_clientType_formType_index_field
     final parts = key.split('_');
     final fieldType = parts.length >= 5 ? parts[4] : '';
@@ -311,7 +315,7 @@ class _FormAreaState extends State<FormArea> {
       }
     }
     
-    // Adaugă listener pentru a salva modificările automat
+    // Adauga listener pentru a salva modificarile automat
     controller.addListener(() {
       _saveControllerValueToModel(key, controller.text);
     });
@@ -319,7 +323,7 @@ class _FormAreaState extends State<FormArea> {
     return controller;
   }
 
-  /// Salvează valoarea din controller înapoi în model
+  /// Salveaza valoarea din controller inapoi in model
   void _saveControllerValueToModel(String key, String value) {
     // Cancel the previous timer if it exists
     _saveTimer?.cancel();
@@ -458,16 +462,16 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește conținutul formularului conform design-ului din formArea.md
+  /// Construieste continutul formularului conform design-ului din formArea.md
   Widget _buildFormContent() {
     final focusedClient = _clientService.focusedClient;
     
-    // Dacă nu există client focusat, afișează un placeholder
+    // Daca nu exista client focusat, afiseaza un placeholder
     if (focusedClient == null) {
       return _buildNoClientSelectedPlaceholder();
     }
     
-    // Afișează formularele pentru client conform design-ului exact din Figma
+    // Afiseaza formularele pentru client conform design-ului exact din Figma
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -484,7 +488,7 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește placeholder-ul când nu există client selectat
+  /// Construieste placeholder-ul cand nu exista client selectat
   Widget _buildNoClientSelectedPlaceholder() {
     return Container(
       width: double.infinity,
@@ -530,7 +534,7 @@ class _FormAreaState extends State<FormArea> {
             ),
             const SizedBox(height: AppTheme.smallGap),
             Text(
-              'Selectați un client din panoul de clienti pentru a vedea formularul clientului',
+              'Selectati un client din panoul de clienti pentru a vedea formularul clientului',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: AppTheme.fontSizeMedium,
@@ -543,7 +547,7 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește secțiunea pentru credite conform design-ului exact din formArea.md
+  /// Construieste sectiunea pentru credite conform design-ului exact din formArea.md
   Widget _buildCreditSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientLoanForm(client.phoneNumber);
     final forms = isShowingClient 
@@ -597,7 +601,7 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește secțiunea pentru venituri conform design-ului exact din formArea.md
+  /// Construieste sectiunea pentru venituri conform design-ului exact din formArea.md
   Widget _buildIncomeSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientIncomeForm(client.phoneNumber);
     final forms = isShowingClient 
@@ -651,9 +655,9 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește lista de formulare de credit folosind componentele specificate
+  /// Construieste lista de formulare de credit folosind componentele specificate
   Widget _buildCreditFormsList(ClientModel client, List<CreditFormModel> forms, bool isClient) {
-    // Filtrează doar formularele care au date (nu sunt goale)
+    // Filtreaza doar formularele care au date (nu sunt goale)
     final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
     
     return Container(
@@ -672,7 +676,7 @@ class _FormAreaState extends State<FormArea> {
           // Formulare existente (doar cele cu date)
           ...nonEmptyForms.asMap().entries.map((entry) {
             final form = entry.value;
-            // Găsește indexul real în lista originală
+            // Gaseste indexul real in lista originala
             final realIndex = forms.indexOf(form);
             
             return GestureDetector(
@@ -685,7 +689,7 @@ class _FormAreaState extends State<FormArea> {
             );
           }),
           
-          // Formular nou (FormNew) pentru adăugare - întotdeauna afișat
+          // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
           FormNew(
             key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_$_newCreditFormSelectedType'),
             titleF1: 'Banca',
@@ -735,9 +739,9 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește lista de formulare de venit folosind componentele specificate
+  /// Construieste lista de formulare de venit folosind componentele specificate
   Widget _buildIncomeFormsList(ClientModel client, List<IncomeFormModel> forms, bool isClient) {
-    // Filtrează doar formularele care au date (nu sunt goale)
+    // Filtreaza doar formularele care au date (nu sunt goale)
     final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
     
     return Container(
@@ -756,7 +760,7 @@ class _FormAreaState extends State<FormArea> {
           // Formulare existente (doar cele cu date)
           ...nonEmptyForms.asMap().entries.map((entry) {
             final form = entry.value;
-            // Găsește indexul real în lista originală
+            // Gaseste indexul real in lista originala
             final realIndex = forms.indexOf(form);
             
             return GestureDetector(
@@ -769,7 +773,7 @@ class _FormAreaState extends State<FormArea> {
             );
           }),
           
-          // Formular nou (FormNew) pentru adăugare - întotdeauna afișat
+          // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
           FormNew(
             key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_$_newIncomeFormSelectedType'),
             titleF1: 'Banca',
@@ -819,15 +823,15 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// Construiește un formular de credit individual folosind componentele specificate
+  /// Construieste un formular de credit individual folosind componentele specificate
   Widget _buildCreditForm(ClientModel client, CreditFormModel form, int index, bool isClient) {
-    // Determină ce tipuri de câmpuri să afișeze în funcție de tipul de credit
+    // Determina ce tipuri de campuri sa afiseze in functie de tipul de credit
     final showConsumat = form.creditType == 'Card cumparaturi' || form.creditType == 'Overdraft';
     final showSoldRata = form.creditType == 'Nevoi personale';
     final showIpotecarFields = form.creditType == 'Ipotecar' || form.creditType == 'Prima casa';
 
     if (showIpotecarFields) {
-      // Folosește Form3 pentru Ipotecar și Prima casa (2+4 câmpuri: Banca, Tip credit în primul rând; Sold, Rata, Perioada, Tip Rata în al doilea rând)
+      // Foloseste Form3 pentru Ipotecar si Prima casa (2+4 campuri: Banca, Tip credit in primul rand; Sold, Rata, Perioada, Tip Rata in al doilea rand)
       return Form3(
         titleR1F1: 'Banca',
         valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
@@ -887,7 +891,7 @@ class _FormAreaState extends State<FormArea> {
         onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
     } else if (showSoldRata) {
-      // Folosește Form1 pentru Nevoi personale (4 câmpuri: Sold și Rata)
+      // Foloseste Form1 pentru Nevoi personale (4 campuri: Sold si Rata)
       return Form1(
         titleR1F1: 'Banca',
         valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
@@ -928,7 +932,7 @@ class _FormAreaState extends State<FormArea> {
         onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
       );
     } else {
-      // Folosește Form1 pentru Card cumparaturi și Overdraft (4 câmpuri)
+      // Foloseste Form1 pentru Card cumparaturi si Overdraft (4 campuri)
       return Form1(
         titleR1F1: 'Banca',
         valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
@@ -971,9 +975,9 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
-  /// Construiește un formular de venit individual folosind componentele specificate
+  /// Construieste un formular de venit individual folosind componentele specificate
   Widget _buildIncomeForm(ClientModel client, IncomeFormModel form, int index, bool isClient) {
-    // Folosește Form1 pentru venituri (4 câmpuri: 2x2)
+    // Foloseste Form1 pentru venituri (4 campuri: 2x2)
     return Form1(
       titleR1F1: 'Banca',
       valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
@@ -1039,7 +1043,7 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
-  /// Actualizează un câmp din formular
+  /// Actualizeaza un camp din formular
   void _updateFormField(ClientModel client, int index, String field, String value, bool isCreditForm, bool isClient) {
     debugPrint('_updateFormField called: client=${client.phoneNumber}, index=$index, field=$field, value="$value", isCreditForm=$isCreditForm, isClient=$isClient');
     
@@ -1107,20 +1111,20 @@ class _FormAreaState extends State<FormArea> {
   void _transformCreditFormNew(ClientModel client, String bank, String creditType, bool isClient) {
     debugPrint('DEBUG: Transforming credit form - Bank: $bank, Type: $creditType, IsClient: $isClient');
     
-    // Creează un formular nou cu datele selectate
+    // Creeaza un formular nou cu datele selectate
     final newForm = CreditFormModel(
       bank: bank,
       creditType: creditType,
     );
     
-    // Obține lista de formulare și găsește ultimul formular gol
+    // Obtine lista de formulare si gaseste ultimul formular gol
     final forms = isClient 
         ? _formService.getClientCreditForms(client.phoneNumber)
         : _formService.getCoborrowerCreditForms(client.phoneNumber);
     
     debugPrint('DEBUG: Current forms count: ${forms.length}');
     
-    // Găsește ultimul formular gol pentru a-l actualiza
+    // Gaseste ultimul formular gol pentru a-l actualiza
     int lastEmptyIndex = forms.length - 1;
     for (int i = forms.length - 1; i >= 0; i--) {
       if (forms[i].isEmpty) {
@@ -1131,7 +1135,7 @@ class _FormAreaState extends State<FormArea> {
     
     debugPrint('DEBUG: Updating form at index: $lastEmptyIndex');
     
-    // Actualizează ultimul formular gol cu datele noi
+    // Actualizeaza ultimul formular gol cu datele noi
     _formService.updateCreditForm(
       client.phoneNumber, 
       lastEmptyIndex, 
@@ -1151,20 +1155,20 @@ class _FormAreaState extends State<FormArea> {
   void _transformIncomeFormNew(ClientModel client, String bank, String incomeType, bool isClient) {
     debugPrint('DEBUG: Transforming income form - Bank: $bank, Type: $incomeType, IsClient: $isClient');
     
-    // Creează un formular nou cu datele selectate
+    // Creeaza un formular nou cu datele selectate
     final newForm = IncomeFormModel(
       bank: bank,
       incomeType: incomeType,
     );
     
-    // Obține lista de formulare și găsește ultimul formular gol
+    // Obtine lista de formulare si gaseste ultimul formular gol
     final forms = isClient 
         ? _formService.getClientIncomeForms(client.phoneNumber)
         : _formService.getCoborrowerIncomeForms(client.phoneNumber);
     
     debugPrint('DEBUG: Current forms count: ${forms.length}');
     
-    // Găsește ultimul formular gol pentru a-l actualiza
+    // Gaseste ultimul formular gol pentru a-l actualiza
     int lastEmptyIndex = forms.length - 1;
     for (int i = forms.length - 1; i >= 0; i--) {
       if (forms[i].isEmpty) {
@@ -1175,7 +1179,7 @@ class _FormAreaState extends State<FormArea> {
     
     debugPrint('DEBUG: Updating form at index: $lastEmptyIndex');
     
-    // Actualizează ultimul formular gol cu datele noi
+    // Actualizeaza ultimul formular gol cu datele noi
     _formService.updateIncomeForm(
       client.phoneNumber, 
       lastEmptyIndex, 
