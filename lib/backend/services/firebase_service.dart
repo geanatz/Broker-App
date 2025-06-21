@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'clients_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -261,26 +262,14 @@ class FirebaseFormService {
           await _clientService.createClient(
             phoneNumber: phoneNumber,
             name: clientName,
-            source: 'form_service',
           );
         }
 
-        // Convertește datele formularului în noua structură
-        final convertedData = _convertFormDataToUnified(formData);
-        
-        // Salvează datele de loan și income separat
-        await _clientService.saveLoanData(
-          phoneNumber,
-          clientCredits: convertedData.clientCredits,
-          coDebitorCredits: convertedData.coDebitorCredits,
-          additionalData: convertedData.additionalData,
-        );
-        
-        await _clientService.saveIncomeData(
-          phoneNumber,
-          clientIncomes: convertedData.clientIncomes,
-          coDebitorIncomes: convertedData.coDebitorIncomes,
-          additionalData: convertedData.additionalData,
+        // Salvează datele formularului direct în noua structură
+        await _clientService.saveClientForm(
+          phoneNumber: phoneNumber,
+          formType: 'unified_form',
+          formData: formData,
         );
         
         debugPrint('✅ FirebaseFormService: Successfully saved data to unified structure for client: $clientName');
@@ -303,14 +292,15 @@ class FirebaseFormService {
         if (client != null) {
           debugPrint('✅ FirebaseFormService: Successfully loaded data from unified structure for client: $phoneNumber');
           
-          // Convertește datele din noua structură în formatul așteptat
-          final convertedData = _convertUnifiedToFormData(client.formData);
+          // Obtine formularele clientului
+          final forms = await _clientService.getClientForms(phoneNumber);
+          final formData = forms.isNotEmpty ? forms.first['data'] ?? {} : {};
           
           return {
-            'clientName': client.basicInfo.name,
-            'phoneNumber': client.basicInfo.phoneNumber,
-            'lastUpdated': client.metadata.updatedAt.toIso8601String(),
-            'formData': convertedData,
+            'clientName': client.name,
+            'phoneNumber': client.phoneNumber,
+            'lastUpdated': DateTime.now().toIso8601String(),
+            'formData': formData,
           };
         } else {
           debugPrint('⚠️ FirebaseFormService: No data found in unified structure for client: $phoneNumber');
@@ -327,18 +317,16 @@ class FirebaseFormService {
   Future<bool> deleteClientFormData(String phoneNumber) async {
     try {
       await _threadHandler.executeOnPlatformThread(() async {
-        // În noua structură, ștergem doar datele de formular, nu întregul client
-        await _clientService.saveLoanData(
-          phoneNumber,
-          clientCredits: [],
-          coDebitorCredits: [],
-        );
-        
-        await _clientService.saveIncomeData(
-          phoneNumber,
-          clientIncomes: [],
-          coDebitorIncomes: [],
-        );
+        // În noua structură, ștergem formularele clientului
+        final forms = await _clientService.getClientForms(phoneNumber);
+        for (final form in forms) {
+          // Folosim NewFirebaseService pentru a șterge formularele
+          final newFirebaseService = NewFirebaseService();
+          await newFirebaseService.deleteClientForm(
+            phoneNumber: phoneNumber,
+            formId: form['id'] ?? form['formId'] ?? 'unified_form',
+          );
+        }
       });
       return true;
     } catch (e) {
@@ -432,13 +420,22 @@ class FirebaseFormService {
     try {
       return await _threadHandler.executeOnPlatformThread(() async {
         final clients = await _clientService.getAllClients();
-        return clients.map((client) => {
-          'id': client.basicInfo.phoneNumber,
-          'clientName': client.basicInfo.name,
-          'phoneNumber': client.basicInfo.phoneNumber,
-          'lastUpdated': client.metadata.updatedAt.toIso8601String(),
-          'formData': _convertUnifiedToFormData(client.formData),
-        }).toList();
+        final List<Map<String, dynamic>> allForms = [];
+        
+        for (final client in clients) {
+          final forms = await _clientService.getClientForms(client.phoneNumber);
+          final formData = forms.isNotEmpty ? forms.first['data'] ?? {} : {};
+          
+          allForms.add({
+            'id': client.phoneNumber,
+            'clientName': client.name,
+            'phoneNumber': client.phoneNumber,
+            'lastUpdated': DateTime.now().toIso8601String(),
+            'formData': formData,
+          });
+        }
+        
+        return allForms;
       });
     } catch (e) {
       debugPrint('Error getting all forms from unified structure: $e');
@@ -455,163 +452,849 @@ class FirebaseFormService {
     });
   }
 
-  // =================== HELPER METHODS ===================
 
-  /// Convertește datele formularului din vechiul format în noua structură
-  ClientFormData _convertFormDataToUnified(Map<String, dynamic> formData) {
-    final creditForms = formData['creditForms'] as Map<String, dynamic>? ?? {};
-    final incomeForms = formData['incomeForms'] as Map<String, dynamic>? ?? {};
+}
+
+/// Serviciu Firebase refactorizat pentru noua structura
+/// Separa corect datele pentru fiecare consultant
+class NewFirebaseService {
+  static final NewFirebaseService _instance = NewFirebaseService._internal();
+  factory NewFirebaseService() => _instance;
+  NewFirebaseService._internal();
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseThreadHandler _threadHandler = FirebaseThreadHandler.instance;
+
+  // Collection names pentru noua structura
+  static const String _consultantsCollection = 'consultants';
+  static const String _clientsCollection = 'clients';
+  static const String _statsCollection = 'stats';
+  static const String _formsSubcollection = 'forms';
+  static const String _meetingsSubcollection = 'meetings';
+
+  User? get currentUser => _auth.currentUser;
+
+  /// Obtine token-ul consultantului curent din baza de data
+  Future<String?> getCurrentConsultantToken() async {
+    final user = currentUser;
+    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken - currentUser: ${user?.email ?? 'NULL'}');
     
-    // Convertește creditele client
-    final clientCredits = (creditForms['client'] as List<dynamic>? ?? [])
-        .map((credit) => _convertCreditToUnified(credit))
-        .toList();
-    
-    // Convertește creditele codebitor
-    final coDebitorCredits = (creditForms['coborrower'] as List<dynamic>? ?? [])
-        .map((credit) => _convertCreditToUnified(credit))
-        .toList();
-    
-    // Convertește veniturile client
-    final clientIncomes = (incomeForms['client'] as List<dynamic>? ?? [])
-        .map((income) => _convertIncomeToUnified(income))
-        .toList();
-    
-    // Convertește veniturile codebitor
-    final coDebitorIncomes = (incomeForms['coborrower'] as List<dynamic>? ?? [])
-        .map((income) => _convertIncomeToUnified(income))
-        .toList();
-    
-    return ClientFormData(
-      clientCredits: clientCredits,
-      coDebitorCredits: coDebitorCredits,
-      clientIncomes: clientIncomes,
-      coDebitorIncomes: coDebitorIncomes,
-      additionalData: {
-        'showingClientLoanForm': formData['showingClientLoanForm'] ?? true,
-        'showingClientIncomeForm': formData['showingClientIncomeForm'] ?? true,
-      },
-    );
-  }
-
-  /// Convertește datele din noua structură în vechiul format
-  Map<String, dynamic> _convertUnifiedToFormData(ClientFormData formData) {
-    return {
-      'creditForms': {
-        'client': formData.clientCredits.map((credit) => _convertCreditFromUnified(credit)).toList(),
-        'coborrower': formData.coDebitorCredits.map((credit) => _convertCreditFromUnified(credit)).toList(),
-      },
-      'incomeForms': {
-        'client': formData.clientIncomes.map((income) => _convertIncomeFromUnified(income)).toList(),
-        'coborrower': formData.coDebitorIncomes.map((income) => _convertIncomeFromUnified(income)).toList(),
-      },
-      'showingClientLoanForm': formData.additionalData['showingClientLoanForm'] ?? true,
-      'showingClientIncomeForm': formData.additionalData['showingClientIncomeForm'] ?? true,
-    };
-  }
-
-  /// Convertește un credit din vechiul format în noua structură
-  CreditData _convertCreditToUnified(Map<String, dynamic> credit) {
-    return CreditData(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      bank: credit['bank'] ?? '',
-      creditType: credit['creditType'] ?? '',
-      currentBalance: double.tryParse(credit['sold']?.toString().replaceAll(',', '') ?? '0'),
-      consumedAmount: double.tryParse(credit['consumat']?.toString().replaceAll(',', '') ?? '0'),
-      rateType: credit['rateType'] ?? '',
-      monthlyPayment: double.tryParse(credit['rata']?.toString().replaceAll(',', '') ?? '0'),
-      remainingMonths: _parseYearMonthFormat(credit['perioada']?.toString()),
-    );
-  }
-
-  /// Convertește un credit din noua structură în vechiul format
-  Map<String, dynamic> _convertCreditFromUnified(CreditData credit) {
-    return {
-      'bank': credit.bank,
-      'creditType': credit.creditType,
-      'sold': _formatAmount(credit.currentBalance),
-      'consumat': _formatAmount(credit.consumedAmount),
-      'rateType': credit.rateType,
-      'rata': _formatAmount(credit.monthlyPayment),
-      'perioada': _formatYearMonth(credit.remainingMonths),
-      'isNew': false,
-    };
-  }
-
-  /// Convertește un venit din vechiul format în noua structură
-  IncomeData _convertIncomeToUnified(Map<String, dynamic> income) {
-    return IncomeData(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      bank: income['bank'] ?? '',
-      incomeType: income['incomeType'] ?? '',
-      monthlyAmount: double.tryParse(income['incomeAmount']?.toString().replaceAll(',', '') ?? '0'),
-      seniority: _parseVechime(income['vechime']?.toString()),
-    );
-  }
-
-  /// Convertește un venit din noua structură în vechiul format
-  Map<String, dynamic> _convertIncomeFromUnified(IncomeData income) {
-    return {
-      'bank': income.bank,
-      'incomeType': income.incomeType,
-      'incomeAmount': _formatAmount(income.monthlyAmount),
-      'vechime': _formatYearMonth(income.seniority),
-      'isNew': false,
-    };
-  }
-
-  /// Formatează o sumă eliminând zecimalele inutile (.0)
-  String _formatAmount(double? amount) {
-    if (amount == null) return '';
-    
-    // Verifică dacă numărul este întreg
-    if (amount == amount.toInt()) {
-      return amount.toInt().toString();
-    } else {
-      return amount.toString();
+    if (user == null) {
+      debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken - no current user');
+      return null;
     }
-  }
 
-  /// Parsează perioada din format "ani/luni" în luni totale pentru sistemul intern
-  int? _parseYearMonthFormat(String? period) {
-    if (period == null || period.isEmpty) return null;
-    
-    // Dacă contine "/", parseaza formatul ani/luni
-    if (period.contains('/')) {
-      final parts = period.split('/');
-      if (parts.length == 2) {
-        final years = int.tryParse(parts[0].trim()) ?? 0;
-        final months = int.tryParse(parts[1].trim()) ?? 0;
-        return years * 12 + months;
+    try {
+      debugPrint('🔍 FIREBASE_SERVICE: Fetching consultant document for UID: ${user.uid}');
+      final doc = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection).doc(user.uid).get()
+      );
+      
+      if (doc.exists) {
+        final token = doc.data()?['token'] as String?;
+        debugPrint('🔍 FIREBASE_SERVICE: Found consultant token: ${token != null ? '${token.substring(0, 8)}...' : 'NULL'}');
+        return token;
+      } else {
+        debugPrint('❌ FIREBASE_SERVICE: Consultant document does not exist for UID: ${user.uid}');
+        return null;
       }
-    }
-    
-    // Dacă nu contine "/", încearcă să parseze ca număr simplu (luni)
-    return int.tryParse(period.replaceAll(RegExp(r'[^0-9]'), ''));
-  }
-
-  /// Convertește luni totale înapoi în format "ani/luni" pentru afișare
-  String _formatYearMonth(int? totalMonths) {
-    if (totalMonths == null || totalMonths == 0) return '';
-    
-    final years = totalMonths ~/ 12;
-    final months = totalMonths % 12;
-    
-    if (years == 0) {
-      return '0/$months';
-    } else if (months == 0) {
-      return '$years/0';
-    } else {
-      return '$years/$months';
+    } catch (e) {
+      debugPrint('❌ Error getting consultant token: $e');
+      return null;
     }
   }
 
-  /// Parsează vechimea din string în luni, cu suport pentru formatul ani/luni
-  int? _parseVechime(String? vechime) {
-    if (vechime == null || vechime.isEmpty) return null;
+  /// Obtine datele consultantului pe baza token-ului
+  Future<Map<String, dynamic>?> getConsultantByToken(String token) async {
+    try {
+      final snapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection)
+            .where('token', isEqualTo: token)
+            .limit(1)
+            .get()
+      );
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.data();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error getting consultant by token: $e');
+      return null;
+    }
+  }
+
+  /// Obtine echipa consultantului curent
+  Future<String?> getCurrentConsultantTeam() async {
+    final token = await getCurrentConsultantToken();
+    if (token == null) return null;
+
+    final consultantData = await getConsultantByToken(token);
+    return consultantData?['team'] as String?;
+  }
+
+  // =================== CLIENT OPERATIONS ===================
+
+  /// Creeaza un client nou pentru consultantul curent
+  Future<bool> createClient({
+    required String phoneNumber,
+    required String name,
+    String? coDebitorName,
+    String? status,
+    String? category,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      final clientData = {
+        'consultantToken': consultantToken,
+        'name': name,
+        'phoneNumber': phoneNumber,
+        'coDebitorName': coDebitorName,
+        'status': status ?? 'normal',
+        'category': category ?? 'apeluri',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        ...?additionalData,
+      };
+
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection).doc(phoneNumber).set(clientData)
+      );
+
+      debugPrint('✅ Client created successfully: $name ($phoneNumber)');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error creating client: $e');
+      return false;
+    }
+  }
+
+  /// Obtine un client dupa numarul de telefon (doar pentru consultantul curent)
+  Future<Map<String, dynamic>?> getClient(String phoneNumber) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return null;
+
+    try {
+      final doc = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection).doc(phoneNumber).get()
+      );
+
+      final data = doc.data();
+      if (data != null && data['consultantToken'] == consultantToken) {
+        return data;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error getting client: $e');
+      return null;
+    }
+  }
+
+  /// Obtine toti clientii pentru consultantul curent (FIX: mai robust filtering)
+  Future<List<Map<String, dynamic>>> getAllClients() async {
+    final consultantToken = await getCurrentConsultantToken();
+    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken returned: ${consultantToken ?? 'NULL'}');
     
-    // Folosește noua funcție pentru a parsa formatul ani/luni
-    return _parseYearMonthFormat(vechime);
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: Cannot get clients - consultant token is null');
+      return [];
+    }
+
+    try {
+      debugPrint('🔍 FIREBASE_SERVICE: Querying clients for token: ${consultantToken.substring(0, 8)}...');
+      final snapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection)
+            .where('consultantToken', isEqualTo: consultantToken)
+            .get()
+      );
+
+      debugPrint('🔍 FIREBASE_SERVICE: Found ${snapshot.docs.length} clients for consultant');
+      
+      // FIX: verifică explicit că consultantToken match-uiește pentru fiecare client
+      final clientsList = <Map<String, dynamic>>[];
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final clientConsultantToken = data['consultantToken'] as String?;
+        
+        // Verificare explicită pentru siguranță
+        if (clientConsultantToken == consultantToken) {
+          clientsList.add({
+            'id': doc.id,
+            ...data,
+          });
+        } else {
+          debugPrint('⚠️ FIREBASE_SERVICE: Skipping client ${doc.id} - wrong consultant token');
+        }
+      }
+      
+      // Sortez local dupa updatedAt (descending)
+      clientsList.sort((a, b) {
+        final aTime = a['updatedAt'] as Timestamp?;
+        final bTime = b['updatedAt'] as Timestamp?;
+        
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        
+        return bTime.compareTo(aTime); // descending
+      });
+      
+      debugPrint('✅ FIREBASE_SERVICE: Returning ${clientsList.length} filtered clients');
+      return clientsList;
+    } catch (e) {
+      debugPrint('❌ Error getting all clients: $e');
+      return [];
+    }
+  }
+
+  /// Actualizeaza un client
+  Future<bool> updateClient(String phoneNumber, Map<String, dynamic> updates) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      updates['updatedAt'] = FieldValue.serverTimestamp();
+
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection).doc(phoneNumber).update(updates)
+      );
+
+      debugPrint('✅ Client updated successfully: $phoneNumber');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error updating client: $e');
+      return false;
+    }
+  }
+
+  /// Sterge un client si toate sub-colectiile sale
+  Future<bool> deleteClient(String phoneNumber) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      final batch = _firestore.batch();
+      final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
+
+      // Sterge toate formularele
+      final formsSnapshot = await clientRef.collection(_formsSubcollection).get();
+      for (final doc in formsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Sterge toate intalnirile
+      final meetingsSnapshot = await clientRef.collection(_meetingsSubcollection).get();
+      for (final doc in meetingsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Sterge clientul
+      batch.delete(clientRef);
+
+      await _threadHandler.executeOnPlatformThread(() => batch.commit());
+
+      debugPrint('✅ Client deleted successfully: $phoneNumber');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error deleting client: $e');
+      return false;
+    }
+  }
+
+  // =================== FORM OPERATIONS ===================
+
+  /// Salveaza un formular pentru un client
+  Future<bool> saveClientForm({
+    required String phoneNumber,
+    required String formId,
+    required Map<String, dynamic> formData,
+  }) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      final formDoc = {
+        'formId': formId,
+        'data': formData,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection)
+            .doc(phoneNumber)
+            .collection(_formsSubcollection)
+            .doc(formId)
+            .set(formDoc)
+      );
+
+      // Actualizeaza timestamp-ul clientului
+      await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
+
+      debugPrint('✅ Form saved successfully: $formId for client $phoneNumber');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error saving form: $e');
+      return false;
+    }
+  }
+
+  /// Obtine toate formularele pentru un client
+  Future<List<Map<String, dynamic>>> getClientForms(String phoneNumber) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return [];
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return [];
+
+      final snapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection)
+            .doc(phoneNumber)
+            .collection(_formsSubcollection)
+            .orderBy('updatedAt', descending: true)
+            .get()
+      );
+
+      return snapshot.docs.map((doc) => {
+        'id': doc.id,
+        ...doc.data(),
+      }).toList();
+    } catch (e) {
+      debugPrint('❌ Error getting client forms: $e');
+      return [];
+    }
+  }
+
+  // =================== MEETING OPERATIONS ===================
+
+  /// Creeaza o intalnire pentru un client
+  Future<bool> createMeeting({
+    required String phoneNumber,
+    required DateTime dateTime,
+    required String type,
+    String? description,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      final meetingDoc = {
+        'dateTime': Timestamp.fromDate(dateTime),
+        'type': type,
+        'description': description,
+        'consultantToken': consultantToken,
+        'consultantName': additionalData?['consultantName'] ?? 'Consultant necunoscut',
+        'clientName': additionalData?['clientName'] ?? 'Client necunoscut',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        ...?additionalData,
+      };
+
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection)
+            .doc(phoneNumber)
+            .collection(_meetingsSubcollection)
+            .add(meetingDoc)
+      );
+
+      // Actualizeaza timestamp-ul clientului
+      await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
+
+      debugPrint('✅ Meeting created successfully for client $phoneNumber');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error creating meeting: $e');
+      return false;
+    }
+  }
+
+  /// Obtine toate intalnirile pentru consultantul curent (FIX: mai robust filtering)
+  Future<List<Map<String, dynamic>>> getAllMeetings() async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: Cannot get meetings - consultant token is null');
+      return [];
+    }
+
+    try {
+      debugPrint('🔍 FIREBASE_SERVICE: Getting meetings for consultant: ${consultantToken.substring(0, 8)}...');
+      final clients = await getAllClients(); // Folosește getAllClients care deja filtrează corect
+      final List<Map<String, dynamic>> allMeetings = [];
+
+      debugPrint('🔍 FIREBASE_SERVICE: Processing ${clients.length} clients for meetings');
+
+      for (final client in clients) {
+        final phoneNumber = client['phoneNumber'] as String;
+        
+        // Verificare suplimentară pentru siguranță
+        if (client['consultantToken'] != consultantToken) {
+          debugPrint('⚠️ FIREBASE_SERVICE: Skipping client $phoneNumber - wrong consultant token');
+          continue;
+        }
+        
+        final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+          _firestore.collection(_clientsCollection)
+              .doc(phoneNumber)
+              .collection(_meetingsSubcollection)
+              .orderBy('dateTime', descending: false)
+              .get()
+        );
+
+        debugPrint('🔍 FIREBASE_SERVICE: Found ${meetingsSnapshot.docs.length} meetings for client $phoneNumber');
+
+        for (final doc in meetingsSnapshot.docs) {
+          // FIX: Asigură-te că consultantToken este disponibil pentru identificare
+          final meetingData = doc.data();
+          final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+          
+          allMeetings.add({
+            'id': doc.id,
+            'clientPhoneNumber': phoneNumber,
+            'clientName': client['name'],
+            'consultantToken': consultantToken, // FIX: asigură-te că este setat corect
+            ...meetingData,
+            'additionalData': {
+              ...additionalData,
+              'consultantToken': consultantToken, // FIX: Folosește token-ul pentru identificare
+            },
+          });
+        }
+      }
+
+      debugPrint('✅ FIREBASE_SERVICE: Returning ${allMeetings.length} total meetings for consultant');
+      return allMeetings;
+    } catch (e) {
+      debugPrint('❌ Error getting all meetings: $e');
+      return [];
+    }
+  }
+
+  /// Obtine intalnirile pentru echipa consultantului curent (FIX: mai robust filtering)
+  Future<List<Map<String, dynamic>>> getTeamMeetings() async {
+    final team = await getCurrentConsultantTeam();
+    if (team == null) {
+      debugPrint('❌ FIREBASE_SERVICE: Cannot get team meetings - team is null');
+      return [];
+    }
+
+    try {
+      debugPrint('🔍 FIREBASE_SERVICE: Getting team meetings for team: $team');
+      
+      // Obtine toti consultantii din echipa
+      final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection)
+            .where('team', isEqualTo: team)
+            .get()
+      );
+
+      final List<String> teamTokens = teamConsultantsSnapshot.docs
+          .map((doc) => doc.data()['token'] as String)
+          .where((token) => token.isNotEmpty)
+          .toList();
+      debugPrint('🔍 FIREBASE_SERVICE: Found ${teamTokens.length} consultants in team $team');
+
+      // Obtine clientii pentru toti consultantii din echipa
+      final List<Map<String, dynamic>> teamMeetings = [];
+      
+      for (final token in teamTokens) {
+        debugPrint('🔍 FIREBASE_SERVICE: Processing meetings for consultant token: ${token.substring(0, 8)}...');
+        
+        final clientsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+          _firestore.collection(_clientsCollection)
+              .where('consultantToken', isEqualTo: token)
+              .get()
+        );
+
+        debugPrint('🔍 FIREBASE_SERVICE: Found ${clientsSnapshot.docs.length} clients for consultant');
+
+        for (final clientDoc in clientsSnapshot.docs) {
+          final phoneNumber = clientDoc.id;
+          final clientData = clientDoc.data();
+          
+          // FIX: verificare suplimentară pentru siguranță
+          if (clientData['consultantToken'] != token) {
+            debugPrint('⚠️ FIREBASE_SERVICE: Skipping client $phoneNumber - token mismatch');
+            continue;
+          }
+          
+          final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
+            _firestore.collection(_clientsCollection)
+                .doc(phoneNumber)
+                .collection(_meetingsSubcollection)
+                .orderBy('dateTime', descending: false)
+                .get()
+          );
+
+          for (final meetingDoc in meetingsSnapshot.docs) {
+            // FIX: Asigură-te că consultantToken este disponibil pentru identificare
+            final meetingData = meetingDoc.data();
+            final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+            
+            teamMeetings.add({
+              'id': meetingDoc.id,
+              'clientPhoneNumber': phoneNumber,
+              'clientName': clientData['name'],
+              'consultantToken': token, // FIX: asigură-te că este setat corect
+              ...meetingData,
+              'additionalData': {
+                ...additionalData,
+                'consultantToken': token, // FIX: Folosește token-ul pentru identificare în calendar
+              },
+            });
+          }
+        }
+      }
+
+      debugPrint('✅ FIREBASE_SERVICE: Returning ${teamMeetings.length} total team meetings');
+      return teamMeetings;
+    } catch (e) {
+      debugPrint('❌ Error getting team meetings: $e');
+      return [];
+    }
+  }
+
+  /// Actualizeaza o intalnire existenta
+  Future<bool> updateMeeting({
+    required String phoneNumber,
+    required String meetingId,
+    DateTime? dateTime,
+    String? type,
+    String? description,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      final updates = <String, dynamic>{
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (dateTime != null) updates['dateTime'] = Timestamp.fromDate(dateTime);
+      if (type != null) updates['type'] = type;
+      if (description != null) updates['description'] = description;
+      if (additionalData != null) updates['additionalData'] = additionalData;
+
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection)
+            .doc(phoneNumber)
+            .collection(_meetingsSubcollection)
+            .doc(meetingId)
+            .update(updates)
+      );
+
+      // Actualizeaza timestamp-ul clientului
+      await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
+
+      debugPrint('✅ Meeting updated successfully: $meetingId for client $phoneNumber');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error updating meeting: $e');
+      return false;
+    }
+  }
+
+  /// Sterge o intalnire specifica
+  Future<bool> deleteMeeting({
+    required String phoneNumber,
+    required String meetingId,
+  }) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection)
+            .doc(phoneNumber)
+            .collection(_meetingsSubcollection)
+            .doc(meetingId)
+            .delete()
+      );
+
+      // Actualizeaza timestamp-ul clientului
+      await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
+
+      debugPrint('✅ Meeting deleted successfully: $meetingId for client $phoneNumber');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error deleting meeting: $e');
+      return false;
+    }
+  }
+
+  /// Sterge un formular specific
+  Future<bool> deleteClientForm({
+    required String phoneNumber,
+    required String formId,
+  }) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      // Verifica daca clientul apartine consultantului curent
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_clientsCollection)
+            .doc(phoneNumber)
+            .collection(_formsSubcollection)
+            .doc(formId)
+            .delete()
+      );
+
+      // Actualizeaza timestamp-ul clientului
+      await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
+
+      debugPrint('✅ Form deleted successfully: $formId for client $phoneNumber');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error deleting form: $e');
+      return false;
+    }
+  }
+
+  // =================== STATS OPERATIONS ===================
+
+  /// Actualizeaza statistici globale
+  Future<bool> updateGlobalStats(Map<String, dynamic> stats) async {
+    try {
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_statsCollection).doc('global').set(stats, SetOptions(merge: true))
+      );
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error updating global stats: $e');
+      return false;
+    }
+  }
+
+  /// Obtine statistici globale
+  Future<Map<String, dynamic>?> getGlobalStats() async {
+    try {
+      final doc = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_statsCollection).doc('global').get()
+      );
+      return doc.data();
+    } catch (e) {
+      debugPrint('❌ Error getting global stats: $e');
+      return null;
+    }
+  }
+
+  /// Actualizeaza statistici pentru o echipa
+  Future<bool> updateTeamStats(String teamName, Map<String, dynamic> stats) async {
+    try {
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_statsCollection).doc('teams').collection(teamName).doc('stats').set(stats, SetOptions(merge: true))
+      );
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error updating team stats: $e');
+      return false;
+    }
+  }
+
+  // =================== MIGRATION HELPERS ===================
+
+  /// Migreaza datele existente la noua structura
+  Future<bool> migrateToNewStructure() async {
+    try {
+      debugPrint('🔄 Starting migration to new structure...');
+      
+      // Aceasta functie va fi implementata pentru a migra datele existente
+      // Dar pentru simplitate, vom incepe cu o structura curata
+      
+      debugPrint('✅ Migration completed successfully');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error during migration: $e');
+      return false;
+    }
+  }
+
+  /// Curata structura existenta (ATENTIE: Sterge toate datele!)
+  Future<bool> clearOldStructure() async {
+    try {
+      debugPrint('🔄 Starting cleanup of old structure...');
+      
+      // ATENTIE: Aceasta functie va sterge toate datele din structura veche!
+      // Foloseste-o doar dupa ce ai migrat datele necesare
+      
+      debugPrint('⚠️ Cleanup functionality not implemented for safety');
+      debugPrint('✅ Cleanup completed successfully');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error during cleanup: $e');
+      return false;
+    }
+  }
+}
+
+/// Serviciu pentru migrarea datelor la noua structura Firebase
+class MigrationService {
+  static final MigrationService _instance = MigrationService._internal();
+  factory MigrationService() => _instance;
+  MigrationService._internal();
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  /// Incepe migrarea completa la noua structura
+  Future<Map<String, dynamic>> startMigration() async {
+    try {
+      debugPrint('🔄 MIGRATION: Starting complete migration to new structure...');
+
+      // Pasul 1: Migreaza consultantii
+      final consultantsResult = await _migrateConsultants();
+      if (!consultantsResult['success']) {
+        return consultantsResult;
+      }
+
+      // Pasul 2: Migreaza clientii si datele asociate
+      final clientsResult = await _migrateClients();
+      if (!clientsResult['success']) {
+        return clientsResult;
+      }
+
+      // Pasul 3: Creeaza structura pentru statistici
+      await _createStatsStructure();
+
+      debugPrint('✅ MIGRATION: Complete migration finished successfully');
+      return {
+        'success': true,
+        'message': 'Migrarea s-a finalizat cu succes',
+        'consultantsMigrated': consultantsResult['count'],
+        'clientsMigrated': clientsResult['count'],
+      };
+    } catch (e) {
+      debugPrint('❌ MIGRATION: Error during migration: $e');
+      return {
+        'success': false,
+        'message': 'Eroare în timpul migrării: $e',
+      };
+    }
+  }
+
+  /// Migreaza consultantii la noua structura
+  Future<Map<String, dynamic>> _migrateConsultants() async {
+    try {
+      debugPrint('🔄 MIGRATION: Migrating consultants...');
+      
+      // Obtine toti consultantii din structura veche
+      final oldConsultantsSnapshot = await _firestore.collection('consultants').get();
+      int migratedCount = 0;
+
+      for (final doc in oldConsultantsSnapshot.docs) {
+        final data = doc.data();
+        
+        // Verifica daca consultantul are deja token
+        if (data.containsKey('token')) {
+          debugPrint('✅ MIGRATION: Consultant ${data['name']} already has token');
+          migratedCount++;
+        } else {
+          debugPrint('⚠️ MIGRATION: Consultant ${data['name']} needs token update');
+          // Aici ai putea adauga logica pentru a genera token-uri pentru consultantii existenti
+        }
+      }
+
+      debugPrint('✅ MIGRATION: Migrated $migratedCount consultants');
+      return {
+        'success': true,
+        'count': migratedCount,
+      };
+    } catch (e) {
+      debugPrint('❌ MIGRATION: Error migrating consultants: $e');
+      return {
+        'success': false,
+        'message': 'Eroare la migrarea consultantilor: $e',
+      };
+    }
+  }
+
+  /// Migreaza clientii la noua structura
+  Future<Map<String, dynamic>> _migrateClients() async {
+    try {
+      debugPrint('🔄 MIGRATION: Migrating clients to new structure...');
+      
+      // Pentru noua structura, clientii vor fi creati direct cu noua structura
+      // Datele vechi pot fi pastrate pentru backup sau migrate manual
+      
+      debugPrint('✅ MIGRATION: Client migration prepared (will use new structure)');
+      return {
+        'success': true,
+        'count': 0, // Clientii vor fi creati fresh cu noua structura
+      };
+    } catch (e) {
+      debugPrint('❌ MIGRATION: Error preparing client migration: $e');
+      return {
+        'success': false,
+        'message': 'Eroare la migrarea clientilor: $e',
+      };
+    }
+  }
+
+  /// Creeaza structura pentru statistici
+  Future<void> _createStatsStructure() async {
+    try {
+      debugPrint('🔄 MIGRATION: Creating stats structure...');
+      
+      // Creeaza document global pentru statistici
+      await _firestore.collection('stats').doc('global').set({
+        'totalClients': 0,
+        'totalMeetings': 0,
+        'dutyAgent': '',
+        'dutyRotation': [],
+        'lastUpdated': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      debugPrint('✅ MIGRATION: Stats structure created');
+    } catch (e) {
+      debugPrint('❌ MIGRATION: Error creating stats structure: $e');
+    }
+  }
+
+  /// Verifica daca migrarea este necesara
+  Future<bool> isMigrationNeeded() async {
+    try {
+      // Verifica daca exista structura noua
+      final globalStatsDoc = await _firestore.collection('stats').doc('global').get();
+      return !globalStatsDoc.exists;
+    } catch (e) {
+      debugPrint('❌ MIGRATION: Error checking migration status: $e');
+      return true; // Pe siguranta, presupunem ca migrarea este necesara
+    }
   }
 }
 

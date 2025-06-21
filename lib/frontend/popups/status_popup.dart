@@ -9,7 +9,8 @@ import 'package:broker_app/frontend/components/fields/input_field3.dart';
 import 'package:broker_app/frontend/components/buttons/flex_buttons1.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
-import 'package:broker_app/backend/services/xlsx_service.dart';
+import 'package:broker_app/backend/services/auth_service.dart';
+import 'package:broker_app/backend/services/splash_service.dart';
 
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -73,7 +74,6 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   // Services
   final MeetingService _meetingService = MeetingService();
   final ClientUIService _clientService = ClientUIService();
-  final ExcelExportService _excelExportService = ExcelExportService();
   
   // Controllers pentru inputuri
   final TextEditingController _statusController = TextEditingController();
@@ -116,9 +116,22 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   /// Selecteaza data din calendar
   Future<void> _selectDate() async {
     final now = DateTime.now();
-    final initialDate = _selectedDate != null && _selectedDate!.isAfter(now) 
-        ? _selectedDate! 
-        : now;
+    
+    // Functie helper pentru a gasi urmatoarea zi lucratoare
+    DateTime getNextWorkday(DateTime date) {
+      while (date.weekday == DateTime.saturday || date.weekday == DateTime.sunday) {
+        date = date.add(const Duration(days: 1));
+      }
+      return date;
+    }
+    
+    // Asigura-te ca initialDate este o zi lucratoare
+    DateTime initialDate;
+    if (_selectedDate != null && _selectedDate!.isAfter(now)) {
+      initialDate = getNextWorkday(_selectedDate!);
+    } else {
+      initialDate = getNextWorkday(now);
+    }
     
     final picked = await showDatePicker(
       context: context,
@@ -252,13 +265,18 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       // Daca statusul este "Acceptat", salveaza intalnirea in calendar
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
+        // Obtine numele consultantului curent
+        final authService = AuthService();
+        final consultantData = await authService.getCurrentConsultantData();
+        final consultantName = consultantData?['name'] ?? 'Consultant necunoscut';
+        
         final meetingData = MeetingData(
           clientName: widget.client.name,
           phoneNumber: widget.client.phoneNumber,
           dateTime: finalDateTime,
           type: MeetingType.meeting,
-          consultantId: '', // Va fi setat de service
-          consultantName: '', // Va fi setat de service
+          consultantToken: '', // Va fi setat de service
+          consultantName: consultantName,
         );
 
         final result = await _meetingService.createMeeting(meetingData);
@@ -269,6 +287,16 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
         
         debugPrint('✅ Intalnire salvata in calendar: ${widget.client.name} - $finalDateTime');
+        
+        // IMPORTANT: Invalidează cache-ul pentru a afișa imediat întâlnirea în calendar
+        try {
+          final splashService = SplashService();
+          await splashService.invalidateMeetingsCacheAndRefresh();
+          debugPrint('✅ STATUS_POPUP: Cache invalidat după salvarea întâlnirii');
+        } catch (e) {
+          debugPrint('❌ STATUS_POPUP: Eroare la invalidarea cache-ului: $e');
+        }
+
       }
 
       // Muta clientul in categoria corespunzatoare in functie de status
@@ -304,21 +332,8 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       try {
         debugPrint('🔄 Incepe salvarea clientului in XLSX...');
         
-        // Obtine datele complete ale clientului folosind ClientsFirebaseService
-        final clientsService = ClientsFirebaseService();
-        final unifiedClient = await clientsService.getClient(widget.client.phoneNumber);
-        
-        if (unifiedClient != null) {
-          final filePath = await _excelExportService.saveClientToXlsx(unifiedClient);
-          
-          if (filePath != null) {
-            debugPrint('✅ Client salvat in XLSX: $filePath');
-          } else {
-            debugPrint('⚠️ Salvarea in XLSX nu a putut fi realizata');
-          }
-        } else {
-          debugPrint('⚠️ Nu s-au putut obtine datele complete ale clientului pentru XLSX');
-        }
+        // Pentru moment, dezactivăm salvarea în XLSX până la refactorizarea completă
+        debugPrint('⚠️ Salvarea în XLSX temporar dezactivată - necesită refactorizare pentru noua structură');
       } catch (e, stackTrace) {
         debugPrint('❌ Eroare la salvarea clientului in XLSX: $e');
         debugPrint('❌ Stack trace: $stackTrace');

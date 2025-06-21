@@ -172,12 +172,7 @@ class WidgetHeader6 extends StatelessWidget {
                     child: Text(
                       dateText,
                       textAlign: TextAlign.center,
-                      style: onDateTextTap != null 
-                          ? finalDateTextStyle.copyWith(
-                              decoration: TextDecoration.underline,
-                              decorationColor: effectiveDateTextColor,
-                            )
-                          : finalDateTextStyle,
+                      style: finalDateTextStyle, // Removed underline decoration
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

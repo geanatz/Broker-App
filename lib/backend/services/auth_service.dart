@@ -37,8 +37,9 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final _uuid = const Uuid();
   final FirebaseThreadHandler _threadHandler = FirebaseThreadHandler.instance;
+  final NewFirebaseService _newFirebaseService = NewFirebaseService();
 
-  // Collection names
+  // Collection names pentru noua structura
   final String _consultantsCollection = 'consultants';
 
   // Get current user
@@ -51,7 +52,7 @@ class AuthService {
     return '${consultantName.trim().replaceAll(' ', '_').toLowerCase()}@brokerapp.dev';
   }
 
-  // Register consultant
+  // Register consultant - ACTUALIZAT pentru noua structura
   Future<Map<String, dynamic>> registerConsultant({
     required String consultantName,
     required String password,
@@ -70,6 +71,18 @@ class AuthService {
         };
       }
 
+      // Genereaza token unic pentru consultant
+      final consultantToken = _uuid.v4();
+      debugPrint('🟨 AUTH_SERVICE: Generated consultant token: ${consultantToken.substring(0, 8)}...');
+
+      // Verifica daca numele consultantului este unic in noua structura
+      final existingConsultant = await _newFirebaseService.getConsultantByToken(consultantToken);
+      if (existingConsultant != null) {
+        // Genereaza un alt token daca cumva exista unul identic (foarte improbabil)
+        final newToken = _uuid.v4();
+        debugPrint('🟨 AUTH_SERVICE: Token collision, generating new token: ${newToken.substring(0, 8)}...');
+      }
+
       // Verifica daca numele consultantului este unic
       final consultantSnapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore
@@ -86,19 +99,10 @@ class AuthService {
         };
       }
       
-      // Verifica daca email-ul este deja folosit
+      // Creeaza email-ul pentru Firebase Auth
       final email = _createEmailFromConsultantName(consultantName);
       debugPrint('🟨 AUTH_SERVICE: Created email: $email');
       
-      try {
-        // Incearca sa creezi utilizatorul direct - Firebase va returna eroare daca email-ul exista
-        // Aceasta este abordarea recomandata in loc de fetchSignInMethodsForEmail
-        // Vom gestiona eroarea 'email-already-in-use' mai jos in catch block
-      } catch (e) {
-        // Ignoram eroarea de verificare, vom lasa Firebase sa gestioneze duplicatele
-        debugPrint('Proceeding with user creation, Firebase will handle duplicates: $e');
-      }
-
       debugPrint('🟨 AUTH_SERVICE: Creating Firebase user...');
       // Creeaza utilizator in Firebase Auth
       final userCredential = await _auth.createUserWithEmailAndPassword(
@@ -114,25 +118,28 @@ class AuthService {
       await _auth.signOut();
       debugPrint('🟨 AUTH_SERVICE: Immediate signOut completed');
 
-      // Genereaza token unic pentru resetarea parolei
-      final token = _uuid.v4();
-      debugPrint('🟨 AUTH_SERVICE: Generated token: ${token.substring(0, 8)}...');
-
-      // Salveaza datele consultantului in Firestore, including token
+      // Salveaza datele consultantului in noua structura Firebase
+      // IMPORTANT: documentul va fi cu UID-ul din Firebase Auth, dar va contine token-ul unic
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(userCredential.user!.uid).set({
           'name': consultantName,
           'team': team,
-          'createdAt': FieldValue.serverTimestamp(),
+          'token': consultantToken, // Token-ul unic al consultantului
           'email': userCredential.user!.email,
-          'token': token, // Store token directly in consultant document
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'lastActive': FieldValue.serverTimestamp(),
+          'settings': {
+            'theme': 'system',
+            'notifications': true,
+          },
         })
       );
 
-      debugPrint('🟢 AUTH_SERVICE: Registration completed successfully');
+      debugPrint('🟢 AUTH_SERVICE: Registration completed successfully with token structure');
       return {
         'success': true,
-        'token': token,
+        'token': consultantToken,
         'message': 'Cont creat cu succes',
       };
     } on FirebaseAuthException catch (e) {
@@ -163,14 +170,14 @@ class AuthService {
     }
   }
 
-  // Login consultant
+  // Login consultant - ACTUALIZAT pentru noua structura
   Future<Map<String, dynamic>> loginConsultant({
     required String consultantName,
     required String password,
   }) async {
     debugPrint('🔵 AUTH_SERVICE: Starting loginConsultant for: $consultantName');
     try {
-      // In primul rand, verificam daca exista un consultant cu acest nume
+      // In primul rand, verificam daca exista un consultant cu acest nume in noua structura
       final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore
           .collection(_consultantsCollection)
@@ -193,88 +200,141 @@ class AuthService {
         final data = doc.data() as Map<String, dynamic>?;
         final createdAt = data?['createdAt'] as Timestamp?;
         if (createdAt != null) {
-          final creationTime = createdAt.toDate();
-          if (mostRecentTime == null || creationTime.isAfter(mostRecentTime.toDate())) {
+          if (mostRecentTime == null || createdAt.compareTo(mostRecentTime) > 0) {
             mostRecentTime = createdAt;
             mostRecentDoc = doc;
           }
-        } else {
-            // Fallback if createdAt is missing, just take the first one
-            mostRecentDoc ??= doc;
         }
       }
-      
-      // If loop didn't find any with timestamp, use the first doc as fallback
-      mostRecentDoc ??= consultantsSnapshot.docs.first;
-      
-      // Obtinem ID-ul consultantului si alte date utile
-      final consultantData = mostRecentDoc.data() as Map<String, dynamic>;
-      
-      // Incercam sa extragem email-ul stocat, daca exista
-      String? storedEmail = consultantData['email'] as String?;
-      String emailToUse;
-      
-      if (storedEmail != null && storedEmail.isNotEmpty) {
-        // Folosim email-ul stocat explicit in document
-        emailToUse = storedEmail;
-      } else {
-        // Generam email-ul standard (fallback if email wasn't stored during registration)
-        debugPrint("Warning: Email not found in consultant document, generating from name.");
-        emailToUse = _createEmailFromConsultantName(consultantName);
-      }
-      
-      // Incercam autentificarea cu acest email si parola in Firebase Auth
-      debugPrint('🔵 AUTH_SERVICE: Attempting Firebase signIn with email: $emailToUse');
-      try {
-        await _auth.signInWithEmailAndPassword(
-          email: emailToUse,
-          password: password,
-        );
-        
-        debugPrint('🟢 AUTH_SERVICE: Firebase signIn successful for: $consultantName');
-        debugPrint('🟢 AUTH_SERVICE: Current user after signIn: ${_auth.currentUser?.email ?? 'null'}');
-        
-        // Autentificare reusita - Nu returnam mesaj de succes pentru ca utilizatorul va fi navigat automat
-        // AuthWrapper va detecta schimbarea si va naviga la MainScreen
-        return {
-          'success': true,
-          'consultantData': consultantData,
-        };
-      } catch (authError) {
-        debugPrint('🔴 AUTH_SERVICE: Firebase signIn failed: $authError');
-        // Daca esueaza cu email-ul specific, verificam daca exista token pentru resetare
-        if (authError is FirebaseAuthException) {
-          debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException code: ${authError.code}');
-          if (authError.code == 'user-not-found' || authError.code == 'wrong-password') {
-            // Check if consultant document has token
-            if (consultantData.containsKey('token')) {
-              return {
-                'success': false,
-                'message': 'Parola incorecta sau cont resetat. Verifica credentialele sau foloseste token-ul pentru a reseta parola.',
-                'resetEnabled': true,
-              };
-            } else {
-              return {
-                'success': false,
-                'message': 'Credentiale invalide. Verifica numele si parola.',
-              };
-            }
-          }
-        }
-        
-        debugPrint("Firebase Auth Error during login: ${authError is FirebaseAuthException ? authError.message : authError}");
+
+      if (mostRecentDoc == null) {
         return {
           'success': false,
-          'message': 'Eroare la autentificare. Parola gresita.',
-          'details': authError.toString(),
+          'message': 'Date consultant invalide',
         };
       }
+
+      final consultantData = mostRecentDoc.data() as Map<String, dynamic>;
+      final email = consultantData['email'] as String?;
+      final consultantToken = consultantData['token'] as String?;
+      
+      if (email == null || consultantToken == null) {
+        return {
+          'success': false,
+          'message': 'Date consultant incomplete',
+        };
+      }
+
+      debugPrint('🔵 AUTH_SERVICE: Found consultant with email: $email');
+      debugPrint('🔵 AUTH_SERVICE: Consultant token: ${consultantToken.substring(0, 8)}...');
+
+      // Incearca autentificarea cu Firebase Auth
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      debugPrint('🟢 AUTH_SERVICE: Firebase Auth successful for: ${userCredential.user?.uid}');
+
+      // Actualizeaza lastActive timestamp pentru consultant
+      await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection).doc(mostRecentDoc!.id).update({
+          'lastActive': FieldValue.serverTimestamp(),
+        })
+      );
+
+      // Returneaza datele consultantului, inclusiv token-ul pentru identificare
+      return {
+        'success': true,
+        'consultant': {
+          'id': mostRecentDoc.id,
+          'name': consultantData['name'],
+          'email': consultantData['email'],
+          'team': consultantData['team'],
+          'token': consultantToken,
+        },
+        'message': 'Autentificare reusita',
+      };
+    } on FirebaseAuthException catch (e) {
+      debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException during login: ${e.code} - ${e.message}');
+      String message;
+
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'Consultant negasit';
+          break;
+        case 'wrong-password':
+          message = 'Parola incorecta';
+          break;
+        case 'too-many-requests':
+          message = 'Prea multe incercari. Incearca din nou mai tarziu.';
+          break;
+        default:
+          message = 'Eroare la autentificare: ${e.message}';
+      }
+
+      return {
+        'success': false,
+        'message': message,
+      };
     } catch (e) {
-      debugPrint("General Error during login: $e");
+      debugPrint('🔴 AUTH_SERVICE: General exception during login: $e');
       return {
         'success': false,
         'message': 'Eroare la autentificare: $e',
       };
+    }
+  }
+
+  // Obtine datele consultantului curent - ACTUALIZAT pentru noua structura
+  Future<Map<String, dynamic>?> getCurrentConsultantData() async {
+    final user = currentUser;
+    if (user == null) return null;
+
+    try {
+      final doc = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection).doc(user.uid).get()
+      );
+      
+      if (doc.exists) {
+        return doc.data();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error getting current consultant data: $e');
+      return null;
+    }
+  }
+
+  // Obtine token-ul consultantului curent
+  Future<String?> getCurrentConsultantToken() async {
+    final consultantData = await getCurrentConsultantData();
+    return consultantData?['token'] as String?;
+  }
+
+  // Obtine echipa consultantului curent
+  Future<String?> getCurrentConsultantTeam() async {
+    final consultantData = await getCurrentConsultantData();
+    return consultantData?['team'] as String?;
+  }
+
+  // Obtine lista tuturor consultantilor pentru dropdown
+  Future<List<Map<String, String>>> getAllConsultants() async {
+    try {
+      final snapshot = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection(_consultantsCollection)
+            .orderBy('name')
+            .get()
+      );
+
+      return snapshot.docs.map((doc) => {
+        'id': doc.id,
+        'name': doc.data()['name'] as String,
+        'team': doc.data()['team'] as String,
+      }).toList();
+    } catch (e) {
+      debugPrint('❌ Error getting all consultants: $e');
+      return [];
     }
   }
 

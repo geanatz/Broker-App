@@ -34,6 +34,111 @@ class SettingsService extends ChangeNotifier {
   /// Obtine ID-ul consultantului curent
   String? get _consultantId => _auth.currentUser?.uid;
 
+  /// Băncile hardcodate în aplicație (nu mai sunt modificabile din UI)
+  static const List<Map<String, dynamic>> _hardcodedBanks = [
+    {
+      'name': 'Banca Comercială Română',
+      'logo': 'assets/bcrIcon.svg',
+      'minAge': 18,
+      'maxAge': 70,
+      'minIncome': 1500,
+      'maxLoanAmount': 250000,
+      'interestRate': 7.5,
+      'maxLoanTerm': 120,
+      'creditTypes': ['Nevoi personale', 'Ipotecar', 'Prima casa'],
+      'requirements': ['Venit minim 1500 RON', 'Vechime min 6 luni'],
+    },
+    {
+      'name': 'Banca Transilvania',
+      'logo': 'assets/btIcon.svg',
+      'minAge': 21,
+      'maxAge': 65,
+      'minIncome': 1200,
+      'maxLoanAmount': 200000,
+      'interestRate': 8.0,
+      'maxLoanTerm': 96,
+      'creditTypes': ['Nevoi personale', 'Card de cumparaturi', 'Overdraft'],
+      'requirements': ['Venit minim 1200 RON', 'Cont deschis min 3 luni'],
+    },
+    {
+      'name': 'ING Bank',
+      'logo': 'assets/ingIcon.svg',
+      'minAge': 18,
+      'maxAge': 75,
+      'minIncome': 1800,
+      'maxLoanAmount': 300000,
+      'interestRate': 7.2,
+      'maxLoanTerm': 240,
+      'creditTypes': ['Nevoi personale', 'Ipotecar', 'Prima casa'],
+      'requirements': ['Venit minim 1800 RON', 'Cont activ min 1 an'],
+    },
+    {
+      'name': 'Raiffeisen Bank',
+      'logo': 'assets/raiffeisenIcon.svg',
+      'minAge': 18,
+      'maxAge': 70,
+      'minIncome': 1400,
+      'maxLoanAmount': 180000,
+      'interestRate': 8.5,
+      'maxLoanTerm': 84,
+      'creditTypes': ['Nevoi personale', 'Card de cumparaturi'],
+      'requirements': ['Venit minim 1400 RON', 'Fara restante'],
+    },
+    {
+      'name': 'CEC Bank',
+      'logo': 'assets/cecIcon.svg',
+      'minAge': 18,
+      'maxAge': 65,
+      'minIncome': 1000,
+      'maxLoanAmount': 150000,
+      'interestRate': 9.0,
+      'maxLoanTerm': 72,
+      'creditTypes': ['Nevoi personale', 'Prima casa'],
+      'requirements': ['Venit minim 1000 RON', 'Cetațean român'],
+    },
+    {
+      'name': 'BRD - Groupe Société Générale',
+      'logo': 'assets/brdIcon.svg',
+      'minAge': 20,
+      'maxAge': 70,
+      'minIncome': 1600,
+      'maxLoanAmount': 220000,
+      'interestRate': 7.8,
+      'maxLoanTerm': 120,
+      'creditTypes': ['Nevoi personale', 'Ipotecar', 'Overdraft'],
+      'requirements': ['Venit minim 1600 RON', 'Cont activ'],
+    },
+    {
+      'name': 'TBI Credit',
+      'logo': 'assets/tbiIcon.svg',
+      'minAge': 18,
+      'maxAge': 65,
+      'minIncome': 800,
+      'maxLoanAmount': 50000,
+      'interestRate': 12.0,
+      'maxLoanTerm': 60,
+      'creditTypes': ['Nevoi personale', 'Card de cumparaturi'],
+      'requirements': ['Venit minim 800 RON', 'Proces rapid'],
+    },
+    {
+      'name': 'Garanti BBVA',
+      'logo': 'assets/garantiIcon.svg',
+      'minAge': 21,
+      'maxAge': 65,
+      'minIncome': 1300,
+      'maxLoanAmount': 160000,
+      'interestRate': 8.8,
+      'maxLoanTerm': 84,
+      'creditTypes': ['Nevoi personale', 'Card de cumparaturi'],
+      'requirements': ['Venit minim 1300 RON', 'Cont deschis'],
+    },
+  ];
+
+  /// Obține lista băncilor hardcodate
+  List<Map<String, dynamic>> getHardcodedBanks() {
+    return List.from(_hardcodedBanks);
+  }
+
   /// Initializarea service-ului - se apeleaza la pornirea aplicatiei
   Future<void> initialize() async {
     if (_isInitialized) return;

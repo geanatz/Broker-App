@@ -1,11 +1,11 @@
 ConstrainedBox(
     constraints: BoxConstraints(minWidth: 520, minHeight: 432),
     child: Container(
-        width: 600,
-        height: 803,
+        width: 520,
+        height: 432,
         padding: const EdgeInsets.all(8),
         decoration: ShapeDecoration(
-            color: const Color(0xFFD9D9D9) /* widgetBackground */,
+            color: const Color(0xFFD9D9D9) /* popupBackground */,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(32),
             ),
@@ -36,7 +36,7 @@ ConstrainedBox(
                                         spacing: 10,
                                         children: [
                                             Text(
-                                                'Top consultanti',
+                                                'Titlu',
                                                 style: TextStyle(
                                                     color: const Color(0xFF8A8AA8) /* elementColor1 */,
                                                     fontSize: 19,
@@ -80,7 +80,7 @@ ConstrainedBox(
                                                     SizedBox(
                                                         width: 72,
                                                         child: Text(
-                                                            'Luna',
+                                                            'Date',
                                                             textAlign: TextAlign.center,
                                                             style: TextStyle(
                                                                 color: const Color(0xFF8A8AA8) /* elementColor1 */,
@@ -144,38 +144,37 @@ ConstrainedBox(
                                         crossAxisAlignment: CrossAxisAlignment.center,
                                         spacing: 16,
                                         children: [
-                                            Expanded(
-                                                child: Container(
-                                                    height: 21,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                    child: Row(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                        children: [
-                                                            Container(
-                                                                clipBehavior: Clip.antiAlias,
-                                                                decoration: BoxDecoration(),
-                                                                child: Row(
-                                                                    mainAxisSize: MainAxisSize.min,
-                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                    spacing: 10,
-                                                                    children: [
-                                                                        Text(
-                                                                            'Pozitie',
-                                                                            style: TextStyle(
-                                                                                color: const Color(0xFF666699) /* elementColor2 */,
-                                                                                fontSize: 15,
-                                                                                fontFamily: 'Outfit',
-                                                                                fontWeight: FontWeight.w500,
-                                                                            ),
+                                            Container(
+                                                width: 56,
+                                                height: 21,
+                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                    children: [
+                                                        Container(
+                                                            clipBehavior: Clip.antiAlias,
+                                                            decoration: BoxDecoration(),
+                                                            child: Row(
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                spacing: 10,
+                                                                children: [
+                                                                    Text(
+                                                                        'Pozitie',
+                                                                        style: TextStyle(
+                                                                            color: const Color(0xFF666699) /* elementColor2 */,
+                                                                            fontSize: 15,
+                                                                            fontFamily: 'Outfit',
+                                                                            fontWeight: FontWeight.w500,
                                                                         ),
-                                                                    ],
-                                                                ),
+                                                                    ),
+                                                                ],
                                                             ),
-                                                        ],
-                                                    ),
+                                                        ),
+                                                    ],
                                                 ),
                                             ),
                                             Expanded(
@@ -348,6 +347,40 @@ ConstrainedBox(
                                                         crossAxisAlignment: CrossAxisAlignment.center,
                                                         spacing: 16,
                                                         children: [
+                                                            Container(
+                                                                width: 56,
+                                                                height: 21,
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                child: Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                    spacing: 8,
+                                                                    children: [
+                                                                        Container(
+                                                                            clipBehavior: Clip.antiAlias,
+                                                                            decoration: BoxDecoration(),
+                                                                            child: Row(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                spacing: 10,
+                                                                                children: [
+                                                                                    Text(
+                                                                                        '1',
+                                                                                        style: TextStyle(
+                                                                                            color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                            fontSize: 15,
+                                                                                            fontFamily: 'Outfit',
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
                                                             Expanded(
                                                                 child: Container(
                                                                     height: 21,
@@ -368,7 +401,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '1',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -403,7 +436,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            'Claudiu Vasile',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -438,7 +471,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '764',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -473,236 +506,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '168',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '22',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                Container(
-                                                    width: double.infinity,
-                                                    height: 40,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                                    decoration: ShapeDecoration(
-                                                        color: const Color(0xFFACACD2) /* containerColor2 */,
-                                                        shape: RoundedRectangleBorder(
-                                                            borderRadius: BorderRadius.circular(16),
-                                                        ),
-                                                    ),
-                                                    child: Row(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                        spacing: 16,
-                                                        children: [
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '2',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            'Andreea Marin',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '124',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '20',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '2',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -736,6 +540,40 @@ ConstrainedBox(
                                                         crossAxisAlignment: CrossAxisAlignment.center,
                                                         spacing: 16,
                                                         children: [
+                                                            Container(
+                                                                width: 56,
+                                                                height: 21,
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                child: Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                    spacing: 8,
+                                                                    children: [
+                                                                        Container(
+                                                                            clipBehavior: Clip.antiAlias,
+                                                                            decoration: BoxDecoration(),
+                                                                            child: Row(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                spacing: 10,
+                                                                                children: [
+                                                                                    Text(
+                                                                                        '2',
+                                                                                        style: TextStyle(
+                                                                                            color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                            fontSize: 15,
+                                                                                            fontFamily: 'Outfit',
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
                                                             Expanded(
                                                                 child: Container(
                                                                     height: 21,
@@ -756,7 +594,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '3',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -791,7 +629,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            'Trif Ionut Rege',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -826,7 +664,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '9,999',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -861,236 +699,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '9,999',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '9,999',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                Container(
-                                                    width: double.infinity,
-                                                    height: 40,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                                    decoration: ShapeDecoration(
-                                                        color: const Color(0xFFACACD2) /* containerColor2 */,
-                                                        shape: RoundedRectangleBorder(
-                                                            borderRadius: BorderRadius.circular(16),
-                                                        ),
-                                                    ),
-                                                    child: Row(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                        spacing: 16,
-                                                        children: [
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '4',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            'Robert Valentin',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '214',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '49',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '10',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1124,6 +733,40 @@ ConstrainedBox(
                                                         crossAxisAlignment: CrossAxisAlignment.center,
                                                         spacing: 16,
                                                         children: [
+                                                            Container(
+                                                                width: 56,
+                                                                height: 21,
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                child: Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                    spacing: 8,
+                                                                    children: [
+                                                                        Container(
+                                                                            clipBehavior: Clip.antiAlias,
+                                                                            decoration: BoxDecoration(),
+                                                                            child: Row(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                spacing: 10,
+                                                                                children: [
+                                                                                    Text(
+                                                                                        '3',
+                                                                                        style: TextStyle(
+                                                                                            color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                            fontSize: 15,
+                                                                                            fontFamily: 'Outfit',
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
                                                             Expanded(
                                                                 child: Container(
                                                                     height: 21,
@@ -1144,7 +787,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '5',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1179,7 +822,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            'Florentin Hriscu',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1214,7 +857,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '378',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1249,236 +892,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '87',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '12',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                Container(
-                                                    width: double.infinity,
-                                                    height: 40,
-                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                                    decoration: ShapeDecoration(
-                                                        color: const Color(0xFFACACD2) /* containerColor2 */,
-                                                        shape: RoundedRectangleBorder(
-                                                            borderRadius: BorderRadius.circular(16),
-                                                        ),
-                                                    ),
-                                                    child: Row(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                        spacing: 16,
-                                                        children: [
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '6',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            'Zaharia Daniel',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '126',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '31',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '7',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1512,6 +926,40 @@ ConstrainedBox(
                                                         crossAxisAlignment: CrossAxisAlignment.center,
                                                         spacing: 16,
                                                         children: [
+                                                            Container(
+                                                                width: 56,
+                                                                height: 21,
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                child: Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                    spacing: 8,
+                                                                    children: [
+                                                                        Container(
+                                                                            clipBehavior: Clip.antiAlias,
+                                                                            decoration: BoxDecoration(),
+                                                                            child: Row(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                spacing: 10,
+                                                                                children: [
+                                                                                    Text(
+                                                                                        '4',
+                                                                                        style: TextStyle(
+                                                                                            color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                            fontSize: 15,
+                                                                                            fontFamily: 'Outfit',
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
                                                             Expanded(
                                                                 child: Container(
                                                                     height: 21,
@@ -1532,7 +980,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '7',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1567,7 +1015,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            'Kylian Mbappe',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1602,7 +1050,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '742',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1637,42 +1085,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '290',
-                                                                                            style: TextStyle(
-                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
-                                                                                                fontSize: 15,
-                                                                                                fontFamily: 'Outfit',
-                                                                                                fontWeight: FontWeight.w500,
-                                                                                            ),
-                                                                                        ),
-                                                                                    ],
-                                                                                ),
-                                                                            ),
-                                                                        ],
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                            Expanded(
-                                                                child: Container(
-                                                                    height: 21,
-                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                                                    child: Row(
-                                                                        mainAxisSize: MainAxisSize.min,
-                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                                                        spacing: 8,
-                                                                        children: [
-                                                                            Container(
-                                                                                clipBehavior: Clip.antiAlias,
-                                                                                decoration: BoxDecoration(),
-                                                                                child: Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.start,
-                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                    spacing: 10,
-                                                                                    children: [
-                                                                                        Text(
-                                                                                            '49',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1706,6 +1119,40 @@ ConstrainedBox(
                                                         crossAxisAlignment: CrossAxisAlignment.center,
                                                         spacing: 16,
                                                         children: [
+                                                            Container(
+                                                                width: 56,
+                                                                height: 21,
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                child: Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                    spacing: 8,
+                                                                    children: [
+                                                                        Container(
+                                                                            clipBehavior: Clip.antiAlias,
+                                                                            decoration: BoxDecoration(),
+                                                                            child: Row(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                spacing: 10,
+                                                                                children: [
+                                                                                    Text(
+                                                                                        '5',
+                                                                                        style: TextStyle(
+                                                                                            color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                            fontSize: 15,
+                                                                                            fontFamily: 'Outfit',
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
                                                             Expanded(
                                                                 child: Container(
                                                                     height: 21,
@@ -1726,7 +1173,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '8',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1761,7 +1208,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            'Lionel Messi',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1796,7 +1243,7 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '985',
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1831,7 +1278,95 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '401',
+                                                                                            'Titlu',
+                                                                                            style: TextStyle(
+                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                                fontSize: 15,
+                                                                                                fontFamily: 'Outfit',
+                                                                                                fontWeight: FontWeight.w500,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ],
+                                                    ),
+                                                ),
+                                                Container(
+                                                    width: double.infinity,
+                                                    height: 40,
+                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                    decoration: ShapeDecoration(
+                                                        color: const Color(0xFFACACD2) /* containerColor2 */,
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(16),
+                                                        ),
+                                                    ),
+                                                    child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                        spacing: 16,
+                                                        children: [
+                                                            Container(
+                                                                width: 56,
+                                                                height: 21,
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                child: Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                    spacing: 8,
+                                                                    children: [
+                                                                        Container(
+                                                                            clipBehavior: Clip.antiAlias,
+                                                                            decoration: BoxDecoration(),
+                                                                            child: Row(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                spacing: 10,
+                                                                                children: [
+                                                                                    Text(
+                                                                                        '6',
+                                                                                        style: TextStyle(
+                                                                                            color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                            fontSize: 15,
+                                                                                            fontFamily: 'Outfit',
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
+                                                            Expanded(
+                                                                child: Container(
+                                                                    height: 21,
+                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                    child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                                        spacing: 8,
+                                                                        children: [
+                                                                            Container(
+                                                                                clipBehavior: Clip.antiAlias,
+                                                                                decoration: BoxDecoration(),
+                                                                                child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                    spacing: 10,
+                                                                                    children: [
+                                                                                        Text(
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,
@@ -1866,7 +1401,270 @@ ConstrainedBox(
                                                                                     spacing: 10,
                                                                                     children: [
                                                                                         Text(
-                                                                                            '120',
+                                                                                            'Titlu',
+                                                                                            style: TextStyle(
+                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                                fontSize: 15,
+                                                                                                fontFamily: 'Outfit',
+                                                                                                fontWeight: FontWeight.w500,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                            Expanded(
+                                                                child: Container(
+                                                                    height: 21,
+                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                    child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                                        spacing: 8,
+                                                                        children: [
+                                                                            Container(
+                                                                                clipBehavior: Clip.antiAlias,
+                                                                                decoration: BoxDecoration(),
+                                                                                child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                    spacing: 10,
+                                                                                    children: [
+                                                                                        Text(
+                                                                                            'Titlu',
+                                                                                            style: TextStyle(
+                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                                fontSize: 15,
+                                                                                                fontFamily: 'Outfit',
+                                                                                                fontWeight: FontWeight.w500,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                            Expanded(
+                                                                child: Container(
+                                                                    height: 21,
+                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                    child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                                        spacing: 8,
+                                                                        children: [
+                                                                            Container(
+                                                                                clipBehavior: Clip.antiAlias,
+                                                                                decoration: BoxDecoration(),
+                                                                                child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                    spacing: 10,
+                                                                                    children: [
+                                                                                        Text(
+                                                                                            'Titlu',
+                                                                                            style: TextStyle(
+                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                                fontSize: 15,
+                                                                                                fontFamily: 'Outfit',
+                                                                                                fontWeight: FontWeight.w500,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        ],
+                                                    ),
+                                                ),
+                                                Container(
+                                                    width: double.infinity,
+                                                    height: 40,
+                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                    decoration: ShapeDecoration(
+                                                        color: const Color(0xFFACACD2) /* containerColor2 */,
+                                                        shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(16),
+                                                        ),
+                                                    ),
+                                                    child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                        spacing: 16,
+                                                        children: [
+                                                            Container(
+                                                                width: 56,
+                                                                height: 21,
+                                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                child: Row(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                    spacing: 8,
+                                                                    children: [
+                                                                        Container(
+                                                                            clipBehavior: Clip.antiAlias,
+                                                                            decoration: BoxDecoration(),
+                                                                            child: Row(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                spacing: 10,
+                                                                                children: [
+                                                                                    Text(
+                                                                                        '7',
+                                                                                        style: TextStyle(
+                                                                                            color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                            fontSize: 15,
+                                                                                            fontFamily: 'Outfit',
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
+                                                            Expanded(
+                                                                child: Container(
+                                                                    height: 21,
+                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                    child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                                        spacing: 8,
+                                                                        children: [
+                                                                            Container(
+                                                                                clipBehavior: Clip.antiAlias,
+                                                                                decoration: BoxDecoration(),
+                                                                                child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                    spacing: 10,
+                                                                                    children: [
+                                                                                        Text(
+                                                                                            'Titlu',
+                                                                                            style: TextStyle(
+                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                                fontSize: 15,
+                                                                                                fontFamily: 'Outfit',
+                                                                                                fontWeight: FontWeight.w500,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                            Expanded(
+                                                                child: Container(
+                                                                    height: 21,
+                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                    child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                                        spacing: 8,
+                                                                        children: [
+                                                                            Container(
+                                                                                clipBehavior: Clip.antiAlias,
+                                                                                decoration: BoxDecoration(),
+                                                                                child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                    spacing: 10,
+                                                                                    children: [
+                                                                                        Text(
+                                                                                            'Titlu',
+                                                                                            style: TextStyle(
+                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                                fontSize: 15,
+                                                                                                fontFamily: 'Outfit',
+                                                                                                fontWeight: FontWeight.w500,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                            Expanded(
+                                                                child: Container(
+                                                                    height: 21,
+                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                    child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                                        spacing: 8,
+                                                                        children: [
+                                                                            Container(
+                                                                                clipBehavior: Clip.antiAlias,
+                                                                                decoration: BoxDecoration(),
+                                                                                child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                    spacing: 10,
+                                                                                    children: [
+                                                                                        Text(
+                                                                                            'Titlu',
+                                                                                            style: TextStyle(
+                                                                                                color: const Color(0xFF4D4D80) /* elementColor3 */,
+                                                                                                fontSize: 15,
+                                                                                                fontFamily: 'Outfit',
+                                                                                                fontWeight: FontWeight.w500,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                            Expanded(
+                                                                child: Container(
+                                                                    height: 21,
+                                                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                                    child: Row(
+                                                                        mainAxisSize: MainAxisSize.min,
+                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                                                        spacing: 8,
+                                                                        children: [
+                                                                            Container(
+                                                                                clipBehavior: Clip.antiAlias,
+                                                                                decoration: BoxDecoration(),
+                                                                                child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                    spacing: 10,
+                                                                                    children: [
+                                                                                        Text(
+                                                                                            'Titlu',
                                                                                             style: TextStyle(
                                                                                                 color: const Color(0xFF4D4D80) /* elementColor3 */,
                                                                                                 fontSize: 15,

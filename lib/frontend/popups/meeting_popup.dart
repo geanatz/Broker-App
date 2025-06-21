@@ -10,6 +10,7 @@ import 'package:broker_app/frontend/components/buttons/flex_buttons2.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
+import 'package:broker_app/backend/services/auth_service.dart';
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
 class TimeInputFormatter extends TextInputFormatter {
@@ -272,14 +273,20 @@ class _MeetingPopupState extends State<MeetingPopup> {
         int.parse(timeParts[1]),
       );
 
+      // Obtine datele consultantului curent
+      final authService = AuthService();
+      final consultantData = await authService.getCurrentConsultantData();
+      final consultantName = consultantData?['name'] ?? 'Consultant necunoscut';
+      final consultantToken = consultantData?['token'] ?? '';
+
       // Creeaza obiectul MeetingData
       final meetingData = MeetingData(
         clientName: _clientNameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         dateTime: finalDateTime,
         type: _selectedType,
-        consultantId: '', // Va fi setat de service
-        consultantName: '', // Va fi setat de service
+        consultantToken: consultantToken,
+        consultantName: consultantName,
       );
 
       Map<String, dynamic> result;
@@ -290,9 +297,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
       }
 
       if (result['success']) {
-        // Invalideaza cache-urile pentru a reflecta modificarile
-        _splashService.invalidateMeetingsCache();
-        _splashService.invalidateTimeSlotsCache();
+        // FIX: Invalidează și reîncarcă imediat cache-urile pentru actualizare instantanee
+        await _splashService.invalidateAllMeetingCaches();
         
         if (mounted) {
           Navigator.of(context).pop();
@@ -361,9 +367,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
       debugPrint("Delete result: $result");
       
       if (result['success']) {
-        // Invalideaza cache-urile pentru a reflecta modificarile
-        _splashService.invalidateMeetingsCache();
-        _splashService.invalidateTimeSlotsCache();
+        // FIX: Invalidează și reîncarcă imediat cache-urile pentru actualizare instantanee
+        await _splashService.invalidateAllMeetingCaches();
         
         if (mounted) {
           Navigator.of(context).pop();

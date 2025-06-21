@@ -1,13 +1,13 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/components/items/light_item7.dart';
 import 'package:broker_app/frontend/components/items/dark_item7.dart';
 
 import '../../backend/services/clients_service.dart';
-import '../../backend/services/splash_service.dart';
 
 /// Widget pentru panoul de intalniri
 /// 
@@ -86,7 +86,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
     }
   }
 
-  /// Incarca intalnirile viitoare din noua structura unificata
+  /// Incarca intalnirile viitoare doar pentru consultantul curent (FIX: filtrare per consultant)
   Future<void> _loadUpcomingMeetings() async {
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) {
@@ -99,21 +99,53 @@ class MeetingsPaneState extends State<MeetingsPane> {
     });
 
     try {
-      debugPrint("📋 Loading upcoming meetings from cache for consultant: $currentUserId");
+      debugPrint("📋 Loading upcoming meetings for current consultant only: $currentUserId");
       
-      // Obtine toate intalnirile din cache-ul din splash (instant)
-      final allMeetings = await SplashService().getCachedMeetings();
+      // FIX: Folosește serviciul de clienți pentru a obține doar întâlnirile consultantului curent
+      final clientService = ClientUIService();
+      final consultantMeetings = await clientService.firebaseService.getAllMeetings();
       final now = DateTime.now();
       
-      // Filtreaza doar intalnirile viitoare
-      final futureAppointments = allMeetings.where((meeting) {
-        return meeting.dateTime.isAfter(now);
-      }).toList();
+      // Convertește în ClientActivity și filtrează întâlnirile viitoare
+      final List<ClientActivity> futureAppointments = [];
+      
+      for (final meetingData in consultantMeetings) {
+        try {
+          final dateTime = meetingData['dateTime'] is Timestamp 
+              ? (meetingData['dateTime'] as Timestamp).toDate()
+              : DateTime.fromMillisecondsSinceEpoch(meetingData['dateTime'] ?? 0);
+          
+                     // Filtrează doar întâlnirile viitoare
+           if (dateTime.isAfter(now)) {
+             final activityType = meetingData['type'] == 'bureauDelete' 
+                 ? ClientActivityType.bureauDelete 
+                 : ClientActivityType.meeting;
+             
+             final activity = ClientActivity(
+               id: meetingData['id'] ?? '',
+               type: activityType,
+               dateTime: dateTime,
+               description: meetingData['description'],
+               additionalData: {
+                 'clientName': meetingData['clientName'],
+                 'phoneNumber': meetingData['additionalData']?['phoneNumber'] ?? '',
+                 'consultantId': meetingData['additionalData']?['consultantId'],
+                 'consultantName': meetingData['consultantName'] ?? 'Consultant',
+                 ...?(meetingData['additionalData'] as Map<String, dynamic>?),
+               },
+               createdAt: DateTime.now(),
+             );
+             futureAppointments.add(activity);
+           }
+        } catch (e) {
+          debugPrint("⚠️ Error processing meeting: $e");
+        }
+      }
 
-      // Sorteaza dupa data
+      // Sortează după data
       futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-      debugPrint("✅ Found ${allMeetings.length} total meetings, ${futureAppointments.length} future meetings (from cache)");
+      debugPrint("✅ Found ${consultantMeetings.length} total meetings, ${futureAppointments.length} future meetings for current consultant");
 
       if (mounted) {
         setState(() {
@@ -122,7 +154,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         });
       }
     } catch (e) {
-      debugPrint("❌ Error loading upcoming meetings from cache: $e");
+      debugPrint("❌ Error loading upcoming meetings for consultant: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;

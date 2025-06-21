@@ -75,19 +75,19 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       
       if (success) {
         await Future.delayed(const Duration(milliseconds: 500));
-        _navigateToMainScreen();
+        await _navigateToMainScreen();
       } else {
         // In case of error, still navigate to main screen
         debugPrint('⚠️ SPLASH_SCREEN: Preloading had errors, but continuing to main screen');
         await Future.delayed(const Duration(milliseconds: 500));
-        _navigateToMainScreen();
+        await _navigateToMainScreen();
       }
       
     } catch (e) {
       debugPrint('❌ SPLASH_SCREEN: Error during preloading: $e');
       // In case of error, still navigate to main screen
       await Future.delayed(const Duration(milliseconds: 500));
-      _navigateToMainScreen();
+      await _navigateToMainScreen();
     }
   }
 
@@ -103,11 +103,20 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
 
-  void _navigateToMainScreen() {
+  Future<void> _navigateToMainScreen() async {
     debugPrint('🚀 SPLASH_SCREEN: Navigating to MainScreen');
     debugPrint('🚀 SPLASH_SCREEN: Consultant name: ${widget.consultantData['name']}');
     debugPrint('🚀 SPLASH_SCREEN: Team name: ${widget.consultantData['team']}');
     
+    // FIX: Resetează cache-ul pentru noul consultant înainte de navigare
+    try {
+      await _splashService.resetForNewConsultant();
+      debugPrint('✅ SPLASH_SCREEN: Cache reset completed before navigation');
+    } catch (e) {
+      debugPrint('❌ SPLASH_SCREEN: Error resetting cache: $e');
+    }
+    
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => MainScreen(
@@ -241,7 +250,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   const SizedBox(height: 60),
                   
                   // Loading indicator
-                  if (!_splashService.isComplete)
+                  if (!_splashService.isInitialized)
                     SizedBox(
                       width: 20,
                       height: 20,
@@ -253,7 +262,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       ),
                     ),
                   
-                  if (_splashService.isComplete)
+                  if (_splashService.isInitialized)
                     Icon(
                       Icons.check_circle,
                       size: 20,

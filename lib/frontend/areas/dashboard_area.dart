@@ -55,12 +55,12 @@ class _DashboardAreaState extends State<DashboardArea> {
           child: Column(
             children: [
               Expanded(child: _buildConsultantsLeaderboard()),
-              const SizedBox(height: AppTheme.smallGap),
+              const SizedBox(height: AppTheme.mediumGap),
               Expanded(child: _buildTeamsLeaderboard()),
             ],
           ),
         ),
-        const SizedBox(width: AppTheme.smallGap),
+        const SizedBox(width: AppTheme.mediumGap),
         // Coloana dreapta - Widget-uri informative
         Expanded(
           flex: 1,
@@ -84,13 +84,13 @@ class _DashboardAreaState extends State<DashboardArea> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header cu navigare luni
+            // Header cu navigare luni pentru consultanti
             WidgetHeader6(
               title: 'Top consultanti',
-              dateText: DateFormat('MMMM yyyy', 'ro').format(_dashboardService.selectedMonth),
-              onPrevDateTap: _dashboardService.goToPreviousMonth,
-              onNextDateTap: _dashboardService.goToNextMonth,
-              onDateTextTap: _dashboardService.goToCurrentMonth,
+              dateText: DateFormat('MMMM yyyy', 'ro').format(_dashboardService.selectedMonthConsultants),
+              onPrevDateTap: _dashboardService.goToPreviousMonthConsultants,
+              onNextDateTap: _dashboardService.goToNextMonthConsultants,
+              onDateTextTap: _dashboardService.goToCurrentMonthConsultants,
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -139,13 +139,13 @@ class _DashboardAreaState extends State<DashboardArea> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header cu navigare luni
+            // Header cu navigare luni pentru echipe
             WidgetHeader6(
               title: 'Top echipe',
-              dateText: DateFormat('MMMM yyyy', 'ro').format(_dashboardService.selectedMonth),
-              onPrevDateTap: _dashboardService.goToPreviousMonth,
-              onNextDateTap: _dashboardService.goToNextMonth,
-              onDateTextTap: _dashboardService.goToCurrentMonth,
+              dateText: DateFormat('MMMM yyyy', 'ro').format(_dashboardService.selectedMonthTeams),
+              onPrevDateTap: _dashboardService.goToPreviousMonthTeams,
+              onNextDateTap: _dashboardService.goToNextMonthTeams,
+              onDateTextTap: _dashboardService.goToCurrentMonthTeams,
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -189,10 +189,18 @@ class _DashboardAreaState extends State<DashboardArea> {
       width: 600,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.widgetBackground,
+        color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(32),
         ),
+        shadows: const [
+          BoxShadow(
+            color: Color(0x3F000000),
+            blurRadius: 4,
+            offset: Offset(0, 4),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -235,13 +243,11 @@ class _DashboardAreaState extends State<DashboardArea> {
           ),
           const SizedBox(height: 8),
           
-          // Meetings list (daca exista)
-          if (meetings.isNotEmpty) ...[
-            ...meetings.map((meeting) => Container(
+          // 1. PRIMA POZIȚIE: Duty agent section
+          if (_dashboardService.dutyAgent != null) ...[
+            Container(
               width: double.infinity,
-              height: 52,
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: ShapeDecoration(
                 color: AppTheme.containerColor1,
                 shape: RoundedRectangleBorder(
@@ -250,39 +256,39 @@ class _DashboardAreaState extends State<DashboardArea> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Text(
-                      meeting.clientName,
-                      style: AppTheme.safeOutfit(
-                        color: AppTheme.elementColor2,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  Text(
+                    'Agent serviciu',
+                    style: AppTheme.safeOutfit(
+                      color: AppTheme.elementColor2,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  SizedBox(
-                    width: 104,
+                  GestureDetector(
+                    onTap: () {
+                      // Debug: forțează reîncărcarea agentului de serviciu
+                      _dashboardService.forceReloadDutyAgent();
+                    },
                     child: Text(
-                      _extractPhoneFromMeeting(meeting),
+                      _dashboardService.dutyAgent ?? 'N/A',
                       textAlign: TextAlign.right,
                       style: AppTheme.safeOutfit(
                         color: AppTheme.elementColor1,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
               ),
-            )),
+            ),
             const SizedBox(height: 8),
           ],
           
-          // Statistics cards row
+          // 2. A DOUA POZIȚIE: Statistics cards row
           SizedBox(
             width: double.infinity,
             child: Row(
@@ -299,42 +305,52 @@ class _DashboardAreaState extends State<DashboardArea> {
             ),
           ),
           
-          // Duty agent section
-          if (_dashboardService.dutyAgent != null) ...[
+          // 3. A TREIA POZIȚIE: Meetings list (daca exista)
+          if (meetings.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: ShapeDecoration(
-                color: AppTheme.containerColor1,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+            Column(
+              spacing: 8, // Folosesc spacing în loc de marginBottom
+              children: meetings.map((meeting) => Container(
+                width: double.infinity,
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: ShapeDecoration(
+                  color: AppTheme.containerColor1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Agent curatenie',
-                    style: AppTheme.safeOutfit(
-                      color: AppTheme.elementColor2,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w500,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        meeting.clientName,
+                        style: AppTheme.safeOutfit(
+                          color: AppTheme.elementColor2,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                  ),
-                  Text(
-                    _dashboardService.dutyAgent ?? 'N/A',
-                    textAlign: TextAlign.right,
-                    style: AppTheme.safeOutfit(
-                      color: AppTheme.elementColor1,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: 104,
+                      child: Text(
+                        _extractPhoneFromMeeting(meeting),
+                        textAlign: TextAlign.right,
+                        style: AppTheme.safeOutfit(
+                          color: AppTheme.elementColor1,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              )).toList(),
             ),
           ],
         ],
@@ -350,7 +366,7 @@ class _DashboardAreaState extends State<DashboardArea> {
         decoration: ShapeDecoration(
           color: AppTheme.containerColor1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           ),
         ),
         child: Column(
@@ -380,7 +396,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                 textAlign: TextAlign.center,
                 style: AppTheme.safeOutfit(
                   color: AppTheme.elementColor2,
-                  fontSize: 19,
+                  fontSize: 17,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -409,14 +425,15 @@ class _DashboardAreaState extends State<DashboardArea> {
       height: 21,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: List.generate(headers.length, (index) => Expanded(
-          flex: flexValues[index],
-          child: Container(
+        children: [
+          // Prima coloană cu lățime fixă de 80px
+          Container(
+            width: 80,
             height: 21,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             alignment: Alignment.centerLeft,
             child: Text(
-              headers[index],
+              headers[0],
               style: AppTheme.safeOutfit(
                 color: AppTheme.elementColor2,
                 fontSize: 15,
@@ -424,7 +441,24 @@ class _DashboardAreaState extends State<DashboardArea> {
               ),
             ),
           ),
-        )),
+          // Restul coloanelor cu Expanded
+          ...List.generate(headers.length - 1, (index) => Expanded(
+            flex: flexValues[index + 1],
+            child: Container(
+              height: 21,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                headers[index + 1],
+                style: AppTheme.safeOutfit(
+                  color: AppTheme.elementColor2,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          )),
+        ],
       ),
     );
   }
@@ -449,7 +483,7 @@ class _DashboardAreaState extends State<DashboardArea> {
           ),
           child: Row(
             children: [
-              _buildTableCell('${index + 1}', flex: 1),
+              _buildTableCell('${index + 1}', isFirstColumn: true),
               _buildTableCell(consultant.name, flex: 3, isName: true),
               _buildTableCell('${consultant.formsCompleted}', flex: 2),
               _buildTableCell('${consultant.meetingsScheduled}', flex: 2),
@@ -462,24 +496,25 @@ class _DashboardAreaState extends State<DashboardArea> {
 
   /// Construieste tabelul pentru echipe
   Widget _buildTeamsTable(List<TeamRanking> teams) {
-    return ListView.builder(
+    return ListView.separated(
+      padding: EdgeInsets.zero,
       itemCount: teams.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final team = teams[index];
         return Container(
           width: double.infinity,
-          height: 48,
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: ShapeDecoration(
             color: AppTheme.containerColor2,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
           child: Row(
             children: [
-              _buildTableCell((index + 1).toString(), flex: 1),
+              _buildTableCell((index + 1).toString(), isFirstColumn: true),
               _buildTableCell(team.teamName, flex: 3, isName: true),
               _buildTableCell(team.memberCount.toString(), flex: 2),
               _buildTableCell(team.formsCompleted.toString(), flex: 2),
@@ -492,7 +527,25 @@ class _DashboardAreaState extends State<DashboardArea> {
   }
 
   /// Construieste o celula de tabel
-  Widget _buildTableCell(String text, {int flex = 1, bool isName = false}) {
+  Widget _buildTableCell(String text, {int flex = 1, bool isName = false, bool isFirstColumn = false}) {
+    if (isFirstColumn) {
+      // Prima coloană cu lățime fixă de 80px
+      return Container(
+        width: 80,
+        height: 21,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: AppTheme.safeOutfit(
+            color: isName ? AppTheme.elementColor2 : AppTheme.elementColor3,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+    
     return Expanded(
       flex: flex,
       child: Container(

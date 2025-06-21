@@ -91,6 +91,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Folosește serviciile pre-încărcate din splash
     _clientService = _splashService.clientUIService;
     
+    // FIX: Resetează cache-ul pentru consultant curent la început
+    _initializeForCurrentConsultant();
+    
     // Initializeaza sidebar service
     _sidebarService = SidebarService(
       onAreaChanged: _handleAreaChanged,
@@ -116,6 +119,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     // Asculta schimbarile de brightness pentru modul auto
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// FIX: Inițializează aplicația pentru consultantul curent
+  Future<void> _initializeForCurrentConsultant() async {
+    try {
+      // Resetează cache-ul pentru consultant/echipa curentă
+      await _splashService.resetForNewConsultant();
+      
+      debugPrint('✅ MAIN_SCREEN: Successfully initialized for current consultant');
+    } catch (e) {
+      debugPrint('❌ MAIN_SCREEN: Error initializing for current consultant: $e');
+    }
   }
   
   @override
