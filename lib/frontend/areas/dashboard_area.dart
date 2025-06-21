@@ -64,11 +64,7 @@ class _DashboardAreaState extends State<DashboardArea> {
         // Coloana dreapta - Widget-uri informative
         Expanded(
           flex: 1,
-          child: Column(
-            children: [
-              _buildCombinedMeetingsAndStatsWidget(),
-            ],
-          ),
+          child: _buildCombinedMeetingsAndStatsWidget(),
         ),
       ],
     );
@@ -112,7 +108,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTableHeader(['Pozitie', 'Nume', 'Formulare', 'Intalniri']),
+                    _buildTableHeader(['Pozitie', 'Nume', 'Formulare', 'Intalniri'], [1, 3, 2, 2]),
                     const SizedBox(height: 8),
                     Expanded(
                       child: consultants.isEmpty
@@ -167,7 +163,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTableHeader(['Pozitie', 'Nume', 'Membri', 'Formulare', 'Intalniri']),
+                    _buildTableHeader(['Pozitie', 'Nume', 'Membri', 'Formulare', 'Intalniri'], [1, 3, 2, 2, 2]),
                     const SizedBox(height: 8),
                     Expanded(
                       child: teams.isEmpty
@@ -189,161 +185,159 @@ class _DashboardAreaState extends State<DashboardArea> {
     final meetings = _dashboardService.upcomingMeetings.take(5).toList(); // Maximum 5 meetings
     final stats = _dashboardService.consultantStats;
     
-    return Expanded(
-      child: Container(
-        width: 600,
-        padding: const EdgeInsets.all(8),
-        decoration: ShapeDecoration(
-          color: AppTheme.widgetBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
-          ),
+    return Container(
+      width: 600,
+      padding: const EdgeInsets.all(8),
+      decoration: ShapeDecoration(
+        color: AppTheme.widgetBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Container(
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 24,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: const BoxDecoration(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Statistici',
+                          style: AppTheme.safeOutfit(
+                            color: AppTheme.elementColor1,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Meetings list (daca exista)
+          if (meetings.isNotEmpty) ...[
+            ...meetings.map((meeting) => Container(
               width: double.infinity,
+              height: 52,
+              margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: ShapeDecoration(
+                color: AppTheme.containerColor1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: Container(
-                      height: 24,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: const BoxDecoration(),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Statistici',
-                            style: AppTheme.safeOutfit(
-                              color: AppTheme.elementColor1,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            
-            // Meetings list (daca exista)
-            if (meetings.isNotEmpty) ...[
-              ...meetings.map((meeting) => Container(
-                width: double.infinity,
-                height: 52,
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: ShapeDecoration(
-                  color: AppTheme.containerColor1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        meeting.clientName,
-                        style: AppTheme.safeOutfit(
-                          color: AppTheme.elementColor2,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 104,
-                      child: Text(
-                        _extractPhoneFromMeeting(meeting),
-                        textAlign: TextAlign.right,
-                        style: AppTheme.safeOutfit(
-                          color: AppTheme.elementColor1,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-              const SizedBox(height: 8),
-            ],
-            
-            // Statistics cards row
-            SizedBox(
-              width: double.infinity,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Forms card
-                  _buildStatCard('assets/formIcon.svg', '${stats?.formsCompletedThisMonth ?? 0} formulare'),
-                  const SizedBox(width: 10),
-                  // Meetings card
-                  _buildStatCard('assets/meetingIcon.svg', '${stats?.totalMeetingsScheduled ?? 0} intalniri'),
-                ],
-              ),
-            ),
-            
-            // Duty agent section
-            if (_dashboardService.dutyAgent != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: ShapeDecoration(
-                  color: AppTheme.containerColor1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Agent curatenie',
+                    child: Text(
+                      meeting.clientName,
                       style: AppTheme.safeOutfit(
                         color: AppTheme.elementColor2,
-                        fontSize: 19,
+                        fontSize: 17,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Text(
-                      _dashboardService.dutyAgent ?? 'N/A',
+                  ),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 104,
+                    child: Text(
+                      _extractPhoneFromMeeting(meeting),
                       textAlign: TextAlign.right,
                       style: AppTheme.safeOutfit(
                         color: AppTheme.elementColor1,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            )),
+            const SizedBox(height: 8),
+          ],
+          
+          // Statistics cards row
+          SizedBox(
+            width: double.infinity,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Forms card
+                _buildStatCard('assets/formIcon.svg', '${stats?.formsCompletedThisMonth ?? 0} formulare'),
+                const SizedBox(width: 10),
+                // Meetings card
+                _buildStatCard('assets/meetingIcon.svg', '${stats?.totalMeetingsScheduled ?? 0} intalniri'),
+              ],
+            ),
+          ),
+          
+          // Duty agent section
+          if (_dashboardService.dutyAgent != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: ShapeDecoration(
+                color: AppTheme.containerColor1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
               ),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Agent curatenie',
+                    style: AppTheme.safeOutfit(
+                      color: AppTheme.elementColor2,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    _dashboardService.dutyAgent ?? 'N/A',
+                    textAlign: TextAlign.right,
+                    style: AppTheme.safeOutfit(
+                      color: AppTheme.elementColor1,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -408,20 +402,21 @@ class _DashboardAreaState extends State<DashboardArea> {
   }
 
   /// Construieste header-ul pentru tabele
-  Widget _buildTableHeader(List<String> headers) {
+  Widget _buildTableHeader(List<String> headers, List<int> flexValues) {
+    assert(headers.length == flexValues.length, 'Headers and flexValues must have the same length');
     return Container(
       width: double.infinity,
       height: 21,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: headers.map((header) => Expanded(
+        children: List.generate(headers.length, (index) => Expanded(
+          flex: flexValues[index],
           child: Container(
             height: 21,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             alignment: Alignment.centerLeft,
             child: Text(
-              header,
+              headers[index],
               style: AppTheme.safeOutfit(
                 color: AppTheme.elementColor2,
                 fontSize: 15,
@@ -429,7 +424,7 @@ class _DashboardAreaState extends State<DashboardArea> {
               ),
             ),
           ),
-        )).toList(),
+        )),
       ),
     );
   }
@@ -453,20 +448,11 @@ class _DashboardAreaState extends State<DashboardArea> {
             ),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: _buildTableCell('${index + 1}'),
-              ),
-              Expanded(
-                child: _buildTableCell(consultant.name),
-              ),
-              Expanded(
-                child: _buildTableCell('${consultant.formsCompleted}'),
-              ),
-              Expanded(
-                child: _buildTableCell('${consultant.meetingsScheduled}'),
-              ),
+              _buildTableCell('${index + 1}', flex: 1),
+              _buildTableCell(consultant.name, flex: 3, isName: true),
+              _buildTableCell('${consultant.formsCompleted}', flex: 2),
+              _buildTableCell('${consultant.meetingsScheduled}', flex: 2),
             ],
           ),
         );

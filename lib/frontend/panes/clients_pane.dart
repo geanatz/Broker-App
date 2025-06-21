@@ -200,8 +200,7 @@ class _ClientsPaneState extends State<ClientsPane> {
         shadows: [AppTheme.widgetShadow],
       ),
       child: isApeluri 
-          ? Expanded(
-            child: Column(
+          ? Column(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -218,8 +217,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                   // Lista de clienti expandabila pentru Apeluri
                   Expanded(child: _buildClientsList(category)),
                 ],
-              ),
-          )
+              )
           : Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.start,
