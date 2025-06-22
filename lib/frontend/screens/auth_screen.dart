@@ -74,13 +74,15 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _navigateTo(AuthStep step) {
-    debugPrint('🟦 AUTH_SCREEN: Navigating to step: $step');
+    debugPrint('🟦 AUTH_SCREEN: Navigating from $_currentStep to $step');
+    debugPrint('🟦 AUTH_SCREEN: Current _registrationToken: ${_registrationToken?.substring(0, 8)}...');
     setState(() {
       _currentStep = step;
       _errorMessage = null; // Reseteaza erorile la navigare
       _successMessage = null; // Reseteaza mesajele de succes la navigare
     });
     debugPrint('🟦 AUTH_SCREEN: Navigation completed to: $_currentStep');
+    debugPrint('🟦 AUTH_SCREEN: _registrationToken after navigation: ${_registrationToken?.substring(0, 8)}...');
   }
 
   Future<void> _handleLoginAttempt(String consultantName, String password) async {
@@ -122,6 +124,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _handleRegisterAttempt(String consultantName, String password, String confirmPassword, String team) async {
     debugPrint('🔵 AUTH_SCREEN: Starting registration attempt for: $consultantName');
+    debugPrint('🔵 AUTH_SCREEN: Current _currentStep before registration: $_currentStep');
+    debugPrint('🔵 AUTH_SCREEN: Current _registrationToken before registration: $_registrationToken');
     
     final result = await _authService.registerConsultant(
       consultantName: consultantName,
@@ -130,30 +134,42 @@ class _AuthScreenState extends State<AuthScreen> {
       team: team,
     );
     
-    debugPrint('🔵 AUTH_SCREEN: Registration result: ${result['success']}');
+    debugPrint('🔵 AUTH_SCREEN: Registration completed with result:');
+    debugPrint('🔵 AUTH_SCREEN: - success: ${result['success']}');
+    debugPrint('🔵 AUTH_SCREEN: - message: ${result['message']}');
+    debugPrint('🔵 AUTH_SCREEN: - token present: ${result['token'] != null}');
     if (result['token'] != null) {
-      debugPrint('🔵 AUTH_SCREEN: Token received: ${result['token'].substring(0, 8)}...');
+      debugPrint('🔵 AUTH_SCREEN: - token value: ${result['token'].substring(0, 8)}...');
     }
     
     if (mounted) {
       if (result['success']) {
-        debugPrint('🟡 AUTH_SCREEN: Registration successful, navigating to AccountCreated');
+        debugPrint('🟡 AUTH_SCREEN: Registration successful, starting state update');
+        debugPrint('🟡 AUTH_SCREEN: Token from result: ${result['token']}');
         
         setState(() {
           _successMessage = result['message'];
           _errorMessage = null;
           _registrationToken = result['token']; // Salvam token-ul pentru afisare in popup
-          debugPrint('🔵 AUTH_SCREEN: Setting _registrationToken: ${_registrationToken?.substring(0, 8)}...');
-          _navigateTo(AuthStep.accountCreated); // Navigam la popup-ul de confirmare cont creat
+          debugPrint('🔵 AUTH_SCREEN: _registrationToken set to: ${_registrationToken?.substring(0, 8)}...');
         });
         
+        debugPrint('🟢 AUTH_SCREEN: State updated, now navigating to accountCreated');
+        debugPrint('🟢 AUTH_SCREEN: _registrationToken before navigation: ${_registrationToken?.substring(0, 8)}...');
+        
+        // Separăm navigația de setState pentru debugging mai clar
+        _navigateTo(AuthStep.accountCreated);
+        
         debugPrint('🟢 AUTH_SCREEN: Navigation to AccountCreated completed');
+        debugPrint('🟢 AUTH_SCREEN: Current _currentStep after navigation: $_currentStep');
+        debugPrint('🟢 AUTH_SCREEN: Current _registrationToken after navigation: ${_registrationToken?.substring(0, 8)}...');
       } else {
         debugPrint('🔴 AUTH_SCREEN: Registration failed: ${result['message']}');
         setState(() {
           _errorMessage = result['message'];
           _successMessage = null;
         });
+        debugPrint('🔴 AUTH_SCREEN: Error state set, staying on registration step');
       }
     } else {
       debugPrint('🔴 AUTH_SCREEN: Widget not mounted after registration');
@@ -234,9 +250,18 @@ class _AuthScreenState extends State<AuthScreen> {
         break;
       case AuthStep.accountCreated:
         debugPrint('🟪 AUTH_SCREEN: Building AccountCreatedPopup with token: ${_registrationToken?.substring(0, 8)}...');
+        debugPrint('🟪 AUTH_SCREEN: Full token available: ${_registrationToken != null}');
+        debugPrint('🟪 AUTH_SCREEN: Token length: ${_registrationToken?.length}');
+        if (_registrationToken == null) {
+          debugPrint('🔴 AUTH_SCREEN: WARNING - Token is null when building AccountCreatedPopup!');
+        }
         popupToShow = AccountCreatedPopup(
           token: _registrationToken ?? 'Token indisponibil',
-          onContinue: () => _navigateTo(AuthStep.login),
+          onContinue: () {
+            debugPrint('🟪 AUTH_SCREEN: AccountCreatedPopup onContinue called');
+            debugPrint('🟪 AUTH_SCREEN: Navigating from accountCreated to login');
+            _navigateTo(AuthStep.login);
+          },
         );
         break;
       case AuthStep.tokenEntry:

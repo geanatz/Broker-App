@@ -50,7 +50,9 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
   @override
   Widget build(BuildContext context) {
     debugPrint('🟫 TOKEN_MODULE: Building AccountCreatedPopup');
-    debugPrint('🟫 TOKEN_MODULE: Token: ${widget.token.substring(0, 8)}...');
+    debugPrint('🟫 TOKEN_MODULE: Token received: ${widget.token.substring(0, 8)}...');
+    debugPrint('🟫 TOKEN_MODULE: Full token: ${widget.token}');
+    debugPrint('🟫 TOKEN_MODULE: Token length: ${widget.token.length}');
     
     const double popupWidth = 360.0;
     const double popupHeight = 220.0;

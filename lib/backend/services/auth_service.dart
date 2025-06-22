@@ -137,6 +137,8 @@ class AuthService {
       );
 
       debugPrint('🟢 AUTH_SERVICE: Registration completed successfully with token structure');
+      debugPrint('🟢 AUTH_SERVICE: Returning token: ${consultantToken.substring(0, 8)}...');
+      debugPrint('🟢 AUTH_SERVICE: Token length: ${consultantToken.length}');
       return {
         'success': true,
         'token': consultantToken,
