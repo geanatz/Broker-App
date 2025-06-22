@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -136,9 +137,6 @@ class MeetingService {
           );
           
           debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
-          
-          // FIX: Forțează notificare listeners pentru actualizare UI
-          clientService.notifyListeners();
         } else {
           debugPrint('⚠️ MEETING_SERVICE: Client not found in ClientUIService after multiple retries: $phoneNumber');
         }
@@ -216,6 +214,7 @@ class MeetingService {
           'phoneNumber': phoneNumber, // Numarul real al clientului
           'consultantName': meetingData.consultantName,
           'consultantToken': await _firebaseService.getCurrentConsultantToken(), // FIX: Salvăm consultantToken pentru identificare
+          'consultantId': FirebaseAuth.instance.currentUser?.uid, // FIX: Salvăm și consultantId pentru ownership verification
           'isClientless': isClientless,
         },
       );

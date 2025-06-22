@@ -1,13 +1,14 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/components/items/light_item7.dart';
 import 'package:broker_app/frontend/components/items/dark_item7.dart';
 
 import '../../backend/services/clients_service.dart';
+import '../../backend/services/splash_service.dart';
+import '../../backend/services/firebase_service.dart';
 
 /// Widget pentru panoul de intalniri
 /// 
@@ -31,6 +32,9 @@ class MeetingsPaneState extends State<MeetingsPane> {
   // Firebase reference
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
+  // FIX: Adăugat SplashService pentru listener automat
+  final SplashService _splashService = SplashService();
+  
   // Formatter pentru date
   DateFormat? dateFormatter;
   DateFormat? timeFormatter;
@@ -44,6 +48,9 @@ class MeetingsPaneState extends State<MeetingsPane> {
   @override
   void initState() {
     super.initState();
+    // FIX: Adaugă listener pentru actualizare automată când se modifică datele în SplashService
+    _splashService.addListener(_onSplashServiceChanged);
+    
     // Foloseste serviciul pre-incarcat din splash - accesez firebaseService din ClientUIService
     _initializeFormatters();
     _startPeriodicRefresh();
@@ -52,7 +59,17 @@ class MeetingsPaneState extends State<MeetingsPane> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    // FIX: Cleanup listener pentru a evita memory leaks
+    _splashService.removeListener(_onSplashServiceChanged);
     super.dispose();
+  }
+
+  /// FIX: Callback pentru refresh automat când se schimbă datele în SplashService
+  void _onSplashServiceChanged() {
+    if (mounted) {
+      debugPrint('📋 MEETINGS_PANE: SplashService changed, refreshing meetings automatically');
+      _loadUpcomingMeetings();
+    }
   }
   
   void _initializeFormatters() async {
@@ -86,11 +103,11 @@ class MeetingsPaneState extends State<MeetingsPane> {
     }
   }
 
-  /// Incarca intalnirile viitoare doar pentru consultantul curent (FIX: filtrare per consultant)
+  /// Incarca intalnirile viitoare doar pentru consultantul curent (FIX: folosește cache SplashService)
   Future<void> _loadUpcomingMeetings() async {
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) {
-      debugPrint("User not authenticated");
+      debugPrint("❌ MEETINGS_PANE: User not authenticated");
       return;
     }
 
@@ -99,53 +116,63 @@ class MeetingsPaneState extends State<MeetingsPane> {
     });
 
     try {
-      debugPrint("📋 Loading upcoming meetings for current consultant only: $currentUserId");
+      debugPrint("📋 MEETINGS_PANE: Loading upcoming meetings for current consultant: $currentUserId");
       
-      // FIX: Folosește serviciul de clienți pentru a obține doar întâlnirile consultantului curent
-      final clientService = ClientUIService();
-      final consultantMeetings = await clientService.firebaseService.getAllMeetings();
+      // FIX: Folosește cache-ul din SplashService pentru performanță și sincronizare
+      final allMeetings = await _splashService.getCachedMeetings();
       final now = DateTime.now();
       
-      // Convertește în ClientActivity și filtrează întâlnirile viitoare
+      // Filtrează întâlnirile viitoare ale consultantului curent  
       final List<ClientActivity> futureAppointments = [];
+      final currentConsultantToken = await _getCurrentConsultantToken();
       
-      for (final meetingData in consultantMeetings) {
-        try {
-          final dateTime = meetingData['dateTime'] is Timestamp 
-              ? (meetingData['dateTime'] as Timestamp).toDate()
-              : DateTime.fromMillisecondsSinceEpoch(meetingData['dateTime'] ?? 0);
-          
-                     // Filtrează doar întâlnirile viitoare
-           if (dateTime.isAfter(now)) {
-             final activityType = meetingData['type'] == 'bureauDelete' 
-                 ? ClientActivityType.bureauDelete 
-                 : ClientActivityType.meeting;
-             
-             final activity = ClientActivity(
-               id: meetingData['id'] ?? '',
-               type: activityType,
-               dateTime: dateTime,
-               description: meetingData['description'],
-               additionalData: {
-                 'clientName': meetingData['clientName'],
-                 'phoneNumber': meetingData['additionalData']?['phoneNumber'] ?? '',
-                 'consultantId': meetingData['additionalData']?['consultantId'],
-                 'consultantName': meetingData['consultantName'] ?? 'Consultant',
-                 ...?(meetingData['additionalData'] as Map<String, dynamic>?),
-               },
-               createdAt: DateTime.now(),
-             );
-             futureAppointments.add(activity);
-           }
-        } catch (e) {
-          debugPrint("⚠️ Error processing meeting: $e");
+      for (final meeting in allMeetings) {
+        // FIX: Debug pentru fiecare întâlnire
+        debugPrint('🔍 MEETINGS_PANE: Checking meeting: ${meeting.additionalData?['clientName']}');
+        debugPrint('  - Meeting dateTime: ${meeting.dateTime}');
+        debugPrint('  - Current time (now): $now');
+        debugPrint('  - Is in future: ${meeting.dateTime.isAfter(now)}');
+        debugPrint('  - Meeting consultantId: ${meeting.additionalData?['consultantId']}');
+        debugPrint('  - Current user ID: $currentUserId');
+        debugPrint('  - Current consultant token: ${currentConsultantToken?.substring(0, 8) ?? 'NULL'}');
+        
+        // Verifică dacă întâlnirea este în viitor
+        if (!meeting.dateTime.isAfter(now)) {
+          debugPrint('  - ❌ Rejected: Meeting is in the past');
+          continue;
         }
+        
+        // Verifică dacă întâlnirea aparține consultantului curent
+        final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+        
+        // FIX: Pentru întâlnirile noi, folosește consultantId
+        if (meetingConsultantId != null) {
+          if (meetingConsultantId != currentUserId) {
+            debugPrint('  - ❌ Rejected: Consultant ID does not match (using consultantId)');
+            continue;
+          }
+        } else {
+          // FIX: Pentru întâlnirile existente (fără consultantId), folosește consultantToken
+          final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+          if (meetingConsultantToken == null) {
+            debugPrint('  - ❌ Rejected: No consultant identification found');
+            continue;
+          }
+          
+          if (meetingConsultantToken != currentConsultantToken) {
+            debugPrint('  - ❌ Rejected: Consultant token does not match (using consultantToken fallback)');
+            continue;
+          }
+        }
+        
+        debugPrint('  - ✅ Accepted: Future meeting for current consultant');
+        futureAppointments.add(meeting);
       }
 
       // Sortează după data
       futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-      debugPrint("✅ Found ${consultantMeetings.length} total meetings, ${futureAppointments.length} future meetings for current consultant");
+      debugPrint("✅ MEETINGS_PANE: Found ${allMeetings.length} total meetings, ${futureAppointments.length} future meetings for current consultant");
 
       if (mounted) {
         setState(() {
@@ -154,7 +181,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         });
       }
     } catch (e) {
-      debugPrint("❌ Error loading upcoming meetings for consultant: $e");
+      debugPrint("❌ MEETINGS_PANE: Error loading upcoming meetings for consultant: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -208,6 +235,18 @@ class MeetingsPaneState extends State<MeetingsPane> {
   // Marcheaza intalnirea ca terminata (placeholder)
   void _markMeetingAsDone(String meetingId) {
     debugPrint('Mark meeting as done: $meetingId');
+  }
+  
+  /// FIX: Obține consultantToken-ul curent pentru comparația cu întâlnirile existente
+  Future<String?> _getCurrentConsultantToken() async {
+    try {
+      // Folosește NewFirebaseService pentru a obține consultantToken-ul curent
+      final firebaseService = NewFirebaseService();
+      return await firebaseService.getCurrentConsultantToken();
+    } catch (e) {
+      debugPrint('❌ MEETINGS_PANE: Error getting current consultant token: $e');
+      return null;
+    }
   }
 
   @override

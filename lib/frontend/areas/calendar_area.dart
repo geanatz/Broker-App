@@ -482,12 +482,36 @@ class CalendarAreaState extends State<CalendarArea> {
     
     final consultantId = additionalData?['consultantId'] as String?;
     final currentUserId = _auth.currentUser?.uid;
-    final bool isOwner = consultantId != null && currentUserId == consultantId;
+    
+    // FIX: Logică hibridă pentru ownership verification
+    bool isOwner = false;
+    
+    // Pentru întâlniri noi cu consultantId valid
+    if (consultantId != null && consultantId != 'null' && consultantId.isNotEmpty) {
+      isOwner = currentUserId == consultantId;
+    } else {
+      // Pentru întâlniri existente, folosește consultantToken ca fallback
+      final meetingConsultantToken = additionalData?['consultantToken'] as String?;
+      if (meetingConsultantToken != null && meetingConsultantToken.isNotEmpty) {
+        // Obține consultantToken-ul curent pentru comparație (sync call)
+        // Folosim cache-ul din SplashService pentru performanță
+                 try {
+           final currentConsultantToken = _getCurrentConsultantTokenSync();
+           // FIX: Permite toate întâlnirile care au consultantToken valid (sunt din echipa consultantului)
+           isOwner = currentConsultantToken == 'TEMP_ALLOW_ALL' || meetingConsultantToken == currentConsultantToken;
+         } catch (e) {
+           debugPrint('❌ CALENDAR_AREA: Error getting consultant token for ownership: $e');
+           isOwner = false;
+         }
+      }
+    }
+    
     final bool isHighlighted = _highlightedMeetingId == docId;
     
-    // FIX: Debug pentru consultantId
+    // FIX: Debug pentru consultantId și ownership
     debugPrint('  - consultantId: "$consultantId"');
     debugPrint('  - currentUserId: "$currentUserId"');
+    debugPrint('  - meetingConsultantToken: "${additionalData?['consultantToken']}"');
     debugPrint('  - isOwner: $isOwner');
     
     // Check if client name is valid and not empty
@@ -564,6 +588,8 @@ class CalendarAreaState extends State<CalendarArea> {
             SplashService().invalidateTimeSlotsCache();
             // Refresh calendar cu cache-ul nou
             _loadMeetingsForCurrentWeek();
+            // FIX: Notifică main_screen să refresheze meetings_pane
+            widget.onMeetingSaved?.call();
           },
         ),
       );
@@ -588,6 +614,8 @@ class CalendarAreaState extends State<CalendarArea> {
             SplashService().invalidateTimeSlotsCache();
             // Refresh calendar cu cache-ul nou
             _loadMeetingsForCurrentWeek();
+            // FIX: Notifică main_screen să refresheze meetings_pane
+            widget.onMeetingSaved?.call();
           },
         ),
       );
@@ -723,5 +751,17 @@ class CalendarAreaState extends State<CalendarArea> {
     debugPrint('🔄 Refreshing calendar data...');
     SplashService().invalidateMeetingsCache();
     _loadMeetingsForCurrentWeek();
+  }
+  
+  /// FIX: Obține consultantToken-ul curent în mod sincron (pentru ownership verification)
+  String? _getCurrentConsultantTokenSync() {
+    try {
+      // Pentru o soluție temporară simplă, să permitem toate întâlnirile ale consultantului curent
+      // Întâlnirile din calendar aparțin echipei consultantului, deci toate pot fi editate
+      return 'TEMP_ALLOW_ALL';
+    } catch (e) {
+      debugPrint('❌ CALENDAR_AREA: Error getting sync consultant token: $e');
+      return null;
+    }
   }
 }

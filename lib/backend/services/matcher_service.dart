@@ -366,9 +366,11 @@ class MatcherService extends ChangeNotifier {
     // Gaseste criteriile bancii si returneaza suma maxima configurata
     final criteria = getBankCriteria(bankName);
     if (criteria != null) {
+      debugPrint('💰 MATCHER_SERVICE: calculateLoanAmount for $bankName = ${criteria.maxLoanAmount} lei');
       return criteria.maxLoanAmount;
     }
     // Fallback pentru banci necunoscute
+    debugPrint('⚠️ MATCHER_SERVICE: Bank $bankName not found, using fallback amount');
     return 50000.0; // 50.000 lei fallback
   }
 
@@ -415,16 +417,34 @@ class MatcherService extends ChangeNotifier {
       if (criteriaJson != null) {
         try {
           final List<dynamic> criteriaList = json.decode(criteriaJson);
-          _bankCriteriaList = criteriaList
+          final loadedCriteria = criteriaList
               .map((criteria) => BankCriteria.fromMap(criteria))
               .toList();
-          debugPrint('Loaded ${_bankCriteriaList.length} bank criteria for consultant');
+          
+          // FIX: Verifică dacă criteriile încărcate sunt din versiunea veche (cu valori mici pentru maxLoanAmount)
+          bool hasOldCriteria = false;
+          for (final criteria in loadedCriteria) {
+            if (criteria.maxLoanAmount < 100000) { // Dacă maxLoanAmount e sub 100.000, sunt criterii vechi
+              hasOldCriteria = true;
+              break;
+            }
+          }
+          
+          if (hasOldCriteria) {
+            debugPrint('⚠️ MATCHER_SERVICE: Detected old criteria with small maxLoanAmount values, updating to new defaults');
+            _setDefaultCriteria();
+            await _saveBankCriteria(); // Salvează noile criterii
+          } else {
+            _bankCriteriaList = loadedCriteria;
+            debugPrint('✅ MATCHER_SERVICE: Loaded ${_bankCriteriaList.length} up-to-date bank criteria');
+          }
         } catch (e) {
-          debugPrint('Error parsing bank criteria: $e');
+          debugPrint('❌ MATCHER_SERVICE: Error parsing bank criteria: $e');
           _setDefaultCriteria();
         }
       } else {
         // Nu exista criterii salvate, folosim criteriile implicite
+        debugPrint('ℹ️ MATCHER_SERVICE: No saved criteria found, using defaults');
         _setDefaultCriteria();
       }
     } else {
@@ -439,52 +459,57 @@ class MatcherService extends ChangeNotifier {
         bankName: 'BCR',
         minIncome: 2500,
         maxAgeMale: 60,
-        maxAgeFemale: 57,
-        minFicoScore: 500,
-        maxLoanAmount: 55000, // 55.000 lei
+        maxAgeFemale: 58,
+        minFicoScore: 600,
+        maxLoanAmount: 200000,
       ),
       BankCriteria(
         bankName: 'BRD',
         minIncome: 2000,
-        maxAgeMale: 63,
-        maxAgeFemale: 60,
-        minFicoScore: 450,
-        maxLoanAmount: 50000, // 50.000 lei
+        maxAgeMale: 60,
+        maxAgeFemale: 58,
+        minFicoScore: 0,
+        maxLoanAmount: 250000,
       ),
       BankCriteria(
         bankName: 'Raiffeisen',
         minIncome: 1500,
-        maxAgeMale: 65,
-        maxAgeFemale: 62,
-        minFicoScore: 400,
-        maxLoanAmount: 60000, // 60.000 lei
+        maxAgeMale: 60,
+        maxAgeFemale: 58,
+        minFicoScore: 600,
+        maxLoanAmount: 250000,
       ),
       BankCriteria(
-        bankName: 'UniCredit',
-        minIncome: 1800,
+        bankName: 'CEC Bank',
+        minIncome: 2500,
         maxAgeMale: 62,
         maxAgeFemale: 59,
-        minFicoScore: 400,
-        maxLoanAmount: 45000, // 45.000 lei
+        minFicoScore: 540,
+        maxLoanAmount: 200000,
       ),
       BankCriteria(
         bankName: 'ING',
-        minIncome: 2200,
-        maxAgeMale: 64,
-        maxAgeFemale: 61,
-        minFicoScore: 480,
-        maxLoanAmount: 52000, // 52.000 lei
+        minIncome: 3000,
+        maxAgeMale: 60,
+        maxAgeFemale: 58,
+        minFicoScore: 0,
+        maxLoanAmount: 200000,
       ),
       BankCriteria(
         bankName: 'Garanti',
-        minIncome: 1600,
+        minIncome: 2500,
         maxAgeMale: 63,
         maxAgeFemale: 60,
         minFicoScore: 420,
-        maxLoanAmount: 48000, // 48.000 lei
+        maxLoanAmount: 200000,
       ),
     ];
-    debugPrint('Set default bank criteria (${_bankCriteriaList.length} banks)');
+    debugPrint('🏦 MATCHER_SERVICE: Set default bank criteria (${_bankCriteriaList.length} banks)');
+    
+    // FIX: Debug pentru a verifica valorile setate
+    for (final criteria in _bankCriteriaList) {
+      debugPrint('  - ${criteria.bankName}: maxLoanAmount = ${criteria.maxLoanAmount} lei');
+    }
   }
 
   /// Salveaza criteriile bancilor in SharedPreferences
@@ -613,7 +638,16 @@ class MatcherService extends ChangeNotifier {
     _setDefaultCriteria();
     await _saveBankCriteria();
     notifyListeners();
-    debugPrint('Reset bank criteria to defaults');
+    debugPrint('🔄 MATCHER_SERVICE: Reset bank criteria to defaults');
+  }
+  
+  /// FIX: Forțează actualizarea la criteriile noi pentru toate consultantii
+  Future<void> forceUpdateToNewCriteria() async {
+    debugPrint('🔧 MATCHER_SERVICE: Force updating to new criteria with higher maxLoanAmount values');
+    _setDefaultCriteria();
+    await _saveBankCriteria();
+    notifyListeners();
+    debugPrint('✅ MATCHER_SERVICE: Successfully updated to new criteria');
   }
 
   /// Sterge toate criteriile pentru un consultant (folosit la stergerea contului)

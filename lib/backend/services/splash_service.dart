@@ -284,7 +284,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Convertește `Map<String, dynamic>` în ClientActivity (FIX: păstrează consultantName)
+  /// Convertește `Map<String, dynamic>` în ClientActivity (FIX: păstrează consultantName și consultantId)
   ClientActivity _convertMapToClientActivity(Map<String, dynamic> meetingMap) {
     // Convertește timestamp-ul la DateTime
     final dateTime = meetingMap['dateTime'] is Timestamp 
@@ -310,6 +310,8 @@ class SplashService extends ChangeNotifier {
         'clientName': additionalData['clientName'] ?? meetingMap['clientName'] ?? '',
         'consultantName': meetingMap['consultantName'] ?? additionalData['consultantName'] ?? '',
         'consultantToken': meetingMap['consultantToken'] ?? '',
+        // FIX: Propagă consultantId din additionalData pentru ownership verification
+        'consultantId': additionalData['consultantId'],
         // Asigură-te că alte date importante sunt păstrate
         'type': meetingMap['type'] ?? 'meeting',
       },

@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../backend/services/matcher_service.dart';
 import '../components/headers/widget_header1.dart';
-import '../components/buttons/flex_buttons1.dart';
 import '../components/fields/input_field1.dart';
 
-/// Popup pentru editarea criteriilor unei banci
+/// Popup pentru vizualizarea criteriilor unei banci
 /// 
-/// Aceasta componenta permite editarea tuturor criteriilor
-/// pentru o banca specifica si salvarea modificarilor
+/// Aceasta componenta afiseaza criteriile unei banci
+/// in mod read-only (doar pentru vizualizare)
 class BankPopup extends StatefulWidget {
   final BankCriteria bankCriteria;
   final MatcherService matcherService;
@@ -35,9 +34,9 @@ class _BankPopupState extends State<BankPopup> {
   void initState() {
     super.initState();
     
-    // Initializeaza controlerele cu valorile curente
+    // FIX: Initializeaza controlerele cu valorile curente formatate (read-only)
     _minIncomeController = TextEditingController(
-      text: widget.bankCriteria.minIncome.toStringAsFixed(0)
+      text: _formatWithCommas(widget.bankCriteria.minIncome.toStringAsFixed(0))
     );
     _maxAgeMaleController = TextEditingController(
       text: widget.bankCriteria.maxAgeMale.toString()
@@ -46,7 +45,7 @@ class _BankPopupState extends State<BankPopup> {
       text: widget.bankCriteria.maxAgeFemale.toString()
     );
     _minFicoController = TextEditingController(
-      text: widget.bankCriteria.minFicoScore.toStringAsFixed(0)
+      text: _formatWithCommas(widget.bankCriteria.minFicoScore.toStringAsFixed(0))
     );
     _maxLoanAmountController = TextEditingController(
       text: _formatWithCommas(widget.bankCriteria.maxLoanAmount.toStringAsFixed(0))
@@ -91,50 +90,7 @@ class _BankPopupState extends State<BankPopup> {
     super.dispose();
   }
 
-  /// Salveaza modificarile criteriilor
-  void _saveChanges() async {
-    try {
-      // Valideaza si creeaza criteriile actualizate
-      final updatedCriteria = BankCriteria(
-        bankName: widget.bankCriteria.bankName,
-        minIncome: double.parse(_minIncomeController.text.replaceAll(',', '')),
-        maxAgeMale: int.parse(_maxAgeMaleController.text),
-        maxAgeFemale: int.parse(_maxAgeFemaleController.text),
-        minFicoScore: double.parse(_minFicoController.text),
-        maxLoanAmount: double.parse(_maxLoanAmountController.text.replaceAll(',', '')),
-      );
-      
-      // Salveaza prin MatcherService
-      await widget.matcherService.updateBankCriteria(updatedCriteria);
-      
-      // Inchide popup-ul
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-      
-      // Afiseaza mesaj de confirmare
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Criteriile pentru ${widget.bankCriteria.bankName} au fost salvate'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      // Afiseaza eroare daca valorile nu sunt valide
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Valorile introduse nu sunt valide'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
+  // FIX: Eliminată metoda _saveChanges - popup-ul este doar pentru vizualizare
 
   @override
   Widget build(BuildContext context) {
@@ -182,18 +138,19 @@ class _BankPopupState extends State<BankPopup> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Venit minim
+                  // Venit minim (read-only)
                   InputField1(
                     title: 'Venit minim',
                     controller: _minIncomeController,
-                    hintText: 'Introduceti venitul minim',
+                    hintText: 'Venit minim',
                     keyboardType: TextInputType.number,
                     enableCommaFormatting: true,
+                    enabled: false, // FIX: Read-only
                   ),
                   
                   const SizedBox(height: AppTheme.smallGap),
                   
-                  // Varsta maxima row (barbati si femei)
+                  // Varsta maxima row (barbati si femei) - read-only
                   Row(
                     children: [
                       Expanded(
@@ -206,6 +163,7 @@ class _BankPopupState extends State<BankPopup> {
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(2),
                           ],
+                          enabled: false, // FIX: Read-only
                         ),
                       ),
                       const SizedBox(width: AppTheme.smallGap),
@@ -219,6 +177,7 @@ class _BankPopupState extends State<BankPopup> {
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(2),
                           ],
+                          enabled: false, // FIX: Read-only
                         ),
                       ),
                     ],
@@ -226,40 +185,35 @@ class _BankPopupState extends State<BankPopup> {
                   
                   const SizedBox(height: AppTheme.smallGap),
                   
-                  // FICO minim
+                  // FICO minim (read-only)
                   InputField1(
                     title: 'FICO minim',
                     controller: _minFicoController,
-                    hintText: 'Scorul FICO minim',
+                    hintText: 'FICO minim',
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(3),
                     ],
+                    enabled: false, // FIX: Read-only
                   ),
                   
                   const SizedBox(height: AppTheme.smallGap),
                   
-                  // Suma maxima de credit
+                  // Plafon (read-only)
                   InputField1(
-                    title: 'Suma maxima credit',
+                    title: 'Plafon', // FIX: Schimbat din "Suma maxima credit"
                     controller: _maxLoanAmountController,
-                    hintText: 'Suma maxima',
+                    hintText: 'Plafon',
                     keyboardType: TextInputType.number,
                     enableCommaFormatting: true,
+                    enabled: false, // FIX: Read-only
                   ),
                 ],
               ),
             ),
             
-            const SizedBox(height: AppTheme.smallGap),
-            
-            // Save button with icon
-            FlexButtonSingle(
-              text: 'Salveaza',
-              iconPath: 'assets/saveIcon.svg',
-              onTap: _saveChanges,
-            ),
+            // FIX: Eliminat butonul de salvare - popup-ul este doar pentru vizualizare
           ],
         ),
       ),
