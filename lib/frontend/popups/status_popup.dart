@@ -93,6 +93,66 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   void initState() {
     super.initState();
     _generateTimeSlots();
+    _initializeExistingStatus();
+  }
+
+  /// Initializeaza status-ul existent pentru editare
+  void _initializeExistingStatus() {
+    debugPrint('🔍 STATUS_POPUP: Initializing existing status for client: ${widget.client.name}');
+    debugPrint('🔍 STATUS_POPUP: Discussion status: ${widget.client.discussionStatus}');
+    debugPrint('🔍 STATUS_POPUP: Scheduled DateTime: ${widget.client.scheduledDateTime}');
+    debugPrint('🔍 STATUS_POPUP: Additional info: ${widget.client.additionalInfo}');
+    
+    if (widget.client.discussionStatus != null && widget.client.discussionStatus!.isNotEmpty) {
+      _selectedStatus = widget.client.discussionStatus;
+      debugPrint('✅ STATUS_POPUP: Loaded existing status: $_selectedStatus');
+      
+      // Incarca informatiile aditionale daca exista
+      if (widget.client.additionalInfo != null && widget.client.additionalInfo!.isNotEmpty) {
+        _statusController.text = widget.client.additionalInfo!;
+        debugPrint('✅ STATUS_POPUP: Loaded additional info: ${widget.client.additionalInfo}');
+      }
+      
+      // IMPORTANT: Daca are data programata, incarca-o INDIFERENT de status
+      if (widget.client.scheduledDateTime != null) {
+        _selectedDate = DateTime(
+          widget.client.scheduledDateTime!.year,
+          widget.client.scheduledDateTime!.month,
+          widget.client.scheduledDateTime!.day,
+        );
+        
+        debugPrint('✅ STATUS_POPUP: Loaded existing date: $_selectedDate');
+        
+        // Pentru amanat, incarca ora in timeController
+        if (_selectedStatus == 'Amanat') {
+          _timeController.text = DateFormat('HH:mm').format(widget.client.scheduledDateTime!);
+          debugPrint('✅ STATUS_POPUP: Loaded existing time for Amanat: ${_timeController.text}');
+        }
+        
+        // Pentru acceptat, incarca ora ca selectedTimeSlot si pregateste orele disponibile
+        if (_selectedStatus == 'Acceptat') {
+          _selectedTimeSlot = DateFormat('HH:mm').format(widget.client.scheduledDateTime!);
+          debugPrint('✅ STATUS_POPUP: Loaded existing time for Acceptat: $_selectedTimeSlot');
+          
+          // IMPORTANT: Adaugă ora existentă în lista disponibilă IMEDIAT pentru a fi afișată în UI
+          if (_selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot!)) {
+            _availableTimeSlots.add(_selectedTimeSlot!);
+            _availableTimeSlots.sort();
+            debugPrint('✅ STATUS_POPUP: Added existing time slot to available list: $_selectedTimeSlot');
+          }
+          
+          // Incarca orele disponibile pentru data selectata pentru completarea listei
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _loadAvailableTimeSlotsForDate();
+          });
+        }
+      } else {
+        debugPrint('⚠️ STATUS_POPUP: Client has status but no scheduledDateTime');
+      }
+    } else {
+      // Nu are status existent, va fi setat automat cand se selecteaza un status
+      debugPrint('🔄 STATUS_POPUP: No existing status, waiting for user to select status');
+    }
   }
 
   @override
@@ -164,6 +224,87 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     }
   }
 
+  /// Seteaza data si ora implicita in functie de tipul de status
+  Future<void> _setDefaultDateTimeForStatus(String? status) async {
+    if (status == null) return;
+    
+    debugPrint('🔄 STATUS_POPUP: Setting default date/time for status: $status');
+    
+    if (status == 'Acceptat') {
+      // Pentru Acceptat, foloseste cea mai apropiata data valida din calendar
+      await _setNextAvailableDateTime();
+    } else if (status == 'Amanat') {
+      // Pentru Amanat, foloseste data si ora curenta
+      final now = DateTime.now();
+      final currentTime = DateFormat('HH:mm').format(now);
+      
+      if (mounted) {
+        setState(() {
+          _selectedDate = now;
+          _timeController.text = currentTime;
+          _selectedTimeSlot = null; // Nu e relevant pentru amanat
+        });
+      }
+      
+      debugPrint('✅ STATUS_POPUP: Set current date/time for Amanat: ${DateFormat('dd/MM/yy').format(now)} at $currentTime');
+    }
+    // Pentru Refuzat nu setam nimic (nu are campuri de data/ora)
+  }
+
+  /// Seteaza automat cea mai apropiata data si ora valida pentru programare
+  Future<void> _setNextAvailableDateTime() async {
+    try {
+      debugPrint('🔄 STATUS_POPUP: Searching for next available date/time...');
+      
+      // Cauta urmatoarea zi lucratoare disponibila (maxim 30 de zile in viitor)
+      DateTime currentDate = DateTime.now();
+      DateTime? availableDate;
+      String? availableTime;
+      
+      for (int i = 0; i < 30; i++) {
+        final testDate = currentDate.add(Duration(days: i));
+        
+        // Verifica daca este zi lucratoare
+        if (testDate.weekday == DateTime.saturday || testDate.weekday == DateTime.sunday) {
+          continue;
+        }
+        
+        // Obtine orele disponibile pentru aceasta data
+        final availableSlots = await _meetingService.getAvailableTimeSlots(testDate);
+        
+        if (availableSlots.isNotEmpty) {
+          availableDate = testDate;
+          availableTime = availableSlots.first; // Prima ora disponibila
+          debugPrint('✅ STATUS_POPUP: Found available slot: ${DateFormat('dd/MM/yy').format(availableDate)} at $availableTime');
+          break;
+        }
+      }
+      
+      // Seteaza datele gasite
+      if (availableDate != null) {
+        if (mounted) {
+          setState(() {
+            _selectedDate = availableDate;
+            _selectedTimeSlot = availableTime;
+            _availableTimeSlots = [availableTime!]; // Va fi actualizat cand se incarca toate orele
+            
+            // Pre-completeaza si timpul pentru amanare cu acelasi timp
+            _timeController.text = availableTime;
+          });
+        }
+        
+        // Incarca toate orele disponibile pentru data selectata
+        await _loadAvailableTimeSlotsForDate();
+        
+        debugPrint('✅ STATUS_POPUP: Auto-completed with next available slot: ${DateFormat('dd/MM/yy').format(availableDate)} at $availableTime');
+      } else {
+        debugPrint('⚠️ STATUS_POPUP: No available dates found in the next 30 days');
+      }
+    } catch (e) {
+      debugPrint('❌ STATUS_POPUP: Error setting next available date/time: $e');
+    }
+  }
+
   /// Incarca orele disponibile pentru data selectata
   Future<void> _loadAvailableTimeSlotsForDate() async {
     if (_selectedDate == null) return;
@@ -175,11 +316,18 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       if (mounted) {
         setState(() {
           _availableTimeSlots = availableSlots;
+          
+          // Daca se incarca pentru prima data din edit mode si timeSlot-ul selectat nu e disponibil,
+          // adauga-l la lista pentru a permite editarea
+          if (_selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot)) {
+            _availableTimeSlots.add(_selectedTimeSlot!);
+            _availableTimeSlots.sort(); // Sorteaza lista din nou
+          }
         });
       }
       
-      // Afiseaza mesaj daca nu sunt ore disponibile
-      if (_availableTimeSlots.isEmpty) {
+      // Afiseaza mesaj daca nu sunt ore disponibile (dar nu pentru edit mode)
+      if (_availableTimeSlots.isEmpty && _selectedTimeSlot == null) {
         _showError('Nu sunt ore disponibile in aceasta data');
       }
     } catch (e) {
@@ -193,15 +341,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     return _selectedStatus == 'Acceptat' || _selectedStatus == 'Amanat';
   }
 
-  /// Genereaza textul pentru placeholder-ul datei (data curenta)
-  String get _currentDateText {
-    return DateFormat('dd/MM/yy').format(DateTime.now());
-  }
 
-  /// Genereaza textul pentru placeholder-ul orei (ora curenta)
-  String get _currentTimeText {
-    return DateFormat('HH:mm').format(DateTime.now());
-  }
 
   /// Salveaza statusul clientului
   Future<void> _saveClientStatus() async {
@@ -305,6 +445,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           await _clientService.moveClientToRecente(
             widget.client.phoneNumber,
             additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
+            scheduledDateTime: finalDateTime, // IMPORTANT: Transmite data și ora întâlnirii
           );
           break;
           
@@ -451,11 +592,14 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                 _selectedDate = null;
                                 _timeController.clear();
                                 _selectedTimeSlot = null;
+                              } else {
+                                // Seteaza automat data si ora in functie de tipul de status
+                                _setDefaultDateTimeForStatus(value);
                               }
                             });
                           }
                         },
-                        hintText: 'Selecteaza statusul',
+                        hintText: 'Selecteaza status',
                       ),
                       
                       const SizedBox(height: 8),
@@ -470,7 +614,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                 title: _selectedStatus == 'Acceptat' ? 'Data intalnire' : 'Data amanare',
                                 inputText: _selectedDate != null 
                                   ? DateFormat('dd/MM/yy').format(_selectedDate!)
-                                  : _currentDateText,
+                                  : '',
                                 trailingIconPath: "assets/calendarIcon.svg",
                                 onTap: _selectDate,
                               ),
@@ -484,7 +628,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                   ? InputField1(
                                       title: 'Ora amanare',
                                       controller: _timeController,
-                                      hintText: _currentTimeText,
+                                      hintText: null,
                                       keyboardType: TextInputType.number,
                                       inputFormatters: [
                                         FilteringTextInputFormatter.digitsOnly,
@@ -507,8 +651,8 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                           });
                                         }
                                       },
-                                      hintText: _selectedDate != null ? "00:00" : "Alege data",
-                                      enabled: _selectedDate != null && _availableTimeSlots.isNotEmpty,
+                                      hintText: null,
+                                      enabled: _selectedDate != null,
                                     ),
                             ),
                           ],

@@ -98,8 +98,8 @@ class _LightItem7State extends State<LightItem7> {
       fontWeight: FontWeight.w500,
     );
 
-    // Determine if we should show an icon (either SVG or IconData)
-    final bool hasIcon = widget.svgAsset != null || widget.icon != null;
+    // Determine if we should show an icon (either SVG or IconData) - ONLY on hover
+    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && _isHovered;
 
     Widget iconButton = hasIcon ? Container(
       width: 48.0,

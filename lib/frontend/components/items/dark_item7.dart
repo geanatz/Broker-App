@@ -9,7 +9,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 ///
 /// The item has a specific padding and a height of 64. The text content is
 /// vertically centered. The icon container has its own padding and rounded corners.
-class DarkItem7 extends StatelessWidget {
+/// Icons are shown only on hover.
+class DarkItem7 extends StatefulWidget {
   /// The primary title text.
   final String title;
 
@@ -79,15 +80,22 @@ class DarkItem7 extends StatelessWidget {
   });
 
   @override
+  State<DarkItem7> createState() => _DarkItem7State();
+}
+
+class _DarkItem7State extends State<DarkItem7> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     // DarkItem7 represents focused state - no hover color changes needed
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor2;
-    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor3;
-    final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor2;
-    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
-    final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent;
-    final double effectiveMainBorderRadius = mainBorderRadius ?? AppTheme.borderRadiusMedium;
-    final double effectiveIconContainerBorderRadius = iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? AppTheme.containerColor2;
+    final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor3;
+    final Color effectiveDescriptionColor = widget.descriptionColor ?? AppTheme.elementColor2;
+    final Color effectiveIconColor = widget.iconColor ?? AppTheme.elementColor3;
+    final Color effectiveIconContainerColor = widget.iconContainerColor ?? Colors.transparent;
+    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;
@@ -108,11 +116,11 @@ class DarkItem7 extends StatelessWidget {
       fontWeight: FontWeight.w500,
     );
 
-    // Determine if we should show an icon (either SVG or IconData)
-    final bool hasIcon = svgAsset != null || icon != null;
+    // Determine if we should show an icon (either SVG or IconData) - ONLY on hover
+    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && _isHovered;
 
     Widget iconButton = hasIcon ? GestureDetector(
-      onTap: onIconTap,
+      onTap: widget.onIconTap,
       child: Container(
         width: iconContainerSize,
         height: iconContainerSize,
@@ -127,17 +135,17 @@ class DarkItem7 extends StatelessWidget {
             child: SizedBox(
               width: 24.0,
               height: 24.0,
-              child: svgAsset != null
+              child: widget.svgAsset != null
                   ? SvgPicture.asset(
-                      svgAsset!,
+                      widget.svgAsset!,
                       width: 24.0,
                       height: 24.0,
                       colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
                       fit: BoxFit.contain,
                     )
-                  : icon != null
+                  : widget.icon != null
                       ? Icon(
-                          icon,
+                          widget.icon,
                           size: 24.0,
                           color: effectiveIconColor,
                         )
@@ -165,14 +173,14 @@ class DarkItem7 extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: titleStyle,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
                 SizedBox(height: textColumnSpacing),
                 Text(
-                  description,
+                  widget.description,
                   style: descriptionStyle,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -186,17 +194,21 @@ class DarkItem7 extends StatelessWidget {
       ),
     );
 
-    // Make the entire item clickable (no hover behavior for focused state)
-    return onTap != null
-        ? Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
-              child: content,
-            ),
-          )
-        : content;
+    // Make the entire item clickable with hover behavior
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: widget.onTap != null
+          ? Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onTap,
+                borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
+                child: content,
+              ),
+            )
+          : content,
+    );
   }
 }
 

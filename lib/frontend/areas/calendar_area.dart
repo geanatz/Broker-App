@@ -312,7 +312,7 @@ class CalendarAreaState extends State<CalendarArea> {
       child: Row(
         children: [
           // Spatiu pentru coloana cu orele
-          const SizedBox(width: 56),
+          const SizedBox(width: 48),
           
           // Zilele saptamanii folosind Text2
           ...List.generate(CalendarService.daysPerWeek, (index) {
@@ -408,7 +408,7 @@ class CalendarAreaState extends State<CalendarArea> {
               children: [
                 // Ora
                 SizedBox(
-                  width: 64,
+                  width: 48,
                   child: Text2(
                     text: hour,
                     color: AppTheme.elementColor2,

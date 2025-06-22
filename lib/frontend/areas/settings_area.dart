@@ -7,8 +7,6 @@ import 'package:broker_app/frontend/components/headers/widget_header1.dart';
 import 'package:broker_app/frontend/components/headers/field_header1.dart';
 import 'package:broker_app/frontend/components/items/outlined_item6.dart';
 import 'package:broker_app/frontend/components/items/dark_item6.dart';
-import 'package:broker_app/frontend/components/items/light_item7.dart';
-import 'package:intl/intl.dart';
 
 /// Area pentru setari care urmeaza exact design-ul specificat
 /// Permite schimbarea modului light/dark si a culorii temei cu actualizari in timp real
@@ -100,11 +98,6 @@ class _SettingsAreaState extends State<SettingsArea> {
           
           // Sectiunea pentru culoarea temei
           _buildThemeColorSection(),
-          
-          const SizedBox(height: AppTheme.smallGap),
-          
-          // Sectiunea pentru bancile disponibile
-          _buildBanksSection(),
         ],
       ),
     );
@@ -371,84 +364,7 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 
-  /// Construieste sectiunea pentru bancile disponibile (doar afișare)
-  Widget _buildBanksSection() {
-    final hardcodedBanks = _settingsService.getHardcodedBanks();
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.smallGap),
-      clipBehavior: Clip.antiAlias,
-      decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Field Header pentru banci
-          FieldHeader1(title: 'Banci disponibile (doar vizualizare)'),
-          
-          const SizedBox(height: AppTheme.smallGap),
-          
-          // Lista cu băncile hardcodate folosind LightItem7
-          ...List.generate(
-            hardcodedBanks.length,
-            (index) {
-              final bank = hardcodedBanks[index];
-              
-              return Padding(
-                padding: EdgeInsets.only(bottom: index < hardcodedBanks.length - 1 ? 8.0 : 0),
-                child: LightItem7(
-                  title: bank['name'],
-                  description: '${NumberFormat('#,###').format(bank['maxLoanAmount'])} lei - ${bank['interestRate']}%',
-                  svgAsset: 'assets/viewIcon.svg',
-                  onTap: () => _showBankInfo(bank),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// Afiseaza informații despre o bancă hardcodată (doar vizualizare)
-  void _showBankInfo(Map<String, dynamic> bank) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(bank['name']),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Vârstă: ${bank['minAge']}-${bank['maxAge']} ani'),
-            Text('Venit minim: ${bank['minIncome']} RON'),
-            Text('Suma maximă: ${NumberFormat('#,###').format(bank['maxLoanAmount'])} RON'),
-            Text('Dobândă: ${bank['interestRate']}%'),
-            Text('Termen maxim: ${bank['maxLoanTerm']} luni'),
-            const SizedBox(height: 8),
-            Text('Tipuri credite:', style: TextStyle(fontWeight: FontWeight.bold)),
-            ...((bank['creditTypes'] as List).map((type) => Text('• $type'))),
-            const SizedBox(height: 8),
-            Text('Cerințe:', style: TextStyle(fontWeight: FontWeight.bold)),
-            ...((bank['requirements'] as List).map((req) => Text('• $req'))),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Închide'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 

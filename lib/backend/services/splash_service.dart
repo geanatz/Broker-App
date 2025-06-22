@@ -180,6 +180,12 @@ class SplashService extends ChangeNotifier {
     // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
     await _refreshMeetingsCache();
     notifyListeners(); // Notifică UI-ul că datele s-au schimbat
+    
+    // FIX: Notifică și ClientUIService să se refresh-eze pentru sincronizare
+    if (_clientUIService != null) {
+      debugPrint('🔄 SPLASH_SERVICE: Notifying ClientUIService to refresh after meeting changes');
+      await _clientUIService!.loadClientsFromFirebase();
+    }
   }
 
   /// Invalidează cache-ul de meetings (să fie apelat când se adaugă/modifică/șterge meeting)
@@ -198,6 +204,12 @@ class SplashService extends ChangeNotifier {
     // Reîncarcă imediat pentru actualizare instantanee
     await _refreshMeetingsCache();
     notifyListeners();
+    
+    // FIX: Notifică și ClientUIService să se refresh-eze pentru sincronizare
+    if (_clientUIService != null) {
+      debugPrint('🔄 SPLASH_SERVICE: Notifying ClientUIService to refresh after meeting changes');
+      await _clientUIService!.loadClientsFromFirebase();
+    }
   }
 
   /// Obtine slot-urile de timp disponibile din cache sau refreshuie

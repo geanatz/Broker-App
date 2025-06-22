@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:intl/intl.dart';
 import 'dashboard_service.dart';
 import 'firebase_service.dart';
+import 'splash_service.dart';
 
 /// Tipul de intalnire
 enum MeetingType {
@@ -92,6 +93,43 @@ class MeetingService {
     }
   }
 
+  /// FIX: Notifica clients_service ca o intalnire a fost creata pentru un client
+  Future<void> _notifyClientMeetingCreated(String phoneNumber, DateTime dateTime) async {
+    try {
+      // Skip notificarea pentru intalnirile fara client specific
+      if (phoneNumber.isEmpty || phoneNumber == 'no_client_meetings') {
+        debugPrint('📅 MEETING_SERVICE: Skipping client notification for general meeting');
+        return;
+      }
+
+      // Importam SplashService pentru a accesa ClientUIService
+      final splashService = SplashService();
+      if (splashService.isInitialized) {
+        final clientService = splashService.clientUIService;
+        
+        // Verifica daca clientul exista in lista locala
+        final clientsWithPhone = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
+        final client = clientsWithPhone.isNotEmpty ? clientsWithPhone.first : null;
+        if (client != null) {
+          debugPrint('📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: ${client.name}');
+          
+          // Muta clientul in categoria "Recente" cu status "Acceptat"
+          await clientService.moveClientToRecente(
+            phoneNumber,
+            scheduledDateTime: dateTime,
+            additionalInfo: 'Intalnire programata din calendar',
+          );
+          
+          debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
+        } else {
+          debugPrint('⚠️ MEETING_SERVICE: Client not found in ClientUIService: $phoneNumber');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ MEETING_SERVICE: Error notifying client meeting created: $e');
+    }
+  }
+
   /// Notifica dashboard-ul ca o intalnire a fost stearsa
   void _notifyMeetingDeleted() {
     try {
@@ -169,6 +207,9 @@ class MeetingService {
         
         // Notifica dashboard-ul
         await _notifyMeetingCreated();
+        
+        // Notifica clients_service
+        await _notifyClientMeetingCreated(phoneNumber, meetingData.dateTime);
         
         return {'success': true, 'message': 'Intalnire creata cu succes'};
       } else {

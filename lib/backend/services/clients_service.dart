@@ -1019,19 +1019,45 @@ class ClientUIService extends ChangeNotifier {
     try {
       debugPrint('🔍 CLIENT_UI_SERVICE: loadClientsFromFirebase() called');
       
+      // Pastreaza clientul focusat curent pentru a nu pierde focus-ul din cauza auto-refresh-ului
+      final currentFocusedPhoneNumber = _focusedClient?.phoneNumber;
+      
       // Foloseste noua metoda getAllClients() din ClientsService
-      _clients = await _firebaseService.getAllClients();
+      final newClients = await _firebaseService.getAllClients();
       
-      debugPrint('🔍 CLIENT_UI_SERVICE: Loaded ${_clients.length} clients from Firebase');
+      debugPrint('🔍 CLIENT_UI_SERVICE: Loaded ${newClients.length} clients from Firebase');
       
-      // Focuseaza primul client daca exista
-      if (_clients.isNotEmpty) {
-        _focusedClient = _clients.first;
-        focusClient(_clients.first.phoneNumber); // Foloseste phoneNumber ca ID
-        debugPrint('🔍 CLIENT_UI_SERVICE: Focused client: ${_focusedClient!.name}');
+      // Actualizeaza lista de clienti
+      _clients = newClients;
+      
+      // Incearca sa pastreze clientul focusat daca inca exista
+      if (currentFocusedPhoneNumber != null) {
+        final stillExists = _clients.any((client) => client.phoneNumber == currentFocusedPhoneNumber);
+        if (stillExists) {
+          // Clientul focusat inca exista, pastreaza focus-ul
+          focusClient(currentFocusedPhoneNumber);
+          debugPrint('🔍 CLIENT_UI_SERVICE: Preserved focus on client: $currentFocusedPhoneNumber');
+        } else {
+          // Clientul focusat nu mai exista, focuseaza primul disponibil
+          if (_clients.isNotEmpty) {
+            _focusedClient = _clients.first;
+            focusClient(_clients.first.phoneNumber);
+            debugPrint('🔍 CLIENT_UI_SERVICE: Focused new client: ${_focusedClient!.name}');
+          } else {
+            _focusedClient = null;
+            debugPrint('🔍 CLIENT_UI_SERVICE: No clients found');
+          }
+        }
       } else {
-        _focusedClient = null;
-        debugPrint('🔍 CLIENT_UI_SERVICE: No clients found');
+        // Nu avea client focusat, focuseaza primul daca exista
+        if (_clients.isNotEmpty) {
+          _focusedClient = _clients.first;
+          focusClient(_clients.first.phoneNumber);
+          debugPrint('🔍 CLIENT_UI_SERVICE: Focused client: ${_focusedClient!.name}');
+        } else {
+          _focusedClient = null;
+          debugPrint('🔍 CLIENT_UI_SERVICE: No clients found');
+        }
       }
       
       notifyListeners();
@@ -1143,25 +1169,46 @@ class ClientUIService extends ChangeNotifier {
   /// Foloseste phoneNumber pentru identificare
   Future<void> removeClient(String clientPhoneNumber) async {
     try {
-      // Sterge din Firebase folosind noua structura
+      // Primul pas: sterge din lista locala IMEDIAT pentru UI responsive
+      final clientsBefore = _clients.length;
+      _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
+      final wasDeleted = _clients.length < clientsBefore;
+      
+      // Daca clientul sters era focusat, focuseaza primul client disponibil
+      if (_focusedClient?.phoneNumber == clientPhoneNumber) {
+        _focusedClient = _clients.isNotEmpty ? _clients.first : null;
+        if (_focusedClient != null) {
+          focusClient(_focusedClient!.phoneNumber);
+        }
+      }
+      
+      // Actualizeaza UI-ul imediat
+      if (wasDeleted) {
+        notifyListeners();
+      }
+      
+      // Al doilea pas: sterge din Firebase (poate sa dureze mai mult)
       final success = await _firebaseService.deleteClient(clientPhoneNumber);
       
-      if (success) {
-        // Sterge din lista locala
-        _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
+      if (!success) {
+        debugPrint('❌ Failed to delete client from Firebase: $clientPhoneNumber');
+        // Daca stergerea din Firebase a esuat, reincarca datele pentru consistenta
+        await loadClientsFromFirebase();
+      } else {
+        debugPrint('✅ Client deleted successfully from Firebase: $clientPhoneNumber');
         
-        // Daca clientul sters era focusat, focuseaza primul client disponibil
-        if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-          _focusedClient = _clients.isNotEmpty ? _clients.first : null;
-          if (_focusedClient != null) {
-            focusClient(_focusedClient!.phoneNumber);
-          }
-        }
+        // IMPORTANT: Opreste auto-refresh-ul temporar pentru a evita conflictele
+        _stopAutoRefresh();
         
-        notifyListeners();
+        // Reporneeste auto-refresh-ul dupa 5 secunde pentru a da timp Firebase-ului sa se sincronizeze
+        Timer(const Duration(seconds: 5), () {
+          _startAutoRefresh();
+        });
       }
     } catch (e) {
       debugPrint('Error removing client: $e');
+      // In caz de eroare, reincarca datele pentru consistenta
+      await loadClientsFromFirebase();
     }
   }
   
@@ -1207,6 +1254,7 @@ class ClientUIService extends ChangeNotifier {
   /// Muta un client in categoria "Recente" cu statusul "Acceptat"
   Future<void> moveClientToRecente(String clientPhoneNumber, {
     String? additionalInfo,
+    DateTime? scheduledDateTime,
   }) async {
     final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
@@ -1227,6 +1275,7 @@ class ClientUIService extends ChangeNotifier {
         category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: 'Acceptat',
+        scheduledDateTime: scheduledDateTime, // IMPORTANT: Salvează data și ora întâlnirii
         additionalInfo: additionalInfo,
         isCompleted: true, // Marcheaza ca si contorizat
       );

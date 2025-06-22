@@ -116,8 +116,8 @@ class _OutlinedItem6State extends State<OutlinedItem6> {
       fontWeight: FontWeight.w600,
     );
 
-    // Determine if we should show an icon (either SVG or IconData)
-    final bool hasIcon = widget.svgAsset != null || widget.icon != null;
+    // Determine if we should show an icon (either SVG or IconData) - ONLY on hover
+    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && _isHovered;
 
     Widget content = Container(
       width: double.infinity,

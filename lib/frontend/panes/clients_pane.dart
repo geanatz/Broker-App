@@ -120,10 +120,14 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// Construieste un item pentru un client
   Widget _buildClientItem(ClientModel client) {
     final bool isFocused = client.status == ClientStatus.focused;
+    final bool hasDiscussionStatus = client.discussionStatus != null && client.discussionStatus!.isNotEmpty;
     
     // Determina ce sa afiseze ca descriere
     String description;
-    if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
+    if (hasDiscussionStatus) {
+      // Daca are status salvat, afiseaza statusul
+      description = client.discussionStatus!;
+    } else if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
       // Pentru clientii amanati, afiseaza data si ora
       description = DateFormat('dd/MM/yy HH:mm').format(client.scheduledDateTime!);
     } else {
@@ -135,7 +139,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       return DarkItem7(
         title: client.name,
         description: description,
-        svgAsset: 'assets/doneIcon.svg',
+        svgAsset: 'assets/editIcon.svg', // Întotdeauna editIcon pentru client focusat
         onTap: () => _showClientSavePopup(client),
         onIconTap: () => _showClientSavePopup(client),
       );
@@ -143,8 +147,11 @@ class _ClientsPaneState extends State<ClientsPane> {
       return LightItem7(
         title: client.name,
         description: description,
-        svgAsset: 'assets/viewIcon.svg',
-        onTap: () => _clientService.focusClient(client.id),
+        svgAsset: 'assets/viewIcon.svg', // Întotdeauna viewIcon pentru client nefocusat
+        onTap: () {
+          // Prima data face focus pentru a afisa formularul
+          _clientService.focusClient(client.phoneNumber);
+        },
       );
     }
   }
