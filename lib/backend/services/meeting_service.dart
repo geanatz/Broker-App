@@ -107,7 +107,11 @@ class MeetingService {
       if (splashService.isInitialized) {
         final clientService = splashService.clientUIService;
         
-        // Verifica daca clientul exista in lista locala
+        // FIX: Forțează refresh-ul ClientUIService pentru a obține cel mai recent client
+        debugPrint('🔄 MEETING_SERVICE: Refreshing ClientUIService to get latest clients...');
+        await clientService.loadClientsFromFirebase();
+        
+        // Verifica daca clientul exista in lista locala actualizata
         final clientsWithPhone = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
         final client = clientsWithPhone.isNotEmpty ? clientsWithPhone.first : null;
         if (client != null) {
@@ -122,7 +126,7 @@ class MeetingService {
           
           debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
         } else {
-          debugPrint('⚠️ MEETING_SERVICE: Client not found in ClientUIService: $phoneNumber');
+          debugPrint('⚠️ MEETING_SERVICE: Client not found in ClientUIService after refresh: $phoneNumber');
         }
       }
     } catch (e) {
