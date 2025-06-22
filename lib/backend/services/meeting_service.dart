@@ -113,7 +113,18 @@ class MeetingService {
         
         // Verifica daca clientul exista in lista locala actualizata
         final clientsWithPhone = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
-        final client = clientsWithPhone.isNotEmpty ? clientsWithPhone.first : null;
+        var client = clientsWithPhone.isNotEmpty ? clientsWithPhone.first : null;
+        
+        // FIX: Dacă clientul nu se găsește, încearcă din nou după o scurtă întârziere
+        if (client == null) {
+          debugPrint('⚠️ MEETING_SERVICE: Client not found on first try, retrying after delay...');
+          await Future.delayed(const Duration(milliseconds: 1000));
+          await clientService.loadClientsFromFirebase();
+          
+          final clientsRetry = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
+          client = clientsRetry.isNotEmpty ? clientsRetry.first : null;
+        }
+        
         if (client != null) {
           debugPrint('📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: ${client.name}');
           
@@ -125,8 +136,11 @@ class MeetingService {
           );
           
           debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
+          
+          // FIX: Forțează notificare listeners pentru actualizare UI
+          clientService.notifyListeners();
         } else {
-          debugPrint('⚠️ MEETING_SERVICE: Client not found in ClientUIService after refresh: $phoneNumber');
+          debugPrint('⚠️ MEETING_SERVICE: Client not found in ClientUIService after multiple retries: $phoneNumber');
         }
       }
     } catch (e) {
@@ -211,6 +225,9 @@ class MeetingService {
         
         // Notifica dashboard-ul
         await _notifyMeetingCreated();
+        
+        // FIX: Așteaptă o mică întârziere pentru sincronizarea Firebase înainte de notificare
+        await Future.delayed(const Duration(milliseconds: 500));
         
         // Notifica clients_service
         await _notifyClientMeetingCreated(phoneNumber, meetingData.dateTime);

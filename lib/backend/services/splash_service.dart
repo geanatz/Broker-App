@@ -185,6 +185,8 @@ class SplashService extends ChangeNotifier {
     if (_clientUIService != null) {
       debugPrint('🔄 SPLASH_SERVICE: Notifying ClientUIService to refresh after meeting changes');
       await _clientUIService!.loadClientsFromFirebase();
+      // Forțează notificare UI pentru actualizare immediată
+      _clientUIService!.notifyListeners();
     }
   }
 
@@ -209,6 +211,8 @@ class SplashService extends ChangeNotifier {
     if (_clientUIService != null) {
       debugPrint('🔄 SPLASH_SERVICE: Notifying ClientUIService to refresh after meeting changes');
       await _clientUIService!.loadClientsFromFirebase();
+      // Forțează notificare UI pentru actualizare immediată
+      _clientUIService!.notifyListeners();
     }
   }
 
