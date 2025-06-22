@@ -7,6 +7,7 @@ import 'package:broker_app/frontend/modules/verify_module.dart';
 import 'package:broker_app/frontend/modules/recovery__module.dart';
 import 'package:broker_app/frontend/modules/token_module.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -29,8 +30,12 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('🟦 AUTH_SCREEN: initState called - hashCode: $hashCode');
     // Initializeaza SettingsService
     _initializeSettings();
+    
+    // Verificam daca avem un token pending de afisat
+    _checkForPendingToken();
     
     // Asculta schimbarile din SettingsService pentru actualizari in timp real ale temei
     _settingsService.addListener(_onSettingsChanged);
@@ -41,6 +46,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void dispose() {
+    debugPrint('🔴 AUTH_SCREEN: dispose called - hashCode: $hashCode');
     _settingsService.removeListener(_onSettingsChanged);
     AppTheme().removeListener(_onAppThemeChanged);
     super.dispose();
@@ -50,6 +56,33 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _initializeSettings() async {
     if (!_settingsService.isInitialized) {
       await _settingsService.initialize();
+    }
+  }
+
+  /// Verifica daca avem un token pending de afisat din localStorage
+  Future<void> _checkForPendingToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingToken = prefs.getString('pending_registration_token');
+      
+      if (pendingToken != null && pendingToken.isNotEmpty) {
+        debugPrint('🟦 AUTH_SCREEN: Found pending token: ${pendingToken.substring(0, 8)}...');
+        debugPrint('🟦 AUTH_SCREEN: Navigating to accountCreated step');
+        
+        // Setam token-ul si navigam la accountCreated
+        setState(() {
+          _registrationToken = pendingToken;
+          _currentStep = AuthStep.accountCreated;
+        });
+        
+        // Stergem token-ul din localStorage dupa ce l-am folosit
+        await prefs.remove('pending_registration_token');
+        debugPrint('🟦 AUTH_SCREEN: Pending token cleared from storage');
+      } else {
+        debugPrint('🟦 AUTH_SCREEN: No pending token found');
+      }
+    } catch (e) {
+      debugPrint('🔴 AUTH_SCREEN: Error checking pending token: $e');
     }
   }
 
@@ -126,6 +159,8 @@ class _AuthScreenState extends State<AuthScreen> {
     debugPrint('🔵 AUTH_SCREEN: Starting registration attempt for: $consultantName');
     debugPrint('🔵 AUTH_SCREEN: Current _currentStep before registration: $_currentStep');
     debugPrint('🔵 AUTH_SCREEN: Current _registrationToken before registration: $_registrationToken');
+    debugPrint('🔵 AUTH_SCREEN: Widget mounted before registration: $mounted');
+    debugPrint('🔵 AUTH_SCREEN: Widget hashCode: $hashCode');
     
     final result = await _authService.registerConsultant(
       consultantName: consultantName,
@@ -133,6 +168,10 @@ class _AuthScreenState extends State<AuthScreen> {
       confirmPassword: confirmPassword,
       team: team,
     );
+    
+    debugPrint('🔵 AUTH_SCREEN: Registration call completed');
+    debugPrint('🔵 AUTH_SCREEN: Widget mounted after registration call: $mounted');
+    debugPrint('🔵 AUTH_SCREEN: Widget hashCode after call: $hashCode');
     
     debugPrint('🔵 AUTH_SCREEN: Registration completed with result:');
     debugPrint('🔵 AUTH_SCREEN: - success: ${result['success']}');
@@ -142,10 +181,23 @@ class _AuthScreenState extends State<AuthScreen> {
       debugPrint('🔵 AUTH_SCREEN: - token value: ${result['token'].substring(0, 8)}...');
     }
     
+    // Token-ul este deja salvat in localStorage de AuthService
+    // Nu mai avem nevoie sa-l salvam din nou aici
+    
     if (mounted) {
+      debugPrint('🟢 AUTH_SCREEN: Widget is mounted, processing registration result');
       if (result['success']) {
         debugPrint('🟡 AUTH_SCREEN: Registration successful, starting state update');
         debugPrint('🟡 AUTH_SCREEN: Token from result: ${result['token']}');
+        
+        // Adaugam un mic delay pentru a permite AuthService sa termine complet
+        await Future.delayed(const Duration(milliseconds: 100));
+        
+        // Verificam din nou daca widget-ul este montat dupa delay
+        if (!mounted) {
+          debugPrint('🔴 AUTH_SCREEN: Widget unmounted during delay, but token is already saved by AuthService');
+          return;
+        }
         
         setState(() {
           _successMessage = result['message'];
@@ -156,6 +208,12 @@ class _AuthScreenState extends State<AuthScreen> {
         
         debugPrint('🟢 AUTH_SCREEN: State updated, now navigating to accountCreated');
         debugPrint('🟢 AUTH_SCREEN: _registrationToken before navigation: ${_registrationToken?.substring(0, 8)}...');
+        
+        // Verificam din nou daca widget-ul este montat inainte de navigare
+        if (!mounted) {
+          debugPrint('🔴 AUTH_SCREEN: Widget unmounted after setState, cannot navigate');
+          return;
+        }
         
         // Separăm navigația de setState pentru debugging mai clar
         _navigateTo(AuthStep.accountCreated);
@@ -173,6 +231,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } else {
       debugPrint('🔴 AUTH_SCREEN: Widget not mounted after registration');
+      debugPrint('🔴 AUTH_SCREEN: But token is already saved by AuthService for next AuthScreen instance');
     }
   }
 
@@ -195,7 +254,9 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> _handleResetPasswordAttempt(String newPassword, String confirmPassword) async {
+  Future<void> _handleResetPasswordAttempt(String currentPassword, String newPassword, String confirmPassword) async {
+    debugPrint('🔧 AUTH_SCREEN: Attempting password reset with current password');
+    
     if (_tempConsultantIdForPasswordReset == null) {
       setState(() {
         _errorMessage = "ID consultant lipsa. Reia procesul de la introducerea token-ului.";
@@ -204,8 +265,9 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    final result = await _authService.resetPasswordWithToken(
+    final result = await _authService.resetPasswordWithTokenAndCurrentPassword(
       consultantId: _tempConsultantIdForPasswordReset!,
+      currentPassword: currentPassword,
       newPassword: newPassword,
       confirmPassword: confirmPassword,
     );
@@ -213,18 +275,24 @@ class _AuthScreenState extends State<AuthScreen> {
     if (mounted) {
       if (result['success']) {
         setState(() {
-          // Chiar daca AuthService nu reseteaza parola in Firebase, sterge token-ul.
-          // Mesajul din AuthService e important.
-          _successMessage = result['message'] + " Te rugam sa te autentifici cu noua parola daca procesul backend ar fi complet.";
+          _successMessage = result['message'];
           _errorMessage = null;
           _tempConsultantIdForPasswordReset = null; // Reseteaza ID-ul temporar
-          _navigateTo(AuthStep.login); // Trimite la login dupa "resetare"
+        });
+        debugPrint('✅ AUTH_SCREEN: Password reset successful');
+        
+        // Navighează către login după un delay pentru a permite utilizatorului să citească mesajul
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            _navigateTo(AuthStep.login);
+          }
         });
       } else {
         setState(() {
           _errorMessage = result['message'];
           _successMessage = null;
         });
+        debugPrint('❌ AUTH_SCREEN: Password reset failed: ${result['message']}');
       }
     }
   }
@@ -252,6 +320,7 @@ class _AuthScreenState extends State<AuthScreen> {
         debugPrint('🟪 AUTH_SCREEN: Building AccountCreatedPopup with token: ${_registrationToken?.substring(0, 8)}...');
         debugPrint('🟪 AUTH_SCREEN: Full token available: ${_registrationToken != null}');
         debugPrint('🟪 AUTH_SCREEN: Token length: ${_registrationToken?.length}');
+        debugPrint('🟪 AUTH_SCREEN: Widget mounted: $mounted');
         if (_registrationToken == null) {
           debugPrint('🔴 AUTH_SCREEN: WARNING - Token is null when building AccountCreatedPopup!');
         }
@@ -263,6 +332,7 @@ class _AuthScreenState extends State<AuthScreen> {
             _navigateTo(AuthStep.login);
           },
         );
+        debugPrint('🟪 AUTH_SCREEN: AccountCreatedPopup instance created successfully');
         break;
       case AuthStep.tokenEntry:
         debugPrint('🟪 AUTH_SCREEN: Building TokenPopup');
@@ -290,6 +360,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🟦 AUTH_SCREEN: build called - hashCode: $hashCode, step: $_currentStep, mounted: $mounted');
     return Scaffold(
       // Folosim un Stack pentru a putea afisa popup-urile peste un fundal comun
       // Fundalul este gradientul definit in AppTheme

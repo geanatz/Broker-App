@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'firebase_service.dart';
 import 'settings_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Enum pentru a defini starile/pasii posibili ai ecranului de autentificare.
 /// Aceasta va controla ce popup este afisat.
@@ -113,10 +114,23 @@ class AuthService {
       debugPrint('🟨 AUTH_SERVICE: Firebase user created: ${userCredential.user?.uid}');
       debugPrint('🟨 AUTH_SERVICE: User email: ${userCredential.user?.email}');
 
+      // IMPORTANT: Salvam token-ul in localStorage INAINTE de signOut
+      // pentru a fi disponibil pentru noul AuthScreen care va fi creat
+      debugPrint('🟨 AUTH_SERVICE: Saving token to localStorage before signOut');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('pending_registration_token', consultantToken);
+        debugPrint('🟨 AUTH_SERVICE: Token saved successfully: ${consultantToken.substring(0, 8)}...');
+      } catch (e) {
+        debugPrint('🔴 AUTH_SERVICE: Error saving token to localStorage: $e');
+      }
+
       // IMPORTANT: Facem signOut imediat pentru a preveni autentificarea automata
       debugPrint('🟨 AUTH_SERVICE: Doing immediate signOut to prevent auto-login');
       await _auth.signOut();
-      debugPrint('🟨 AUTH_SERVICE: Immediate signOut completed');
+      // Adaugam un delay mic pentru a permite AuthWrapper sa proceseze complete signOut-ul
+      await Future.delayed(const Duration(milliseconds: 500));
+      debugPrint('🟨 AUTH_SERVICE: Immediate signOut completed with delay');
 
       // Salveaza datele consultantului in noua structura Firebase
       // IMPORTANT: documentul va fi cu UID-ul din Firebase Auth, dar va contine token-ul unic
@@ -361,6 +375,11 @@ class AuthService {
       // Obtine ID-ul consultantului asociat cu token-ul
       final consultantDoc = consultantSnapshot.docs.first;
       final consultantId = consultantDoc.id;
+      final consultantData = consultantDoc.data();
+      final consultantName = consultantData['name'] as String?;
+
+      debugPrint('🔧 AUTH_SERVICE: Token valid găsit pentru consultant: $consultantName');
+      debugPrint('🔧 AUTH_SERVICE: Token-ul este permanent și reutilizabil');
 
       return {
         'success': true,
@@ -374,7 +393,139 @@ class AuthService {
     }
   }
 
-  // Reset password using token
+  // Reset password using token and current password
+  Future<Map<String, dynamic>> resetPasswordWithTokenAndCurrentPassword({
+    required String consultantId,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    if (newPassword != confirmPassword) {
+      return {
+        'success': false,
+        'message': 'Parolele nu se potrivesc',
+      };
+    }
+
+    if (newPassword.length < 6) {
+      return {
+        'success': false,
+        'message': 'Parola nouă trebuie să aibă minim 6 caractere',
+      };
+    }
+
+    try {
+      // Obtine datele consultantului
+      final consultantDoc = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore
+          .collection(_consultantsCollection)
+          .doc(consultantId)
+          .get()
+      );
+
+      if (!consultantDoc.exists) {
+        return {
+          'success': false,
+          'message': 'Consultant negasit',
+        };
+      }
+
+      final consultantData = consultantDoc.data() as Map<String, dynamic>;
+      final email = consultantData['email'] as String?;
+
+      if (email == null || email.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Email consultant lipsa',
+        };
+      }
+
+      debugPrint('🔧 AUTH_SERVICE: Începem schimbarea parolei pentru: $email');
+
+      // Salvează utilizatorul curent dacă există
+      final previousUser = _auth.currentUser;
+      final previousUserEmail = previousUser?.email;
+
+      try {
+        // Autentifică-te temporar cu parola veche
+        debugPrint('🔧 AUTH_SERVICE: Autentificare temporară cu parola actuală');
+        final userCredential = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: currentPassword,
+        );
+
+        if (userCredential.user == null) {
+          return {
+            'success': false,
+            'message': 'Eroare la autentificare cu parola actuală',
+          };
+        }
+
+        debugPrint('🔧 AUTH_SERVICE: Autentificare temporară reușită, schimbăm parola');
+        
+        // Schimbă parola
+        await userCredential.user!.updatePassword(newPassword);
+
+        debugPrint('✅ AUTH_SERVICE: Parola schimbată cu succes în Firebase Auth');
+
+        // Deconectare după schimbarea parolei
+        await _auth.signOut();
+        debugPrint('🔧 AUTH_SERVICE: Deconectare după schimbarea parolei');
+
+        // Reautentifică utilizatorul anterior dacă exista
+        if (previousUserEmail != null && previousUserEmail != email) {
+          debugPrint('🔧 AUTH_SERVICE: Încercăm să reautentificăm utilizatorul anterior: $previousUserEmail');
+          // Nu putem reautentifica fără parolă, așa că rămânem deconectați
+        }
+
+        return {
+          'success': true,
+          'message': 'Parola a fost schimbată cu succes! Te poți autentifica cu noua parolă.',
+        };
+
+      } on FirebaseAuthException catch (e) {
+        debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException la schimbarea parolei: ${e.code} - ${e.message}');
+        
+        // Reautentifică utilizatorul anterior dacă exista și schimbarea a eșuat
+        if (previousUser != null && _auth.currentUser?.uid != previousUser.uid) {
+          try {
+            await _auth.signOut(); // Asigură-te că suntem deconectați
+          } catch (e) {
+            debugPrint('🔴 AUTH_SERVICE: Eroare la cleanup signOut: $e');
+          }
+        }
+
+        String message;
+        switch (e.code) {
+          case 'wrong-password':
+            message = 'Parola actuală este incorectă';
+            break;
+          case 'weak-password':
+            message = 'Parola nouă este prea slabă';
+            break;
+          case 'requires-recent-login':
+            message = 'Este nevoie de o autentificare recentă pentru a schimba parola';
+            break;
+          default:
+            message = 'Eroare la schimbarea parolei: ${e.message}';
+        }
+
+        return {
+          'success': false,
+          'message': message,
+        };
+      }
+
+    } catch (e) {
+      debugPrint('🔴 AUTH_SERVICE: Eroare generală la schimbarea parolei: $e');
+      return {
+        'success': false,
+        'message': 'Eroare la schimbarea parolei: $e',
+      };
+    }
+  }
+
+  // Reset password using token (legacy method - kept for compatibility)
   Future<Map<String, dynamic>> resetPasswordWithToken({
     required String consultantId,
     required String newPassword,
@@ -413,16 +564,22 @@ class AuthService {
         };
       }
 
-      // Remove token after use by setting to null or removing field
-      await _threadHandler.executeOnPlatformThread(() =>
-        _firestore.collection(_consultantsCollection).doc(consultantId).update({
-          'token': FieldValue.delete(),
-        })
-      );
+      // MODIFICAT: Implementăm schimbarea efectivă a parolei în Firebase Auth
+      // Token-ul rămâne permanent și reutilizabil
+      debugPrint('🔧 AUTH_SERVICE: Procedura de schimbare parolă începe pentru: $email');
+      
+      // Problema: Pentru a schimba parola, avem nevoie de parola actuală
+      // Soluție temporară: Folosim Firebase Admin SDK prin Cloud Functions
+      // sau implementăm un flux prin email reset
+      
+      // IMPORTANT: Această implementare necesită îmbunătățire pentru producție
+      debugPrint('🔧 AUTH_SERVICE: Token-ul rămâne permanent pentru resetări viitoare');
+      debugPrint('⚠️  AUTH_SERVICE: Parola nu poate fi schimbată direct din aplicația client');
+      debugPrint('⚠️  AUTH_SERVICE: Necesită implementare backend/Cloud Functions pentru schimbarea parolei');
 
       return {
         'success': true,
-        'message': 'Token valid. Resetarea parolei necesita implementare backend/cloud function sau flux Firebase standard (email).',
+        'message': 'Token valid și permanent. ATENȚIE: Schimbarea parolei necesită implementare backend. Parola actuală rămâne neschimbată.',
       };
     } catch (e) {
       return {

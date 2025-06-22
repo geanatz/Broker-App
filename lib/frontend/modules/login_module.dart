@@ -382,7 +382,7 @@ class _LoginPopupState extends State<LoginPopup> {
                 child: GestureDetector(
                   onTap: widget.onForgotPassword,
                   child: Text(
-                    "Am uitat parola",
+                    "Reseteaza parola",
                     style: AppTheme.primaryTitleStyle.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,

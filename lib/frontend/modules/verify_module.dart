@@ -167,7 +167,7 @@ class _TokenPopupState extends State<TokenPopup> {
                 height: 24,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Token secret",
+                  "Token secret (permanent)",
                   style: AppTheme.primaryTitleStyle.copyWith(
                     fontSize: AppTheme.fontSizeMedium,
                     fontWeight: FontWeight.w600,
@@ -197,7 +197,7 @@ class _TokenPopupState extends State<TokenPopup> {
                   }
                 },
                 decoration: InputDecoration(
-                  hintText: "Introdu token-ul tau",
+                  hintText: "Introdu token-ul tau permanent",
                   hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),

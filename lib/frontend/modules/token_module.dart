@@ -50,9 +50,13 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
   @override
   Widget build(BuildContext context) {
     debugPrint('🟫 TOKEN_MODULE: Building AccountCreatedPopup');
-    debugPrint('🟫 TOKEN_MODULE: Token received: ${widget.token.substring(0, 8)}...');
-    debugPrint('🟫 TOKEN_MODULE: Full token: ${widget.token}');
-    debugPrint('🟫 TOKEN_MODULE: Token length: ${widget.token.length}');
+    if (widget.token.isNotEmpty && widget.token != 'Token indisponibil') {
+      debugPrint('🟫 TOKEN_MODULE: Token received: ${widget.token.substring(0, 8)}...');
+      debugPrint('🟫 TOKEN_MODULE: Full token: ${widget.token}');
+      debugPrint('🟫 TOKEN_MODULE: Token length: ${widget.token.length}');
+    } else {
+      debugPrint('🔴 TOKEN_MODULE: Invalid or missing token: ${widget.token}');
+    }
     
     const double popupWidth = 360.0;
     const double popupHeight = 220.0;
@@ -112,7 +116,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
                 SizedBox(
                   height: 24,
                   child: Text(
-                    "Mai jos ai cheia contului tau.",
+                    "Cheia permanenta a contului tau.",
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
@@ -151,7 +155,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
             child: Text(
-              "Token-ul tau",
+              "Token-ul tau permanent",
               style: AppTheme.primaryTitleStyle.copyWith(
                 fontSize: AppTheme.fontSizeMedium,
                 fontWeight: FontWeight.w600,

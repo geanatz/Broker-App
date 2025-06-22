@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/frontend/modules/login_module.dart';
 
 class ResetPasswordPopup extends StatefulWidget {
-  final Function(String newPassword, String confirmPassword) onResetPasswordAttempt;
+  final Function(String currentPassword, String newPassword, String confirmPassword) onResetPasswordAttempt;
   final VoidCallback onGoToLogin;
 
   const ResetPasswordPopup({
@@ -19,19 +19,23 @@ class ResetPasswordPopup extends StatefulWidget {
 
 class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   final _formKey = GlobalKey<FormState>();
+  final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
   String? _resetError;
   
   // Adaugare stari pentru validare
+  bool _isCurrentPasswordInvalid = false;
   bool _isNewPasswordInvalid = false;
   bool _isConfirmPasswordInvalid = false;
 
   void _attemptResetPassword() {
     // Resetam starile de validare
     setState(() {
+      _isCurrentPasswordInvalid = false;
       _isNewPasswordInvalid = false;
       _isConfirmPasswordInvalid = false;
       _resetError = null;
@@ -39,6 +43,14 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
     
     // Validare manuala
     bool isValid = true;
+    
+    // Validare parola actuală
+    if (_currentPasswordController.text.isEmpty) {
+      setState(() {
+        _isCurrentPasswordInvalid = true;
+        isValid = false;
+      });
+    }
     
     // Validare parola noua
     if (_newPasswordController.text.isEmpty) {
@@ -69,6 +81,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
     // Daca totul e valid, trimitem datele
     if (isValid) {
       widget.onResetPasswordAttempt(
+        _currentPasswordController.text,
         _newPasswordController.text,
         _confirmPasswordController.text,
       );
@@ -77,6 +90,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
 
   @override
   void dispose() {
+    _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -85,7 +99,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   @override
   Widget build(BuildContext context) {
     const double popupWidth = 360.0;
-    const double popupHeight = 328.0;
+    const double popupHeight = 408.0; // Increased height for current password field
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -191,9 +205,22 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
         child: Column(
           children: [
             _buildPasswordField(
+              controller: _currentPasswordController,
+              title: "Parola actuală",
+              hintText: "Introdu parola actuală",
+              obscureText: _obscureCurrentPassword,
+              onToggleObscure: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Introdu parola actuală';
+                return null;
+              },
+              isInvalid: _isCurrentPasswordInvalid,
+            ),
+            SizedBox(height: AppTheme.smallGap),
+            _buildPasswordField(
               controller: _newPasswordController,
-              title: "Parola noua",
-              hintText: "Introdu parola",
+              title: "Parola nouă",
+              hintText: "Introdu parola nouă",
               obscureText: _obscureNewPassword,
               onToggleObscure: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
               validator: (value) {
@@ -206,8 +233,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
             SizedBox(height: AppTheme.smallGap),
             _buildPasswordField(
               controller: _confirmPasswordController,
-              title: "Repeta parola",
-              hintText: "Introdu parola iar",
+              title: "Confirmă parola nouă",
+              hintText: "Introdu parola nouă din nou",
               obscureText: _obscureConfirmPassword,
               onToggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
               validator: (value) {
