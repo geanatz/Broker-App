@@ -55,7 +55,7 @@ class ConsultantPopup extends StatelessWidget {
   /// Construieste antetul popup-ului
   Widget _buildHeader() {
     return WidgetHeader1(
-      title: "Detalii cont",
+      title: "Contul meu",
       titleColor: AppTheme.elementColor1,
     );
   }
@@ -78,7 +78,7 @@ class ConsultantPopup extends StatelessWidget {
           ),
           const SizedBox(height: AppTheme.smallGap), // 8px gap
           _buildDetailField(
-            title: "Echipa ta",
+            title: "Echipa",
             value: teamName,
           ),
         ],
@@ -157,7 +157,7 @@ class ConsultantPopup extends StatelessWidget {
           }
         },
         text: "Deconectare",
-        iconPath: "assets/returnIcon.svg",
+        iconPath: "assets/logoutIcon.svg",
         textStyle: AppTheme.safeOutfit(
           fontSize: AppTheme.fontSizeMedium, // 17px
           fontWeight: FontWeight.w500, // medium

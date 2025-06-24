@@ -297,8 +297,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
       }
 
       if (result['success']) {
-        // FIX: Invalidează și reîncarcă imediat cache-urile pentru actualizare instantanee
-        await _splashService.invalidateAllMeetingCaches();
+        // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
+        _splashService.invalidateAllMeetingCaches();
         
         if (mounted) {
           Navigator.of(context).pop();
@@ -367,8 +367,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
       debugPrint("Delete result: $result");
       
       if (result['success']) {
-        // FIX: Invalidează și reîncarcă imediat cache-urile pentru actualizare instantanee
-        await _splashService.invalidateAllMeetingCaches();
+        // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
+        _splashService.invalidateAllMeetingCaches();
         
         if (mounted) {
           Navigator.of(context).pop();

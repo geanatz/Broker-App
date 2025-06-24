@@ -77,8 +77,17 @@ class _LightItem7State extends State<LightItem7> {
         (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2);
     final Color effectiveDescriptionColor = widget.descriptionColor ?? 
         (_isHovered ? AppTheme.elementColor2 : AppTheme.elementColor1);
-    final Color effectiveIconColor = widget.iconColor ?? 
-        (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor3); // Icon always elementColor3
+    // Set icon color based on hover state and icon type
+    Color effectiveIconColor;
+    if (widget.iconColor != null) {
+      effectiveIconColor = widget.iconColor!;
+    } else if (widget.svgAsset == 'assets/userIcon.svg') {
+      // Special handling for userIcon: elementColor2 when not hovered, elementColor3 when hovered
+      effectiveIconColor = _isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2;
+    } else {
+      // Default behavior for other icons
+      effectiveIconColor = AppTheme.elementColor3;
+    }
 
     final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
     final double itemHeight = 64.0;
@@ -98,8 +107,18 @@ class _LightItem7State extends State<LightItem7> {
       fontWeight: FontWeight.w500,
     );
 
-    // Determine if we should show an icon (either SVG or IconData) - ONLY on hover
-    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && _isHovered;
+    // Determine if we should show an icon (either SVG or IconData) - always show if specified
+    final bool hasIcon = widget.svgAsset != null || widget.icon != null;
+    
+    // Determine which icon to show: userIcon when not hovered, logoutIcon when hovered
+    String? effectiveSvgAsset;
+    if (widget.svgAsset != null) {
+      if (widget.svgAsset == 'assets/userIcon.svg') {
+        effectiveSvgAsset = _isHovered ? 'assets/logoutIcon.svg' : 'assets/userIcon.svg';
+      } else {
+        effectiveSvgAsset = widget.svgAsset;
+      }
+    }
 
     Widget iconButton = hasIcon ? Container(
       width: 48.0,
@@ -109,9 +128,9 @@ class _LightItem7State extends State<LightItem7> {
         child: SizedBox(
           width: 24.0,
           height: 24.0,
-          child: widget.svgAsset != null
+          child: effectiveSvgAsset != null
               ? SvgPicture.asset(
-                  widget.svgAsset!,
+                  effectiveSvgAsset,
                   width: 24.0,
                   height: 24.0,
                   colorFilter: widget.iconColor == Colors.transparent 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'form_service.dart';
 import 'clients_service.dart';
 import 'settings_service.dart';
@@ -146,6 +147,15 @@ class MatcherService extends ChangeNotifier {
 
   // Date client
   final ClientGender _gender = ClientGender.male;
+  
+  // Debouncing pentru refreshClientData
+  Timer? _refreshDebounceTimer;
+  bool _isRefreshing = false;
+  
+  // OPTIMIZARE: Cache pentru calculele de venituri
+  final Map<String, double> _incomeCache = {};
+  final Map<String, DateTime> _incomeCacheTime = {};
+  Timer? _incomeCacheCleanupTimer;
 
   // Map pentru iconitele bancilor
   final Map<String, String> bankIcons = {
@@ -177,6 +187,9 @@ class MatcherService extends ChangeNotifier {
       
       await _loadClientData();
       
+      // OPTIMIZARE: Configurează curățarea automată a cache-ului de venituri
+      _setupIncomeCacheCleanup();
+      
       notifyListeners();
     } catch (e) {
       debugPrint('Error initializing MatcherService: $e');
@@ -186,23 +199,51 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
-  /// Callback pentru schimbarile din servicii
+  /// OPTIMIZARE: Configurează curățarea automată a cache-ului
+  void _setupIncomeCacheCleanup() {
+    _incomeCacheCleanupTimer?.cancel();
+    _incomeCacheCleanupTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+      final now = DateTime.now();
+      final keysToRemove = <String>[];
+      
+      for (final entry in _incomeCacheTime.entries) {
+        if (now.difference(entry.value).inMinutes > 5) {
+          keysToRemove.add(entry.key);
+        }
+      }
+      
+      for (final key in keysToRemove) {
+        _incomeCache.remove(key);
+        _incomeCacheTime.remove(key);
+      }
+      
+      if (keysToRemove.isNotEmpty) {
+        debugPrint('🧹 MATCHER_SERVICE: Cleaned ${keysToRemove.length} cached income calculations');
+      }
+    });
+  }
+
+  /// OPTIMIZAT: Callback pentru schimbarile din servicii cu debouncing
   void _onFormServiceChanged() {
+    // OPTIMIZARE: Invalidează cache-ul de venituri când formularele se schimbă
+    _incomeCache.clear();
+    _incomeCacheTime.clear();
     _loadClientData();
   }
 
   void _onClientServiceChanged() {
+    // OPTIMIZARE: Invalidează cache-ul când clientul se schimbă
+    _incomeCache.clear();
+    _incomeCacheTime.clear();
     _loadClientData();
   }
 
-  /// Incarca datele de baza ale clientului
+  /// OPTIMIZAT: Incarca datele de baza ale clientului cu caching
   Future<void> _loadClientData() async {
     try {
       final currentClient = _clientService.focusedClient;
-      debugPrint('🔍 MATCHER_SERVICE: Loading client data for: ${currentClient?.name ?? 'null'}');
       
       if (currentClient == null) {
-        debugPrint('⚠️ MATCHER_SERVICE: No focused client found');
         _updateUIData(
           totalIncome: 0,
           errorMessage: 'Nu este selectat niciun client',
@@ -211,7 +252,28 @@ class MatcherService extends ChangeNotifier {
         return;
       }
 
-      // Calculeaza venitul total din formulare
+      // OPTIMIZARE: Verifică cache-ul pentru calculul veniturilor
+      final cacheKey = currentClient.phoneNumber;
+      final cachedIncome = _incomeCache[cacheKey];
+      final cacheTime = _incomeCacheTime[cacheKey];
+      
+      // OPTIMIZARE: Folosește cache-ul dacă e valid (mai nou de 2 minute)
+      if (cachedIncome != null && cacheTime != null && 
+          DateTime.now().difference(cacheTime).inMinutes < 2) {
+        debugPrint('🚀 MATCHER_SERVICE: Using cached income: $cachedIncome lei for $cacheKey');
+        
+        _updateUIData(
+          totalIncome: cachedIncome,
+          errorMessage: cachedIncome <= 0 ? 'Nu exista date de venit pentru client' : null,
+          recommendations: [],
+        );
+        
+        // Actualizeaza automat recomandarile daca avem date complete
+        _updateRecommendations();
+        return;
+      }
+
+      // OPTIMIZARE: Calculează venitul doar dacă nu e în cache
       final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
       final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
       
@@ -224,7 +286,6 @@ class MatcherService extends ChangeNotifier {
         if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
           final amount = double.tryParse(income.incomeAmount.replaceAll(',', '')) ?? 0;
           totalIncome += amount;
-          debugPrint('💰 MATCHER_SERVICE: Added client income: $amount lei');
         }
       }
       
@@ -233,9 +294,12 @@ class MatcherService extends ChangeNotifier {
         if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
           final amount = double.tryParse(income.incomeAmount.replaceAll(',', '')) ?? 0;
           totalIncome += amount;
-          debugPrint('💰 MATCHER_SERVICE: Added coborrower income: $amount lei');
         }
       }
+
+      // OPTIMIZARE: Salvează în cache
+      _incomeCache[cacheKey] = totalIncome;
+      _incomeCacheTime[cacheKey] = DateTime.now();
 
       debugPrint('💵 MATCHER_SERVICE: Total income calculated: $totalIncome lei');
 
@@ -384,25 +448,49 @@ class MatcherService extends ChangeNotifier {
     _updateRecommendations();
   }
 
-  /// Forteaza actualizarea datelor clientului (pentru rezolvarea problemelor de sincronizare)
+  /// Forteaza actualizarea datelor clientului cu debouncing pentru evitarea apelurilor multiple
   Future<void> refreshClientData() async {
-    debugPrint('🔄 MATCHER_SERVICE: Force refreshing client data...');
+    // Anulează refresh-ul anterior dacă există unul pending
+    _refreshDebounceTimer?.cancel();
     
-    // Asteapta un pic pentru ca FormService sa isi termine incarcarea
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Dacă deja se reîmprospătează, nu mai face alt request
+    if (_isRefreshing) return;
     
-    // Reincarca datele clientului
-    await _loadClientData();
+    // Debouncing: așteaptă 300ms înainte de a executa
+    _refreshDebounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      await _performRefreshClientData();
+    });
+  }
+
+  /// Execută refresh-ul efectiv al datelor clientului
+  Future<void> _performRefreshClientData() async {
+    if (_isRefreshing) return;
     
-    debugPrint('✅ MATCHER_SERVICE: Client data refreshed');
+    try {
+      _isRefreshing = true;
+      
+      // Asteapta un pic pentru ca FormService sa isi termine incarcarea
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      // Reincarca datele clientului
+      await _loadClientData();
+      
+    } finally {
+      _isRefreshing = false;
+    }
   }
 
   @override
   void dispose() {
     ageController.dispose();
     ficoController.dispose();
+    _refreshDebounceTimer?.cancel();
     _formService.removeListener(_onFormServiceChanged);
     _clientService.removeListener(_onClientServiceChanged);
+    // OPTIMIZARE: Cleanup pentru income cache timer
+    _incomeCacheCleanupTimer?.cancel();
+    _incomeCache.clear();
+    _incomeCacheTime.clear();
     super.dispose();
   }
 

@@ -306,8 +306,6 @@ class ClientsService {
       final success = await _firebaseService.deleteClient(phoneNumber);
       
       if (success) {
-        debugPrint('✅ Client deleted successfully: $phoneNumber');
-        
         // Notifica dashboard-ul
         _notifyClientDeleted();
       }
@@ -335,8 +333,6 @@ class ClientsService {
       );
 
       if (success) {
-        debugPrint('✅ Form saved successfully: $formType for client $phoneNumber');
-        
         // Actualizeaza si datele clientului cu formData
         await updateClient(phoneNumber, formData: formData);
       }
@@ -378,8 +374,6 @@ class ClientsService {
       );
 
       if (success) {
-        debugPrint('✅ Meeting created successfully for client $phoneNumber');
-        
         // Notifica dashboard-ul
         await _notifyMeetingCreated();
       }
@@ -457,7 +451,6 @@ class ClientsService {
     try {
       // DashboardService nu are metoda onClientCreated, folosim onFormCompleted
       // În viitor, ar putea fi adăugată o metodă specifică
-      debugPrint('📈 Client created - dashboard notified');
     } catch (e) {
       debugPrint('❌ Error notifying dashboard: $e');
     }
@@ -466,7 +459,7 @@ class ClientsService {
   /// Notifica dashboard-ul ca un client a fost sters
   void _notifyClientDeleted() {
     try {
-      debugPrint('📉 Client deleted - dashboard notified');
+      // Client deleted notification
     } catch (e) {
       debugPrint('❌ Error notifying dashboard: $e');
     }
@@ -929,7 +922,6 @@ class ClientMetadata {
 // =================== UI STATE MANAGEMENT SERVICE ===================
 
   /// Service pentru gestionarea starii clientilor in UI si sincronizarea datelor formularelor
-/// intre clientsPane si formArea. Acest service se ocupa doar de UI state management.
 class ClientUIService extends ChangeNotifier {
   static final ClientUIService _instance = ClientUIService._internal();
   factory ClientUIService() => _instance;
@@ -937,7 +929,13 @@ class ClientUIService extends ChangeNotifier {
 
   // Timer pentru actualizarea automată
   Timer? _autoRefreshTimer;
-
+  
+  // Debouncing pentru evitarea apelurilor multiple rapide
+  Timer? _loadDebounceTimer;
+  bool _isLoading = false;
+  DateTime? _lastLoadTime;
+  static const int _cacheValidityMinutes = 2;
+  
   // Lista tuturor clientilor
   List<ClientModel> _clients = [];
   
@@ -992,11 +990,11 @@ class ClientUIService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Pornește actualizarea automată a clientilor din Firebase
+  /// Pornește actualizarea automată a clientilor din Firebase cu delay pentru evitarea apelurilor redundante
   void _startAutoRefresh() {
     _autoRefreshTimer?.cancel();
     _autoRefreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
-      debugPrint('🔄 CLIENT_UI_SERVICE: Auto-refreshing clients...');
+      if (_clients.isEmpty) return;
       loadClientsFromFirebase();
     });
   }
@@ -1011,58 +1009,89 @@ class ClientUIService extends ChangeNotifier {
   @override
   void dispose() {
     _stopAutoRefresh();
+    _loadDebounceTimer?.cancel();
     super.dispose();
   }
   
-  /// Incarca clientii din Firebase pentru consultantul curent
+  /// OPTIMIZARE: Incarca clientii din Firebase pentru consultantul curent cu caching și debouncing
   Future<void> loadClientsFromFirebase() async {
+    // OPTIMIZARE: Verifică cache-ul mai întâi
+    if (_lastLoadTime != null && 
+        DateTime.now().difference(_lastLoadTime!).inMinutes < _cacheValidityMinutes &&
+        _clients.isNotEmpty) {
+      debugPrint('🚀 CLIENT_UI_SERVICE: Using cached clients (${_clients.length} clients)');
+      return;
+    }
+    
+    // Anulează request-ul anterior dacă există unul pending
+    _loadDebounceTimer?.cancel();
+    
+    // Dacă deja se încarcă, nu mai face alt request
+    if (_isLoading) return;
+    
+    // OPTIMIZARE: Debouncing redus de la 300ms la 150ms
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 150), () async {
+      await _performLoadClients();
+    });
+  }
+
+  /// OPTIMIZAT: Execută încărcarea efectivă a clienților cu caching
+  Future<void> _performLoadClients() async {
+    if (_isLoading) return;
+    
     try {
-      debugPrint('🔍 CLIENT_UI_SERVICE: loadClientsFromFirebase() called');
+      _isLoading = true;
       
       // Pastreaza clientul focusat curent pentru a nu pierde focus-ul din cauza auto-refresh-ului
       final currentFocusedPhoneNumber = _focusedClient?.phoneNumber;
       
-      // Foloseste noua metoda getAllClients() din ClientsService
+      // OPTIMIZARE: Foloseste cache-ul din NewFirebaseService
       final newClients = await _firebaseService.getAllClients();
       
-      debugPrint('🔍 CLIENT_UI_SERVICE: Loaded ${newClients.length} clients from Firebase');
+      // OPTIMIZARE: Verifică dacă datele s-au schimbat cu adevărat
+      final hasChanged = _clients.length != newClients.length ||
+          !_clients.every((client) => newClients.any((newClient) => 
+              newClient.phoneNumber == client.phoneNumber &&
+              newClient.name == client.name));
       
-      // Actualizeaza lista de clienti
-      _clients = newClients;
-      
-      // Incearca sa pastreze clientul focusat daca inca exista
-      if (currentFocusedPhoneNumber != null) {
-        final stillExists = _clients.any((client) => client.phoneNumber == currentFocusedPhoneNumber);
-        if (stillExists) {
-          // Clientul focusat inca exista, pastreaza focus-ul
-          focusClient(currentFocusedPhoneNumber);
-          debugPrint('🔍 CLIENT_UI_SERVICE: Preserved focus on client: $currentFocusedPhoneNumber');
+      if (hasChanged || _clients.isEmpty) {
+        // Actualizeaza lista de clienti doar dacă s-au schimbat
+        _clients = newClients;
+        _lastLoadTime = DateTime.now();
+        
+        // Incearca sa pastreze clientul focusat daca inca exista
+        if (currentFocusedPhoneNumber != null) {
+          final stillExists = _clients.any((client) => client.phoneNumber == currentFocusedPhoneNumber);
+          if (stillExists) {
+            // Clientul focusat inca exista, pastreaza focus-ul
+            focusClient(currentFocusedPhoneNumber);
+          } else {
+            // Clientul focusat nu mai exista, focuseaza primul disponibil
+            if (_clients.isNotEmpty) {
+              _focusedClient = _clients.first;
+              focusClient(_clients.first.phoneNumber);
+            } else {
+              _focusedClient = null;
+            }
+          }
         } else {
-          // Clientul focusat nu mai exista, focuseaza primul disponibil
+          // Nu avea client focusat, focuseaza primul daca exista
           if (_clients.isNotEmpty) {
             _focusedClient = _clients.first;
             focusClient(_clients.first.phoneNumber);
-            debugPrint('🔍 CLIENT_UI_SERVICE: Focused new client: ${_focusedClient!.name}');
           } else {
             _focusedClient = null;
-            debugPrint('🔍 CLIENT_UI_SERVICE: No clients found');
           }
         }
+        
+        notifyListeners();
       } else {
-        // Nu avea client focusat, focuseaza primul daca exista
-        if (_clients.isNotEmpty) {
-          _focusedClient = _clients.first;
-          focusClient(_clients.first.phoneNumber);
-          debugPrint('🔍 CLIENT_UI_SERVICE: Focused client: ${_focusedClient!.name}');
-        } else {
-          _focusedClient = null;
-          debugPrint('🔍 CLIENT_UI_SERVICE: No clients found');
-        }
+        debugPrint('🚀 CLIENT_UI_SERVICE: No changes detected, skipping UI update');
       }
-      
-      notifyListeners();
     } catch (e) {
       debugPrint('❌ CLIENT_UI_SERVICE: Error loading clients from Firebase: $e');
+    } finally {
+      _isLoading = false;
     }
   }
   
@@ -1412,8 +1441,6 @@ class ClientUIService extends ChangeNotifier {
   /// FIX: Resetează serviciul pentru un consultant nou (separarea datelor per consultant)
   Future<void> resetForNewConsultant() async {
     try {
-      debugPrint('🔄 CLIENT_UI_SERVICE: Resetting for new consultant...');
-      
       // Oprește actualizarea automată
       _stopAutoRefresh();
       
@@ -1421,14 +1448,19 @@ class ClientUIService extends ChangeNotifier {
       _clients.clear();
       _focusedClient = null;
       
-      // Reîncarcă datele pentru noul consultant și pornește actualizarea automată
-      await initializeDemoData();
+      // Încarcă datele pentru noul consultant (fără auto-refresh pentru a evita apelurile multiple)
+      await loadClientsFromFirebase();
       
-      debugPrint('✅ CLIENT_UI_SERVICE: Reset completed for new consultant');
+      // Pornește auto-refresh cu delay pentru a evita conflictele
+      Timer(const Duration(seconds: 5), () {
+        _startAutoRefresh();
+      });
+      
     } catch (e) {
       debugPrint('❌ CLIENT_UI_SERVICE: Error resetting for new consultant: $e');
     }
   }
+
 }
 
 // =================== BACKWARD COMPATIBILITY ALIAS ===================

@@ -45,6 +45,10 @@ class MeetingsPaneState extends State<MeetingsPane> {
   bool _isLoading = true;
   Timer? _refreshTimer;
   
+  // Debouncing pentru load meetings
+  Timer? _loadDebounceTimer;
+  bool _isLoadingMeetings = false;
+  
   @override
   void initState() {
     super.initState();
@@ -59,6 +63,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _loadDebounceTimer?.cancel();
     // FIX: Cleanup listener pentru a evita memory leaks
     _splashService.removeListener(_onSplashServiceChanged);
     super.dispose();
@@ -103,8 +108,23 @@ class MeetingsPaneState extends State<MeetingsPane> {
     }
   }
 
-  /// Incarca intalnirile viitoare doar pentru consultantul curent (FIX: folosește cache SplashService)
+  /// Incarca intalnirile viitoare cu debouncing pentru evitarea apelurilor multiple
   Future<void> _loadUpcomingMeetings() async {
+    // Anulează loading-ul anterior dacă există unul pending
+    _loadDebounceTimer?.cancel();
+    
+    // Dacă deja se încarcă, nu mai face alt request
+    if (_isLoadingMeetings) return;
+    
+    // Debouncing: așteaptă 200ms înainte de a executa
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 200), () async {
+      await _performLoadUpcomingMeetings();
+    });
+  }
+
+  /// Execută încărcarea efectivă a întâlnirilor
+  Future<void> _performLoadUpcomingMeetings() async {
+    if (_isLoadingMeetings) return;
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) {
       debugPrint("❌ MEETINGS_PANE: User not authenticated");
@@ -116,7 +136,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
     });
 
     try {
-      debugPrint("📋 MEETINGS_PANE: Loading upcoming meetings for current consultant: $currentUserId");
+      _isLoadingMeetings = true;
       
       // FIX: Folosește cache-ul din SplashService pentru performanță și sincronizare
       final allMeetings = await _splashService.getCachedMeetings();
@@ -127,18 +147,8 @@ class MeetingsPaneState extends State<MeetingsPane> {
       final currentConsultantToken = await _getCurrentConsultantToken();
       
       for (final meeting in allMeetings) {
-        // FIX: Debug pentru fiecare întâlnire
-        debugPrint('🔍 MEETINGS_PANE: Checking meeting: ${meeting.additionalData?['clientName']}');
-        debugPrint('  - Meeting dateTime: ${meeting.dateTime}');
-        debugPrint('  - Current time (now): $now');
-        debugPrint('  - Is in future: ${meeting.dateTime.isAfter(now)}');
-        debugPrint('  - Meeting consultantId: ${meeting.additionalData?['consultantId']}');
-        debugPrint('  - Current user ID: $currentUserId');
-        debugPrint('  - Current consultant token: ${currentConsultantToken?.substring(0, 8) ?? 'NULL'}');
-        
         // Verifică dacă întâlnirea este în viitor
         if (!meeting.dateTime.isAfter(now)) {
-          debugPrint('  - ❌ Rejected: Meeting is in the past');
           continue;
         }
         
@@ -148,31 +158,25 @@ class MeetingsPaneState extends State<MeetingsPane> {
         // FIX: Pentru întâlnirile noi, folosește consultantId
         if (meetingConsultantId != null) {
           if (meetingConsultantId != currentUserId) {
-            debugPrint('  - ❌ Rejected: Consultant ID does not match (using consultantId)');
             continue;
           }
         } else {
           // FIX: Pentru întâlnirile existente (fără consultantId), folosește consultantToken
           final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
           if (meetingConsultantToken == null) {
-            debugPrint('  - ❌ Rejected: No consultant identification found');
             continue;
           }
           
           if (meetingConsultantToken != currentConsultantToken) {
-            debugPrint('  - ❌ Rejected: Consultant token does not match (using consultantToken fallback)');
             continue;
           }
         }
         
-        debugPrint('  - ✅ Accepted: Future meeting for current consultant');
         futureAppointments.add(meeting);
       }
 
       // Sortează după data
       futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-      debugPrint("✅ MEETINGS_PANE: Found ${allMeetings.length} total meetings, ${futureAppointments.length} future meetings for current consultant");
 
       if (mounted) {
         setState(() {
@@ -187,6 +191,8 @@ class MeetingsPaneState extends State<MeetingsPane> {
           _isLoading = false;
         });
       }
+    } finally {
+      _isLoadingMeetings = false;
     }
   }
   

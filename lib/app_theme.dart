@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 
 // Enumerari pentru teme si culori - definite in afara clasei pentru a fi accesibile din alte parti
 enum AppThemeMode { light, dark, auto }
@@ -19,6 +20,9 @@ class AppTheme extends ChangeNotifier {
   // Tema si culoarea curenta (valori implicite)
   static AppThemeMode _currentThemeMode = AppThemeMode.auto;
   static AppThemeColor _currentThemeColor = AppThemeColor.blue;
+  
+  // Debouncing pentru evitarea notificărilor multiple rapide
+  Timer? _notifyDebounceTimer;
 
   // Getters pentru valorile curente
   static AppThemeMode get currentThemeMode => _currentThemeMode;
@@ -504,44 +508,41 @@ class AppTheme extends ChangeNotifier {
 
   // ======== METODE PENTRU SCHIMBAREA TEMEI ========
   
+  /// Notificare cu debouncing pentru evitarea rebuild-urilor multiple
+  static void _debouncedNotifyListeners() {
+    _instance._notifyDebounceTimer?.cancel();
+    _instance._notifyDebounceTimer = Timer(const Duration(milliseconds: 50), () {
+      _instance.notifyListeners();
+    });
+  }
+
   /// Schimba tema intre Light si Dark
   static void toggleThemeMode() {
     _currentThemeMode = _currentThemeMode == AppThemeMode.light 
         ? AppThemeMode.dark 
         : AppThemeMode.light;
-    _instance.notifyListeners();
+    _debouncedNotifyListeners();
   }
   
   /// Seteaza tema specifica (Light sau Dark)
   static void setThemeMode(AppThemeMode mode) {
     _currentThemeMode = mode;
-    _instance.notifyListeners();
+    _debouncedNotifyListeners();
   }
   
   /// Seteaza culoarea temei
   static void setThemeColor(AppThemeColor color) {
     _currentThemeColor = color;
-    _instance.notifyListeners();
+    _debouncedNotifyListeners();
   }
   
-  /// Forteaza actualizarea detectiei brightness-ului sistemului
+  /// Forteaza actualizarea detectiei brightness-ului sistemului cu debouncing
   static void refreshSystemBrightness() {
     // This method forces a refresh of system brightness detection
     // It's called when system theme changes are detected at app level
-    debugPrint('🎨 APP_THEME: Refreshing system brightness detection');
-    debugPrint('🎨 APP_THEME: Current mode: $currentThemeMode');
-    
     if (currentThemeMode == AppThemeMode.auto) {
-      final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
-      debugPrint('🎨 APP_THEME: Auto mode active, system brightness: $brightness');
-      debugPrint('🎨 APP_THEME: Will use ${brightness == Brightness.dark ? 'DARK' : 'LIGHT'} theme');
-      debugPrint('🎨 APP_THEME: After refresh - isDarkMode: $isDarkMode');
-      debugPrint('🎨 APP_THEME: After refresh - popupBackground: $popupBackground');
-      
-      // Notify all listeners that theme might have changed
-      _instance.notifyListeners();
-    } else {
-      debugPrint('🎨 APP_THEME: Manual mode active: $currentThemeMode');
+      // Notify all listeners that theme might have changed with debouncing
+      _debouncedNotifyListeners();
     }
   }
 } 

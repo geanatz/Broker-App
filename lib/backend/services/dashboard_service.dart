@@ -155,8 +155,6 @@ class DashboardService extends ChangeNotifier {
       final newConsultantToken = consultantData?['token'];
       
       if (newConsultantToken != _currentConsultantToken) {
-        debugPrint('🔄 DASHBOARD_SERVICE: Switching consultant from ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'} to ${newConsultantToken?.substring(0, 8) ?? 'NULL'}');
-        
         // Salvează datele consultantului anterior în cache
         if (_currentConsultantToken != null) {
           _consultantsRankingCache[_currentConsultantToken!] = _consultantsRanking;
@@ -169,8 +167,6 @@ class DashboardService extends ChangeNotifier {
         
         // Încarcă datele pentru noul consultant din cache sau Firebase
         await _loadDataForCurrentConsultant();
-        
-        debugPrint('✅ DASHBOARD_SERVICE: Successfully switched to new consultant');
       }
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error resetting for new consultant: $e');
@@ -184,7 +180,6 @@ class DashboardService extends ChangeNotifier {
     // Verifică cache-ul mai întâi
     final cacheKey = _currentConsultantToken!;
     if (_consultantsRankingCache.containsKey(cacheKey)) {
-      debugPrint('📋 DASHBOARD_SERVICE: Loading data from cache for consultant');
       _consultantsRanking = _consultantsRankingCache[cacheKey]!;
       _teamsRanking = _teamsRankingCache[cacheKey] ?? [];
       _upcomingMeetings = _upcomingMeetingsCache[cacheKey] ?? [];
@@ -192,7 +187,6 @@ class DashboardService extends ChangeNotifier {
       notifyListeners();
     } else {
       // Încarcă din Firebase
-      debugPrint('🔄 DASHBOARD_SERVICE: Loading fresh data from Firebase for consultant');
       await loadDashboardData();
     }
   }
@@ -265,7 +259,6 @@ class DashboardService extends ChangeNotifier {
     // FIX: Verifică și resetează dacă consultantul s-a schimbat
     await resetForNewConsultant();
 
-    debugPrint('🔄 DASHBOARD_SERVICE: Loading dashboard data...');
     _setLoading(true);
     _errorMessage = null;
 
@@ -281,8 +274,6 @@ class DashboardService extends ChangeNotifier {
 
       // Asteapta toate task-urile sa se termine
       await Future.wait(futures);
-
-      debugPrint('✅ DASHBOARD_SERVICE: All data loaded successfully');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading data: $e');
       _errorMessage = 'Eroare la incarcarea datelor: $e';
@@ -309,8 +300,6 @@ class DashboardService extends ChangeNotifier {
   /// Incarca clasamentul consultantilor din Firebase (FIX: folosește consultantToken pentru stats)
   Future<void> _loadConsultantsRanking() async {
     try {
-      debugPrint('🔍 DASHBOARD_SERVICE: Loading consultants ranking for month: ${DateFormat('yyyy-MM').format(_selectedMonthConsultants)}');
-      
       // FIX: Obține toate consultanții cu token-urile lor
       final consultantsSnapshot = await _firestore.collection('consultants').get();
       if (consultantsSnapshot.docs.isEmpty) {
@@ -328,7 +317,6 @@ class DashboardService extends ChangeNotifier {
           .get();
           
       final statsMap = { for (var doc in monthlyStatsSnapshot.docs) doc.id : doc.data() };
-      debugPrint('🔍 DASHBOARD_SERVICE: Found ${statsMap.length} stats documents in $yearMonth');
 
       final rankings = consultantsSnapshot.docs.map((consultantDoc) {
         final consultantData = consultantDoc.data();
@@ -336,7 +324,6 @@ class DashboardService extends ChangeNotifier {
         final consultantName = consultantData['name'] as String? ?? 'Necunoscut';
         
         if (consultantToken == null) {
-          debugPrint('⚠️ DASHBOARD_SERVICE: Consultant ${consultantDoc.id} has no token');
           return null;
         }
 
@@ -345,8 +332,6 @@ class DashboardService extends ChangeNotifier {
         final forms = (stats['formsCompleted'] ?? 0) as num;
         final meetings = (stats['meetingsHeld'] ?? 0) as num;
         final score = (forms.toInt() * 10) + (meetings.toInt() * 5);
-
-        debugPrint('📊 DASHBOARD_SERVICE: Consultant $consultantName - Forms: $forms, Meetings: $meetings, Score: $score');
 
         return ConsultantRanking(
           id: consultantDoc.id, // Păstrăm UID-ul pentru identificare
@@ -360,14 +345,6 @@ class DashboardService extends ChangeNotifier {
 
       rankings.sort((a, b) => b.score.compareTo(a.score));
       _consultantsRanking = rankings;
-      
-      debugPrint('✅ DASHBOARD_SERVICE: Loaded ${_consultantsRanking.length} consultants ranking');
-      
-      // Debug: Afișează primii 3 consultanți pentru verificare
-      for (int i = 0; i < _consultantsRanking.length && i < 3; i++) {
-        final consultant = _consultantsRanking[i];
-        debugPrint('🏆 Rank ${i + 1}: ${consultant.name} - Forms: ${consultant.formsCompleted}, Meetings: ${consultant.meetingsScheduled}');
-      }
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading consultants: $e');
       _consultantsRanking = [];
@@ -377,8 +354,6 @@ class DashboardService extends ChangeNotifier {
   /// Incarca clasamentul echipelor din Firebase (FIX: folosește consultantToken pentru stats)
   Future<void> _loadTeamsRanking() async {
     try {
-      debugPrint('🔍 DASHBOARD_SERVICE: Loading teams ranking for month: ${DateFormat('yyyy-MM').format(_selectedMonthTeams)}');
-      
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonthTeams);
       final monthlyStatsSnapshot = await _firestore
           .collection('data')
@@ -389,7 +364,6 @@ class DashboardService extends ChangeNotifier {
           .get();
           
       final statsMap = { for (var doc in monthlyStatsSnapshot.docs) doc.id : doc.data() };
-      debugPrint('🔍 DASHBOARD_SERVICE: Found ${statsMap.length} stats documents for teams ranking');
 
       // FIX: Obține toți consultanții cu token-urile lor
       final consultantsSnapshot = await _firestore.collection('consultants').get();
@@ -401,7 +375,6 @@ class DashboardService extends ChangeNotifier {
         final teamId = consultantData['team'] as String? ?? '';
         
         if (consultantToken == null || teamId.isEmpty) {
-          debugPrint('⚠️ DASHBOARD_SERVICE: Skipping consultant ${consultantDoc.id} - missing token or team');
           continue;
         }
         
@@ -414,14 +387,11 @@ class DashboardService extends ChangeNotifier {
         teamStats[teamId]!['forms'] = teamStats[teamId]!['forms']! + forms.toInt();
         teamStats[teamId]!['meetings'] = teamStats[teamId]!['meetings']! + meetings.toInt();
         teamStats[teamId]!['members'] = teamStats[teamId]!['members']! + 1;
-        
-        debugPrint('📊 DASHBOARD_SERVICE: Team $teamId - Consultant ${consultantData['name']}: Forms +${forms.toInt()}, Meetings +${meetings.toInt()}');
       }
       
       final teamNames = await _consultantService.getAllTeams();
       final teamRankings = teamNames.map((teamName) {
         final stats = teamStats[teamName] ?? {'forms': 0, 'meetings': 0, 'members': 0};
-        debugPrint('🏆 DASHBOARD_SERVICE: Team $teamName - Total Forms: ${stats['forms']}, Total Meetings: ${stats['meetings']}, Members: ${stats['members']}');
         
         return TeamRanking(
           id: teamName,
@@ -434,14 +404,6 @@ class DashboardService extends ChangeNotifier {
 
       teamRankings.sort((a, b) => b.formsCompleted.compareTo(a.formsCompleted));
       _teamsRanking = teamRankings;
-      
-      debugPrint('✅ DASHBOARD_SERVICE: Loaded ${_teamsRanking.length} teams ranking');
-      
-      // Debug: Afișează clasamentul echipelor pentru verificare
-      for (int i = 0; i < _teamsRanking.length && i < 3; i++) {
-        final team = _teamsRanking[i];
-        debugPrint('🏆 Team Rank ${i + 1}: ${team.teamName} - Forms: ${team.formsCompleted}, Meetings: ${team.meetingsHeld}, Members: ${team.memberCount}');
-      }
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading teams: $e');
       _teamsRanking = [];
@@ -451,8 +413,6 @@ class DashboardService extends ChangeNotifier {
   /// Incarca intalnirile urmatoare din Firebase
   Future<void> _loadUpcomingMeetings() async {
     try {
-      debugPrint('🔍 DASHBOARD_SERVICE: Loading upcoming meetings...');
-      
       if (_currentUser == null) return;
 
       // Obtine toate intalnirile pentru consultantul curent
@@ -489,8 +449,6 @@ class DashboardService extends ChangeNotifier {
       // Sorteaza dupa data programata
       upcomingMeetings.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
       _upcomingMeetings = upcomingMeetings;
-      
-      debugPrint('✅ DASHBOARD_SERVICE: Loaded ${_upcomingMeetings.length} upcoming meetings');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading meetings: $e');
       _upcomingMeetings = [];
@@ -500,8 +458,6 @@ class DashboardService extends ChangeNotifier {
   /// Incarca statisticile consultantului curent din Firebase
   Future<void> _loadConsultantStats() async {
     try {
-      debugPrint('🔍 DASHBOARD_SERVICE: Loading consultant stats...');
-      
       if (_currentUser == null) return;
 
       // Obtine token-ul consultantului curent
@@ -518,8 +474,6 @@ class DashboardService extends ChangeNotifier {
         totalMeetingsScheduled: stats['meetingsScheduled'] ?? 0,
         lastUpdated: DateTime.now(),
       );
-      
-      debugPrint('✅ DASHBOARD_SERVICE: Loaded consultant stats - Today: ${_consultantStats?.formsCompletedToday}, Month: ${_consultantStats?.formsCompletedThisMonth}');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading consultant stats: $e');
       _consultantStats = null;
@@ -530,7 +484,6 @@ class DashboardService extends ChangeNotifier {
   Future<Map<String, int>> _calculateConsultantStatsOptimized(String consultantToken) async {
     try {
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonthConsultants);
-      debugPrint('🔍 DASHBOARD_SERVICE: Calculating stats for consultant ${consultantToken.substring(0, 8)}... in $yearMonth');
       
       final doc = await _firestore
           .collection('data')
@@ -546,14 +499,11 @@ class DashboardService extends ChangeNotifier {
         final formsCompleted = (data?['formsCompleted'] ?? 0) as num;
         final meetingsScheduled = (data?['meetingsHeld'] ?? 0) as num;
         
-        debugPrint('✅ DASHBOARD_SERVICE: Found stats - Forms: ${formsCompleted.toInt()}, Meetings: ${meetingsScheduled.toInt()}');
-        
         return {
           'formsCompleted': formsCompleted.toInt(),
           'meetingsScheduled': meetingsScheduled.toInt(),
         };
       } else {
-        debugPrint('⚠️ DASHBOARD_SERVICE: No stats document found for consultant in $yearMonth');
         return {'formsCompleted': 0, 'meetingsScheduled': 0};
       }
     } catch (e) {
@@ -615,18 +565,14 @@ class DashboardService extends ChangeNotifier {
       // Verifică cache-ul pentru ziua curentă
       if (_dutyAgentCache.containsKey(today)) {
         _dutyAgent = _dutyAgentCache[today];
-        debugPrint('📋 DASHBOARD_SERVICE: Using cached duty agent for $today: $_dutyAgent');
         return;
       }
-      
-      debugPrint('🔍 DASHBOARD_SERVICE: Loading duty agent from Firebase for $today...');
       
       // Obține toți consultanții din Firebase
       final consultantsSnapshot = await _firestore.collection('consultants').get();
       if (consultantsSnapshot.docs.isEmpty) {
         _dutyAgent = null;
         _dutyAgentCache[today] = null;
-        debugPrint('⚠️ DASHBOARD_SERVICE: No consultants found for duty agent');
         return;
       }
 
@@ -640,9 +586,6 @@ class DashboardService extends ChangeNotifier {
       
       // Salvează în cache pentru ziua curentă
       _dutyAgentCache[today] = _dutyAgent;
-      
-      debugPrint('✅ DASHBOARD_SERVICE: Duty agent for day $dayOfMonth (index $consultantIndex): $_dutyAgent');
-      debugPrint('📋 DASHBOARD_SERVICE: Available consultants: ${consultantsSnapshot.docs.map((doc) => doc.data()['name']).join(', ')}');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading duty agent: $e');
       _dutyAgent = 'Necunoscut';

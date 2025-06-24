@@ -42,6 +42,10 @@ class SplashService extends ChangeNotifier {
   String? _currentTeam;
   final Map<String, List<ClientActivity>> _teamMeetingsCache = {};
   
+  // OPTIMIZARE: Debouncing pentru invalidări de cache
+  Timer? _cacheInvalidationTimer;
+  bool _hasPendingInvalidation = false;
+  
   // Getters
   bool get isInitialized => _isInitialized;
   bool get isLoading => _isLoading;
@@ -66,8 +70,6 @@ class SplashService extends ChangeNotifier {
       final newTeam = await NewFirebaseService().getCurrentConsultantTeam();
       
       if (newConsultantToken != _currentConsultantToken || newTeam != _currentTeam) {
-        debugPrint('🔄 SPLASH_SERVICE: Switching consultant/team from ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'}/${_currentTeam ?? 'NULL'} to ${newConsultantToken?.substring(0, 8) ?? 'NULL'}/${newTeam ?? 'NULL'}');
-        
         // Salvează în cache datele pentru echipa anterioară
         if (_currentTeam != null && _cachedMeetings.isNotEmpty) {
           _teamMeetingsCache[_currentTeam!] = List.from(_cachedMeetings);
@@ -88,8 +90,6 @@ class SplashService extends ChangeNotifier {
         if (_clientUIService != null) {
           await _clientUIService!.resetForNewConsultant();
         }
-        
-        debugPrint('✅ SPLASH_SERVICE: Successfully switched to new consultant/team');
       }
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error resetting for new consultant: $e');
@@ -102,13 +102,11 @@ class SplashService extends ChangeNotifier {
     
     // Verifică cache-ul echipei mai întâi
     if (_teamMeetingsCache.containsKey(_currentTeam!)) {
-      debugPrint('📋 SPLASH_SERVICE: Loading team meetings from cache');
       _cachedMeetings = List.from(_teamMeetingsCache[_currentTeam!]!);
       _meetingsCacheTime = DateTime.now();
       notifyListeners();
     } else {
       // Încarcă din Firebase
-      debugPrint('🔄 SPLASH_SERVICE: Loading fresh team meetings from Firebase');
       await _refreshMeetingsCache();
     }
   }
@@ -121,7 +119,6 @@ class SplashService extends ChangeNotifier {
     // Verifica daca cache-ul este valid (nu mai vechi de 30 secunde)
     if (_meetingsCacheTime == null || 
         DateTime.now().difference(_meetingsCacheTime!).inSeconds > 30) {
-      debugPrint('🔄 SPLASH_SERVICE: Meetings cache expired, refreshing...');
       await _refreshMeetingsCache();
     }
     
@@ -137,7 +134,6 @@ class SplashService extends ChangeNotifier {
         return;
       }
 
-      debugPrint('🔄 SPLASH_SERVICE: Refreshing team meetings cache...');
       final meetingsData = await firebaseService.getTeamMeetings(); // FIX: folosește getTeamMeetings pentru calendar
       
       final List<ClientActivity> meetings = [];
@@ -156,8 +152,6 @@ class SplashService extends ChangeNotifier {
       if (_currentTeam != null) {
         _teamMeetingsCache[_currentTeam!] = List.from(meetings);
       }
-      
-      debugPrint('✅ SPLASH_SERVICE: Team meetings cache refreshed with ${meetings.length} meetings');
       notifyListeners(); // Notifică componentele că datele s-au actualizat
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error refreshing meetings cache: $e');
@@ -168,52 +162,58 @@ class SplashService extends ChangeNotifier {
   void invalidateTimeSlotsCache() {
     _cachedTimeSlots = {};
     _timeSlotsLastUpdate = null;
-    debugPrint('🔄 Time slots cache invalidated');
   }
 
   /// FIX: Invalidează și reîncarcă imediat cache-ul de meetings pentru actualizare instantanee
   Future<void> invalidateMeetingsCacheAndRefresh() async {
-    debugPrint('🗑️ SPLASH_SERVICE: Invalidating meetings cache and forcing refresh');
-    _cachedMeetings = [];
-    _meetingsCacheTime = null;
+    // OPTIMIZARE: Debouncing pentru a evita invalidările multiple
+    if (_hasPendingInvalidation) return;
+    _hasPendingInvalidation = true;
     
-    // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
-    await _refreshMeetingsCache();
-    notifyListeners(); // Notifică UI-ul că datele s-au schimbat
-    
-    // FIX: Notifică și ClientUIService să se refresh-eze pentru sincronizare
-    if (_clientUIService != null) {
-      debugPrint('🔄 SPLASH_SERVICE: Notifying ClientUIService to refresh after meeting changes');
-      await _clientUIService!.loadClientsFromFirebase();
-      // Forțează notificare UI pentru actualizare immediată
-      _clientUIService!.notifyListeners();
-    }
+    _cacheInvalidationTimer?.cancel();
+    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 200), () async {
+      try {
+        _cachedMeetings = [];
+        _meetingsCacheTime = null;
+        
+        // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
+        await _refreshMeetingsCache();
+        notifyListeners(); // Notifică UI-ul că datele s-au schimbat
+        
+        // OPTIMIZARE: Notificare optimizată pentru ClientUIService
+        if (_clientUIService != null && _clientUIService!.clients.isNotEmpty) {
+          // OPTIMIZARE: Doar dacă chiar avem nevoie de refresh
+          await _clientUIService!.loadClientsFromFirebase();
+          _clientUIService!.notifyListeners();
+        }
+        
+        _hasPendingInvalidation = false;
+      } catch (e) {
+        debugPrint('❌ SPLASH_SERVICE: Error in cache invalidation: $e');
+        _hasPendingInvalidation = false;
+      }
+    });
   }
 
   /// Invalidează cache-ul de meetings (să fie apelat când se adaugă/modifică/șterge meeting)
   void invalidateMeetingsCache() {
-    debugPrint('🗑️ SPLASH_SERVICE: Invalidating meetings cache');
+    // OPTIMIZARE: Nu face nimic dacă cache-ul este deja invalid
+    if (_meetingsCacheTime == null) return;
+    
     _cachedMeetings = [];
     _meetingsCacheTime = null;
   }
 
-  /// FIX: Invalidează toate cache-urile legate de meetings
+  /// OPTIMIZAT: Invalidează toate cache-urile legate de meetings cu debouncing
   Future<void> invalidateAllMeetingCaches() async {
-    debugPrint('🔄 SPLASH_SERVICE: Invalidating all meeting-related caches');
-    invalidateMeetingsCache();
-    invalidateTimeSlotsCache();
+    // OPTIMIZARE: Evită apelurile multiple folosind debouncing
+    await invalidateMeetingsCacheAndRefresh();
     
-    // Reîncarcă imediat pentru actualizare instantanee
-    await _refreshMeetingsCache();
-    notifyListeners();
+    // OPTIMIZARE: Invalidarea time slots se face lazy
+    _cachedTimeSlots = {};
+    _timeSlotsLastUpdate = null;
     
-    // FIX: Notifică și ClientUIService să se refresh-eze pentru sincronizare
-    if (_clientUIService != null) {
-      debugPrint('🔄 SPLASH_SERVICE: Notifying ClientUIService to refresh after meeting changes');
-      await _clientUIService!.loadClientsFromFirebase();
-      // Forțează notificare UI pentru actualizare immediată
-      _clientUIService!.notifyListeners();
-    }
+    debugPrint('🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing');
   }
 
   /// Obtine slot-urile de timp disponibile din cache sau refreshuie
@@ -226,7 +226,6 @@ class SplashService extends ChangeNotifier {
         _timeSlotsLastUpdate != null &&
         DateTime.now().difference(_timeSlotsLastUpdate!) < timeSlotsCacheValidity &&
         _cachedTimeSlots.containsKey(dateKey)) {
-      debugPrint('✅ Using cached time slots for $dateKey');
       return _cachedTimeSlots[dateKey] ?? [];
     }
 
@@ -277,8 +276,6 @@ class SplashService extends ChangeNotifier {
       final dateKey = DateFormat('yyyy-MM-dd').format(date);
       _cachedTimeSlots[dateKey] = availableSlots;
       _timeSlotsLastUpdate = DateTime.now();
-      
-      debugPrint('✅ Refreshed time slots cache for $dateKey: ${availableSlots.length} available');
     } catch (e) {
       debugPrint('❌ Error refreshing time slots cache: $e');
     }
@@ -334,7 +331,6 @@ class SplashService extends ChangeNotifier {
   /// Pornește procesul de pre-încărcare
   Future<bool> startPreloading() async {
     if (_isInitialized) {
-      debugPrint('🚀 SPLASH_SERVICE: Already initialized, skipping preload');
       return true;
     }
 
@@ -363,7 +359,6 @@ class SplashService extends ChangeNotifier {
       _markComplete();
       _isInitialized = true;
       
-      debugPrint('✅ SPLASH_SERVICE: All services pre-loaded successfully');
       return true;
       
     } catch (e) {
@@ -412,7 +407,6 @@ class SplashService extends ChangeNotifier {
       if (!_calendarService!.isInitialized) {
         await _calendarService!.initialize();
       }
-      debugPrint('✅ SPLASH_SERVICE: Calendar service cached');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing calendar service: $e');
       rethrow;
@@ -426,7 +420,6 @@ class SplashService extends ChangeNotifier {
       
       // Pre-load clients data
       await _clientUIService!.loadClientsFromFirebase();
-      debugPrint('✅ SPLASH_SERVICE: Client services cached');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing client services: $e');
       rethrow;
@@ -437,7 +430,6 @@ class SplashService extends ChangeNotifier {
   Future<void> _preloadMeetings() async {
     try {
       await _refreshMeetingsCache();
-      debugPrint('✅ SPLASH_SERVICE: Meetings preloaded');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error preloading meetings: $e');
       rethrow;
@@ -449,7 +441,6 @@ class SplashService extends ChangeNotifier {
     try {
       _formService = FormService();
       await _formService!.initialize();
-      debugPrint('✅ SPLASH_SERVICE: Form service cached');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing form service: $e');
       rethrow;
@@ -462,7 +453,6 @@ class SplashService extends ChangeNotifier {
       _dashboardService = DashboardService();
       // Pre-load dashboard data
       await _dashboardService!.loadDashboardData();
-      debugPrint('✅ SPLASH_SERVICE: Dashboard service cached');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing dashboard service: $e');
       rethrow;
@@ -474,7 +464,6 @@ class SplashService extends ChangeNotifier {
     try {
       _matcherService = MatcherService();
       await _matcherService!.initialize();
-      debugPrint('✅ SPLASH_SERVICE: Matcher service cached');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing matcher service: $e');
       rethrow;
@@ -489,7 +478,6 @@ class SplashService extends ChangeNotifier {
         // Set first client as focused to pre-load form data
         final firstClient = _clientUIService!.clients.first;
         _clientUIService!.focusClient(firstClient.phoneNumber1);
-        debugPrint('✅ SPLASH_SERVICE: Data synchronization complete');
       }
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error during data sync: $e');
@@ -501,7 +489,6 @@ class SplashService extends ChangeNotifier {
   Future<void> _finalize() async {
     try {
       // Orice finalizări suplimentare
-      debugPrint('✅ SPLASH_SERVICE: Splash screen finalization complete');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error during finalization: $e');
       rethrow;
@@ -561,17 +548,17 @@ class SplashService extends ChangeNotifier {
     _dashboardService = null;
     _matcherService = null;
     _lastError = null;
-    debugPrint('🔄 SPLASH_SERVICE: Force reinitialization requested');
   }
 
   /// Cleanup pentru disposal
   @override
   void dispose() {
-    _calendarService = null;
-    _clientUIService = null;
-    _formService = null;
-    _dashboardService = null;
-    _matcherService = null;
+    _timeSlotsLastUpdate = null;
+    _cachedTimeSlots.clear();
+    _cachedMeetings.clear();
+    _teamMeetingsCache.clear();
+    // OPTIMIZARE: Cleanup pentru timers
+    _cacheInvalidationTimer?.cancel();
     super.dispose();
   }
 } 

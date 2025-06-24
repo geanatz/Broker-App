@@ -1,10 +1,10 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/backend/services/sidebar_service.dart';
 import 'package:broker_app/frontend/popups/consultant_popup.dart';
 import 'package:broker_app/frontend/components/headers/widget_header3.dart';
 import 'package:broker_app/frontend/components/buttons/spaced_buttons1.dart';
+import 'package:broker_app/frontend/components/items/light_item7.dart';
 import 'package:broker_app/frontend/areas/dashboard_area.dart';
 import 'package:broker_app/frontend/areas/form_area.dart';
 import 'package:broker_app/frontend/areas/calendar_area.dart';
@@ -71,8 +71,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   bool _isAreaSectionCollapsed = false;
   bool _isPaneSectionCollapsed = false;
   
-  // UI state pentru hover pe sectiunea consultant
-  bool _isConsultantSectionHovered = false;
+
   
   // State pentru popup-uri
   List<Client> _popupClients = [];
@@ -85,8 +84,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
     
-    debugPrint('🏠 MAIN_SCREEN: Initialized with consultant name: $_consultantName');
-    debugPrint('🏠 MAIN_SCREEN: Initialized with team name: $_teamName');
+
     
     // Folosește serviciile pre-încărcate din splash
     _clientService = _splashService.clientUIService;
@@ -127,7 +125,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       // Resetează cache-ul pentru consultant/echipa curentă
       await _splashService.resetForNewConsultant();
       
-      debugPrint('✅ MAIN_SCREEN: Successfully initialized for current consultant');
+
     } catch (e) {
       debugPrint('❌ MAIN_SCREEN: Error initializing for current consultant: $e');
     }
@@ -608,83 +606,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Builds the consultant information section with avatar and details
+  /// Builds the consultant information section using LightItem7
   Widget _buildConsultantSection() {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isConsultantSectionHovered = true),
-      onExit: (_) => setState(() => _isConsultantSectionHovered = false),
-      child: GestureDetector(
-        onTap: _showConsultantPopup,
-        child: Container(
-          height: 63,
-          decoration: BoxDecoration(
-            color: _isConsultantSectionHovered ? AppTheme.containerColor2 : AppTheme.containerColor1,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 8, 7),
-            child: Row(
-              children: [
-                // Consultant information
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _consultantName,
-                        style: AppTheme.primaryTitleStyle.copyWith(
-                          color: _isConsultantSectionHovered ? AppTheme.elementColor3 : AppTheme.elementColor2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _teamName,
-                        style: AppTheme.secondaryTitleStyle.copyWith(
-                          color: _isConsultantSectionHovered ? AppTheme.elementColor2 : AppTheme.elementColor1,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Consultant avatar button
-                _buildConsultantAvatar(),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return LightItem7(
+      title: _consultantName,
+      description: _teamName,
+      svgAsset: 'assets/userIcon.svg',
+      onTap: _showConsultantPopup,
     );
   }
 
-  /// Builds the consultant avatar container
-  Widget _buildConsultantAvatar() {
-    return Container(
-      width: 48,
-      height: 47,
-      decoration: BoxDecoration(
-        color: AppTheme.containerColor2,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-      ),
-      child: Center(
-        child: SvgPicture.asset(
-          'assets/userIcon.svg',
-          width: AppTheme.iconSizeMedium,
-          height: AppTheme.iconSizeMedium,
-          colorFilter: ColorFilter.mode(
-            AppTheme.elementColor3,
-            BlendMode.srcIn,
-          ),
-        ),
-      ),
-    );
-  }
+
 
   /// Builds the areas navigation section with collapsible header
   Widget _buildAreasSection() {
@@ -884,22 +816,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Forces complete state synchronization between MainScreen and SidebarService
+  /// Forces complete state synchronization between MainScreen and SidebarService with debouncing
   void _forceSyncStates() {
-    debugPrint('🔄 Forcing state synchronization');
-    debugPrint('📊 MainScreen state: Area=$_currentArea, Pane=$_currentPane');
-    debugPrint('📊 SidebarService state: Area=${_sidebarService.currentArea}, Pane=${_sidebarService.currentPane}');
-    
     // If states are out of sync, update MainScreen to match SidebarService (single source of truth)
     bool needsUpdate = false;
     if (_currentArea != _sidebarService.currentArea) {
-      debugPrint('⚠️ Area states out of sync, updating MainScreen');
       _currentArea = _sidebarService.currentArea;
       needsUpdate = true;
     }
     
     if (_currentPane != _sidebarService.currentPane) {
-      debugPrint('⚠️ Pane states out of sync, updating MainScreen');
       _currentPane = _sidebarService.currentPane ?? PaneType.clients;
       needsUpdate = true;
     }

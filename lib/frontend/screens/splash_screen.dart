@@ -78,7 +78,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         await _navigateToMainScreen();
       } else {
         // In case of error, still navigate to main screen
-        debugPrint('⚠️ SPLASH_SCREEN: Preloading had errors, but continuing to main screen');
         await Future.delayed(const Duration(milliseconds: 500));
         await _navigateToMainScreen();
       }
@@ -104,14 +103,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   Future<void> _navigateToMainScreen() async {
-    debugPrint('🚀 SPLASH_SCREEN: Navigating to MainScreen');
-    debugPrint('🚀 SPLASH_SCREEN: Consultant name: ${widget.consultantData['name']}');
-    debugPrint('🚀 SPLASH_SCREEN: Team name: ${widget.consultantData['team']}');
-    
     // FIX: Resetează cache-ul pentru noul consultant înainte de navigare
     try {
       await _splashService.resetForNewConsultant();
-      debugPrint('✅ SPLASH_SCREEN: Cache reset completed before navigation');
     } catch (e) {
       debugPrint('❌ SPLASH_SCREEN: Error resetting cache: $e');
     }

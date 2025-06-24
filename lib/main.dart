@@ -264,19 +264,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
     
     // Listener manual optimizat - doar când se schimbă efectiv starea
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
-      debugPrint('🔶 AUTH_WRAPPER: Manual auth listener triggered - User: ${user?.email ?? 'null'}');
-      
       // Doar dacă utilizatorul s-a schimbat efectiv
       if (_lastKnownUser?.uid != user?.uid) {
         _lastKnownUser = user;
-        debugPrint('🔶 AUTH_WRAPPER: Auth state actually changed, forcing setState');
         if (mounted) {
           setState(() {
             // Force rebuild when auth state actually changes
           });
         }
-      } else {
-        debugPrint('🔶 AUTH_WRAPPER: Same user, skipping setState');
       }
     });
   }
@@ -302,14 +297,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return StreamBuilder<User?>( 
       stream: FirebaseAuth.instance.authStateChanges(), 
       builder: (context, snapshot) {
-        debugPrint('🔶 AUTH_WRAPPER: Stream builder called');
-        debugPrint('🔶 AUTH_WRAPPER: Connection state: ${snapshot.connectionState}');
-        debugPrint('🔶 AUTH_WRAPPER: Has data: ${snapshot.hasData}');
-        debugPrint('🔶 AUTH_WRAPPER: User: ${snapshot.data?.email ?? 'null'}');
-        debugPrint('🔶 AUTH_WRAPPER: Direct current user check: ${FirebaseAuth.instance.currentUser?.email ?? 'null'}');
-        
         if (snapshot.connectionState == ConnectionState.waiting) {
-          debugPrint('🔶 AUTH_WRAPPER: Showing loading indicator');
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -322,14 +310,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // Verificare dublă - considerăm utilizatorul autentificat doar dacă ambele confirmă
         final hasUser = streamUser != null && currentUser != null;
         
-        debugPrint('🔶 AUTH_WRAPPER: hasUser calculation: streamUser!=null=${streamUser != null}, currentUser!=null=${currentUser != null}, hasUser=$hasUser');
-        
         if (hasUser) {
-          debugPrint('🔶 AUTH_WRAPPER: User is authenticated, showing MainAppWrapper');
           return const MainAppWrapper();
         }
         
-        debugPrint('🔶 AUTH_WRAPPER: User is not authenticated, showing AuthScreen');
         // When user is logged out, reset to default theme
         _resetToDefaultTheme();
         
@@ -367,13 +351,9 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
   }
 
   Future<void> _fetchConsultantData() async {
-    debugPrint('🔸 MAIN_APP_WRAPPER: Starting to fetch consultant data');
-    
     final currentUser = FirebaseAuth.instance.currentUser;
-    debugPrint('🔸 MAIN_APP_WRAPPER: Current user: ${currentUser?.email ?? 'null'}');
     
     if (currentUser == null) {
-      debugPrint('🔸 MAIN_APP_WRAPPER: No current user, setting state to null');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -385,27 +365,21 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     }
 
     try {
-      debugPrint('🔸 MAIN_APP_WRAPPER: Getting consultant data from service');
       // Use ConsultantService instead of direct Firestore access
       final consultantService = ConsultantService();
       final consultantData = await consultantService.getCurrentConsultantData();
       
-      debugPrint('🔸 MAIN_APP_WRAPPER: Consultant data received: ${consultantData != null ? 'Data found' : 'No data'}');
-      
       if (!mounted) return;
 
       if (consultantData != null) {
-        debugPrint('🔸 MAIN_APP_WRAPPER: Reloading theme settings');
         // Reload theme settings for the current consultant
         await _settingsService.onConsultantChanged();
         
-        debugPrint('🔸 MAIN_APP_WRAPPER: Setting consultant data in state');
         setState(() {
           _consultantData = consultantData;
           _isLoading = false;
         });
       } else {
-        debugPrint('🔸 MAIN_APP_WRAPPER: No consultant data found, signing out user');
         // Daca utilizatorul autentificat nu are date in Firestore, ar trebui deconectat
         // pentru a preveni o stare invalida in aplicatie.
         await FirebaseAuth.instance.signOut(); // Acest signOut va fi detectat de AuthWrapper
@@ -416,7 +390,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         });
       }
     } catch (e) {
-      debugPrint("🔸 MAIN_APP_WRAPPER: Error fetching consultant data: $e");
+      debugPrint("❌ MAIN_APP_WRAPPER: Error fetching consultant data: $e");
       if (mounted) {
         setState(() {
           _consultantData = null;

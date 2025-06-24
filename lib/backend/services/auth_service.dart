@@ -167,7 +167,7 @@ class AuthService {
           message = 'Parola este prea slaba';
           break;
         case 'email-already-in-use':
-          message = 'Acest consultant exista deja (email asociat)';
+          message = 'Acest consultant exista deja';
           break;
         default:
           message = 'Eroare la crearea contului: ${e.message}';

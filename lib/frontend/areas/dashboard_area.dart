@@ -87,7 +87,7 @@ class _DashboardAreaState extends State<DashboardArea> {
             // Header cu navigare luni pentru consultanti
             WidgetHeader6(
               title: 'Top consultanti',
-              dateText: DateFormat('MMMM yyyy', 'ro').format(_dashboardService.selectedMonthConsultants),
+              dateText: DateFormat('MMM yyyy', 'ro').format(_dashboardService.selectedMonthConsultants),
               onPrevDateTap: _dashboardService.goToPreviousMonthConsultants,
               onNextDateTap: _dashboardService.goToNextMonthConsultants,
               onDateTextTap: _dashboardService.goToCurrentMonthConsultants,
@@ -142,7 +142,7 @@ class _DashboardAreaState extends State<DashboardArea> {
             // Header cu navigare luni pentru echipe
             WidgetHeader6(
               title: 'Top echipe',
-              dateText: DateFormat('MMMM yyyy', 'ro').format(_dashboardService.selectedMonthTeams),
+              dateText: DateFormat('MMM yyyy', 'ro').format(_dashboardService.selectedMonthTeams),
               onPrevDateTap: _dashboardService.goToPreviousMonthTeams,
               onNextDateTap: _dashboardService.goToNextMonthTeams,
               onDateTextTap: _dashboardService.goToCurrentMonthTeams,
@@ -188,20 +188,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     return Container(
       width: 600,
       padding: const EdgeInsets.all(8),
-      decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
-        ),
-        shadows: const [
-          BoxShadow(
-            color: Color(0x3F000000),
-            blurRadius: 4,
-            offset: Offset(0, 4),
-            spreadRadius: 0,
-          )
-        ],
-      ),
+      decoration: AppTheme.widgetDecoration,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
@@ -263,7 +250,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                     'Agent serviciu',
                     style: AppTheme.safeOutfit(
                       color: AppTheme.elementColor2,
-                      fontSize: 19,
+                      fontSize: 17,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -273,12 +260,12 @@ class _DashboardAreaState extends State<DashboardArea> {
                       _dashboardService.forceReloadDutyAgent();
                     },
                     child: Text(
-                      _dashboardService.dutyAgent ?? 'N/A',
+                      _dashboardService.dutyAgent ?? 'Nimeni',
                       textAlign: TextAlign.right,
                       style: AppTheme.safeOutfit(
                         color: AppTheme.elementColor1,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),

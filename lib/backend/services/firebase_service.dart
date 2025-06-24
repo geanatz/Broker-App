@@ -92,27 +92,13 @@ class DefaultFirebaseOptions {
   );
 }
 
-/// A utility class to handle Firebase operations in a thread-safe manner.
-/// This ensures all Firebase operations run on the platform thread (main UI thread)
-/// to prevent "Sending messages to native from a non-platform thread" errors.
+
 class FirebaseThreadHandler {
-  /// Private constructor for singleton pattern
+
   FirebaseThreadHandler._();
-  
-  /// The singleton instance
+
   static final FirebaseThreadHandler instance = FirebaseThreadHandler._();
-  
-  /// Executes a Firebase operation safely on the platform thread.
-  /// 
-  /// This method ensures the operation runs on the main UI thread, which is required
-  /// for Firebase operations to avoid thread-related errors and data loss.
-  /// 
-  /// Example usage:
-  /// ```dart
-  /// final docSnapshot = await FirebaseThreadHandler.instance.executeOnPlatformThread(
-  ///   () => FirebaseFirestore.instance.collection('users').doc('123').get()
-  /// );
-  /// ```
+
   Future<T> executeOnPlatformThread<T>(Future<T> Function() operation) async {
     final completer = Completer<T>();
     
@@ -142,17 +128,6 @@ class FirebaseThreadHandler {
     return completer.future;
   }
   
-  /// Creates a thread-safe stream for Firestore queries.
-  /// 
-  /// This method wraps a Firestore query stream to ensure all operations are on the 
-  /// platform thread and properly managed.
-  /// 
-  /// Example usage:
-  /// ```dart
-  /// final stream = FirebaseThreadHandler.instance.createSafeQueryStream(
-  ///   () => FirebaseFirestore.instance.collection('users').snapshots()
-  /// );
-  /// ```
   Stream<QuerySnapshot> createSafeQueryStream(Stream<QuerySnapshot> Function() queryStream) {
     // Create a stream controller that will be responsible for the stream management
     final controller = StreamController<QuerySnapshot>.broadcast();
@@ -198,16 +173,6 @@ class FirebaseThreadHandler {
     return controller.stream;
   }
   
-  /// Execute a Firestore transaction safely on the platform thread.
-  /// 
-  /// Example usage:
-  /// ```dart
-  /// final result = await FirebaseThreadHandler.instance.executeTransaction((transaction) async {
-  ///   final docSnapshot = await transaction.get(docRef);
-  ///   // Perform transaction operations
-  ///   return 'success';
-  /// });
-  /// ```
   Future<T> executeTransaction<T>(
     Future<T> Function(Transaction transaction) transactionFunction
   ) async {
@@ -216,16 +181,6 @@ class FirebaseThreadHandler {
     });
   }
   
-  /// Execute a Firestore batch write safely on the platform thread.
-  /// 
-  /// Example usage:
-  /// ```dart
-  /// await FirebaseThreadHandler.instance.executeBatch((batch) {
-  ///   batch.set(doc1Ref, data1);
-  ///   batch.update(doc2Ref, data2);
-  ///   batch.delete(doc3Ref);
-  /// });
-  /// ```
   Future<void> executeBatch(void Function(WriteBatch batch) batchFunction) async {
     return executeOnPlatformThread(() async {
       final batch = FirebaseFirestore.instance.batch();
@@ -236,7 +191,6 @@ class FirebaseThreadHandler {
 }
 
 /// Serviciu pentru gestionarea formularelor în Firebase Firestore
-/// Acum folosește noua structură unificată în loc de colecția globală 'forms'
 class FirebaseFormService {
   static final FirebaseFormService _instance = FirebaseFormService._internal();
   factory FirebaseFormService() => _instance;
@@ -252,9 +206,6 @@ class FirebaseFormService {
     required Map<String, dynamic> formData,
   }) async {
     try {
-      debugPrint('🔥 FirebaseFormService: Saving data to unified structure for client: $clientName ($phoneNumber)');
-      debugPrint('🔥 FirebaseFormService: Data structure: ${formData.keys.toList()}');
-      
       await _threadHandler.executeOnPlatformThread(() async {
         // Verifică dacă clientul există, dacă nu îl creează
         final existingClient = await _clientService.getClient(phoneNumber);
@@ -271,12 +222,10 @@ class FirebaseFormService {
           formType: 'unified_form',
           formData: formData,
         );
-        
-        debugPrint('✅ FirebaseFormService: Successfully saved data to unified structure for client: $clientName');
       });
       return true;
     } catch (e) {
-      debugPrint('❌ FirebaseFormService: Error saving form data to unified structure: $e');
+      debugPrint('❌ FirebaseFormService: Error saving form data: $e');
       return false;
     }
   }
@@ -284,14 +233,10 @@ class FirebaseFormService {
   /// Încarcă datele formularului pentru un client din noua structură
   Future<Map<String, dynamic>?> loadClientFormData(String phoneNumber) async {
     try {
-      debugPrint('🔥 FirebaseFormService: Loading data from unified structure for client: $phoneNumber');
-      
       return await _threadHandler.executeOnPlatformThread(() async {
         final client = await _clientService.getClient(phoneNumber);
         
         if (client != null) {
-          debugPrint('✅ FirebaseFormService: Successfully loaded data from unified structure for client: $phoneNumber');
-          
           // Obtine formularele clientului
           final forms = await _clientService.getClientForms(phoneNumber);
           final formData = forms.isNotEmpty ? forms.first['data'] ?? {} : {};
@@ -302,13 +247,11 @@ class FirebaseFormService {
             'lastUpdated': DateTime.now().toIso8601String(),
             'formData': formData,
           };
-        } else {
-          debugPrint('⚠️ FirebaseFormService: No data found in unified structure for client: $phoneNumber');
         }
         return null;
       });
     } catch (e) {
-      debugPrint('❌ FirebaseFormService: Error loading form data from unified structure: $e');
+      debugPrint('❌ FirebaseFormService: Error loading form data: $e');
       return null;
     }
   }
@@ -317,10 +260,8 @@ class FirebaseFormService {
   Future<bool> deleteClientFormData(String phoneNumber) async {
     try {
       await _threadHandler.executeOnPlatformThread(() async {
-        // În noua structură, ștergem formularele clientului
         final forms = await _clientService.getClientForms(phoneNumber);
         for (final form in forms) {
-          // Folosim NewFirebaseService pentru a șterge formularele
           final newFirebaseService = NewFirebaseService();
           await newFirebaseService.deleteClientForm(
             phoneNumber: phoneNumber,
@@ -415,7 +356,6 @@ class FirebaseFormService {
   }
 
   /// Obține toate documentele din colecția forms (pentru debug/admin)
-  /// Acum returnează datele din noua structură
   Future<List<Map<String, dynamic>>> getAllForms() async {
     try {
       return await _threadHandler.executeOnPlatformThread(() async {
@@ -456,7 +396,6 @@ class FirebaseFormService {
 }
 
 /// Serviciu Firebase refactorizat pentru noua structura
-/// Separa corect datele pentru fiecare consultant
 class NewFirebaseService {
   static final NewFirebaseService _instance = NewFirebaseService._internal();
   factory NewFirebaseService() => _instance;
@@ -478,22 +417,18 @@ class NewFirebaseService {
   /// Obtine token-ul consultantului curent din baza de data
   Future<String?> getCurrentConsultantToken() async {
     final user = currentUser;
-    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken - currentUser: ${user?.email ?? 'NULL'}');
     
     if (user == null) {
-      debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken - no current user');
       return null;
     }
 
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: Fetching consultant document for UID: ${user.uid}');
       final doc = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(user.uid).get()
       );
       
       if (doc.exists) {
         final token = doc.data()?['token'] as String?;
-        debugPrint('🔍 FIREBASE_SERVICE: Found consultant token: ${token != null ? '${token.substring(0, 8)}...' : 'NULL'}');
         return token;
       } else {
         debugPrint('❌ FIREBASE_SERVICE: Consultant document does not exist for UID: ${user.uid}');
@@ -564,8 +499,6 @@ class NewFirebaseService {
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection).doc(phoneNumber).set(clientData)
       );
-
-      debugPrint('✅ Client created successfully: $name ($phoneNumber)');
       return true;
     } catch (e) {
       debugPrint('❌ Error creating client: $e');
@@ -597,24 +530,18 @@ class NewFirebaseService {
   /// Obtine toti clientii pentru consultantul curent (FIX: mai robust filtering)
   Future<List<Map<String, dynamic>>> getAllClients() async {
     final consultantToken = await getCurrentConsultantToken();
-    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken returned: ${consultantToken ?? 'NULL'}');
     
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: Cannot get clients - consultant token is null');
       return [];
     }
 
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: Querying clients for token: ${consultantToken.substring(0, 8)}...');
       final snapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection)
             .where('consultantToken', isEqualTo: consultantToken)
             .get()
       );
 
-      debugPrint('🔍 FIREBASE_SERVICE: Found ${snapshot.docs.length} clients for consultant');
-      
-      // FIX: verifică explicit că consultantToken match-uiește pentru fiecare client
       final clientsList = <Map<String, dynamic>>[];
       for (final doc in snapshot.docs) {
         final data = doc.data();
@@ -626,8 +553,6 @@ class NewFirebaseService {
             'id': doc.id,
             ...data,
           });
-        } else {
-          debugPrint('⚠️ FIREBASE_SERVICE: Skipping client ${doc.id} - wrong consultant token');
         }
       }
       
@@ -643,7 +568,6 @@ class NewFirebaseService {
         return bTime.compareTo(aTime); // descending
       });
       
-      debugPrint('✅ FIREBASE_SERVICE: Returning ${clientsList.length} filtered clients');
       return clientsList;
     } catch (e) {
       debugPrint('❌ Error getting all clients: $e');
@@ -666,8 +590,6 @@ class NewFirebaseService {
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection).doc(phoneNumber).update(updates)
       );
-
-      debugPrint('✅ Client updated successfully: $phoneNumber');
       return true;
     } catch (e) {
       debugPrint('❌ Error updating client: $e');
@@ -704,8 +626,6 @@ class NewFirebaseService {
       batch.delete(clientRef);
 
       await _threadHandler.executeOnPlatformThread(() => batch.commit());
-
-      debugPrint('✅ Client deleted successfully: $phoneNumber');
       return true;
     } catch (e) {
       debugPrint('❌ Error deleting client: $e');
@@ -746,8 +666,6 @@ class NewFirebaseService {
 
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
-
-      debugPrint('✅ Form saved successfully: $formId for client $phoneNumber');
       return true;
     } catch (e) {
       debugPrint('❌ Error saving form: $e');
@@ -822,8 +740,6 @@ class NewFirebaseService {
 
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
-
-      debugPrint('✅ Meeting created successfully for client $phoneNumber');
       return true;
     } catch (e) {
       debugPrint('❌ Error creating meeting: $e');
@@ -835,23 +751,18 @@ class NewFirebaseService {
   Future<List<Map<String, dynamic>>> getAllMeetings() async {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: Cannot get meetings - consultant token is null');
       return [];
     }
 
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: Getting meetings for consultant: ${consultantToken.substring(0, 8)}...');
       final clients = await getAllClients(); // Folosește getAllClients care deja filtrează corect
       final List<Map<String, dynamic>> allMeetings = [];
-
-      debugPrint('🔍 FIREBASE_SERVICE: Processing ${clients.length} clients for meetings');
 
       for (final client in clients) {
         final phoneNumber = client['phoneNumber'] as String;
         
         // Verificare suplimentară pentru siguranță
         if (client['consultantToken'] != consultantToken) {
-          debugPrint('⚠️ FIREBASE_SERVICE: Skipping client $phoneNumber - wrong consultant token');
           continue;
         }
         
@@ -862,8 +773,6 @@ class NewFirebaseService {
               .orderBy('dateTime', descending: false)
               .get()
         );
-
-        debugPrint('🔍 FIREBASE_SERVICE: Found ${meetingsSnapshot.docs.length} meetings for client $phoneNumber');
 
         for (final doc in meetingsSnapshot.docs) {
           // FIX: Asigură-te că consultantToken este disponibil pentru identificare
@@ -884,7 +793,6 @@ class NewFirebaseService {
         }
       }
 
-      debugPrint('✅ FIREBASE_SERVICE: Returning ${allMeetings.length} total meetings for consultant');
       return allMeetings;
     } catch (e) {
       debugPrint('❌ Error getting all meetings: $e');
@@ -896,13 +804,10 @@ class NewFirebaseService {
   Future<List<Map<String, dynamic>>> getTeamMeetings() async {
     final team = await getCurrentConsultantTeam();
     if (team == null) {
-      debugPrint('❌ FIREBASE_SERVICE: Cannot get team meetings - team is null');
       return [];
     }
 
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: Getting team meetings for team: $team');
-      
       // Obtine toti consultantii din echipa
       final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection)
@@ -914,21 +819,16 @@ class NewFirebaseService {
           .map((doc) => doc.data()['token'] as String)
           .where((token) => token.isNotEmpty)
           .toList();
-      debugPrint('🔍 FIREBASE_SERVICE: Found ${teamTokens.length} consultants in team $team');
 
       // Obtine clientii pentru toti consultantii din echipa
       final List<Map<String, dynamic>> teamMeetings = [];
       
       for (final token in teamTokens) {
-        debugPrint('🔍 FIREBASE_SERVICE: Processing meetings for consultant token: ${token.substring(0, 8)}...');
-        
         final clientsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
           _firestore.collection(_clientsCollection)
               .where('consultantToken', isEqualTo: token)
               .get()
         );
-
-        debugPrint('🔍 FIREBASE_SERVICE: Found ${clientsSnapshot.docs.length} clients for consultant');
 
         for (final clientDoc in clientsSnapshot.docs) {
           final phoneNumber = clientDoc.id;
@@ -936,7 +836,6 @@ class NewFirebaseService {
           
           // FIX: verificare suplimentară pentru siguranță
           if (clientData['consultantToken'] != token) {
-            debugPrint('⚠️ FIREBASE_SERVICE: Skipping client $phoneNumber - token mismatch');
             continue;
           }
           
@@ -968,7 +867,6 @@ class NewFirebaseService {
         }
       }
 
-      debugPrint('✅ FIREBASE_SERVICE: Returning ${teamMeetings.length} total team meetings');
       return teamMeetings;
     } catch (e) {
       debugPrint('❌ Error getting team meetings: $e');
@@ -1012,8 +910,6 @@ class NewFirebaseService {
 
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
-
-      debugPrint('✅ Meeting updated successfully: $meetingId for client $phoneNumber');
       return true;
     } catch (e) {
       debugPrint('❌ Error updating meeting: $e');
@@ -1044,8 +940,6 @@ class NewFirebaseService {
 
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
-
-      debugPrint('✅ Meeting deleted successfully: $meetingId for client $phoneNumber');
       return true;
     } catch (e) {
       debugPrint('❌ Error deleting meeting: $e');
@@ -1076,8 +970,6 @@ class NewFirebaseService {
 
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
-
-      debugPrint('✅ Form deleted successfully: $formId for client $phoneNumber');
       return true;
     } catch (e) {
       debugPrint('❌ Error deleting form: $e');
@@ -1131,12 +1023,9 @@ class NewFirebaseService {
   /// Migreaza datele existente la noua structura
   Future<bool> migrateToNewStructure() async {
     try {
-      debugPrint('🔄 Starting migration to new structure...');
-      
       // Aceasta functie va fi implementata pentru a migra datele existente
       // Dar pentru simplitate, vom incepe cu o structura curata
       
-      debugPrint('✅ Migration completed successfully');
       return true;
     } catch (e) {
       debugPrint('❌ Error during migration: $e');
@@ -1147,13 +1036,9 @@ class NewFirebaseService {
   /// Curata structura existenta (ATENTIE: Sterge toate datele!)
   Future<bool> clearOldStructure() async {
     try {
-      debugPrint('🔄 Starting cleanup of old structure...');
-      
       // ATENTIE: Aceasta functie va sterge toate datele din structura veche!
       // Foloseste-o doar dupa ce ai migrat datele necesare
       
-      debugPrint('⚠️ Cleanup functionality not implemented for safety');
-      debugPrint('✅ Cleanup completed successfully');
       return true;
     } catch (e) {
       debugPrint('❌ Error during cleanup: $e');
@@ -1173,8 +1058,6 @@ class MigrationService {
   /// Incepe migrarea completa la noua structura
   Future<Map<String, dynamic>> startMigration() async {
     try {
-      debugPrint('🔄 MIGRATION: Starting complete migration to new structure...');
-
       // Pasul 1: Migreaza consultantii
       final consultantsResult = await _migrateConsultants();
       if (!consultantsResult['success']) {
@@ -1190,7 +1073,6 @@ class MigrationService {
       // Pasul 3: Creeaza structura pentru statistici
       await _createStatsStructure();
 
-      debugPrint('✅ MIGRATION: Complete migration finished successfully');
       return {
         'success': true,
         'message': 'Migrarea s-a finalizat cu succes',
@@ -1209,8 +1091,6 @@ class MigrationService {
   /// Migreaza consultantii la noua structura
   Future<Map<String, dynamic>> _migrateConsultants() async {
     try {
-      debugPrint('🔄 MIGRATION: Migrating consultants...');
-      
       // Obtine toti consultantii din structura veche
       final oldConsultantsSnapshot = await _firestore.collection('consultants').get();
       int migratedCount = 0;
@@ -1220,15 +1100,10 @@ class MigrationService {
         
         // Verifica daca consultantul are deja token
         if (data.containsKey('token')) {
-          debugPrint('✅ MIGRATION: Consultant ${data['name']} already has token');
           migratedCount++;
-        } else {
-          debugPrint('⚠️ MIGRATION: Consultant ${data['name']} needs token update');
-          // Aici ai putea adauga logica pentru a genera token-uri pentru consultantii existenti
         }
       }
 
-      debugPrint('✅ MIGRATION: Migrated $migratedCount consultants');
       return {
         'success': true,
         'count': migratedCount,
@@ -1245,12 +1120,9 @@ class MigrationService {
   /// Migreaza clientii la noua structura
   Future<Map<String, dynamic>> _migrateClients() async {
     try {
-      debugPrint('🔄 MIGRATION: Migrating clients to new structure...');
-      
       // Pentru noua structura, clientii vor fi creati direct cu noua structura
       // Datele vechi pot fi pastrate pentru backup sau migrate manual
       
-      debugPrint('✅ MIGRATION: Client migration prepared (will use new structure)');
       return {
         'success': true,
         'count': 0, // Clientii vor fi creati fresh cu noua structura
@@ -1267,8 +1139,6 @@ class MigrationService {
   /// Creeaza structura pentru statistici
   Future<void> _createStatsStructure() async {
     try {
-      debugPrint('🔄 MIGRATION: Creating stats structure...');
-      
       // Creeaza document global pentru statistici
       await _firestore.collection('stats').doc('global').set({
         'totalClients': 0,
@@ -1278,8 +1148,6 @@ class MigrationService {
         'lastUpdated': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
       });
-
-      debugPrint('✅ MIGRATION: Stats structure created');
     } catch (e) {
       debugPrint('❌ MIGRATION: Error creating stats structure: $e');
     }

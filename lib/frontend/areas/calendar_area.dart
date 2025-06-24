@@ -51,6 +51,10 @@ class CalendarAreaState extends State<CalendarArea> {
   List<ClientActivity> _allMeetings = []; // Cache for all meetings for navigation
   Timer? _refreshTimer;
   
+  // Debouncing pentru load meetings
+  Timer? _loadDebounceTimer;
+  bool _isLoadingMeetings = false;
+  
   // Highlight functionality
   String? _highlightedMeetingId;
   Timer? _highlightTimer;
@@ -92,6 +96,7 @@ class CalendarAreaState extends State<CalendarArea> {
   void dispose() {
     _refreshTimer?.cancel();
     _highlightTimer?.cancel();
+    _loadDebounceTimer?.cancel();
     _scrollController.dispose();
     _splashService.removeListener(_onSplashServiceChanged); // FIX: cleanup listener
     super.dispose();
@@ -100,13 +105,27 @@ class CalendarAreaState extends State<CalendarArea> {
   /// FIX: Callback pentru refresh automat când se schimbă datele în SplashService
   void _onSplashServiceChanged() {
     if (mounted) {
-      debugPrint('📋 CALENDAR_AREA: SplashService changed, refreshing meetings');
       _loadMeetingsForCurrentWeek();
     }
   }
 
-  /// Incarca intalnirile pentru saptamana curenta din cache-ul din splash (FIX: mai robust)
+  /// Incarca intalnirile cu debouncing pentru evitarea apelurilor multiple
   Future<void> _loadMeetingsForCurrentWeek() async {
+    // Anulează loading-ul anterior dacă există unul pending
+    _loadDebounceTimer?.cancel();
+    
+    // Dacă deja se încarcă, nu mai face alt request
+    if (_isLoadingMeetings) return;
+    
+    // Debouncing: așteaptă 150ms înainte de a executa
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 150), () async {
+      await _performLoadMeetingsForCurrentWeek();
+    });
+  }
+
+  /// Execută încărcarea efectivă a întâlnirilor pentru săptămâna curentă
+  Future<void> _performLoadMeetingsForCurrentWeek() async {
+    if (_isLoadingMeetings) return;
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) {
       debugPrint("❌ CALENDAR_AREA: User not authenticated");
@@ -120,7 +139,7 @@ class CalendarAreaState extends State<CalendarArea> {
     }
 
     try {
-      debugPrint("📋 CALENDAR_AREA: Loading team meetings from cache for week offset: $_currentWeekOffset");
+      _isLoadingMeetings = true;
       
       final DateTime startOfWeek = _calendarService.getStartOfWeekToDisplay(_currentWeekOffset);
       final DateTime endOfWeek = _calendarService.getEndOfWeekToDisplay(_currentWeekOffset);
@@ -139,8 +158,6 @@ class CalendarAreaState extends State<CalendarArea> {
         }
       }
 
-      debugPrint("✅ CALENDAR_AREA: Found ${weekMeetings.length} team meetings for current week (from cache)");
-
       if (mounted) {
         setState(() {
           _cachedMeetings = weekMeetings;
@@ -157,6 +174,8 @@ class CalendarAreaState extends State<CalendarArea> {
           // Keep existing cache on error
         });
       }
+    } finally {
+      _isLoadingMeetings = false;
     }
   }
 
@@ -566,7 +585,7 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// Afiseaza dialogul pentru crearea unei intalniri noi
+  /// OPTIMIZAT: Afiseaza dialogul pentru crearea unei intalniri noi cu delay redus
   void _showCreateMeetingDialog(int dayIndex, int hourIndex) {
     if (!mounted) return;
     
@@ -577,18 +596,17 @@ class CalendarAreaState extends State<CalendarArea> {
         hourIndex
       );
       
+      // OPTIMIZARE: Afișează imediat popup-ul fără delay
       showDialog(
         context: context,
         barrierDismissible: true,
         builder: (context) => MeetingPopup(
           initialDateTime: selectedDateTime,
           onSaved: () {
-            // Invalideaza cache-urile pentru refresh instant
-            SplashService().invalidateMeetingsCache();
-            SplashService().invalidateTimeSlotsCache();
-            // Refresh calendar cu cache-ul nou
-            _loadMeetingsForCurrentWeek();
-            // FIX: Notifică main_screen să refresheze meetings_pane
+            // OPTIMIZARE: Invalidare optimizată cu debouncing
+            SplashService().invalidateAllMeetingCaches();
+            // OPTIMIZARE: Nu mai apelăm load-ul separat, e inclus în invalidateAllMeetingCaches
+            // Notifică main_screen să refresheze meetings_pane
             widget.onMeetingSaved?.call();
           },
         ),
@@ -598,23 +616,22 @@ class CalendarAreaState extends State<CalendarArea> {
     }
   }
 
-  /// Afiseaza dialogul pentru editarea unei intalniri existente
+  /// OPTIMIZAT: Afiseaza dialogul pentru editarea unei intalniri existente cu delay redus
   void _showEditMeetingDialog(Map<String, dynamic> meetingData, String docId) {
     if (!mounted) return;
     
     try {
+      // OPTIMIZARE: Afișează imediat popup-ul fără delay
       showDialog(
         context: context,
         barrierDismissible: true,
         builder: (context) => MeetingPopup(
           meetingId: docId,
           onSaved: () {
-            // Invalideaza cache-urile pentru refresh instant
-            SplashService().invalidateMeetingsCache();
-            SplashService().invalidateTimeSlotsCache();
-            // Refresh calendar cu cache-ul nou
-            _loadMeetingsForCurrentWeek();
-            // FIX: Notifică main_screen să refresheze meetings_pane
+            // OPTIMIZARE: Invalidare optimizată cu debouncing
+            SplashService().invalidateAllMeetingCaches();
+            // OPTIMIZARE: Nu mai apelăm load-ul separat, e inclus în invalidateAllMeetingCaches
+            // Notifică main_screen să refresheze meetings_pane
             widget.onMeetingSaved?.call();
           },
         ),
@@ -749,8 +766,8 @@ class CalendarAreaState extends State<CalendarArea> {
   /// Public method to refresh calendar data
   void refreshCalendar() {
     debugPrint('🔄 Refreshing calendar data...');
-    SplashService().invalidateMeetingsCache();
-    _loadMeetingsForCurrentWeek();
+    // OPTIMIZARE: Folosește invalidarea optimizată
+    SplashService().invalidateAllMeetingCaches();
   }
   
   /// FIX: Obține consultantToken-ul curent în mod sincron (pentru ownership verification)
