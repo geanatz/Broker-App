@@ -11,6 +11,7 @@ import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/auth_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:broker_app/backend/services/xlsx_service.dart';
 
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -469,16 +470,42 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       debugPrint('✅ Client mutat cu succes: ${widget.client.name} - Status: $_selectedStatus');
 
-      // Salveaza doar acest client in Excel dupa salvarea cu succes
+      // Salveaza client in Excel prin Google Drive dupa salvarea cu succes
       try {
-        debugPrint('🔄 Incepe salvarea clientului in XLSX...');
+        debugPrint('🔄 Incepe salvarea clientului in Google Drive XLSX...');
         
-        // Pentru moment, dezactivăm salvarea în XLSX până la refactorizarea completă
-        debugPrint('⚠️ Salvarea în XLSX temporar dezactivată - necesită refactorizare pentru noua structură');
+        final xlsxService = ExcelExportService();
+        final saveResult = await xlsxService.saveClientToXlsx(widget.client);
+        
+        if (saveResult != null) {
+          // A fost o eroare la salvare
+          debugPrint('❌ Eroare la salvarea clientului in Google Drive: $saveResult');
+          // Afișează eroarea utilizatorului dar nu oprește procesul
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Avertizare: $saveResult'),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        } else {
+          debugPrint('✅ Client salvat cu succes în Google Drive XLSX');
+        }
       } catch (e, stackTrace) {
-        debugPrint('❌ Eroare la salvarea clientului in XLSX: $e');
+        debugPrint('❌ Eroare la salvarea clientului in Google Drive: $e');
         debugPrint('❌ Stack trace: $stackTrace');
         // Nu oprim procesul pentru ca statusul a fost salvat cu succes
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Avertizare: Eroare la salvarea în Google Drive Excel'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
 
       if (mounted) {
@@ -488,13 +515,13 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
       }
       
-      String successMessage = "Statusul a fost salvat cu succes si datele au fost salvate in clienti.xlsx";
+      String successMessage = "Statusul a fost salvat cu succes si datele au fost salvate in Google Sheets";
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
-        successMessage = "Statusul a fost salvat, intalnirea a fost programata si datele au fost salvate in clienti.xlsx";
+        successMessage = "Statusul a fost salvat, intalnirea a fost programata si datele au fost salvate in Google Sheets";
       } else if (_selectedStatus == 'Amanat') {
-        successMessage = "Clientul a fost mutat in sectiunea Reveniri si datele au fost salvate in clienti.xlsx";
+        successMessage = "Clientul a fost mutat in sectiunea Reveniri si datele au fost salvate in Google Sheets";
       } else if (_selectedStatus == 'Refuzat') {
-        successMessage = "Clientul a fost mutat in sectiunea Recente si datele au fost salvate in clienti.xlsx";
+        successMessage = "Clientul a fost mutat in sectiunea Recente si datele au fost salvate in Google Sheets";
       }
       _showSuccess(successMessage);
     } catch (e) {

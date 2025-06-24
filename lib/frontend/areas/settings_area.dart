@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:broker_app/backend/services/sheets_service.dart';
+import 'package:broker_app/frontend/popups/google_drive_popup.dart';
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
 import 'package:broker_app/frontend/components/headers/field_header1.dart';
 import 'package:broker_app/frontend/components/items/outlined_item6.dart';
@@ -20,6 +22,7 @@ class SettingsArea extends StatefulWidget {
 class _SettingsAreaState extends State<SettingsArea> {
   late final SettingsService _settingsService;
   late final MatcherService _matcherService;
+  late final GoogleDriveService _googleDriveService;
 
   @override
   void initState() {
@@ -27,16 +30,19 @@ class _SettingsAreaState extends State<SettingsArea> {
     // Foloseste serviciile pre-incarcate din splash
     _settingsService = SettingsService();
     _matcherService = SplashService().matcherService;
+    _googleDriveService = SplashService().googleDriveService;
     
     // Asculta schimbarile de la SettingsService pentru actualizari in timp real
     _settingsService.addListener(_onSettingsChanged);
     _matcherService.addListener(_onMatcherServiceChanged);
+    _googleDriveService.addListener(_onGoogleDriveServiceChanged);
   }
 
   @override
   void dispose() {
     _settingsService.removeListener(_onSettingsChanged);
     _matcherService.removeListener(_onMatcherServiceChanged);
+    _googleDriveService.removeListener(_onGoogleDriveServiceChanged);
     super.dispose();
   }
 
@@ -51,6 +57,15 @@ class _SettingsAreaState extends State<SettingsArea> {
 
   /// Callback pentru schimbarile din MatcherService
   void _onMatcherServiceChanged() {
+    if (mounted) {
+      setState(() {
+        // UI-ul se va actualiza automat datorita setState
+      });
+    }
+  }
+
+  /// Callback pentru schimbarile din GoogleDriveService
+  void _onGoogleDriveServiceChanged() {
     if (mounted) {
       setState(() {
         // UI-ul se va actualiza automat datorita setState
@@ -98,6 +113,11 @@ class _SettingsAreaState extends State<SettingsArea> {
           
           // Sectiunea pentru culoarea temei
           _buildThemeColorSection(),
+          
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Sectiunea pentru Google Drive
+          _buildGoogleDriveSection(),
         ],
       ),
     );
@@ -364,7 +384,113 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 
+  /// Construiește secțiunea pentru Google Drive
+  Widget _buildGoogleDriveSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.smallGap),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: AppTheme.containerColor1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Field Header pentru Google Drive
+          FieldHeader1(title: 'Google Drive'),
+          
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Status și buton pentru Google Drive
+          Row(
+            children: [
+              // Status info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                                         Text(
+                       _getGoogleDriveStatusText(),
+                       style: AppTheme.safeOutfit(
+                         fontSize: AppTheme.fontSizeSmall,
+                         color: AppTheme.elementColor3,
+                       ),
+                     ),
+                    
+                                        if (_googleDriveService.sheetName != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Google Sheet: ${_googleDriveService.sheetName}',
+                         style: AppTheme.safeOutfit(
+                           fontSize: AppTheme.fontSizeSmall,
+                           color: AppTheme.elementColor3,
+                         ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              
+              const SizedBox(width: 8),
+              
+              // Butonul pentru deschiderea popup-ului
+              SizedBox(
+                width: 140,
+                child: _googleDriveService.isAuthenticated
+                    ? DarkItem6(
+                        title: 'Gestionează',
+                        svgAsset: 'assets/settingsIcon.svg',
+                        onTap: _showGoogleDrivePopup,
+                        mainBorderRadius: AppTheme.borderRadiusSmall,
+                      )
+                    : OutlinedItem6(
+                        title: 'Conectează',
+                        svgAsset: 'assets/addIcon.svg',
+                        onTap: _showGoogleDrivePopup,
+                        mainBorderRadius: AppTheme.borderRadiusSmall,
+                      ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
+  /// Obține textul pentru statusul Google Drive
+  String _getGoogleDriveStatusText() {
+    if (_googleDriveService.lastError != null) {
+      return _googleDriveService.lastError!;
+    }
+    
+    if (_googleDriveService.isAuthenticated) {
+      // Pentru mobile/web folosește currentUser
+      if (_googleDriveService.currentUser != null) {
+        return 'Conectat: ${_googleDriveService.currentUser!.displayName ?? _googleDriveService.currentUser!.email}';
+      }
+      // Pentru desktop folosește userName/userEmail
+      else if (_googleDriveService.userName != null || _googleDriveService.userEmail != null) {
+        return 'Conectat: ${_googleDriveService.userName ?? _googleDriveService.userEmail ?? 'Utilizator necunoscut'}';
+      }
+      
+      return 'Conectat: Utilizator necunoscut';
+    }
+    
+    return 'Nu sunteți conectat la Google Drive';
+  }
+
+  /// Afișează popup-ul pentru gestionarea Google Drive
+  void _showGoogleDrivePopup() {
+    showDialog(
+      context: context,
+      builder: (context) => const GoogleDrivePopup(),
+    );
+  }
 }
 
 

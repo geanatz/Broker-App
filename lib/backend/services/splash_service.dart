@@ -9,6 +9,7 @@ import 'package:broker_app/backend/services/form_service.dart';
 import 'package:broker_app/backend/services/dashboard_service.dart';
 import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/firebase_service.dart';
+import 'package:broker_app/backend/services/sheets_service.dart';
 
 /// Service pentru gestionarea încărcărilor de pe splash screen și cache-ul aplicației
 class SplashService extends ChangeNotifier {
@@ -30,6 +31,7 @@ class SplashService extends ChangeNotifier {
   FormService? _formService;
   DashboardService? _dashboardService;
   MatcherService? _matcherService;
+  GoogleDriveService? _googleDriveService;
   
   // Meeting cache pentru calendar
   List<ClientActivity> _cachedMeetings = [];
@@ -59,6 +61,7 @@ class SplashService extends ChangeNotifier {
   FormService get formService => _formService!;
   DashboardService get dashboardService => _dashboardService!;
   MatcherService get matcherService => _matcherService!;
+  GoogleDriveService get googleDriveService => _googleDriveService!;
 
   /// FIX: Resetează cache-ul când consultantul se schimbă
   Future<void> resetForNewConsultant() async {
@@ -89,6 +92,11 @@ class SplashService extends ChangeNotifier {
         // FIX: Resetează și cache-ul de clienți pentru separarea datelor
         if (_clientUIService != null) {
           await _clientUIService!.resetForNewConsultant();
+        }
+        
+        // FIX: Resetează și serviciul Google Drive pentru noul consultant
+        if (_googleDriveService != null) {
+          await _googleDriveService!.resetForNewConsultant();
         }
       }
     } catch (e) {
@@ -318,14 +326,15 @@ class SplashService extends ChangeNotifier {
 
   // Loading steps configuration
   final List<Map<String, dynamic>> _loadingSteps = [
-    {'name': 'Initializare calendar...', 'weight': 0.12, 'function': '_initializeCalendarService'},
-    {'name': 'Încărcare servicii client...', 'weight': 0.18, 'function': '_initializeClientServices'},
-    {'name': 'Preîncărcare întâlniri...', 'weight': 0.15, 'function': '_preloadMeetings'},
-    {'name': 'Initializare formulare...', 'weight': 0.12, 'function': '_initializeFormService'},
-    {'name': 'Încărcare dashboard...', 'weight': 0.18, 'function': '_initializeDashboardService'},
-    {'name': 'Încărcare matcher...', 'weight': 0.10, 'function': '_initializeMatcherService'},
-    {'name': 'Sincronizare date...', 'weight': 0.10, 'function': '_syncData'},
-    {'name': 'Finalizare...', 'weight': 0.05, 'function': '_finalize'},
+    {'name': 'Initializare calendar...', 'weight': 0.11, 'function': '_initializeCalendarService'},
+    {'name': 'Încărcare servicii client...', 'weight': 0.16, 'function': '_initializeClientServices'},
+    {'name': 'Preîncărcare întâlniri...', 'weight': 0.13, 'function': '_preloadMeetings'},
+    {'name': 'Initializare formulare...', 'weight': 0.11, 'function': '_initializeFormService'},
+    {'name': 'Încărcare dashboard...', 'weight': 0.16, 'function': '_initializeDashboardService'},
+    {'name': 'Încărcare matcher...', 'weight': 0.09, 'function': '_initializeMatcherService'},
+    {'name': 'Initializare Google Drive...', 'weight': 0.12, 'function': '_initializeGoogleDriveService'},
+    {'name': 'Sincronizare date...', 'weight': 0.09, 'function': '_syncData'},
+    {'name': 'Finalizare...', 'weight': 0.03, 'function': '_finalize'},
   ];
 
   /// Pornește procesul de pre-încărcare
@@ -391,10 +400,13 @@ class SplashService extends ChangeNotifier {
       case 5: // Matcher service
         await _initializeMatcherService();
         break;
-      case 6: // Data synchronization
+      case 6: // Google Drive service
+        await _initializeGoogleDriveService();
+        break;
+      case 7: // Data synchronization
         await _syncData();
         break;
-      case 7: // Finalization
+      case 8: // Finalization
         await _finalize();
         break;
     }
@@ -470,6 +482,17 @@ class SplashService extends ChangeNotifier {
     }
   }
 
+  /// Inițializează și cache-ează GoogleDriveService
+  Future<void> _initializeGoogleDriveService() async {
+    try {
+      _googleDriveService = GoogleDriveService();
+      await _googleDriveService!.initialize();
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error initializing google drive service: $e');
+      rethrow;
+    }
+  }
+
   /// Sincronizează datele între servicii
   Future<void> _syncData() async {
     try {
@@ -536,6 +559,7 @@ class SplashService extends ChangeNotifier {
            _formService != null &&
            _dashboardService != null &&
            _matcherService != null &&
+           _googleDriveService != null &&
            _isInitialized;
   }
 
@@ -547,6 +571,7 @@ class SplashService extends ChangeNotifier {
     _formService = null;
     _dashboardService = null;
     _matcherService = null;
+    _googleDriveService = null;
     _lastError = null;
   }
 
