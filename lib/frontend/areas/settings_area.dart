@@ -4,7 +4,7 @@ import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
-import 'package:broker_app/frontend/popups/google_drive_popup.dart';
+// import 'package:broker_app/frontend/popups/drive_popup.dart'; // Removed - no longer needed
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
 import 'package:broker_app/frontend/components/headers/field_header1.dart';
 import 'package:broker_app/frontend/components/items/outlined_item6.dart';
@@ -469,27 +469,168 @@ class _SettingsAreaState extends State<SettingsArea> {
     }
     
     if (_googleDriveService.isAuthenticated) {
+      String userInfo;
       // Pentru mobile/web folosește currentUser
       if (_googleDriveService.currentUser != null) {
-        return 'Conectat: ${_googleDriveService.currentUser!.displayName ?? _googleDriveService.currentUser!.email}';
+        userInfo = _googleDriveService.currentUser!.displayName ?? _googleDriveService.currentUser!.email;
       }
       // Pentru desktop folosește userName/userEmail
       else if (_googleDriveService.userName != null || _googleDriveService.userEmail != null) {
-        return 'Conectat: ${_googleDriveService.userName ?? _googleDriveService.userEmail ?? 'Utilizator necunoscut'}';
+        userInfo = _googleDriveService.userName ?? _googleDriveService.userEmail ?? 'Utilizator necunoscut';
+      } else {
+        userInfo = 'Utilizator necunoscut';
       }
       
-      return 'Conectat: Utilizator necunoscut';
+      return 'Conectat: $userInfo\n(pentru consultantul curent)';
     }
     
-    return 'Nu sunteți conectat la Google Drive';
+    return 'Nu sunteți conectat la Google Drive\n(fiecare consultant poate avea propriul cont)';
   }
 
-  /// Afișează popup-ul pentru gestionarea Google Drive
+  /// Afișează popup pentru gestionarea Google Drive
   void _showGoogleDrivePopup() {
+    if (_googleDriveService.isAuthenticated) {
+      // Dacă este conectat, afișează opțiuni de gestionare
+      _showManageGoogleDriveDialog();
+    } else {
+      // Dacă nu este conectat, afișează opțiuni de conectare
+      _showConnectGoogleDriveDialog();
+    }
+  }
+
+  /// Dialog pentru conectarea la Google Drive
+  void _showConnectGoogleDriveDialog() {
     showDialog(
       context: context,
-      builder: (context) => const GoogleDrivePopup(),
+      builder: (context) => AlertDialog(
+        title: Text('Conectare Google Drive'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Fiecare consultant poate avea propriul cont Google.'),
+            SizedBox(height: 12),
+            Text('Sistemul automatic va:'),
+            SizedBox(height: 8),
+            Text('• Găsi/crea automat fișierul "clienti"'),
+            Text('• Crea foi lunare automat (ex: "Dec 24")'),
+            Text('• Salva cu structura nouă de 9 coloane'),
+            SizedBox(height: 16),
+            Text('Doriți să conectați acest consultant la Google Drive?'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Anulează'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _connectToGoogleDrive();
+            },
+            child: Text('Conectează'),
+          ),
+        ],
+      ),
     );
+  }
+
+  /// Dialog pentru gestionarea Google Drive când este conectat
+  void _showManageGoogleDriveDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Google Drive - Conectat'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Conectat pentru consultantul curent.'),
+            SizedBox(height: 8),
+            Text('Cont: ${_googleDriveService.userName ?? _googleDriveService.userEmail ?? 'Necunoscut'}'),
+            if (_googleDriveService.sheetName != null) ...[
+              SizedBox(height: 8),
+              Text('Sheet: ${_googleDriveService.sheetName}'),
+            ],
+            SizedBox(height: 16),
+            Text('Sistemul salvează automat în fișierul "clienti" cu structura nouă de 9 coloane.'),
+            SizedBox(height: 12),
+            Text('Notă: Dacă schimbați consultantul, se va conecta automat la contul Google asociat cu acel consultant.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _disconnectFromGoogleDrive();
+            },
+            child: Text('Deconectează consultantul'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Conectează la Google Drive
+  Future<void> _connectToGoogleDrive() async {
+    try {
+      debugPrint('🔧 SETTINGS_AREA: Starting Google Drive connection...');
+      final success = await _googleDriveService.connect();
+      debugPrint('🔧 SETTINGS_AREA: Connection result: $success');
+      
+      if (success) {
+        debugPrint('✅ SETTINGS_AREA: Connection successful');
+        _showSuccessSnackBar('Conectat cu succes la Google Drive!');
+      } else {
+        final error = _googleDriveService.lastError ?? 'Eroare la conectare';
+        debugPrint('❌ SETTINGS_AREA: Connection failed: $error');
+        _showErrorSnackBar(error);
+      }
+    } catch (e) {
+      debugPrint('💥 SETTINGS_AREA: Exception during connection: $e');
+      _showErrorSnackBar('Eroare la conectare: ${e.toString()}');
+    }
+  }
+
+  /// Deconectează de la Google Drive
+  Future<void> _disconnectFromGoogleDrive() async {
+    try {
+      await _googleDriveService.disconnect();
+      _showSuccessSnackBar('Deconectat de la Google Drive');
+    } catch (e) {
+      _showErrorSnackBar('Eroare la deconectare: ${e.toString()}');
+    }
+  }
+
+  /// Afișează mesaj de succes
+  void _showSuccessSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  /// Afișează mesaj de eroare
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 }
 

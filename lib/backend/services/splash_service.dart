@@ -94,9 +94,9 @@ class SplashService extends ChangeNotifier {
           await _clientUIService!.resetForNewConsultant();
         }
         
-        // FIX: Resetează și serviciul Google Drive pentru noul consultant
-        if (_googleDriveService != null) {
-          await _googleDriveService!.resetForNewConsultant();
+        // FIX: Schimbă consultantul în Google Drive Service pentru token-urile corecte
+        if (_googleDriveService != null && newConsultantToken != null) {
+          await _googleDriveService!.switchConsultant(newConsultantToken);
         }
       }
     } catch (e) {

@@ -1,3 +1,4 @@
+import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -122,36 +123,35 @@ class MeetingService {
         return;
       }
 
-      // OPTIMIZARE: Cache lookup mai întâi
-      var client = _clientCache[phoneNumber];
+      // OPTIMIZARE: Cache lookup mai întâi, dar doar pentru flag de existență
+      ClientModel? client;
       
       final splashService = SplashService();
       if (splashService.isInitialized) {
         final clientService = splashService.clientUIService;
         
         // OPTIMIZARE: Doar dacă clientul nu e în cache, încarcă din service
-        if (client == null) {
-          // OPTIMIZARE: Verifică mai întâi în lista existentă din service
-          final clientsWithPhone = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
-          if (clientsWithPhone.isNotEmpty) {
-            client = clientsWithPhone.first;
-            // OPTIMIZARE: Salvează în cache pentru viitor
+        // OPTIMIZARE: Verifică mai întâi în lista existentă din service
+        final clientsWithPhone = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
+        if (clientsWithPhone.isNotEmpty) {
+          client = clientsWithPhone.first;
+          // OPTIMIZARE: Salvează în cache pentru viitor
+          _clientCache[phoneNumber] = client;
+          _resetClientCache();
+        } else {
+          // OPTIMIZARE: Doar dacă nu e în lista existentă, reîncarcă
+          debugPrint('🔄 MEETING_SERVICE: Client not in current list, refreshing...');
+          await clientService.loadClientsFromFirebase();
+          
+          final clientsRetry = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
+          if (clientsRetry.isNotEmpty) {
+            client = clientsRetry.first;
             _clientCache[phoneNumber] = client;
             _resetClientCache();
-          } else {
-            // OPTIMIZARE: Doar dacă nu e în lista existentă, reîncarcă
-            debugPrint('🔄 MEETING_SERVICE: Client not in current list, refreshing...');
-            await clientService.loadClientsFromFirebase();
-            
-            final clientsRetry = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
-            if (clientsRetry.isNotEmpty) {
-              client = clientsRetry.first;
-              _clientCache[phoneNumber] = client;
-              _resetClientCache();
-            }
           }
         }
         
+        // Verifică dacă clientul a fost găsit înainte de a-l folosi
         if (client != null) {
           debugPrint('📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: ${client.name}');
           
@@ -164,7 +164,7 @@ class MeetingService {
           
           debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
         } else {
-          debugPrint('⚠️ MEETING_SERVICE: Client not found: $phoneNumber');
+          debugPrint('⚠️ MEETING_SERVICE: Client not found for phone: $phoneNumber');
         }
       }
     } catch (e) {
@@ -222,7 +222,7 @@ class MeetingService {
             },
           );
         }
-        _clientCache['no_client_container_checked'] = true;
+        _clientCache['no_client_container_checked'] = 'checked';
         _resetClientCache();
       } else if (!isClientless) {
         // OPTIMIZARE: Pentru intalniri cu client, verifică cache-ul mai întâi
@@ -236,7 +236,7 @@ class MeetingService {
               category: 'apeluri',
             );
           }
-          _clientCache[phoneNumber] = true;
+          _clientCache[phoneNumber] = 'client_exists';
           _resetClientCache();
         }
       }

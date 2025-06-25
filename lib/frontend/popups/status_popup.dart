@@ -11,7 +11,7 @@ import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/auth_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/xlsx_service.dart';
+import 'package:broker_app/backend/services/sheets_service.dart';
 
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -472,14 +472,23 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       // Salveaza client in Excel prin Google Drive dupa salvarea cu succes
       try {
-        debugPrint('🔄 Incepe salvarea clientului in Google Drive XLSX...');
+        debugPrint('🔄🔄🔄 STATUS_POPUP: INCEPE SALVAREA CLIENTULUI ÎN GOOGLE DRIVE XLSX 🔄🔄🔄');
+        debugPrint('📋 STATUS_POPUP: Client name: ${widget.client.name}');
+        debugPrint('📋 STATUS_POPUP: Client phone: ${widget.client.phoneNumber}');
+        debugPrint('📋 STATUS_POPUP: Client type: ${widget.client.runtimeType}');
         
-        final xlsxService = ExcelExportService();
-        final saveResult = await xlsxService.saveClientToXlsx(widget.client);
+        final googleDriveService = GoogleDriveService();
+        debugPrint('📋 STATUS_POPUP: GoogleDriveService instance created');
+        debugPrint('📋 STATUS_POPUP: Service authenticated: ${googleDriveService.isAuthenticated}');
+        debugPrint('📋 STATUS_POPUP: Service user email: ${googleDriveService.userEmail}');
+        
+        debugPrint('📋 STATUS_POPUP: APELEAZĂ saveClientToXlsx...');
+        final saveResult = await googleDriveService.saveClientToXlsx(widget.client);
+        debugPrint('📋 STATUS_POPUP: saveClientToXlsx terminat, rezultat: $saveResult');
         
         if (saveResult != null) {
           // A fost o eroare la salvare
-          debugPrint('❌ Eroare la salvarea clientului in Google Drive: $saveResult');
+          debugPrint('❌❌❌ STATUS_POPUP: EROARE LA SALVAREA CLIENTULUI: $saveResult');
           // Afișează eroarea utilizatorului dar nu oprește procesul
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -491,11 +500,13 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
             );
           }
         } else {
-          debugPrint('✅ Client salvat cu succes în Google Drive XLSX');
+          debugPrint('✅✅✅ STATUS_POPUP: CLIENT SALVAT CU SUCCES ÎN GOOGLE DRIVE XLSX! ✅✅✅');
         }
       } catch (e, stackTrace) {
-        debugPrint('❌ Eroare la salvarea clientului in Google Drive: $e');
-        debugPrint('❌ Stack trace: $stackTrace');
+        debugPrint('💥💥💥 STATUS_POPUP: EXCEPȚIE LA SALVAREA CLIENTULUI ÎN GOOGLE DRIVE! 💥💥💥');
+        debugPrint('💥 STATUS_POPUP: Tip eroare: ${e.runtimeType}');
+        debugPrint('💥 STATUS_POPUP: Mesaj eroare: $e');
+        debugPrint('💥 STATUS_POPUP: Stack trace: $stackTrace');
         // Nu oprim procesul pentru ca statusul a fost salvat cu succes
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
