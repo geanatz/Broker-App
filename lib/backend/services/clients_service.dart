@@ -556,6 +556,8 @@ class UnifiedClientModel {
       metadata: metadata ?? this.metadata,
     );
   }
+
+  Map<String, dynamic> toJson() => toFirestore();
 }
 
 /// Informatii de baza despre client
@@ -599,6 +601,8 @@ class ClientBasicInfo {
       address: map['address'],
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Date formular consolidate
@@ -660,6 +664,8 @@ class ClientFormData {
       additionalData: additionalData ?? this.additionalData,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Date credit
@@ -709,6 +715,8 @@ class CreditData {
       remainingMonths: map['remainingMonths']?.toInt(),
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Date venit
@@ -746,6 +754,8 @@ class IncomeData {
       seniority: map['seniority']?.toInt(),
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Activitati client
@@ -802,6 +812,8 @@ class ClientActivity {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Tipuri de activitati client
@@ -860,6 +872,8 @@ class UnifiedClientStatus {
       isFocused: map['isFocused'] ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Categorii client unificate
@@ -917,6 +931,8 @@ class ClientMetadata {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 // =================== UI STATE MANAGEMENT SERVICE ===================

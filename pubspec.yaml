@@ -43,6 +43,8 @@ dependencies:
   http: ^1.4.0
   excel: ^4.0.6
   smooth_corner: ^1.1.1
+  crypto: ^3.0.3
+  image: ^4.0.17
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -58,6 +60,7 @@ dependencies:
   url_launcher: ^6.3.1
   oauth2: ^2.0.2
   desktop_webview_auth: ^0.0.15
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:
@@ -131,3 +134,4 @@ flutter:
     - assets/alphaIcon.svg
     - assets/cecIcon.svg 
     - assets/logoutIcon.svg
+    - assets/names.json
