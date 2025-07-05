@@ -105,13 +105,8 @@ class GoogleDriveService extends ChangeNotifier {
         debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 3a - Mobile platform detected, initializing Google Sign In...');
         
         // Mobile platforms - folosește Google Sign In
-        _googleSignIn = GoogleSignIn(
-          scopes: [
-            'email',
-            'https://www.googleapis.com/auth/drive.file',
-            'https://www.googleapis.com/auth/spreadsheets',
-          ],
-        );
+        _googleSignIn = GoogleSignIn.instance;
+        await _googleSignIn!.initialize();
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: GoogleSignIn configured');
         
         // Verifică dacă există o sesiune salvată pentru consultantul curent
@@ -159,7 +154,8 @@ class GoogleDriveService extends ChangeNotifier {
   /// Verifică dacă există o autentificare salvată (mobile) pentru consultantul curent
   Future<void> _checkSavedAuthentication() async {
     try {
-      final account = await _googleSignIn?.signInSilently();
+      // Check for existing lightweight authentication
+      final account = await _googleSignIn?.attemptLightweightAuthentication();
       if (account != null && _currentConsultantToken != null) {
         // Verifică dacă token-ul salvat este pentru consultantul curent
         final prefs = await SharedPreferences.getInstance();
@@ -559,8 +555,8 @@ class GoogleDriveService extends ChangeNotifier {
   /// Gestionează autentificarea prin Google Sign In (mobile)
   Future<void> _handleGoogleSignIn() async {
     try {
-      final account = await _googleSignIn!.signIn();
-      if (account != null && _currentConsultantToken != null) {
+      final account = await _googleSignIn!.authenticate();
+      if (_currentConsultantToken != null) {
         _currentUser = account;
         await _setupApiClients();
         _isAuthenticated = true;
@@ -760,13 +756,23 @@ class GoogleDriveService extends ChangeNotifier {
   /// Configurează API clients cu Google Sign In
   Future<void> _setupApiClients() async {
     try {
-      final authHeaders = await _currentUser!.authHeaders;
-      final authenticateClient = GoogleAuthClient(authHeaders);
+      // Get authorization headers using the new API
+      const scopes = [
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/spreadsheets',
+      ];
       
-      _driveApi = drive.DriveApi(authenticateClient);
-      _sheetsApi = sheets.SheetsApi(authenticateClient);
-      
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: API clients configured with Google Sign In');
+      final authHeaders = await _currentUser!.authorizationClient.authorizationHeaders(scopes);
+      if (authHeaders != null) {
+        final authenticateClient = GoogleAuthClient(authHeaders);
+        
+        _driveApi = drive.DriveApi(authenticateClient);
+        _sheetsApi = sheets.SheetsApi(authenticateClient);
+        
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: API clients configured with Google Sign In');
+      } else {
+        throw Exception('Nu s-au putut obține headerele de autorizare');
+      }
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to setup API clients: $e');
       rethrow;

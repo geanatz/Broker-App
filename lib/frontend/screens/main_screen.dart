@@ -17,6 +17,8 @@ import 'package:broker_app/frontend/popups/clients_popup.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:broker_app/backend/services/update_service.dart';
+import 'package:broker_app/frontend/components/update_notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
@@ -63,6 +65,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   // Settings service pentru actualizari in timp real ale temei
   final SettingsService _settingsService = SettingsService();
+  
+  // Update service pentru notificari de update-uri
+  final UpdateService _updateService = UpdateService();
   
   // Sidebar service pentru navigare
   late final SidebarService _sidebarService;
@@ -299,7 +304,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     });
     
-    return Scaffold(
+    return UpdateNotificationWrapper(
+      updateService: _updateService,
+      child: Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: AppTheme.appBackground,
@@ -341,6 +348,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             if (_isShowingClientListPopup)
               _buildDualPopupOverlay(),
           ],
+        ),
         ),
       ),
     );
