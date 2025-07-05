@@ -200,21 +200,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _restoreNavigationState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final areaIndex = prefs.getInt(_currentAreaKey);
       final paneIndex = prefs.getInt(_currentPaneKey);
       
-      // Dacă nu există preferințe salvate, folosim default-urile (dashboard și clients)
-      if (areaIndex != null && areaIndex < AreaType.values.length) {
-        _currentArea = AreaType.values[areaIndex];
-        // Update SidebarService state to keep it in sync
-        _sidebarService.syncArea(_currentArea);
-        debugPrint('🔧 MAIN_SCREEN: Restored area from preferences: $_currentArea');
-      } else {
-        // Nu există preferințe salvate - folosim default-ul (dashboard)
-        _currentArea = AreaType.dashboard;
-        _sidebarService.syncArea(_currentArea);
-        debugPrint('🔧 MAIN_SCREEN: No saved area preferences, using default: dashboard');
-      }
+      // Not reading areaIndex anymore; area always defaults to dashboard
+      _currentArea = AreaType.dashboard;
+      _sidebarService.syncArea(_currentArea);
+      debugPrint('🔧 MAIN_SCREEN: Area set by default to Acasa (dashboard)');
       
       if (paneIndex != null && paneIndex < PaneType.values.length) {
         _currentPane = PaneType.values[paneIndex];
@@ -321,21 +312,23 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Pane Column (stanga) - latime fixa 312
-              SizedBox(
-                width: 296,
-                child: _paneWidgets[_currentPane]!,
-              ),
-              
-              // Spacing
-              const SizedBox(width: AppTheme.mediumGap),
+              // Conditionally render pane column only if current area is not dashboard (Acasa)
+              ...(_currentArea != AreaType.dashboard ? [
+                // Pane Column (stanga) - latime fixa 312
+                SizedBox(
+                  width: 296,
+                  child: _paneWidgets[_currentPane]!,
+                ),
+                // Spacing
+                const SizedBox(width: AppTheme.mediumGap),
+              ] : []),
               
               // Area Column (centru) - latime flexibila
               Expanded(
                 child: _areaWidgets[_currentArea]!,
               ),
               
-              // Spacing
+              // Spacing intre area si sidebar
               const SizedBox(width: AppTheme.mediumGap),
               
               // Sidebar Column (dreapta) - latime fixa 224
@@ -591,10 +584,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           
           // Areas navigation section
           _buildAreasSection(),
-          const SizedBox(height: AppTheme.mediumGap),
-          
-          // Panes navigation section
-          _buildPanesSection(),
+          // Afiseaza sectiunea de pane doar daca area curent nu este Acasa (dashboard)
+          if (_currentArea != AreaType.dashboard) ...[
+            const SizedBox(height: AppTheme.mediumGap),
+            _buildPanesSection(),
+          ],
           
           // Special functions section (doar daca exista butoane)
           if (_sidebarService.specialButtons.isNotEmpty) ...[

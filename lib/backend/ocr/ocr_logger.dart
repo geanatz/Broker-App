@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import '../services/clients_service.dart';
@@ -134,9 +135,9 @@ class OcrDebugLogger {
       
       final jsonString = JsonEncoder.withIndent('  ').convert(_currentLog!.toJson());
       await logFile.writeAsString(jsonString);
-      print('✅ [OcrDebugLogger] Log salvat: ${logFile.path}');
+      debugPrint('✅ [OcrDebugLogger] Log salvat: ${logFile.path}');
     } catch (e) {
-      print('❌ [OcrDebugLogger] Eroare la salvarea logului: $e');
+      debugPrint('❌ [OcrDebugLogger] Eroare la salvarea logului: $e');
     }
 
     _currentLog = null;

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../services/clients_service.dart';
 import 'ocr_logger.dart';
 import 'parser_ocr.dart';

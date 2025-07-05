@@ -243,9 +243,9 @@ class SidebarService {
   /// Predefined button configurations for the area section
   List<ButtonConfig> get areaButtons => [
     const ButtonConfig(
-      id: 'dashboard',
-      title: 'Dashboard',
-      iconPath: 'assets/dashboardIcon.svg',
+      id: 'home',
+      title: 'Acasa',
+      iconPath: 'assets/homeIcon.svg',
       actionType: ActionType.navigateToArea,
       targetArea: AreaType.dashboard,
     ),
@@ -313,9 +313,9 @@ class SidebarService {
   static final List<SidebarButtonConfig> sidebarButtons = [
     // --- Main Navigation Buttons (visibleOnScreen == null) ---
     const SidebarButtonConfig(
-      id: 'dashboard',
-      title: 'Dashboard',
-      iconPath: 'assets/dashboardIcon.svg',
+      id: 'home',
+      title: 'Acasa',
+      iconPath: 'assets/homeIcon.svg',
       actionType: SidebarButtonActionType.navigateToScreen,
       targetScreen: NavigationScreen.dashboard,
     ),

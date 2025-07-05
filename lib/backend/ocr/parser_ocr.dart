@@ -638,19 +638,25 @@ class ParserOcr {
     // Major bonus for same line association (typical in contact lists)
     int distance = (phones.first.lineIndex - name.lineIndex).abs();
     if (distance == 0) {
-      confidence += 25.0;      // Same line = very high confidence
-    } else if (distance == 1) confidence += 15.0; // Adjacent line = high confidence  
-    else if (distance == 2) confidence += 10.0; // 2 lines away = medium confidence
-    else if (distance >= 3) confidence -= 10.0; // Further away = lower confidence
-    
+      confidence += 25.0; // Same line = very high confidence
+    } else if (distance == 1) {
+      confidence += 15.0; // Adjacent line = high confidence
+    } else if (distance == 2) {
+      confidence += 10.0; // 2 lines away = medium confidence
+    } else if (distance >= 3) {
+      confidence -= 10.0; // Further away = lower confidence
+    }
+
     // Bonus for multiple phones (common in contact lists)
-    if (phones.length > 1) confidence += 10.0;
-    
+    if (phones.length > 1) {
+      confidence += 10.0;
+    }
+
     // Bonus if phone appears immediately after name in same line
     if (distance == 0 && phones.first.position > 0) {
       confidence += 10.0;
     }
-    
+
     return confidence > 100.0 ? 100.0 : confidence;
   }
 
