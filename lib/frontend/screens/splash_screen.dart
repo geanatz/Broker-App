@@ -151,6 +151,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.widgetBackground,
         title: Text(
           'Update disponibil',
           style: GoogleFonts.outfit(
@@ -178,7 +179,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,
-                  color: AppTheme.elementColor1.withAlpha(80),
+                  color: AppTheme.elementColor1.withAlpha(150),
                 ),
               ),
               const SizedBox(height: 4),
@@ -209,14 +210,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.elementColor2,
-              foregroundColor: AppTheme.elementColor2,
+              foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
             ),
             child: Text(
               'Descarca acum',
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.elementColor2,
               ),
             ),
           ),
@@ -261,6 +261,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
+          backgroundColor: AppTheme.widgetBackground,
           title: Text(
             'Se descarca update-ul',
             style: GoogleFonts.outfit(
@@ -345,14 +346,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.elementColor2,
-                foregroundColor: AppTheme.elementColor2,
+                foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
               ),
               child: Text(
                 'Instaleaza acum',
                 style: GoogleFonts.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: AppTheme.elementColor2,
                 ),
               ),
             ),
@@ -377,50 +377,49 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
   
-  Future<void> _showInstallDialog() async {
+  void _showInstallDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.widgetBackground,
         title: Text(
-          'Se instaleaza update-ul',
+          'Noua versiune este gata',
           style: GoogleFonts.outfit(
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: AppTheme.elementColor2,
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor2),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Aplicatia se va restarta automat...',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: AppTheme.elementColor1,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        content: Text(
+          'Update-ul a fost descarcat. Aplicatia trebuie repornita pentru a finaliza instalarea.',
+          style: GoogleFonts.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: AppTheme.elementColor1,
+          ),
         ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _updateService.installUpdate();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.elementColor2,
+              foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
+            ),
+            child: Text(
+              'Reporneste acum',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
-    
-    try {
-      await _updateService.installUpdate();
-      // App will restart automatically, no need to handle success
-    } catch (e) {
-      debugPrint('❌ Error during installation: $e');
-      if (mounted) {
-        Navigator.of(context).pop(); // Close install dialog
-        _showUpdateFailedDialog();
-      }
-    }
   }
   
   void _showUpdateFailedDialog() {

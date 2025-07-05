@@ -116,19 +116,12 @@ class _UpdateNotificationState extends State<UpdateNotification>
             ),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.elementColor2.withAlpha(20),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Icon(
-                    Icons.system_update,
-                    color: AppTheme.elementColor2,
-                    size: 20,
-                  ),
+                Icon(
+                  Icons.system_update,
+                  color: AppTheme.isDarkMode ? Colors.black : Colors.white,
+                  size: 24,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,69 +130,59 @@ class _UpdateNotificationState extends State<UpdateNotification>
                       Text(
                         'Update gata pentru instalare',
                         style: GoogleFonts.outfit(
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.elementColor2,
+                          color: AppTheme.isDarkMode ? Colors.black : Colors.white,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Noua versiune a fost descarcata si este gata pentru instalare',
+                        'Noua versiune a fost descarcata. Reporneste pentru a finaliza.',
                         style: GoogleFonts.outfit(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w400,
-                          color: AppTheme.elementColor1.withAlpha(80),
+                          color: (AppTheme.isDarkMode ? Colors.black : Colors.white).withAlpha(70),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        _hideNotification();
-                        widget.onDismiss?.call();
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppTheme.elementColor1,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        minimumSize: Size.zero,
-                      ),
-                      child: Text(
-                        'Mai tarziu',
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.elementColor1.withAlpha(80),
-                        ),
-                      ),
+                const SizedBox(width: 16),
+                TextButton(
+                  onPressed: () {
+                    _hideNotification();
+                    widget.onDismiss?.call();
+                  },
+                  child: Text(
+                    'Mai tarziu',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: (AppTheme.isDarkMode ? Colors.black : Colors.white).withAlpha(70),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        _hideNotification();
-                        widget.onInstallTap?.call();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.elementColor2,
-                        foregroundColor: AppTheme.elementColor2,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        minimumSize: Size.zero,
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Restartează',
-                        style: GoogleFonts.outfit(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.elementColor2,
-                        ),
-                      ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    _hideNotification();
+                    widget.onInstallTap?.call();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: (AppTheme.isDarkMode ? Colors.black : Colors.white).withAlpha(20),
+                    foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
                     ),
-                  ],
+                  ),
+                  child: Text(
+                    'Reporneste',
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),

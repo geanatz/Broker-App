@@ -1,6 +1,6 @@
 class UpdateConfig {
   // GitHub Repository Configuration
-  static const String githubOwner = 'your-username';
+  static const String githubOwner = 'geanatz';
   static const String githubRepo = 'Broker-App';
   static const String githubApiUrl = 'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
   
