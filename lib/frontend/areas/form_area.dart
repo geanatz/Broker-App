@@ -660,89 +660,70 @@ class _FormAreaState extends State<FormArea> {
     // Filtreaza doar formularele care au date (nu sunt goale)
     final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
     
-    return Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: ShapeDecoration(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Formulare existente (doar cele cu date)
-          ...nonEmptyForms.asMap().entries.map((entry) {
-            final form = entry.value;
-            // Gaseste indexul real in lista originala
-            final realIndex = forms.indexOf(form);
-            
-            return GestureDetector(
-              onTapDown: _getTapPosition,
-              onLongPress: () => _showContextMenu(context, realIndex, true, isClient),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: _buildCreditForm(client, form, realIndex, isClient),
-              ),
-            );
-          }),
-          
-          // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
-          FormNew(
-            key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_$_newCreditFormSelectedType'),
-            titleF1: 'Banca',
-            valueF1: _newCreditFormSelectedBank,
-            itemsF1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
-              value: bank,
-              child: Text(bank),
-            )).toList(),
-            onChangedF1: (value) {
-              setState(() {
-                _newCreditFormSelectedBank = value;
-                debugPrint('DEBUG: Credit bank selected: $value');
-              });
-              // Check if both fields are completed and transform if needed
-              if (value != null && _newCreditFormSelectedType != null) {
-                debugPrint('DEBUG: Both credit fields completed, transforming...');
-                Future.microtask(() {
-                  _transformCreditFormNew(client, value, _newCreditFormSelectedType!, isClient);
-                });
-              }
-            },
-            hintTextF1: 'Selecteaza',
-            
-            titleF2: 'Tip credit',
-            valueF2: _newCreditFormSelectedType,
-            itemsF2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
-              value: type,
-              child: Text(type),
-            )).toList(),
-            onChangedF2: (value) {
-              setState(() {
-                _newCreditFormSelectedType = value;
-                debugPrint('DEBUG: Credit type selected: $value');
-              });
-              // Check if both fields are completed and transform if needed
-              if (value != null && _newCreditFormSelectedBank != null) {
-                debugPrint('DEBUG: Both credit fields completed, transforming...');
-                Future.microtask(() {
-                  _transformCreditFormNew(client, _newCreditFormSelectedBank!, value, isClient);
-                });
-              }
-            },
-            hintTextF2: 'Selecteaza',
+    // Pregateste toate widget-urile pentru lista
+    final List<Widget> allWidgets = [
+      // Formulare existente (doar cele cu date)
+      ...nonEmptyForms.asMap().entries.map((entry) {
+        final form = entry.value;
+        // Gaseste indexul real in lista originala
+        final realIndex = forms.indexOf(form);
+        
+        return GestureDetector(
+          onTapDown: _getTapPosition,
+          onLongPress: () => _showContextMenu(context, realIndex, true, isClient),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: _buildCreditForm(client, form, realIndex, isClient),
           ),
-        ],
+        );
+      }),
+      
+      // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
+      FormNew(
+        key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_$_newCreditFormSelectedType'),
+        titleF1: 'Banca',
+        valueF1: _newCreditFormSelectedBank,
+        itemsF1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
+          value: bank,
+          child: Text(bank),
+        )).toList(),
+        onChangedF1: (value) {
+          setState(() {
+            _newCreditFormSelectedBank = value;
+            debugPrint('DEBUG: Credit bank selected: $value');
+          });
+          // Check if both fields are completed and transform if needed
+          if (value != null && _newCreditFormSelectedType != null) {
+            debugPrint('DEBUG: Both credit fields completed, transforming...');
+            Future.microtask(() {
+              _transformCreditFormNew(client, value, _newCreditFormSelectedType!, isClient);
+            });
+          }
+        },
+        hintTextF1: 'Selecteaza',
+        
+        titleF2: 'Tip credit',
+        valueF2: _newCreditFormSelectedType,
+        itemsF2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
+          value: type,
+          child: Text(type),
+        )).toList(),
+        onChangedF2: (value) {
+          setState(() {
+            _newCreditFormSelectedType = value;
+            debugPrint('DEBUG: Credit type selected: $value');
+          });
+          // Check if both fields are completed and transform if needed
+          if (value != null && _newCreditFormSelectedBank != null) {
+            debugPrint('DEBUG: Both credit fields completed, transforming...');
+            Future.microtask(() {
+              _transformCreditFormNew(client, _newCreditFormSelectedBank!, value, isClient);
+            });
+          }
+        },
+        hintTextF2: 'Selecteaza',
       ),
-    );
-  }
-
-  /// Construieste lista de formulare de venit folosind componentele specificate
-  Widget _buildIncomeFormsList(ClientModel client, List<IncomeFormModel> forms, bool isClient) {
-    // Filtreaza doar formularele care au date (nu sunt goale)
-    final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
+    ];
     
     return Container(
       width: double.infinity,
@@ -752,73 +733,92 @@ class _FormAreaState extends State<FormArea> {
           borderRadius: BorderRadius.circular(24),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Formulare existente (doar cele cu date)
-          ...nonEmptyForms.asMap().entries.map((entry) {
-            final form = entry.value;
-            // Gaseste indexul real in lista originala
-            final realIndex = forms.indexOf(form);
-            
-            return GestureDetector(
-              onTapDown: _getTapPosition,
-              onLongPress: () => _showContextMenu(context, realIndex, false, isClient),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: _buildIncomeForm(client, form, realIndex, isClient),
-              ),
-            );
-          }),
-          
-          // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
-          FormNew(
-            key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_$_newIncomeFormSelectedType'),
-            titleF1: 'Banca',
-            valueF1: _newIncomeFormSelectedBank,
-            itemsF1: FormService.incomeBanks.map((bank) => DropdownMenuItem<String>(
-              value: bank,
-              child: Text(bank),
-            )).toList(),
-            onChangedF1: (value) {
-              setState(() {
-                _newIncomeFormSelectedBank = value;
-                debugPrint('DEBUG: Income bank selected: $value');
-              });
-              // Check if both fields are completed and transform if needed
-              if (value != null && _newIncomeFormSelectedType != null) {
-                debugPrint('DEBUG: Both income fields completed, transforming...');
-                Future.microtask(() {
-                  _transformIncomeFormNew(client, value, _newIncomeFormSelectedType!, isClient);
-                });
-              }
-            },
-            hintTextF1: 'Selecteaza',
-            
-            titleF2: 'Tip venit',
-            valueF2: _newIncomeFormSelectedType,
-            itemsF2: FormService.incomeTypes.map((type) => DropdownMenuItem<String>(
-              value: type,
-              child: Text(type),
-            )).toList(),
-            onChangedF2: (value) {
-              setState(() {
-                _newIncomeFormSelectedType = value;
-                debugPrint('DEBUG: Income type selected: $value');
-              });
-              // Check if both fields are completed and transform if needed
-              if (value != null && _newIncomeFormSelectedBank != null) {
-                debugPrint('DEBUG: Both income fields completed, transforming...');
-                Future.microtask(() {
-                  _transformIncomeFormNew(client, _newIncomeFormSelectedBank!, value, isClient);
-                });
-              }
-            },
-            hintTextF2: 'Selecteaza',
+      child: ListView(
+        children: allWidgets,
+      ),
+    );
+  }
+
+  /// Construieste lista de formulare de venit folosind componentele specificate
+  Widget _buildIncomeFormsList(ClientModel client, List<IncomeFormModel> forms, bool isClient) {
+    // Filtreaza doar formularele care au date (nu sunt goale)
+    final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
+    
+    // Pregateste toate widget-urile pentru lista
+    final List<Widget> allWidgets = [
+      // Formulare existente (doar cele cu date)
+      ...nonEmptyForms.asMap().entries.map((entry) {
+        final form = entry.value;
+        // Gaseste indexul real in lista originala
+        final realIndex = forms.indexOf(form);
+        
+        return GestureDetector(
+          onTapDown: _getTapPosition,
+          onLongPress: () => _showContextMenu(context, realIndex, false, isClient),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: _buildIncomeForm(client, form, realIndex, isClient),
           ),
-        ],
+        );
+      }),
+      
+      // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
+      FormNew(
+        key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_$_newIncomeFormSelectedType'),
+        titleF1: 'Banca',
+        valueF1: _newIncomeFormSelectedBank,
+        itemsF1: FormService.incomeBanks.map((bank) => DropdownMenuItem<String>(
+          value: bank,
+          child: Text(bank),
+        )).toList(),
+        onChangedF1: (value) {
+          setState(() {
+            _newIncomeFormSelectedBank = value;
+            debugPrint('DEBUG: Income bank selected: $value');
+          });
+          // Check if both fields are completed and transform if needed
+          if (value != null && _newIncomeFormSelectedType != null) {
+            debugPrint('DEBUG: Both income fields completed, transforming...');
+            Future.microtask(() {
+              _transformIncomeFormNew(client, value, _newIncomeFormSelectedType!, isClient);
+            });
+          }
+        },
+        hintTextF1: 'Selecteaza',
+        
+        titleF2: 'Tip venit',
+        valueF2: _newIncomeFormSelectedType,
+        itemsF2: FormService.incomeTypes.map((type) => DropdownMenuItem<String>(
+          value: type,
+          child: Text(type),
+        )).toList(),
+        onChangedF2: (value) {
+          setState(() {
+            _newIncomeFormSelectedType = value;
+            debugPrint('DEBUG: Income type selected: $value');
+          });
+          // Check if both fields are completed and transform if needed
+          if (value != null && _newIncomeFormSelectedBank != null) {
+            debugPrint('DEBUG: Both income fields completed, transforming...');
+            Future.microtask(() {
+              _transformIncomeFormNew(client, _newIncomeFormSelectedBank!, value, isClient);
+            });
+          }
+        },
+        hintTextF2: 'Selecteaza',
+      ),
+    ];
+    
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
+      child: ListView(
+        children: allWidgets,
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'package:intl/intl.dart';
 
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
@@ -1056,9 +1055,9 @@ class GoogleDriveService extends ChangeNotifier {
     debugPrint('📋 GOOGLE_DRIVE_SERVICE: _findOrCreateSheet("$spreadsheetId") - ÎNCEPUT');
     
     try {
-      // Genereaza titlul pentru luna si anul curent (ex: Dec 24)
+      // Genereaza titlul pentru luna si anul curent (ex: Iul 25)
       final now = DateTime.now();
-      final sheetTitle = DateFormat('MMM yy', 'en_US').format(now);
+      final sheetTitle = _generateRomanianSheetTitle(now);
       debugPrint('📋 GOOGLE_DRIVE_SERVICE: Titlu sheet generat: "$sheetTitle"');
       debugPrint('📋 GOOGLE_DRIVE_SERVICE: Data curentă: $now');
 
@@ -1191,13 +1190,36 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
   
+  /// Genereaza titlul sheet-ului cu lunile in romana (ex: Iul 25)
+  String _generateRomanianSheetTitle(DateTime date) {
+    final Map<int, String> romanianMonths = {
+      1: 'Ian',   // Ianuarie
+      2: 'Feb',   // Februarie
+      3: 'Mar',   // Martie
+      4: 'Apr',   // Aprilie
+      5: 'Mai',   // Mai
+      6: 'Iun',   // Iunie
+      7: 'Iul',   // Iulie
+      8: 'Aug',   // August
+      9: 'Sep',   // Septembrie
+      10: 'Oct',  // Octombrie
+      11: 'Nov',  // Noiembrie
+      12: 'Dec',  // Decembrie
+    };
+    
+    final monthAbbr = romanianMonths[date.month] ?? 'Err';
+    final yearAbbr = date.year.toString().substring(2); // Ultimii 2 cifri din an
+    
+    return '$monthAbbr $yearAbbr';
+  }
+
   /// Returneaza lista de headere conform noii structuri
   List<String> _getHeaders() {
     return [
       'Client',
       'Contact',
       'Codebitor',
-      'Ziua',
+      'Data',
       'Status',
       'Credit Client',
       'Venit Client',
@@ -1392,27 +1414,29 @@ class GoogleDriveService extends ChangeNotifier {
     
     // Verifică dacă banca și tipul de venit sunt valide (nu "Selectează")
     if (_isSelectValue(bank)) {
-      return 'Venit incomplet - selectează banca';
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Venit incomplet - selectează banca');
+      return '';
     }
     
     if (_isSelectValue(incomeType)) {
-      return 'Venit incomplet - selectează tipul';
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Venit incomplet - selectează tipul');
+      return '';
     }
     
-    // Determină tipul de venit și îl formatează conform specificațiilor
+    // Păstrează tipul de venit în formatul complet
     String incomeTypeFormatted;
     switch (incomeType.toLowerCase()) {
       case 'salariu':
-        incomeTypeFormatted = 'sal';
+        incomeTypeFormatted = 'Salariu';
         break;
       case 'pensie':
-        incomeTypeFormatted = 'pen';
+        incomeTypeFormatted = 'Pensie';
         break;
       case 'indemnizatie':
-        incomeTypeFormatted = 'ind';
+        incomeTypeFormatted = 'Indemnizatie';
         break;
       default:
-        incomeTypeFormatted = incomeType.toLowerCase();
+        incomeTypeFormatted = incomeType;
     }
     
     // Formatează banca
@@ -1421,10 +1445,27 @@ class GoogleDriveService extends ChangeNotifier {
     // Formatează suma cu "k" pentru mii
     final amountFormatted = _formatAmountWithK(incomeAmount);
     
-    // Construiește formatul final: "bancă-tip: sumă(vechime)"
-    String result = '$bankFormatted-$incomeTypeFormatted: $amountFormatted';
-    if (vechime.isNotEmpty && !_isSelectValue(vechime)) {
-      result += '($vechime)';
+    // Formatează vechimea în formatul "2a3l" (2 ani și 3 luni)
+    final vechimeFormatted = _formatVechimeForIncome(vechime);
+    
+    // Construiește formatul final: "bancă:sumă(tip,vechime)" 
+    // Dacă suma este goală, nu salvăm venitul
+    if (amountFormatted.isEmpty) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Venit fără sumă - ignorat');
+      return '';
+    }
+    
+    String result = '$bankFormatted:$amountFormatted';
+    
+    // Adaugă informațiile suplimentare în paranteză
+    final additionalInfo = <String>[];
+    additionalInfo.add(incomeTypeFormatted);
+    if (vechimeFormatted.isNotEmpty) {
+      additionalInfo.add(vechimeFormatted);
+    }
+    
+    if (additionalInfo.isNotEmpty) {
+      result += '(${additionalInfo.join(',')})';
     }
     
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Venit formatat final: $result');
@@ -1445,11 +1486,13 @@ class GoogleDriveService extends ChangeNotifier {
     
     // Verifică dacă banca și tipul de credit sunt valide (nu "Selectează")
     if (_isSelectValue(bank)) {
-      return 'Credit incomplet - selectează banca';
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit incomplet - selectează banca');
+      return '';
     }
     
     if (_isSelectValue(creditType)) {
-      return 'Credit incomplet - selectează tipul';
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit incomplet - selectează tipul');
+      return '';
     }
     
     // Formatează banca folosind aceeași logică ca la venituri
@@ -1460,6 +1503,12 @@ class GoogleDriveService extends ChangeNotifier {
     
     // Formatează sumele (sold/consumat și rata)
     final amountsPart = _formatCreditAmounts(sold, consumat, rata);
+    
+    // Dacă nu există nicio sumă, nu salvăm creditul
+    if (amountsPart.isEmpty) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit fără sume - ignorat');
+      return '';
+    }
     
     // Formatează detaliile (rateType și perioada)
     final detailsPart = _formatCreditDetails(rateType, perioada, creditType);
@@ -1480,28 +1529,104 @@ class GoogleDriveService extends ChangeNotifier {
   String _formatBankName(String bank) {
     switch (bank.toLowerCase()) {
       case 'alpha bank':
-        return 'Alpha';
-      case 'banca transilvania':
-      case 'bt':
-        return 'BT';
+        return 'ALPHA';
+      case 'axi ifn':
+        return 'Axi';
+      case 'banca romaneasca':
+        return 'BR';
       case 'bcr':
         return 'BCR';
+      case 'best credit':
+        return 'BC';
+      case 'bnp paribas':
+        return 'BNP';
       case 'brd':
         return 'BRD';
+      case 'brd finance':
+        return 'BRDf';
+      case 'banca transilvania':
+        return 'BT';
+      case 'bt direct':
+        return 'BTd';
+      case 'bt leasing':
+        return 'BTl';
+      case 'car':
+        return 'CAR';
       case 'cec bank':
         return 'CEC';
+      case 'cash':
+        return 'CASH';
+      case 'cetelem':
+        return 'CTLM';
+      case 'credit europe bank':
+        return 'CreditEU';
+      case 'credit24':
+        return 'C24';
+      case 'credex':
+        return 'CREDEX';
+      case 'credius':
+        return 'CREDIUS';
+      case 'eco finance':
+        return 'EXOfin';
+      case 'exim bank':
+        return 'EXIM';
+      case 'first bank':
+        return 'FIRST';
       case 'garanti bank':
-        return 'Garanti';
+        return 'GRNTI';
+      case 'happy credit':
+        return 'HAPPY';
+      case 'hora credit':
+        return 'HORA';
+      case 'icredit':
+        return 'iCREDIT';
+      case 'idea bank':
+        return 'IDEA';
+      case 'ifn':
+        return 'IFN';
       case 'ing':
+        return 'ING';
       case 'ing bank':
         return 'ING';
+      case 'intesa sanpaolo':
+        return 'INTESA';
+      case 'leasing ifn':
+        return 'leasingIFN';
+      case 'libra bank':
+        return 'LIBRA';
+      case 'patria bank':
+        return 'PATRIA';
+      case 'pireus bank':
+        return 'PIREUS';
+      case 'procredit bank':
+        return 'PROCREDIT';
+      case 'provident':
+        return 'PROVIDENT';
       case 'raiffeisen bank':
-        return 'Raiffeisen';
+        return 'RF';
+      case 'raiffeisen leasing':
+        return 'RFl';
+      case 'revolut':
+        return 'REVOLUT';
+      case 'salt bank':
+        return 'SALT';
+      case 'simplu credit':
+        return 'SIMPLU';
       case 'tbi bank':
         return 'TBI';
+      case 'unicredit':
+        return 'UNICREDIT';
+      case 'unicredit consumer financing':
+        return 'UNICREDITcf';
+      case 'unicredit leasing':
+        return 'UNICREDITll';
+      case 'viva credit':
+        return 'VIVA';
+      case 'volksbank':
+        return 'VOLKS';
       default:
         // Pentru băncile necunoscute, returnează primele 3-4 caractere
-        return bank.length > 4 ? bank.substring(0, 4) : bank;
+        return bank.length > 6 ? bank.substring(0, 6) : bank;
     }
   }
 
@@ -1510,15 +1635,15 @@ class GoogleDriveService extends ChangeNotifier {
     switch (creditType.toLowerCase()) {
       case 'card cumparaturi':
       case 'card de cumparaturi':
-        return 'card';
+        return 'cc';
       case 'nevoi personale':
-        return 'nev';
+        return 'np';
       case 'overdraft':
-        return 'over';
+        return 'ovd';
       case 'ipotecar':
-        return 'ipo';
+        return 'ip';
       case 'prima casa':
-        return 'prima';
+        return 'pc';
       default:
         return creditType.toLowerCase();
     }
@@ -1530,10 +1655,17 @@ class GoogleDriveService extends ChangeNotifier {
     final consumatFormatted = _formatAmountWithK(consumat);
     final rataFormatted = _formatAmountWithK(rata);
     
-    // Construiește partea cu sumele
+    // Construiește partea cu sumele folosind cratimă în loc de slash
     String amounts = '';
     if (soldFormatted.isNotEmpty || consumatFormatted.isNotEmpty) {
-      amounts = '$soldFormatted/$consumatFormatted';
+      // Tratează cazurile când una dintre sume lipsește
+      if (soldFormatted.isNotEmpty && consumatFormatted.isNotEmpty) {
+        amounts = '$soldFormatted-$consumatFormatted';
+      } else if (soldFormatted.isNotEmpty) {
+        amounts = soldFormatted;
+      } else if (consumatFormatted.isNotEmpty) {
+        amounts = consumatFormatted;
+      }
     }
     
     if (rataFormatted.isNotEmpty) {
@@ -1643,6 +1775,44 @@ class GoogleDriveService extends ChangeNotifier {
     return perioada;
   }
 
+  /// Formatează vechimea pentru venit în formatul "4/3" (4 ani și 3 luni)
+  String _formatVechimeForIncome(String vechime) {
+    if (vechime.isEmpty || _isSelectValue(vechime)) return '';
+    
+    try {
+      // Dacă conține deja formatul "ani/luni" (ex: "4/3"), returnează așa cum e
+      if (vechime.contains('/')) {
+        return vechime;
+      }
+      
+      // Dacă conține formatul "a" și "l" (ex: "4a3l"), convertește la "4/3"
+      if (vechime.contains('a') && vechime.contains('l')) {
+        final cleanVechime = vechime.replaceAll('a', '/').replaceAll('l', '');
+        return cleanVechime;
+      }
+      
+      // Încearcă să parseze ca numărul de luni total
+      final totalMonths = int.tryParse(vechime);
+      if (totalMonths != null) {
+        final years = totalMonths ~/ 12;
+        final remainingMonths = totalMonths % 12;
+        
+        // Dacă nu are luni suplimentare, returnează doar anii
+        if (remainingMonths == 0) {
+          return years.toString();
+        } else {
+          return '$years/$remainingMonths';
+        }
+      }
+      
+      // Dacă nu poate fi parsată, returnează valoarea originală
+      return vechime;
+    } catch (e) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Eroare la formatarea vechimii: $e');
+      return vechime;
+    }
+  }
+
   /// Verifică dacă o valoare este "Selectează" în diverse variante
   bool _isSelectValue(String value) {
     final lowerValue = value.toLowerCase().trim();
@@ -1676,7 +1846,9 @@ class GoogleDriveService extends ChangeNotifier {
       cleaned = '0${cleaned.substring(2)}';
     }
     
-    return cleaned;
+    // Adaugă un spațiu zero-width la început pentru a forța Google Sheets să păstreze formatul
+    // Acest lucru previne convertirea automată la număr care ar elimina primul 0
+    return '\u200B$cleaned';
   }
 }
 
