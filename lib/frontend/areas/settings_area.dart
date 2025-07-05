@@ -4,6 +4,7 @@ import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
+import 'package:broker_app/backend/services/update_service.dart';
 // import 'package:broker_app/frontend/popups/drive_popup.dart'; // Removed - no longer needed
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
 import 'package:broker_app/frontend/components/headers/field_header1.dart';
@@ -23,6 +24,7 @@ class _SettingsAreaState extends State<SettingsArea> {
   late final SettingsService _settingsService;
   late final MatcherService _matcherService;
   late final GoogleDriveService _googleDriveService;
+  final UpdateService _updateService = UpdateService();
 
   @override
   void initState() {
@@ -118,6 +120,17 @@ class _SettingsAreaState extends State<SettingsArea> {
           
           // Sectiunea pentru Google Drive
           _buildGoogleDriveSection(),
+
+          const SizedBox(height: AppTheme.largeGap),
+          
+          if (_updateService.currentVersion != null)
+            Text(
+              'Versiune: ${_updateService.currentVersion}',
+              style: TextStyle(
+                color: AppTheme.elementColor1.withAlpha(50),
+                fontSize: 12,
+              ),
+            ),
         ],
       ),
     );

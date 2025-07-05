@@ -6,6 +6,7 @@ import 'package:broker_app/app_theme.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/update_service.dart';
 import 'package:broker_app/frontend/screens/main_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Splash screen care pre-încarcă toate serviciile aplicației pentru o experiență fluidă
 class SplashScreen extends StatefulWidget {
@@ -489,145 +490,96 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.appBackground,
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Padding(
-              padding: const EdgeInsets.all(40.0),
+      backgroundColor: AppTheme.widgetBackground,
+      body: Stack(
+        children: [
+          Center(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo/Icon area
-                  Container(
+                  // SVG Logo
+                  SvgPicture.asset(
+                    'assets/logoIcon.svg',
                     width: 120,
                     height: 120,
-                    decoration: BoxDecoration(
-                      color: AppTheme.elementColor2,
-                      borderRadius: BorderRadius.circular(60),
-                      border: Border.all(
-                        color: AppTheme.elementColor2,
-                        width: 2,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.account_balance,
-                      size: 60,
-                      color: AppTheme.elementColor2,
-                    ),
+                    colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
                   ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // App title
+                  const SizedBox(height: 24),
+
+                  // Title Text
                   Text(
                     'Broker App',
                     style: GoogleFonts.outfit(
-                      fontSize: 32,
+                      fontSize: 48,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.elementColor2,
                     ),
                   ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Consultant name
+                  const SizedBox(height: 12),
+
+                  // Subtitle Text
                   Text(
-                    'Bun venit, ${widget.consultantData['name'] ?? 'Consultant'}',
+                    'Dezvoltat de M.A.T. Finance',
                     style: GoogleFonts.outfit(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.w400,
                       color: AppTheme.elementColor1,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  
-                  const SizedBox(height: 60),
-                  
-                  // Progress indicator
-                  Container(
-                    width: double.infinity,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppTheme.elementColor2,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: AnimatedBuilder(
-                      animation: _progressAnimation,
-                      builder: (context, child) {
-                        return FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: _splashService.progress * _progressAnimation.value,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppTheme.elementColor2,
-                                  AppTheme.elementColor2,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                  const SizedBox(height: 48),
+
+                  // Loading Text & Progress
+                  SizedBox(
+                    width: 300,
+                    child: Column(
+                      children: [
+                        Text(
+                          _splashService.currentTask,
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: AppTheme.elementColor1,
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Progress text
-                  Text(
-                    _splashService.currentTask,
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.elementColor1,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Progress percentage
-                  Text(
-                    '${(_splashService.progress * 100).round()}%',
-                    style: GoogleFonts.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: AppTheme.elementColor1,
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 60),
-                  
-                  // Loading indicator
-                  if (!_splashService.isInitialized)
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppTheme.elementColor2,
+                          textAlign: TextAlign.center,
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        AnimatedBuilder(
+                          animation: _progressAnimation,
+                          builder: (context, child) {
+                            return LinearProgressIndicator(
+                              value: _splashService.progress * _progressAnimation.value,
+                              backgroundColor: AppTheme.elementColor1.withAlpha(30),
+                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor2),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  
-                  if (_splashService.isInitialized)
-                    Icon(
-                      Icons.check_circle,
-                      size: 20,
-                      color: AppTheme.elementColor2,
-                    ),
+                  ),
                 ],
               ),
             ),
           ),
-        ),
+          if (_updateService.currentVersion != null)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Text(
+                  'Versiune ${_updateService.currentVersion}',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.elementColor1.withAlpha(50),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
