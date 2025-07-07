@@ -39,6 +39,9 @@ class GoogleDriveService extends ChangeNotifier {
   drive.DriveApi? _driveApi;
   sheets.SheetsApi? _sheetsApi;
   
+  // Background refresh timer
+  Timer? _backgroundRefreshTimer;
+  
   // Google OAuth2 credentials (Web client ID for desktop webview auth)
   static const String _clientId = '417121374106-54bs43o4e6o2k95n5dp3oa30aepciooi.apps.googleusercontent.com';
   static const String _clientSecret = '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';
@@ -74,14 +77,9 @@ class GoogleDriveService extends ChangeNotifier {
 
   /// Inițializează serviciul Google Drive și Sheets
   Future<void> initialize() async {
-    debugPrint('🚀 GOOGLE_DRIVE_SERVICE: ========== INITIALIZE START ==========');
-    
     try {
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 1 - Getting current consultant token...');
-      
       // Obține consultantToken-ul curent
       _currentConsultantToken = await _firebaseService.getCurrentConsultantToken();
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Current consultant token: ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'}');
       
       if (_currentConsultantToken == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: No consultant token available - cannot proceed with initialization');
@@ -89,35 +87,16 @@ class GoogleDriveService extends ChangeNotifier {
         return;
       }
       
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 2 - Checking platform compatibility...');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _isPlatformSupported() = ${_isPlatformSupported()}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _isDesktopPlatform() = ${_isDesktopPlatform()}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: kIsWeb = $kIsWeb');
-      if (!kIsWeb) {
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Platform.isAndroid = ${Platform.isAndroid}');
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Platform.isIOS = ${Platform.isIOS}');
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Platform.isWindows = ${Platform.isWindows}');
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Platform.isMacOS = ${Platform.isMacOS}');
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Platform.isLinux = ${Platform.isLinux}');
-      }
-      
       if (_isPlatformSupported()) {
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 3a - Mobile platform detected, initializing Google Sign In...');
-        
         // Mobile platforms - folosește Google Sign In
         _googleSignIn = GoogleSignIn.instance;
         await _googleSignIn!.initialize();
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: GoogleSignIn configured');
         
         // Verifică dacă există o sesiune salvată pentru consultantul curent
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 3b - Checking saved mobile authentication...');
         await _checkSavedAuthentication();
         
       } else if (_isDesktopPlatform()) {
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 3a - Desktop platform detected, checking saved tokens...');
-        
         // Desktop platforms - verifică token salvat pentru consultantul curent
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 3b - Checking saved desktop tokens...');
         await _checkSavedDesktopToken();
         
       } else {
@@ -126,29 +105,16 @@ class GoogleDriveService extends ChangeNotifier {
         return;
       }
       
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Step 4 - Final state check...');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _isAuthenticated = $_isAuthenticated');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _userEmail = $_userEmail');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _userName = $_userName');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _accessToken length = ${_accessToken?.length ?? 0}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _refreshToken available = ${_refreshToken != null}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _tokenExpiration = $_tokenExpiration');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _driveApi configured = ${_driveApi != null}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _sheetsApi configured = ${_sheetsApi != null}');
+      // Pornește timer-ul pentru refresh-ul în background (la fiecare 20 minute)
+      _backgroundRefreshTimer?.cancel();
+      _backgroundRefreshTimer = Timer.periodic(Duration(minutes: 20), (timer) {
+        refreshTokenInBackground();
+      });
       
-      if (_isAuthenticated) {
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Initialized successfully for consultant: ${_currentConsultantToken?.substring(0, 8)} - AUTHENTICATED');
-      } else {
-        debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: Initialized for consultant: ${_currentConsultantToken?.substring(0, 8)} - NOT AUTHENTICATED (this is normal for first time)');
-      }
-      
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error initializing: $e');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
       _lastError = 'Eroare la inițializare: ${e.toString()}';
     }
-    
-    debugPrint('🚀 GOOGLE_DRIVE_SERVICE: ========== INITIALIZE END ==========');
   }
 
   /// Verifică dacă există o autentificare salvată (mobile) pentru consultantul curent
@@ -182,17 +148,12 @@ class GoogleDriveService extends ChangeNotifier {
 
   /// Verifică dacă există un token desktop salvat pentru consultantul curent
   Future<void> _checkSavedDesktopToken() async {
-    debugPrint('🔍🔍 GOOGLE_DRIVE_SERVICE: ========== _checkSavedDesktopToken START ==========');
-    
     try {
       if (_currentConsultantToken == null) {
-        debugPrint('❌ GOOGLE_DRIVE_SERVICE: No consultant token available for token check');
         return;
       }
       
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Loading SharedPreferences...');
       final prefs = await SharedPreferences.getInstance();
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: SharedPreferences loaded successfully');
       
       // Generate keys for current consultant
       final accessTokenKey = _getTokenKey(_currentConsultantToken!, 'access_token');
@@ -201,13 +162,6 @@ class GoogleDriveService extends ChangeNotifier {
       final nameKey = _getTokenKey(_currentConsultantToken!, 'user_name');
       final expirationKey = _getTokenKey(_currentConsultantToken!, 'token_expiration');
       
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Looking for tokens with keys:');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - access_token: $accessTokenKey');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - refresh_token: $refreshTokenKey');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - user_email: $emailKey');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - user_name: $nameKey');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - token_expiration: $expirationKey');
-      
       // Try to load all keys
       final accessToken = prefs.getString(accessTokenKey);
       final refreshToken = prefs.getString(refreshTokenKey);
@@ -215,58 +169,37 @@ class GoogleDriveService extends ChangeNotifier {
       final name = prefs.getString(nameKey);
       final expirationString = prefs.getString(expirationKey);
       
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Values found in SharedPreferences:');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - accessToken: ${accessToken != null ? '${accessToken.substring(0, 20)}...' : 'NULL'}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - refreshToken: ${refreshToken != null ? '${refreshToken.substring(0, 20)}...' : 'NULL'}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - email: $email');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - name: $name');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: - expirationString: $expirationString');
-      
-      // Check if we have minimum required data
-      if (accessToken != null && email != null) {
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Found saved tokens! Setting up authentication...');
-        
-        _accessToken = accessToken;
-        _refreshToken = refreshToken;
-        _userEmail = email;
-        _userName = name;
-        
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Parsing expiration time...');
-        // Parse expiration time
-        if (expirationString != null) {
-          // IMPORTANT: Parse as UTC to match Google's API requirements
-          _tokenExpiration = DateTime.tryParse(expirationString)?.toUtc();
-          debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Parsed expiration: $_tokenExpiration');
-          debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Parsed expiration isUtc: ${_tokenExpiration?.isUtc}');
-        } else {
-          debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: No expiration string found');
-          _tokenExpiration = null;
-        }
-        
-        // Check if token is expired
-        final now = DateTime.now().toUtc();
-        final isExpired = _tokenExpiration != null && now.isAfter(_tokenExpiration!);
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Current time (UTC): $now');
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Token expires: $_tokenExpiration');
-        debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Is token expired: $isExpired');
-        
-        // Verifică dacă token-ul a expirat și încearcă să-l refresh
-        if (isExpired) {
-          debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Token expired, attempting refresh...');
-          if (_refreshToken != null) {
-            debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Refresh token available, calling _refreshAccessToken()...');
-            final refreshSuccess = await _refreshAccessToken();
-            debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Refresh result: $refreshSuccess');
-            
-            if (!refreshSuccess) {
-              debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to refresh token, removing saved credentials');
-              await _clearSavedDesktopToken();
-              return;
-            } else {
-              debugPrint('✅ GOOGLE_DRIVE_SERVICE: Token refreshed successfully');
-            }
+              // Check if we have minimum required data
+        if (accessToken != null && email != null) {
+          _accessToken = accessToken;
+          _refreshToken = refreshToken;
+          _userEmail = email;
+          _userName = name;
+          
+          // Parse expiration time
+          if (expirationString != null) {
+            // IMPORTANT: Parse as UTC to match Google's API requirements
+            _tokenExpiration = DateTime.tryParse(expirationString)?.toUtc();
           } else {
-            debugPrint('❌ GOOGLE_DRIVE_SERVICE: No refresh token available, removing saved credentials');
+            _tokenExpiration = null;
+          }
+          
+          // Check if token is expired
+          final now = DateTime.now().toUtc();
+          final isExpired = _tokenExpiration != null && now.isAfter(_tokenExpiration!);
+          
+          // Verifică dacă token-ul a expirat și încearcă să-l refresh
+          if (isExpired) {
+            if (_refreshToken != null) {
+              final refreshSuccess = await _refreshAccessToken();
+              
+              if (!refreshSuccess) {
+                debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to refresh token, removing saved credentials');
+                await _clearSavedDesktopToken();
+                return;
+              }
+            } else {
+              debugPrint('❌ GOOGLE_DRIVE_SERVICE: No refresh token available, removing saved credentials');
             await _clearSavedDesktopToken();
             return;
           }
@@ -326,7 +259,7 @@ class GoogleDriveService extends ChangeNotifier {
           'refresh_token': _refreshToken!,
           'grant_type': 'refresh_token',
         },
-      );
+      ).timeout(Duration(seconds: 30)); // Timeout pentru request
 
       debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Response status: ${response.statusCode}');
       debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Response body length: ${response.body.length}');
@@ -353,6 +286,16 @@ class GoogleDriveService extends ChangeNotifier {
         
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Access token refreshed successfully');
         return true;
+      } else if (response.statusCode == 400) {
+        // Refresh token invalid sau expirat
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Refresh token invalid or expired: ${response.statusCode}');
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Response: ${response.body}');
+        
+        // Șterge refresh token-ul invalid
+        _refreshToken = null;
+        await _clearSavedDesktopToken();
+        
+        return false;
       } else {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to refresh token: ${response.statusCode}');
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Response: ${response.body}');
@@ -361,6 +304,15 @@ class GoogleDriveService extends ChangeNotifier {
     } catch (e, stackTrace) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error refreshing access token: $e');
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
+      
+      // Verifică dacă este o eroare temporară (network, timeout)
+      if (e.toString().contains('TimeoutException') || 
+          e.toString().contains('SocketException') ||
+          e.toString().contains('HttpException')) {
+        debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: Network error during refresh - can retry');
+        return false; // Poate fi reîncercat
+      }
+      
       return false;
     }
     
@@ -368,18 +320,12 @@ class GoogleDriveService extends ChangeNotifier {
 
   /// Șterge token-urile desktop salvate
   Future<void> _clearSavedDesktopToken() async {
-    debugPrint('🧹🧹 GOOGLE_DRIVE_SERVICE: ========== _clearSavedDesktopToken START ==========');
-    debugPrint('🧹 GOOGLE_DRIVE_SERVICE: Consultant token: ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'}');
-    
     if (_currentConsultantToken == null) {
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: No consultant token - cannot clear tokens');
       return;
     }
     
     try {
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: Loading SharedPreferences...');
       final prefs = await SharedPreferences.getInstance();
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: SharedPreferences loaded');
       
       final accessTokenKey = _getTokenKey(_currentConsultantToken!, 'access_token');
       final refreshTokenKey = _getTokenKey(_currentConsultantToken!, 'refresh_token');
@@ -387,20 +333,11 @@ class GoogleDriveService extends ChangeNotifier {
       final nameKey = _getTokenKey(_currentConsultantToken!, 'user_name');
       final expirationKey = _getTokenKey(_currentConsultantToken!, 'token_expiration');
       
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: Removing keys:');
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: - access_token: $accessTokenKey');
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: - refresh_token: $refreshTokenKey');
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: - user_email: $emailKey');
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: - user_name: $nameKey');
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: - token_expiration: $expirationKey');
-      
       await prefs.remove(accessTokenKey);
       await prefs.remove(refreshTokenKey);
       await prefs.remove(emailKey);
       await prefs.remove(nameKey);
       await prefs.remove(expirationKey);
-      
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: All keys removed from SharedPreferences');
       
       _accessToken = null;
       _refreshToken = null;
@@ -408,59 +345,49 @@ class GoogleDriveService extends ChangeNotifier {
       _userEmail = null;
       _userName = null;
       
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Local variables cleared');
-      debugPrint('🧹 GOOGLE_DRIVE_SERVICE: Cleared saved desktop tokens');
-      
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error clearing saved tokens: $e');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
+    }
+  }
+
+  /// Verifică și refresh token-ul în background pentru a preveni expirarea
+  Future<void> refreshTokenInBackground() async {
+    if (!_isAuthenticated || _isDesktopPlatform() == false) {
+      return; // Nu este necesară verificarea pentru mobile sau dacă nu este autentificat
     }
     
-    debugPrint('🧹🧹 GOOGLE_DRIVE_SERVICE: ========== _clearSavedDesktopToken END ==========');
+    if (_tokenExpiration != null && DateTime.now().toUtc().isAfter(_tokenExpiration!.subtract(Duration(minutes: 30)))) {
+      debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Background refresh - token expires in less than 30 minutes');
+      final refreshSuccess = await _refreshAccessToken();
+      if (refreshSuccess) {
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Background refresh successful');
+        await _setupApiClientsWithToken(_accessToken!);
+      } else {
+        debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: Background refresh failed');
+      }
+    }
   }
 
   /// Schimbă consultantul și încarcă token-urile corespunzătoare
   Future<void> switchConsultant(String newConsultantToken) async {
-    debugPrint('🔄🔄 GOOGLE_DRIVE_SERVICE: ========== switchConsultant START ==========');
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Current consultant: ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'}');
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: New consultant: ${newConsultantToken.substring(0, 8)}');
-    
     if (_currentConsultantToken == newConsultantToken) {
-      debugPrint('ℹ️ GOOGLE_DRIVE_SERVICE: Same consultant - no action needed');
       return; // Același consultant
     }
     
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Switching consultant from ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'} to ${newConsultantToken.substring(0, 8)}');
-    
     // Resetează starea curentă
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Resetting current authentication state...');
     await _resetAuthenticationState();
-    debugPrint('✅ GOOGLE_DRIVE_SERVICE: Authentication state reset');
     
     // Schimbă la noul consultant
     _currentConsultantToken = newConsultantToken;
-    debugPrint('✅ GOOGLE_DRIVE_SERVICE: Consultant token updated');
     
     // Încarcă autentificarea pentru noul consultant
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Loading authentication for new consultant...');
     if (_isPlatformSupported()) {
-      debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Checking mobile authentication...');
       await _checkSavedAuthentication();
     } else if (_isDesktopPlatform()) {
-      debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Checking desktop authentication...');
       await _checkSavedDesktopToken();
     }
     
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Final state after switch:');
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: - isAuthenticated: $_isAuthenticated');
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: - userEmail: $_userEmail');
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: - userName: $_userName');
-    
-    debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Notifying listeners...');
     notifyListeners();
-    debugPrint('✅ GOOGLE_DRIVE_SERVICE: Listeners notified');
-    
-    debugPrint('🔄🔄 GOOGLE_DRIVE_SERVICE: ========== switchConsultant END ==========');
   }
 
   /// Resetează starea de autentificare fără a șterge token-urile salvate
@@ -475,6 +402,10 @@ class GoogleDriveService extends ChangeNotifier {
     _driveApi = null;
     _sheetsApi = null;
     _lastError = null;
+    
+    // Oprește timer-ul de background refresh
+    _backgroundRefreshTimer?.cancel();
+    _backgroundRefreshTimer = null;
   }
 
   /// Verifică și refresh token-ul înainte de utilizare
@@ -490,23 +421,41 @@ class GoogleDriveService extends ChangeNotifier {
     }
 
     // Pentru desktop, verifică dacă token-ul a expirat
-    if (_tokenExpiration != null && DateTime.now().toUtc().isAfter(_tokenExpiration!.subtract(Duration(minutes: 5)))) {
+    if (_tokenExpiration != null && DateTime.now().toUtc().isAfter(_tokenExpiration!.subtract(Duration(minutes: 15)))) {
       debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Token expires soon, refreshing...');
       if (_refreshToken != null) {
-        final refreshSuccess = await _refreshAccessToken();
+        // Încerca refresh de 3 ori cu delay între încercări
+        bool refreshSuccess = false;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+          debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Refresh attempt $attempt/3');
+          refreshSuccess = await _refreshAccessToken();
+          if (refreshSuccess) {
+            break;
+          }
+          if (attempt < 3) {
+            debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Waiting 2 seconds before next attempt...');
+            await Future.delayed(Duration(seconds: 2));
+          }
+        }
+        
         if (refreshSuccess) {
           // Actualizează API clients cu noul token
           await _setupApiClientsWithToken(_accessToken!);
           return true;
         } else {
-          debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to refresh token, user needs to reauthenticate');
-          await _resetAuthenticationState();
+          debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to refresh token after 3 attempts');
+          // NU resetăm starea complet - doar marcăm că nu este autentificat
+          // Utilizatorul va fi rugat să se reconecteze doar când încearcă să salveze
+          _isAuthenticated = false;
+          _lastError = 'Token-ul a expirat. Reconectați-vă la Google Drive din Setări.';
           notifyListeners();
           return false;
         }
       } else {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: No refresh token, user needs to reauthenticate');
-        await _resetAuthenticationState();
+        // NU resetăm starea complet - doar marcăm că nu este autentificat
+        _isAuthenticated = false;
+        _lastError = 'Sesiunea a expirat. Reconectați-vă la Google Drive din Setări.';
         notifyListeners();
         return false;
       }
@@ -872,13 +821,9 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Desktop tokens saved with refresh token');
       
       // Verify saved tokens
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Verifying saved tokens...');
-      final savedAccessToken = prefs.getString(accessTokenKey);
-      final savedRefreshToken = prefs.getString(refreshTokenKey);
-      final savedEmail = prefs.getString(emailKey);
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Verification - Access token: ${savedAccessToken != null ? 'SAVED' : 'MISSING'}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Verification - Refresh token: ${savedRefreshToken != null ? 'SAVED' : 'MISSING'}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Verification - Email: ${savedEmail != null ? 'SAVED' : 'MISSING'}');
+      prefs.getString(accessTokenKey);
+      prefs.getString(refreshTokenKey);
+      prefs.getString(emailKey);
       
     } catch (e, stackTrace) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to save desktop tokens: $e');
@@ -917,6 +862,10 @@ class GoogleDriveService extends ChangeNotifier {
       _userName = null;
       _lastError = null;
       
+      // Oprește timer-ul de background refresh
+      _backgroundRefreshTimer?.cancel();
+      _backgroundRefreshTimer = null;
+      
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Disconnected successfully for consultant: ${_currentConsultantToken?.substring(0, 8)}');
       notifyListeners();
       
@@ -941,12 +890,7 @@ class GoogleDriveService extends ChangeNotifier {
       }
       
       // LOG: Verifică starea de autentificare detaliată
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Verificare autentificare...');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _isAuthenticated = $_isAuthenticated');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _driveApi != null = ${_driveApi != null}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _sheetsApi != null = ${_sheetsApi != null}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _currentConsultantToken = ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _userEmail = $_userEmail');
+          // Verificare autentificare
       
       if (!_isAuthenticated) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Nu este conectat la Google Drive');
@@ -1011,73 +955,37 @@ class GoogleDriveService extends ChangeNotifier {
 
   /// Gaseste un spreadsheet dupa nume sau il creeaza daca nu exista
   Future<String?> _findOrCreateSpreadsheet(String name) async {
-    debugPrint('🔍 GOOGLE_DRIVE_SERVICE: _findOrCreateSpreadsheet("$name") - ÎNCEPUT');
-    
     try {
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Construire query pentru căutare fișier...');
       final query = "mimeType='application/vnd.google-apps.spreadsheet' and name='$name' and trashed=false";
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Query: $query');
-      
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Apelare _driveApi.files.list...');
       final response = await _driveApi!.files.list(q: query, $fields: 'files(id, name)');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: Răspuns primit de la API');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: response.files = ${response.files}');
-      debugPrint('🔍 GOOGLE_DRIVE_SERVICE: response.files?.length = ${response.files?.length}');
       
       if (response.files != null && response.files!.isNotEmpty) {
         final fileId = response.files!.first.id!;
-        final fileName = response.files!.first.name!;
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Fișierul "$name" găsit!');
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: - ID: $fileId');
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: - Nume: $fileName');
         return fileId;
       } else {
-        debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: Fișierul "$name" nu a fost găsit. Creez unul nou...');
-        
-        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Construire obiect Spreadsheet nou...');
         final newSheet = sheets.Spreadsheet(
           properties: sheets.SpreadsheetProperties(title: name),
         );
-        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Obiect creat, apelare _sheetsApi.spreadsheets.create...');
         
         final createdSheet = await _sheetsApi!.spreadsheets.create(newSheet);
         final fileId = createdSheet.spreadsheetId!;
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Fișierul "$name" creat cu succes!');
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: - Nou ID: $fileId');
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: - URL: https://docs.google.com/spreadsheets/d/$fileId');
         return fileId;
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _lastError = 'Eroare la căutarea sau crearea fișierului: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _findOrCreateSpreadsheet: $_lastError');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Tip eroare: ${e.runtimeType}');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
       return null;
     }
   }
 
   /// Gaseste un sheet (tab) dupa titlu sau il creeaza daca nu exista
   Future<String?> _findOrCreateSheet(String spreadsheetId) async {
-    debugPrint('📋 GOOGLE_DRIVE_SERVICE: _findOrCreateSheet("$spreadsheetId") - ÎNCEPUT');
-    
     try {
       // Genereaza titlul pentru luna si anul curent (ex: Iul 25)
       final now = DateTime.now();
       final sheetTitle = _generateRomanianSheetTitle(now);
-      debugPrint('📋 GOOGLE_DRIVE_SERVICE: Titlu sheet generat: "$sheetTitle"');
-      debugPrint('📋 GOOGLE_DRIVE_SERVICE: Data curentă: $now');
 
-      debugPrint('📋 GOOGLE_DRIVE_SERVICE: Apelare _sheetsApi.spreadsheets.get pentru spreadsheet...');
       final spreadsheet = await _sheetsApi!.spreadsheets.get(spreadsheetId, includeGridData: false);
-      debugPrint('📋 GOOGLE_DRIVE_SERVICE: Spreadsheet obținut cu succes');
-      debugPrint('📋 GOOGLE_DRIVE_SERVICE: Număr sheet-uri existente: ${spreadsheet.sheets?.length ?? 0}');
-      
-      if (spreadsheet.sheets != null) {
-        for (int i = 0; i < spreadsheet.sheets!.length; i++) {
-          final sheet = spreadsheet.sheets![i];
-          debugPrint('📋 GOOGLE_DRIVE_SERVICE: Sheet $i: "${sheet.properties?.title}"');
-        }
-      }
 
       final existingSheet = spreadsheet.sheets?.firstWhere(
         (s) => s.properties?.title == sheetTitle,
@@ -1085,113 +993,57 @@ class GoogleDriveService extends ChangeNotifier {
       );
 
       if (existingSheet?.properties?.title == sheetTitle) {
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Foaia "$sheetTitle" există deja!');
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet ID: ${existingSheet?.properties?.sheetId}');
         return sheetTitle;
       } else {
-        debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: Foaia "$sheetTitle" nu există. Creez una nouă...');
-        
-        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Construire AddSheetRequest...');
         final addSheetRequest = sheets.AddSheetRequest(
           properties: sheets.SheetProperties(title: sheetTitle),
         );
         
-        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Apelare batchUpdate pentru adăugare sheet...');
         await _sheetsApi!.spreadsheets.batchUpdate(
           sheets.BatchUpdateSpreadsheetRequest(requests: [sheets.Request(addSheet: addSheetRequest)]),
           spreadsheetId,
         );
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet adăugat cu succes');
 
         // Adauga header-ul in noul sheet
-        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adăugare header în noul sheet...');
         await _addHeaderToSheet(spreadsheetId, sheetTitle);
         
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Foaia "$sheetTitle" a fost creată și configurată cu succes!');
         return sheetTitle;
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       _lastError = 'Eroare la căutarea sau crearea foii de calcul: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _findOrCreateSheet: $_lastError');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Tip eroare: ${e.runtimeType}');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
       return null;
     }
   }
 
   /// Adaugă header-ul în sheet-ul specificat
   Future<void> _addHeaderToSheet(String spreadsheetId, String sheetTitle) async {
-    debugPrint('📝 GOOGLE_DRIVE_SERVICE: _addHeaderToSheet - ÎNCEPUT');
-    debugPrint('📝 GOOGLE_DRIVE_SERVICE: spreadsheetId: $spreadsheetId');
-    debugPrint('📝 GOOGLE_DRIVE_SERVICE: sheetTitle: $sheetTitle');
-    
     try {
       final headers = _getHeaders();
-      debugPrint('📝 GOOGLE_DRIVE_SERVICE: Headers: $headers');
-      debugPrint('📝 GOOGLE_DRIVE_SERVICE: Număr coloane header: ${headers.length}');
-      
       final valueRange = sheets.ValueRange()..values = [headers];
-      debugPrint('📝 GOOGLE_DRIVE_SERVICE: ValueRange creat');
-      
       final range = "'$sheetTitle'!A1";
-      debugPrint('📝 GOOGLE_DRIVE_SERVICE: Range pentru header: $range');
       
-      debugPrint('📝 GOOGLE_DRIVE_SERVICE: Apelare _sheetsApi.spreadsheets.values.update...');
       await _sheetsApi!.spreadsheets.values.update(
         valueRange,
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
       );
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Header adăugat cu succes!');
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _addHeaderToSheet: $e');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
       rethrow; // Re-aruncă eroarea pentru ca funcția apelantă să o poată gestiona
     }
   }
   
   /// Adauga un rand de date la finalul unui sheet
   Future<bool> _appendRowToSheet(String spreadsheetId, String sheetTitle, List<dynamic> rowData) async {
-    debugPrint('💾 GOOGLE_DRIVE_SERVICE: _appendRowToSheet - ÎNCEPUT');
-    debugPrint('💾 GOOGLE_DRIVE_SERVICE: spreadsheetId: $spreadsheetId');
-    debugPrint('💾 GOOGLE_DRIVE_SERVICE: sheetTitle: $sheetTitle');
-    debugPrint('💾 GOOGLE_DRIVE_SERVICE: rowData: $rowData');
-    debugPrint('💾 GOOGLE_DRIVE_SERVICE: rowData.length: ${rowData.length}');
-    
     try {
-      debugPrint('💾 GOOGLE_DRIVE_SERVICE: Creare ValueRange...');
-      final valueRange = sheets.ValueRange()..values = [rowData];
-      debugPrint('💾 GOOGLE_DRIVE_SERVICE: ValueRange creat cu succes');
       
-      final range = "'$sheetTitle'!A1";
-      debugPrint('💾 GOOGLE_DRIVE_SERVICE: Range pentru append: $range');
-      debugPrint('💾 GOOGLE_DRIVE_SERVICE: valueInputOption: USER_ENTERED');
-      
-      debugPrint('💾 GOOGLE_DRIVE_SERVICE: APELARE CRITICĂ: _sheetsApi.spreadsheets.values.append...');
-      debugPrint('💾 GOOGLE_DRIVE_SERVICE: Aceasta este operația finală care salvează datele!');
-      
-      final response = await _sheetsApi!.spreadsheets.values.append(
-        valueRange,
-        spreadsheetId,
-        range,
-        valueInputOption: 'USER_ENTERED',
-      );
-      
-      debugPrint('✅✅✅ GOOGLE_DRIVE_SERVICE: APPEND REUȘIT! ✅✅✅');
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Response: $response');
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Updates: ${response.updates}');
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: UpdatedCells: ${response.updates?.updatedCells}');
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: UpdatedRange: ${response.updates?.updatedRange}');
       
       return true;
-    } catch (e, stackTrace) {
+    } catch (e) {
       _lastError = 'Eroare la adăugarea rândului: $e';
-      debugPrint('❌❌❌ GOOGLE_DRIVE_SERVICE: EROARE CRITICĂ în _appendRowToSheet! ❌❌❌');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: $_lastError');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Tip eroare: ${e.runtimeType}');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Detalii eroare: $e');
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _appendRowToSheet: $_lastError');
       return false;
     }
   }

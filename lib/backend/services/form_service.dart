@@ -495,7 +495,7 @@ class FormService extends ChangeNotifier {
   /// Automatically saves form data to Firebase for a client by phone number
   Future<void> _autoSaveToFirebaseForClient(String clientPhoneNumber) async {
     try {
-      debugPrint('FormService: Auto-saving data for client: $clientPhoneNumber');
+
       
       // Find client name - for now use phone number as fallback
       String clientName = clientPhoneNumber;
@@ -508,8 +508,6 @@ class FormService extends ChangeNotifier {
       
       if (!success) {
         debugPrint('❌ FormService: Failed to auto-save form data to Firebase for client: $clientPhoneNumber');
-      } else {
-        debugPrint('✅ FormService: Successfully auto-saved form data to Firebase for client: $clientPhoneNumber');
       }
     } catch (e) {
       debugPrint('❌ FormService: Error auto-saving form data to Firebase: $e');

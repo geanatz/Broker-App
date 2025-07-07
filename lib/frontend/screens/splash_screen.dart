@@ -503,13 +503,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     'assets/logoIcon.svg',
                     width: 120,
                     height: 120,
-                    colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
+                    colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 24),
 
                   // Title Text
                   Text(
-                    'Broker App',
+                    'Bun venit',
                     style: GoogleFonts.outfit(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
@@ -520,7 +521,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
                   // Subtitle Text
                   Text(
-                    'Dezvoltat de M.A.T. Finance',
+                    'Aplicatie de Consultanta Financiara',
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w400,

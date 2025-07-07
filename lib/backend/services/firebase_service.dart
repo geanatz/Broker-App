@@ -416,50 +416,25 @@ class NewFirebaseService {
 
   /// Obtine token-ul consultantului curent din baza de data
   Future<String?> getCurrentConsultantToken() async {
-    debugPrint('🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========');
-    
     final user = currentUser;
-    debugPrint('🔍 FIREBASE_SERVICE: Current user: ${user?.uid}');
-    debugPrint('🔍 FIREBASE_SERVICE: User email: ${user?.email}');
-    
-    if (user == null) {
-      debugPrint('❌ FIREBASE_SERVICE: No current user - returning null');
-      return null;
-    }
+    if (user == null) return null;
 
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: Fetching consultant document for UID: ${user.uid}');
-      
       final doc = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(user.uid).get()
       );
       
-      debugPrint('🔍 FIREBASE_SERVICE: Document exists: ${doc.exists}');
-      
       if (doc.exists) {
-        final data = doc.data();
-        debugPrint('🔍 FIREBASE_SERVICE: Document data keys: ${data?.keys}');
-        
         final token = doc.data()?['token'] as String?;
-        debugPrint('🔍 FIREBASE_SERVICE: Token found: ${token?.substring(0, 8) ?? 'NULL'}');
-        
-        if (token != null) {
-          debugPrint('✅ FIREBASE_SERVICE: Successfully retrieved consultant token');
-        } else {
-          debugPrint('⚠️ FIREBASE_SERVICE: Token field is null in document');
-        }
-        
         return token;
       } else {
         debugPrint('❌ FIREBASE_SERVICE: Consultant document does not exist for UID: ${user.uid}');
         return null;
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('❌ FIREBASE_SERVICE: Error getting consultant token: $e');
-      debugPrint('❌ FIREBASE_SERVICE: Stack trace: $stackTrace');
       return null;
     }
-    
   }
 
   /// Obtine datele consultantului pe baza token-ului

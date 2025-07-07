@@ -112,8 +112,7 @@ class ClientModel {
 
   /// Creeaza un ClientModel dintr-un Map din Firebase (din noua structura)
   static ClientModel fromMap(Map<String, dynamic> map) {
-    debugPrint('🔍 CLIENT_MODEL: Creating from map with consultantToken: ${map['consultantToken'] ?? 'NULL'}');
-    debugPrint('🔍 CLIENT_MODEL: Client name: ${map['name']}, phoneNumber: ${map['phoneNumber']}');
+    // Creating ClientModel from Firebase data
     
     return ClientModel(
       id: map['phoneNumber'] ?? map['id'] ?? '', // phoneNumber este ID-ul in noua structura
@@ -235,13 +234,8 @@ class ClientsService {
   /// Obtine toti clientii pentru consultantul curent
   Future<List<ClientModel>> getAllClients() async {
     try {
-      debugPrint('🔍 CLIENTS_SERVICE: getAllClients() called');
       final clientsData = await _firebaseService.getAllClients();
-      
-      debugPrint('🔍 CLIENTS_SERVICE: Received ${clientsData.length} clients from Firebase');
       final clients = clientsData.map((data) => ClientModel.fromMap(data)).toList();
-      debugPrint('🔍 CLIENTS_SERVICE: Converted to ${clients.length} ClientModel objects');
-      
       return clients;
     } catch (e) {
       debugPrint('❌ Error getting all clients: $e');

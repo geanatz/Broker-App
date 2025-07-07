@@ -65,74 +65,43 @@ class SplashService extends ChangeNotifier {
 
   /// FIX: Resetează cache-ul când consultantul se schimbă
   Future<void> resetForNewConsultant() async {
-    debugPrint('🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========');
-    
     try {
       final firebaseService = _clientUIService?.firebaseService;
-      if (firebaseService == null) {
-        debugPrint('❌ SPLASH_SERVICE: Firebase service not available');
-        return;
-      }
+      if (firebaseService == null) return;
       
-      debugPrint('🔄 SPLASH_SERVICE: Getting current consultant token and team...');
       final newConsultantToken = await NewFirebaseService().getCurrentConsultantToken();
       final newTeam = await NewFirebaseService().getCurrentConsultantTeam();
       
-      debugPrint('🔄 SPLASH_SERVICE: Current consultant token: ${_currentConsultantToken?.substring(0, 8) ?? 'NULL'}');
-      debugPrint('🔄 SPLASH_SERVICE: New consultant token: ${newConsultantToken?.substring(0, 8) ?? 'NULL'}');
-      debugPrint('🔄 SPLASH_SERVICE: Current team: $_currentTeam');
-      debugPrint('🔄 SPLASH_SERVICE: New team: $newTeam');
-      
       if (newConsultantToken != _currentConsultantToken || newTeam != _currentTeam) {
-        debugPrint('🔄 SPLASH_SERVICE: Consultant or team changed - resetting...');
-        
         // Salvează în cache datele pentru echipa anterioară
         if (_currentTeam != null && _cachedMeetings.isNotEmpty) {
-          debugPrint('🔄 SPLASH_SERVICE: Saving meetings cache for previous team: $_currentTeam');
           _teamMeetingsCache[_currentTeam!] = List.from(_cachedMeetings);
         }
         
         _currentConsultantToken = newConsultantToken;
         _currentTeam = newTeam;
-        debugPrint('✅ SPLASH_SERVICE: Updated current consultant and team');
         
         // Încarcă datele pentru noua echipă
-        debugPrint('🔄 SPLASH_SERVICE: Loading meetings for new team...');
         await _loadMeetingsForNewTeam();
         
         // Notifică și dashboard-ul pentru refresh
         if (_dashboardService != null) {
-          debugPrint('🔄 SPLASH_SERVICE: Resetting dashboard service...');
           await _dashboardService!.resetForNewConsultant();
         }
         
         // FIX: Resetează și cache-ul de clienți pentru separarea datelor
         if (_clientUIService != null) {
-          debugPrint('🔄 SPLASH_SERVICE: Resetting client UI service...');
           await _clientUIService!.resetForNewConsultant();
         }
         
         // FIX: Schimbă consultantul în Google Drive Service pentru token-urile corecte
         if (_googleDriveService != null && newConsultantToken != null) {
-          debugPrint('🔄 SPLASH_SERVICE: Calling GoogleDriveService.switchConsultant...');
           await _googleDriveService!.switchConsultant(newConsultantToken);
-          debugPrint('✅ SPLASH_SERVICE: GoogleDriveService.switchConsultant completed');
-        } else {
-          debugPrint('⚠️ SPLASH_SERVICE: GoogleDriveService or newConsultantToken is null');
-          debugPrint('⚠️ SPLASH_SERVICE: _googleDriveService: ${_googleDriveService != null ? 'Available' : 'NULL'}');
-          debugPrint('⚠️ SPLASH_SERVICE: newConsultantToken: ${newConsultantToken != null ? 'Available' : 'NULL'}');
         }
-        
-        debugPrint('✅ SPLASH_SERVICE: All services reset for new consultant');
-      } else {
-        debugPrint('ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error resetting for new consultant: $e');
-      debugPrint('❌ SPLASH_SERVICE: Stack trace: $stackTrace');
     }
-    
-    debugPrint('🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========');
   }
 
   /// FIX: Încarcă întâlnirile pentru noua echipă
@@ -252,7 +221,7 @@ class SplashService extends ChangeNotifier {
     _cachedTimeSlots = {};
     _timeSlotsLastUpdate = null;
     
-    debugPrint('🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing');
+    // Cache invalidated and refreshed
   }
 
   /// Obtine slot-urile de timp disponibile din cache sau refreshuie

@@ -12,6 +12,7 @@ import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/auth_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
+import 'package:broker_app/backend/services/form_service.dart';
 
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -99,19 +100,12 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
   /// Initializeaza status-ul existent pentru editare
   void _initializeExistingStatus() {
-    debugPrint('🔍 STATUS_POPUP: Initializing existing status for client: ${widget.client.name}');
-    debugPrint('🔍 STATUS_POPUP: Discussion status: ${widget.client.discussionStatus}');
-    debugPrint('🔍 STATUS_POPUP: Scheduled DateTime: ${widget.client.scheduledDateTime}');
-    debugPrint('🔍 STATUS_POPUP: Additional info: ${widget.client.additionalInfo}');
-    
     if (widget.client.discussionStatus != null && widget.client.discussionStatus!.isNotEmpty) {
       _selectedStatus = widget.client.discussionStatus;
-      debugPrint('✅ STATUS_POPUP: Loaded existing status: $_selectedStatus');
       
       // Incarca informatiile aditionale daca exista
       if (widget.client.additionalInfo != null && widget.client.additionalInfo!.isNotEmpty) {
         _statusController.text = widget.client.additionalInfo!;
-        debugPrint('✅ STATUS_POPUP: Loaded additional info: ${widget.client.additionalInfo}');
       }
       
       // IMPORTANT: Daca are data programata, incarca-o INDIFERENT de status
@@ -122,24 +116,19 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           widget.client.scheduledDateTime!.day,
         );
         
-        debugPrint('✅ STATUS_POPUP: Loaded existing date: $_selectedDate');
-        
         // Pentru amanat, incarca ora in timeController
         if (_selectedStatus == 'Amanat') {
           _timeController.text = DateFormat('HH:mm').format(widget.client.scheduledDateTime!);
-          debugPrint('✅ STATUS_POPUP: Loaded existing time for Amanat: ${_timeController.text}');
         }
         
         // Pentru acceptat, incarca ora ca selectedTimeSlot si pregateste orele disponibile
         if (_selectedStatus == 'Acceptat') {
           _selectedTimeSlot = DateFormat('HH:mm').format(widget.client.scheduledDateTime!);
-          debugPrint('✅ STATUS_POPUP: Loaded existing time for Acceptat: $_selectedTimeSlot');
           
           // IMPORTANT: Adaugă ora existentă în lista disponibilă IMEDIAT pentru a fi afișată în UI
           if (_selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot!)) {
             _availableTimeSlots.add(_selectedTimeSlot!);
             _availableTimeSlots.sort();
-            debugPrint('✅ STATUS_POPUP: Added existing time slot to available list: $_selectedTimeSlot');
           }
           
           // Incarca orele disponibile pentru data selectata pentru completarea listei
@@ -147,12 +136,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
             _loadAvailableTimeSlotsForDate();
           });
         }
-      } else {
-        debugPrint('⚠️ STATUS_POPUP: Client has status but no scheduledDateTime');
       }
-    } else {
-      // Nu are status existent, va fi setat automat cand se selecteaza un status
-      debugPrint('🔄 STATUS_POPUP: No existing status, waiting for user to select status');
     }
   }
 
@@ -229,7 +213,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   Future<void> _setDefaultDateTimeForStatus(String? status) async {
     if (status == null) return;
     
-    debugPrint('🔄 STATUS_POPUP: Setting default date/time for status: $status');
+    // Setting default date/time for status
     
     if (status == 'Acceptat') {
       // Pentru Acceptat, foloseste cea mai apropiata data valida din calendar
@@ -247,7 +231,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         });
       }
       
-      debugPrint('✅ STATUS_POPUP: Set current date/time for Amanat: ${DateFormat('dd/MM/yy').format(now)} at $currentTime');
+      // Set current date/time for Amanat
     }
     // Pentru Refuzat nu setam nimic (nu are campuri de data/ora)
   }
@@ -255,7 +239,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   /// Seteaza automat cea mai apropiata data si ora valida pentru programare
   Future<void> _setNextAvailableDateTime() async {
     try {
-      debugPrint('🔄 STATUS_POPUP: Searching for next available date/time...');
+      // Searching for next available date/time
       
       // Cauta urmatoarea zi lucratoare disponibila (maxim 30 de zile in viitor)
       DateTime currentDate = DateTime.now();
@@ -276,7 +260,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         if (availableSlots.isNotEmpty) {
           availableDate = testDate;
           availableTime = availableSlots.first; // Prima ora disponibila
-          debugPrint('✅ STATUS_POPUP: Found available slot: ${DateFormat('dd/MM/yy').format(availableDate)} at $availableTime');
+          // Found available slot
           break;
         }
       }
@@ -297,12 +281,10 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         // Incarca toate orele disponibile pentru data selectata
         await _loadAvailableTimeSlotsForDate();
         
-        debugPrint('✅ STATUS_POPUP: Auto-completed with next available slot: ${DateFormat('dd/MM/yy').format(availableDate)} at $availableTime');
-      } else {
-        debugPrint('⚠️ STATUS_POPUP: No available dates found in the next 30 days');
-      }
-    } catch (e) {
-      debugPrint('❌ STATUS_POPUP: Error setting next available date/time: $e');
+        // Auto-completed with next available slot
+              }
+      } catch (e) {
+        debugPrint('❌ STATUS_POPUP: Error setting next available date/time: $e');
     }
   }
 
@@ -433,9 +415,9 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         try {
           final splashService = SplashService();
           await splashService.invalidateMeetingsCacheAndRefresh();
-          debugPrint('✅ STATUS_POPUP: Cache invalidat după salvarea întâlnirii');
-        } catch (e) {
-          debugPrint('❌ STATUS_POPUP: Eroare la invalidarea cache-ului: $e');
+                  // Cache invalidated after meeting save
+      } catch (e) {
+        debugPrint('❌ STATUS_POPUP: Error invalidating cache: $e');
         }
 
       }
@@ -472,24 +454,28 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       // Salveaza client in Excel prin Google Drive dupa salvarea cu succes
       try {
-        debugPrint('🔄🔄🔄 STATUS_POPUP: INCEPE SALVAREA CLIENTULUI ÎN GOOGLE DRIVE XLSX 🔄🔄🔄');
-        debugPrint('📋 STATUS_POPUP: Client name: ${widget.client.name}');
-        debugPrint('📋 STATUS_POPUP: Client phone: ${widget.client.phoneNumber}');
-        debugPrint('📋 STATUS_POPUP: Client type: ${widget.client.runtimeType}');
+        // IMPORTANT: Actualizeaza clientul cu statusul nou si informatiile aditionale
+        final updatedClient = widget.client.copyWith(
+          discussionStatus: _selectedStatus,
+          additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
+          scheduledDateTime: finalDateTime,
+        );
+        
+        // Obtine datele de formular din FormService si le ataseaza la client
+        final formService = FormService();
+        final clientFormData = formService.prepareDataForExport();
+        final clientData = clientFormData[widget.client.phoneNumber];
+        
+        // Ataseaza datele de formular la client
+        final clientWithFormData = updatedClient.copyWith(
+          formData: clientData,
+        );
         
         final googleDriveService = GoogleDriveService();
-        debugPrint('📋 STATUS_POPUP: GoogleDriveService instance created');
-        debugPrint('📋 STATUS_POPUP: Service authenticated: ${googleDriveService.isAuthenticated}');
-        debugPrint('📋 STATUS_POPUP: Service user email: ${googleDriveService.userEmail}');
-        
-        debugPrint('📋 STATUS_POPUP: APELEAZĂ saveClientToXlsx...');
-        final saveResult = await googleDriveService.saveClientToXlsx(widget.client);
-        debugPrint('📋 STATUS_POPUP: saveClientToXlsx terminat, rezultat: $saveResult');
+        final saveResult = await googleDriveService.saveClientToXlsx(clientWithFormData);
         
         if (saveResult != null) {
           // A fost o eroare la salvare
-          debugPrint('❌❌❌ STATUS_POPUP: EROARE LA SALVAREA CLIENTULUI: $saveResult');
-          // Afișează eroarea utilizatorului dar nu oprește procesul
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -499,14 +485,9 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
               ),
             );
           }
-        } else {
-          debugPrint('✅✅✅ STATUS_POPUP: CLIENT SALVAT CU SUCCES ÎN GOOGLE DRIVE XLSX! ✅✅✅');
         }
-      } catch (e, stackTrace) {
-        debugPrint('💥💥💥 STATUS_POPUP: EXCEPȚIE LA SALVAREA CLIENTULUI ÎN GOOGLE DRIVE! 💥💥💥');
-        debugPrint('💥 STATUS_POPUP: Tip eroare: ${e.runtimeType}');
-        debugPrint('💥 STATUS_POPUP: Mesaj eroare: $e');
-        debugPrint('💥 STATUS_POPUP: Stack trace: $stackTrace');
+      } catch (e) {
+        debugPrint('❌ STATUS_POPUP: Error saving to Google Drive: $e');
         // Nu oprim procesul pentru ca statusul a fost salvat cu succes
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

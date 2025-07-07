@@ -253,10 +253,9 @@ class _LoginPopupState extends State<LoginPopup> {
             height: 48,
             child: SvgPicture.asset(
               'assets/logoIcon.svg',
-              // Ensure the color is applied correctly if needed
-              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
-              // Fit might not be needed if SVG viewport is correct
-              // fit: BoxFit.contain,
+              // Use srcATop for better color blending with transparent backgrounds
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+              fit: BoxFit.contain,
             ),
           ),
         ],

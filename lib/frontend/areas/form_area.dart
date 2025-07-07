@@ -117,7 +117,6 @@ class _FormAreaState extends State<FormArea> {
     
     // Salveaza datele clientului anterior daca exista
     if (_previousClient != null && currentClient?.phoneNumber != _previousClient?.phoneNumber) {
-      debugPrint('Saving data for previous client: ${_previousClient!.name} (${_previousClient!.phoneNumber})');
       await _saveFormDataForClient(_previousClient!);
     }
     
@@ -126,7 +125,6 @@ class _FormAreaState extends State<FormArea> {
     
     // Incarca datele pentru noul client
     if (currentClient != null) {
-      debugPrint('Loading data for new client: ${currentClient.name} (${currentClient.phoneNumber})');
       await _loadFormDataForCurrentClient();
     }
     
@@ -143,8 +141,6 @@ class _FormAreaState extends State<FormArea> {
   Future<void> _loadFormDataForCurrentClient() async {
     final currentClient = _clientService.focusedClient;
     if (currentClient != null) {
-      debugPrint('Loading form data for client: ${currentClient.name} (${currentClient.phoneNumber})');
-      
       await _formService.loadFormDataForClient(
         currentClient.phoneNumber,
         currentClient.phoneNumber,
@@ -152,7 +148,6 @@ class _FormAreaState extends State<FormArea> {
       
       // Clear all controllers to force fresh data loading
       _disposeControllers();
-      debugPrint('Controllers cleared, will be recreated with fresh data');
       
       // Force refresh controllers after loading data
       if (mounted) {
@@ -160,26 +155,16 @@ class _FormAreaState extends State<FormArea> {
           // This will trigger rebuild and sync controllers with loaded data
         });
       }
-      
-      debugPrint('Form data loaded and UI refreshed for client: ${currentClient.name}');
     }
   }
 
   /// Salveaza datele formularului pentru un client specific
   Future<void> _saveFormDataForClient(ClientModel client) async {
-    debugPrint('Manually saving form data for client: ${client.name} (${client.phoneNumber})');
-    
-    final success = await _formService.saveFormDataForClient(
+    await _formService.saveFormDataForClient(
       client.phoneNumber,
       client.phoneNumber,
       client.name,
     );
-    
-    if (success) {
-      debugPrint('✅ Successfully saved form data for client: ${client.name}');
-    } else {
-      debugPrint('❌ Failed to save form data for client: ${client.name}');
-    }
   }
 
   /// Store GLOBAL tap position
@@ -436,8 +421,6 @@ class _FormAreaState extends State<FormArea> {
       
       if (!success) {
         debugPrint('❌ Failed to auto-save form data to Firebase for client: ${client.name}');
-      } else {
-        debugPrint('✅ Successfully auto-saved form data to Firebase for client: ${client.name}');
       }
     } catch (e) {
       debugPrint('❌ Error auto-saving form data to Firebase: $e');

@@ -277,7 +277,7 @@ class MatcherService extends ChangeNotifier {
       final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
       final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
       
-      debugPrint('📊 MATCHER_SERVICE: Found ${clientIncomeForms.length} client income forms and ${coborrowerIncomeForms.length} coborrower income forms');
+      // Loading income forms for calculation
       
       double totalIncome = 0;
       
@@ -301,7 +301,7 @@ class MatcherService extends ChangeNotifier {
       _incomeCache[cacheKey] = totalIncome;
       _incomeCacheTime[cacheKey] = DateTime.now();
 
-      debugPrint('💵 MATCHER_SERVICE: Total income calculated: $totalIncome lei');
+      // Total income calculated
 
       _updateUIData(
         totalIncome: totalIncome,
@@ -430,11 +430,9 @@ class MatcherService extends ChangeNotifier {
     // Gaseste criteriile bancii si returneaza suma maxima configurata
     final criteria = getBankCriteria(bankName);
     if (criteria != null) {
-      debugPrint('💰 MATCHER_SERVICE: calculateLoanAmount for $bankName = ${criteria.maxLoanAmount} lei');
       return criteria.maxLoanAmount;
     }
     // Fallback pentru banci necunoscute
-    debugPrint('⚠️ MATCHER_SERVICE: Bank $bankName not found, using fallback amount');
     return 50000.0; // 50.000 lei fallback
   }
 
