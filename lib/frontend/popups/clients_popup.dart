@@ -11,7 +11,7 @@ import '../components/buttons/flex_buttons3.dart';
 import '../components/buttons/flex_buttons2.dart';
 import '../components/buttons/flex_buttons1.dart';
 import '../components/fields/input_field1.dart';
-import '../../backend/ocr/enchance_ocr.dart';
+import '../../backend/services/ocr_service.dart';
 import '../../backend/services/clients_service.dart';
 
 /// Client model to represent client data
@@ -52,7 +52,7 @@ enum PopupState {
   clientsOnly,           // Solo lista de clientes
   clientsWithEdit,       // Lista de clientes + widget de edición/creación
   ocrOnly,               // Solo widget OCR
-  ocrWithClients,        // OCR + Lista de clientes (de la imaginea selectată)
+  ocrWithClients,        // OCR + Lista de clientes (de la imaginea selectata)
   ocrWithClientsAndEdit, // OCR + Lista + Edición (toate 3)
 }
 
@@ -69,6 +69,9 @@ class ClientsPopup extends StatefulWidget {
 
   /// Callback when "Delete All Clients" button is tapped
   final VoidCallback? onDeleteAllClients;
+
+  /// Callback when "Delete OCR Clients" from selected image is tapped  
+  final VoidCallback? onDeleteOcrClients;
 
   /// Callback when a client is selected
   final Function(Client)? onClientSelected;
@@ -91,6 +94,7 @@ class ClientsPopup extends StatefulWidget {
     this.onAddClient,
     this.onExtractClients,
     this.onDeleteAllClients,
+    this.onDeleteOcrClients,
     this.onClientSelected,
     this.onEditClient,
     this.onSaveClient,
@@ -105,21 +109,21 @@ class ClientsPopup extends StatefulWidget {
 class _ClientsPopupState extends State<ClientsPopup> {
   PopupState _currentState = PopupState.clientsOnly;
   List<File> _selectedImages = [];
-  Map<String, OcrImageResult>? _ocrResults;
+  Map<String, OcrResult>? _ocrResults;
   String? _selectedOcrImagePath;
   bool _isOcrProcessing = false;
-  String _ocrMessage = 'Se pregătește extragerea...';
+  String _ocrMessage = 'Se pregateste extragerea...';
   double _ocrProgress = 0.0;
   String? _ocrError;
   Client? _editingClient;
 
-  /// Deschide file picker pentru selecția imaginilor OCR
+  /// Deschide file picker pentru selectia imaginilor OCR
   Future<void> _openImagePicker() async {
     try {
-      debugPrint('🔍 Deschide file picker pentru selecția imaginilor OCR...');
+      debugPrint('🔍 Deschide file picker pentru selectia imaginilor OCR...');
       
-      // Verifică dacă Google Vision API este configurat
-      final ocrService = EnhanceOcr();
+      // Verifica daca Google Vision API este configurat
+      final ocrService = OcrService();
       if (!ocrService.isConfigured()) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -137,7 +141,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         type: FileType.image,
         allowMultiple: true,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'bmp', 'gif'],
-        dialogTitle: 'Selectează imaginile pentru extragerea contactelor',
+        dialogTitle: 'Selecteaza imaginile pentru extragerea contactelor',
       );
       
       if (result != null && result.files.isNotEmpty) {
@@ -151,20 +155,20 @@ class _ClientsPopupState extends State<ClientsPopup> {
         if (mounted && imageFiles.isNotEmpty) {
           setState(() {
             _selectedImages = imageFiles;
-            _currentState = PopupState.ocrOnly; // Doar OCR la început
+            _currentState = PopupState.ocrOnly; // Doar OCR la inceput
           });
           _startOcrProcess();
         }
       } else {
-        debugPrint('❌ Selecția imaginilor a fost anulată');
+        debugPrint('❌ Selectia imaginilor a fost anulata');
       }
     } catch (e) {
-      debugPrint('❌ Eroare la selecția imaginilor: $e');
+      debugPrint('❌ Eroare la selectia imaginilor: $e');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la selecția imaginilor: $e'),
+            content: Text('Eroare la selectia imaginilor: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -173,7 +177,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     }
   }
 
-  /// Începe procesul OCR
+  /// Incepe procesul OCR
   Future<void> _startOcrProcess() async {
     setState(() {
       _isOcrProcessing = true;
@@ -184,21 +188,27 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
 
     try {
-      final ocrService = EnhanceOcr();
-      final results = await ocrService.processImages(
+      final ocrService = OcrService();
+      final batchResult = await ocrService.processMultipleImages(
         _selectedImages,
-        (progressUpdate) {
+        onProgress: (current, total) {
           setState(() {
-            _ocrMessage = progressUpdate.progressMessage;
-            _ocrProgress = progressUpdate.progress;
+            _ocrMessage = 'Se proceseaza imaginea $current din $total...';
+            _ocrProgress = total > 0 ? current / total : 0.0;
           });
         },
       );
 
+      // Converteste List<OcrResult> la Map<String, OcrResult>
+      final resultsMap = <String, OcrResult>{};
+      for (final result in batchResult.individualResults) {
+        resultsMap[result.imagePath] = result;
+      }
+
       setState(() {
         _isOcrProcessing = false;
-        _ocrResults = results;
-        _ocrMessage = 'Extragere finalizată!';
+        _ocrResults = resultsMap;
+        _ocrMessage = 'Extragere finalizata!';
       });
 
     } catch (e) {
@@ -210,7 +220,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     }
   }
 
-  /// Anulează procesul OCR
+  /// Anuleaza procesul OCR
   void _cancelOcrProcess() {
     setState(() {
       _selectedImages = [];
@@ -222,25 +232,25 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
   }
 
-  /// Salvează clienții din imaginea selectată în lista principală
+  /// Salveaza clientii din imaginea selectata in lista principala
   void _saveOcrClients() {
     if (_selectedOcrImagePath != null && _ocrResults != null) {
       final ocrResult = _ocrResults![_selectedOcrImagePath];
-      if (ocrResult?.contacts != null && ocrResult!.contacts.isNotEmpty) {
-        // Convertește UnifiedClientModel la Client și salvează
-        final clientsToSave = ocrResult.contacts.map((contact) => Client(
+      if (ocrResult?.extractedClients != null && ocrResult!.extractedClients!.isNotEmpty) {
+        // Converteste UnifiedClientModel la Client si salveaza
+        final clientsToSave = ocrResult.extractedClients!.map((contact) => Client(
           name: contact.basicInfo.name,
           phoneNumber1: contact.basicInfo.phoneNumber1,
           phoneNumber2: contact.basicInfo.phoneNumber2,
           coDebitorName: contact.basicInfo.coDebitorName,
         )).toList();
         
-        // Notifică părintele despre salvarea clienților
+        // Notifica parintele despre salvarea clientilor
         for (final client in clientsToSave) {
           widget.onSaveClient?.call(client);
         }
         
-        // Afișează mesaj de confirmare
+        // Afiseaza mesaj de confirmare
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -254,23 +264,23 @@ class _ClientsPopupState extends State<ClientsPopup> {
     }
   }
 
-  /// Selectează o imagine din rezultatele OCR și afișează clienții
+  /// Selecteaza o imagine din rezultatele OCR si afiseaza clientii
   void _selectOcrImage(String imagePath) {
     setState(() {
       _selectedOcrImagePath = imagePath;
-      _currentState = PopupState.ocrWithClients; // Afișează OCR + lista de clienți
+      _currentState = PopupState.ocrWithClients; // Afiseaza OCR + lista de clienti
     });
   }
 
 
-  /// Adaugă un client nou la lista de clienți extrași din imaginea selectată
+  /// Adauga un client nou la lista de clienti extrasi din imaginea selectata
   void _addClientToOcrResults(Client client) {
     if (_selectedOcrImagePath == null || _ocrResults == null) return;
     
     final ocrResult = _ocrResults![_selectedOcrImagePath];
     if (ocrResult == null) return;
     
-    // Convertește Client la UnifiedClientModel pentru a-l adăuga la rezultatele OCR
+    // Converteste Client la UnifiedClientModel pentru a-l adauga la rezultatele OCR
     final unifiedClient = UnifiedClientModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(), // ID temporar
       consultantId: 'local', // ID consultant temporar
@@ -297,26 +307,18 @@ class _ClientsPopupState extends State<ClientsPopup> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         createdBy: 'user',
-        source: 'manual_entry',
+        source: 'manual_add_ocr',
         version: 1,
       ),
     );
     
+    final updatedContacts = List<UnifiedClientModel>.from(ocrResult.extractedClients ?? [])..add(unifiedClient);
+    
     setState(() {
-      // Creează o nouă listă cu clientul adăugat
-      final updatedContacts = List<UnifiedClientModel>.from(ocrResult.contacts)..add(unifiedClient);
-      
-      // Actualizează rezultatul OCR cu noua listă
-      _ocrResults![_selectedOcrImagePath!] = OcrImageResult(
-        success: ocrResult.success,
-        error: ocrResult.error,
-        imagePath: ocrResult.imagePath,
-        extractedText: ocrResult.extractedText,
-        contacts: updatedContacts,
-      );
+      _ocrResults![_selectedOcrImagePath!] = ocrResult.copyWith(extractedClients: updatedContacts);
     });
     
-    // Afișează mesaj de confirmare
+    // Afiseaza mesaj de confirmare
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -328,21 +330,73 @@ class _ClientsPopupState extends State<ClientsPopup> {
     }
   }
 
-  /// Gestionează click-ul pe item-ul imaginii OCR
+  /// Actualizeaza un client existent in lista de clienti extrasi
+  void _updateClientInOcrResults(Client client) {
+    if (_selectedOcrImagePath == null || _ocrResults == null) return;
+    
+    final ocrResult = _ocrResults![_selectedOcrImagePath];
+    if (ocrResult == null || ocrResult.extractedClients == null) return;
+    
+    // Converteste Client la UnifiedClientModel si gaseste indexul
+    final unifiedClient = UnifiedClientModel(
+       id: DateTime.now().millisecondsSinceEpoch.toString(), // ID temporar
+      consultantId: 'local', // ID consultant temporar
+      basicInfo: ClientBasicInfo(
+        name: client.name,
+        phoneNumber1: client.phoneNumber1,
+        phoneNumber2: client.phoneNumber2,
+        coDebitorName: client.coDebitorName,
+      ),
+      formData: const ClientFormData(
+        clientCredits: [],
+        coDebitorCredits: [],
+        clientIncomes: [],
+        coDebitorIncomes: [],
+        additionalData: {},
+      ),
+      activities: [],
+      currentStatus: const UnifiedClientStatus(
+        category: UnifiedClientCategory.apeluri,
+        isFocused: false,
+        additionalInfo: 'Modificat manual in lista extrasa',
+      ),
+      metadata: ClientMetadata(
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        createdBy: 'user',
+        source: 'manual_edit_ocr',
+        version: 1,
+      ),
+    );
+
+    final index = ocrResult.extractedClients!.indexWhere((c) => c.basicInfo.phoneNumber1 == client.phoneNumber1);
+    
+    if (index != -1) {
+      final updatedContacts = List<UnifiedClientModel>.from(ocrResult.extractedClients!);
+      updatedContacts[index] = unifiedClient;
+      
+      setState(() {
+        _ocrResults![_selectedOcrImagePath!] = ocrResult.copyWith(extractedClients: updatedContacts);
+      });
+    }
+  }
+
+
+  /// Gestioneaza click-ul pe item-ul imaginii OCR
   void _handleOcrImageTap(String imagePath) {
     if (_selectedOcrImagePath == imagePath) {
-      // Dacă imaginea e deja selectată, afișează popup de confirmare pentru salvare
+      // Daca imaginea e deja selectata, afiseaza popup de confirmare pentru salvare
       _showSaveConfirmationDialog(imagePath);
     } else {
-      // Dacă imaginea nu e selectată, o selectează și afișează clienții
+      // Daca imaginea nu e selectata, o selecteaza si afiseaza clientii
       _selectOcrImage(imagePath);
     }
   }
 
-  /// Afișează popup de confirmare pentru salvarea clienților
+  /// Afiseaza popup de confirmare pentru salvarea clientilor
   void _showSaveConfirmationDialog(String imagePath) {
     final result = _ocrResults![imagePath];
-    final clientCount = result?.contacts.length ?? 0;
+    final clientCount = result?.extractedClients?.length ?? 0;
     
     showDialog(
       context: context,
@@ -368,24 +422,24 @@ class _ClientsPopupState extends State<ClientsPopup> {
     );
   }
 
-  /// Salvează clienții din imagine și șterge item-ul din galerie
+  /// Salveaza clientii din imagine si sterge item-ul din galerie
   void _saveAndRemoveOcrImage(String imagePath) {
-    // Salvează clienții
+    // Salveaza clientii
     final result = _ocrResults![imagePath];
-    if (result?.contacts != null && result!.contacts.isNotEmpty) {
-      final clientsToSave = result.contacts.map((contact) => Client(
+    if (result?.extractedClients != null && result!.extractedClients!.isNotEmpty) {
+      final clientsToSave = result.extractedClients!.map((contact) => Client(
         name: contact.basicInfo.name,
         phoneNumber1: contact.basicInfo.phoneNumber1,
         phoneNumber2: contact.basicInfo.phoneNumber2,
         coDebitorName: contact.basicInfo.coDebitorName,
       )).toList();
       
-      // Notifică părintele despre salvarea clienților
+      // Notifica parintele despre salvarea clientilor
       for (final client in clientsToSave) {
         widget.onSaveClient?.call(client);
       }
       
-      // Afișează mesaj de confirmare
+      // Afiseaza mesaj de confirmare
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -397,15 +451,15 @@ class _ClientsPopupState extends State<ClientsPopup> {
       }
     }
     
-    // Șterge imaginea din rezultatele OCR și din lista de imagini selectate
+    // Sterge imaginea din rezultatele OCR si din lista de imagini selectate
     setState(() {
       _ocrResults!.remove(imagePath);
       _selectedImages.removeWhere((image) => image.path == imagePath);
       
-      // Dacă era imaginea selectată, resetează selecția
+      // Daca era imaginea selectata, reseteaza selectia
       if (_selectedOcrImagePath == imagePath) {
         _selectedOcrImagePath = null;
-        // Dacă mai sunt imagini, rămâne în starea OCR, altfel trece la clientsOnly
+        // Daca mai sunt imagini, ramane in starea OCR, altfel trece la clientsOnly
         if (_selectedImages.isEmpty) {
           _currentState = PopupState.clientsOnly;
         } else {
@@ -415,14 +469,50 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
   }
 
-  /// Returnează lista de clienți de afișat (ori clienții din imaginea OCR selectată, ori toți clienții)
+  /// Sterge imaginea OCR selectata complet (inclusiv item-ul din galerie)
+  void _deleteOcrClientsFromSelectedImage() {
+    if (_selectedOcrImagePath != null && _ocrResults != null) {
+      final result = _ocrResults![_selectedOcrImagePath];
+      if (result?.extractedClients != null) {
+        final clientCount = result!.extractedClients!.length;
+        final imageName = result.imageName;
+        
+        // Sterge complet imaginea din rezultatele OCR si din lista de imagini selectate
+        setState(() {
+          _ocrResults!.remove(_selectedOcrImagePath!);
+          _selectedImages.removeWhere((image) => image.path == _selectedOcrImagePath);
+          _selectedOcrImagePath = null;
+          
+          // Daca nu mai sunt imagini, trece la starea clientsOnly
+          if (_selectedImages.isEmpty) {
+            _currentState = PopupState.clientsOnly;
+          } else {
+            _currentState = PopupState.ocrOnly;
+          }
+        });
+        
+        // Afiseaza mesaj de confirmare
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Imaginea "$imageName" stearsa complet ($clientCount clienti)'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Returneaza lista de clienti de afisat (ori clientii din imaginea OCR selectata, ori toti clientii)
   List<Client> _getClientsToDisplay() {
     if (_selectedOcrImagePath != null && _ocrResults != null) {
-      // Afișează clienții din imaginea selectată OCR
+      // Afiseaza clientii din imaginea selectata OCR
       final ocrResult = _ocrResults![_selectedOcrImagePath];
-      if (ocrResult?.contacts != null) {
-        // Convertește UnifiedClientModel la Client
-        return ocrResult!.contacts.map((contact) => Client(
+      if (ocrResult?.extractedClients != null) {
+        // Converteste UnifiedClientModel la Client
+        return ocrResult!.extractedClients!.map((contact) => Client(
           name: contact.basicInfo.name,
           phoneNumber1: contact.basicInfo.phoneNumber1,
           phoneNumber2: contact.basicInfo.phoneNumber2,
@@ -431,7 +521,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       }
       return [];
     } else {
-      // Afișează toți clienții din lista principală
+      // Afiseaza toti clientii din lista principala
       return widget.clients;
     }
   }
@@ -448,12 +538,12 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
   }
 
-  /// Închide widgetul de editare/creare client
+  /// Inchide widgetul de editare/creare client
   void _closeEditClient() {
     setState(() {
       _editingClient = null;
       if (_selectedImages.isNotEmpty && _selectedOcrImagePath != null) {
-        _currentState = PopupState.ocrWithClients; // Înapoi la OCR + lista
+        _currentState = PopupState.ocrWithClients; // Inapoi la OCR + lista
       } else if (_selectedImages.isNotEmpty) {
         _currentState = PopupState.ocrOnly; // Doar OCR
       } else {
@@ -462,14 +552,14 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
   }
 
-  /// Lățimi fixe pentru fiecare tip de widget conform design-urilor
+  /// Latimi fixe pentru fiecare tip de widget conform design-urilor
   double get _ocrWidgetWidth => 296;    // clientsPopup3.md & clientsPopup4.md  
   double get _clientsWidgetWidth => 360; // clientsPopup1.md
   double get _editWidgetWidth => 296;    // clientsPopup2.md
 
-  /// Construiește widgetul de extragere OCR
+  /// Construieste widgetul de extragere OCR
   Widget _buildOcrWidget(double width) {
-    // Determină dacă acest widget este ultimul (cel mai din dreapta)
+    // Determina daca acest widget este ultimul (cel mai din dreapta)
     final bool isLast = _currentState == PopupState.ocrOnly;
     
     return Container(
@@ -513,7 +603,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     );
   }
 
-  /// Construiește zona de loading OCR
+  /// Construieste zona de loading OCR
   Widget _buildOcrLoading() {
     return Container(
       width: double.infinity,
@@ -602,12 +692,12 @@ class _ClientsPopupState extends State<ClientsPopup> {
     );
   }
 
-  /// Construiește rezultatele OCR cu lightItem7 și darkItem7
+  /// Construieste rezultatele OCR cu lightItem7 si darkItem7
   Widget _buildOcrResults() {
     if (_ocrResults == null) return const SizedBox.shrink();
 
     final sortedResults = _ocrResults!.entries.toList()
-      ..sort((a, b) => b.value.contactCount.compareTo(a.value.contactCount));
+      ..sort((a, b) => (b.value.extractedClients?.length ?? 0).compareTo(a.value.extractedClients?.length ?? 0));
 
     return SizedBox(
       width: double.infinity,
@@ -624,14 +714,14 @@ class _ClientsPopupState extends State<ClientsPopup> {
           if (isSelected) {
             return DarkItem7(
               title: 'Imaginea ${i + 1}',
-              description: '${result.contactCount} clienti',
+              description: '${result.extractedClients?.length ?? 0} clienti',
               svgAsset: 'assets/doneIcon.svg',
               onTap: () => _handleOcrImageTap(imagePath),
             );
           } else {
             return LightItem7(
               title: 'Imaginea ${i + 1}',
-              description: '${result.contactCount} clienti',
+              description: '${result.extractedClients?.length ?? 0} clienti',
               svgAsset: 'assets/viewIcon.svg',
               onTap: () => _handleOcrImageTap(imagePath),
             );
@@ -641,7 +731,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     );
   }
 
-  /// Construiește galeria pentru loading
+  /// Construieste galeria pentru loading
   Widget _buildOcrLoadingGallery() {
     return Container(
       width: double.infinity,
@@ -692,7 +782,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     );
   }
 
-  /// Construiește galeria pentru rezultate
+  /// Construieste galeria pentru rezultate
   Widget _buildOcrResultsGallery() {
     return Container(
       width: double.infinity,
@@ -710,31 +800,44 @@ class _ClientsPopupState extends State<ClientsPopup> {
             for (int i = 0; i < _selectedImages.length; i++) ...[
               GestureDetector(
                 onTap: () => _selectOcrImage(_selectedImages[i].path),
-      child: Container(
+                child: Container(
                   width: 56,
                   height: 56,
                   decoration: ShapeDecoration(
-                    color: _selectedOcrImagePath == _selectedImages[i].path
-                        ? AppTheme.elementColor1
-                        : AppTheme.containerColor2,
+                    color: AppTheme.containerColor2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Image.file(
-                      _selectedImages[i],
-                      fit: BoxFit.cover,
-                      width: 56,
-                      height: 56,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.image,
-                          color: AppTheme.elementColor2,
-                          size: 24,
-                        );
-                      },
+                    child: Stack(
+                      children: [
+                        // Imaginea
+                        Image.file(
+                          _selectedImages[i],
+                          fit: BoxFit.cover,
+                          width: 56,
+                          height: 56,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.image,
+                              color: AppTheme.elementColor2,
+                              size: 24,
+                            );
+                          },
+                        ),
+                        // Overlay negru pentru imaginile nefocusate
+                        if (_selectedOcrImagePath != _selectedImages[i].path)
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -748,9 +851,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
     );
   }
 
-  /// Construiește butonul de anulare/salvare OCR
+  /// Construieste butonul de anulare/salvare OCR
   Widget _buildOcrActionButton() {
-    // După extragere, dacă o imagine este selectată, afișează buton de salvare
+    // Dupa extragere, daca o imagine este selectata, afiseaza buton de salvare
     if (_ocrResults != null && _selectedOcrImagePath != null) {
       return FlexButtonSingle(
         text: 'Salveaza clienti',
@@ -761,7 +864,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         textStyle: AppTheme.navigationButtonTextStyle,
       );
     } else {
-      // În timpul procesării sau fără imagine selectată, afișează buton de anulare
+      // In timpul procesarii sau fara imagine selectata, afiseaza buton de anulare
       return FlexButtonSingle(
         text: 'Anuleaza',
         iconPath: 'assets/returnIcon.svg',
@@ -773,9 +876,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
     }
   }
 
-  /// Construiește widgetul cu lista de clienți
+  /// Construieste widgetul cu lista de clienti
   Widget _buildClientsWidget(double width) {
-    // Determină poziția acestui widget în layout
+    // Determina pozitia acestui widget in layout
     final bool isFirst = _currentState == PopupState.clientsOnly || _currentState == PopupState.clientsWithEdit;
     final bool isLast = _currentState == PopupState.clientsOnly || _currentState == PopupState.ocrWithClients;
     
@@ -872,20 +975,26 @@ class _ClientsPopupState extends State<ClientsPopup> {
     );
   }
 
-  /// Construiește widgetul de editare/creare client
+  /// Construieste widgetul de editare/creare client
   Widget _buildEditClientWidget(double width) {
     return ClientsPopup2(
         editingClient: _editingClient,
         onSaveClient: (client) {
-          // Verifică dacă suntem în starea OCR cu clienți extrași
+          // Verifica daca suntem in starea OCR cu clienti extrasi
           final bool isInOcrMode = (_currentState == PopupState.ocrWithClientsAndEdit) &&
                                    _selectedOcrImagePath != null;
           
           if (isInOcrMode) {
-            // Adaugă clientul la lista de clienți extrași din imaginea selectată
-            _addClientToOcrResults(client);
+            // Verifica daca editeaza un client existent sau creeaza unul nou
+            if (_editingClient != null) {
+              // Editeaza clientul existent din lista OCR
+              _updateClientInOcrResults(client);
+            } else {
+              // Adauga un client nou la lista de clienti extrasi din imaginea selectata
+              _addClientToOcrResults(client);
+            }
           } else {
-            // Salvează clientul în lista principală
+            // Salveaza clientul in lista principala
             widget.onSaveClient?.call(client);
           }
           _closeEditClient();
@@ -904,7 +1013,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     double totalWidth;
     switch (_currentState) {
       case PopupState.clientsOnly:
-        totalWidth = 360; // Lista clienți
+        totalWidth = 360; // Lista clienti
         break;
       case PopupState.ocrOnly:
         totalWidth = 296; // Widget OCR
@@ -920,7 +1029,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         break;
     }
 
-    // Nu mai calculăm o lățime comună, fiecare widget are lățimea sa fixă
+    // Nu mai calculam o latime comuna, fiecare widget are latimea sa fixa
 
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: totalWidth, minHeight: 432),
@@ -965,7 +1074,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
   }
 
   Widget _buildBottomButtonsRow() {
-    // În starea OCR cu clienți extrași, afișează doar 2 butoane
+    // In starea OCR cu clienti extrasi, afiseaza doar 2 butoane
     final bool isShowingOcrClients = (_currentState == PopupState.ocrWithClients || 
                                       _currentState == PopupState.ocrWithClientsAndEdit) &&
                                      _selectedOcrImagePath != null;
@@ -976,14 +1085,18 @@ class _ClientsPopupState extends State<ClientsPopup> {
         primaryButtonIconPath: "assets/addIcon.svg",
         trailingIconPath: "assets/deleteIcon.svg",
         onPrimaryButtonTap: () => _openEditClient(),
-        onTrailingIconTap: widget.onDeleteAllClients,
+        onTrailingIconTap: () {
+          // Sterge complet imaginea OCR selectata (inclusiv item-ul din galerie)
+          _deleteOcrClientsFromSelectedImage();
+          widget.onDeleteOcrClients?.call();
+        },
         spacing: AppTheme.smallGap,
         borderRadius: AppTheme.borderRadiusMedium,
         buttonHeight: 48.0,
         primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
       );
     } else {
-      // În lista de contacte reală, afișează 3 butoane
+      // In lista de contacte reala, afiseaza 3 butoane
       return FlexButtonWithTwoTrailingIcons(
         primaryButtonText: "Adauga client",
         primaryButtonIconPath: "assets/addIcon.svg",
@@ -1042,9 +1155,9 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   void didUpdateWidget(ClientsPopup2 oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // Verifică dacă clientul pentru editare s-a schimbat
+    // Verifica daca clientul pentru editare s-a schimbat
     if (oldWidget.editingClient != widget.editingClient) {
-      // Actualizează textul din controlleri cu noile valori
+      // Actualizeaza textul din controlleri cu noile valori
       _nameController.text = widget.editingClient?.name ?? '';
       _phoneController1.text = widget.editingClient?.phoneNumber1 ?? '';
       _phoneController2.text = widget.editingClient?.phoneNumber2 ?? '';

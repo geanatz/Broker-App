@@ -7,11 +7,13 @@ import 'package:broker_app/frontend/components/items/light_item7.dart';
 import 'package:broker_app/frontend/components/items/dark_item7.dart';
 
 import '../../backend/services/clients_service.dart';
+import '../../backend/services/splash_service.dart';
+import '../../backend/services/firebase_service.dart';
 
-/// Widget pentru panoul de intâlniri
+/// Widget pentru panoul de intalniri
 /// 
-/// Aceasta este o componentă care afișează lista întâlnirilor viitoare ale utilizatorului,
-/// folosind componentele lightItem7 și darkItem7 pentru afișare.
+/// Aceasta este o componenta care afiseaza lista intalnirilor viitoare ale utilizatorului,
+/// folosind componentele lightItem7 si darkItem7 pentru afisare.
 class MeetingsPane extends StatefulWidget {
   final Function? onClose;
   final Function(String)? onNavigateToMeeting;
@@ -29,7 +31,9 @@ class MeetingsPane extends StatefulWidget {
 class MeetingsPaneState extends State<MeetingsPane> {
   // Firebase reference
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final ClientsFirebaseService _clientService = ClientsFirebaseService();
+  
+  // FIX: Adăugat SplashService pentru listener automat
+  final SplashService _splashService = SplashService();
   
   // Formatter pentru date
   DateFormat? dateFormatter;
@@ -41,9 +45,17 @@ class MeetingsPaneState extends State<MeetingsPane> {
   bool _isLoading = true;
   Timer? _refreshTimer;
   
+  // Debouncing pentru load meetings
+  Timer? _loadDebounceTimer;
+  bool _isLoadingMeetings = false;
+  
   @override
   void initState() {
     super.initState();
+    // FIX: Adaugă listener pentru actualizare automată când se modifică datele în SplashService
+    _splashService.addListener(_onSplashServiceChanged);
+    
+    // Foloseste serviciul pre-incarcat din splash - accesez firebaseService din ClientUIService
     _initializeFormatters();
     _startPeriodicRefresh();
   }
@@ -51,7 +63,18 @@ class MeetingsPaneState extends State<MeetingsPane> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _loadDebounceTimer?.cancel();
+    // FIX: Cleanup listener pentru a evita memory leaks
+    _splashService.removeListener(_onSplashServiceChanged);
     super.dispose();
+  }
+
+  /// FIX: Callback pentru refresh automat când se schimbă datele în SplashService
+  void _onSplashServiceChanged() {
+    if (mounted) {
+      debugPrint('📋 MEETINGS_PANE: SplashService changed, refreshing meetings automatically');
+      _loadUpcomingMeetings();
+    }
   }
   
   void _initializeFormatters() async {
@@ -78,16 +101,33 @@ class MeetingsPaneState extends State<MeetingsPane> {
     // Removed automatic refresh - will only refresh when explicitly needed
   }
 
-  /// Public method to refresh meetings data when needed
+  /// Actualizeaza lista de intalniri din cache (apelat dupa salvari/editari)
   void refreshMeetings() {
-    _loadUpcomingMeetings();
+    if (mounted) {
+      _loadUpcomingMeetings();
+    }
   }
 
-  /// Încarcă întâlnirile viitoare din noua structură unificată
+  /// Incarca intalnirile viitoare cu debouncing pentru evitarea apelurilor multiple
   Future<void> _loadUpcomingMeetings() async {
+    // Anulează loading-ul anterior dacă există unul pending
+    _loadDebounceTimer?.cancel();
+    
+    // Dacă deja se încarcă, nu mai face alt request
+    if (_isLoadingMeetings) return;
+    
+    // Debouncing: așteaptă 200ms înainte de a executa
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 200), () async {
+      await _performLoadUpcomingMeetings();
+    });
+  }
+
+  /// Execută încărcarea efectivă a întâlnirilor
+  Future<void> _performLoadUpcomingMeetings() async {
+    if (_isLoadingMeetings) return;
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) {
-      debugPrint("User not authenticated");
+      debugPrint("❌ MEETINGS_PANE: User not authenticated");
       return;
     }
 
@@ -96,21 +136,47 @@ class MeetingsPaneState extends State<MeetingsPane> {
     });
 
     try {
-      debugPrint("Loading upcoming meetings from unified structure for consultant: $currentUserId");
+      _isLoadingMeetings = true;
       
-      // Obține toate întâlnirile din noua structură unificată
-      final allMeetings = await _clientService.getAllMeetings();
+      // FIX: Folosește cache-ul din SplashService pentru performanță și sincronizare
+      final allMeetings = await _splashService.getCachedMeetings();
       final now = DateTime.now();
       
-      // Filtrează doar întâlnirile viitoare
-      final futureAppointments = allMeetings.where((meeting) {
-        return meeting.dateTime.isAfter(now);
-      }).toList();
+      // Filtrează întâlnirile viitoare ale consultantului curent  
+      final List<ClientActivity> futureAppointments = [];
+      final currentConsultantToken = await _getCurrentConsultantToken();
+      
+      for (final meeting in allMeetings) {
+        // Verifică dacă întâlnirea este în viitor
+        if (!meeting.dateTime.isAfter(now)) {
+          continue;
+        }
+        
+        // Verifică dacă întâlnirea aparține consultantului curent
+        final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+        
+        // FIX: Pentru întâlnirile noi, folosește consultantId
+        if (meetingConsultantId != null) {
+          if (meetingConsultantId != currentUserId) {
+            continue;
+          }
+        } else {
+          // FIX: Pentru întâlnirile existente (fără consultantId), folosește consultantToken
+          final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+          if (meetingConsultantToken == null) {
+            continue;
+          }
+          
+          if (meetingConsultantToken != currentConsultantToken) {
+            continue;
+          }
+        }
+        
+        futureAppointments.add(meeting);
+      }
 
-      // Sortează după dată
+      // Sortează după data
       futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-      debugPrint("Found ${allMeetings.length} total meetings, ${futureAppointments.length} future meetings");
 
       if (mounted) {
         setState(() {
@@ -119,18 +185,20 @@ class MeetingsPaneState extends State<MeetingsPane> {
         });
       }
     } catch (e) {
-      debugPrint("Error loading upcoming meetings from unified structure: $e");
+      debugPrint("❌ MEETINGS_PANE: Error loading upcoming meetings for consultant: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
+    } finally {
+      _isLoadingMeetings = false;
     }
   }
   
-  // Verifică dacă două map-uri sunt egale
+  // Verifica daca doua map-uri sunt egale
   
-  // Calculează timpul rămas până la întâlnire în format text
+  // Calculeaza timpul ramas pana la intalnire in format text
   String _getTimeUntilMeeting(DateTime meetingDateTime) {
     final now = DateTime.now();
     final difference = meetingDateTime.difference(now);
@@ -146,7 +214,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
     if (days > 0) {
       return 'in $days ${days == 1 ? 'zi' : 'zile'}';
     } else if (hours > 0) {
-      return 'in $hours ${hours == 1 ? 'oră' : 'ore'}';
+      return 'in $hours ${hours == 1 ? 'ora' : 'ore'}';
     } else if (minutes > 0) {
       return 'in $minutes ${minutes == 1 ? 'minut' : 'minute'}';
     } else {
@@ -154,14 +222,14 @@ class MeetingsPaneState extends State<MeetingsPane> {
     }
   }
   
-  // Verifică dacă întâlnirea este în următoarele 30 de minute
+  // Verifica daca intalnirea este in urmatoarele 30 de minute
   bool _isWithin30Minutes(DateTime meetingDateTime) {
     final now = DateTime.now();
     final difference = meetingDateTime.difference(now);
     return difference.inMinutes <= 30 && difference.inMinutes >= 0;
   }
   
-  // Navighează la întâlnirea din calendar
+  // Navigheaza la intalnirea din calendar
   void _navigateToCalendarMeeting(String meetingId) {
     if (widget.onNavigateToMeeting != null) {
       widget.onNavigateToMeeting!(meetingId);
@@ -170,9 +238,21 @@ class MeetingsPaneState extends State<MeetingsPane> {
     }
   }
   
-  // Marchează întâlnirea ca terminată (placeholder)
+  // Marcheaza intalnirea ca terminata (placeholder)
   void _markMeetingAsDone(String meetingId) {
     debugPrint('Mark meeting as done: $meetingId');
+  }
+  
+  /// FIX: Obține consultantToken-ul curent pentru comparația cu întâlnirile existente
+  Future<String?> _getCurrentConsultantToken() async {
+    try {
+      // Folosește NewFirebaseService pentru a obține consultantToken-ul curent
+      final firebaseService = NewFirebaseService();
+      return await firebaseService.getCurrentConsultantToken();
+    } catch (e) {
+      debugPrint('❌ MEETINGS_PANE: Error getting current consultant token: $e');
+      return null;
+    }
   }
 
   @override
@@ -212,7 +292,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
             ),
           ),
           
-          // Lista întâlnirilor
+          // Lista intalnirilor
           Expanded(
             child: _buildMeetingsList(),
           ),
@@ -221,7 +301,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
     );
   }
   
-  /// Construiește lista de întâlniri folosind noua structură unificată
+  /// Construieste lista de intalniri folosind noua structura unificata
   Widget _buildMeetingsList() {
     final currentUserId = _auth.currentUser?.uid;
 
@@ -256,15 +336,21 @@ class MeetingsPaneState extends State<MeetingsPane> {
       itemBuilder: (context, index) {
         final meeting = _allAppointments[index];
         final dateTime = meeting.dateTime;
-        final clientName = meeting.additionalData?['clientName'] ?? 'Client necunoscut';
+        
+        // Verifica si seteaza numele clientului
+        String clientName = meeting.additionalData?['clientName'] ?? '';
+        if (clientName.trim().isEmpty) {
+          clientName = 'Client fara nume';
+        }
+
         final clientPhone = meeting.additionalData?['phoneNumber'] ?? '';
         final meetingId = meeting.id;
         
-        // Calculează timpul rămas
+        // Calculeaza timpul ramas
         final timeUntil = _getTimeUntilMeeting(dateTime);
         final isUrgent = _isWithin30Minutes(dateTime);
         
-        // Formatează data și ora
+        // Formateaza data si ora
         final formattedDate = dateFormatter?.format(dateTime) ?? dateTime.toString();
         final formattedTime = timeFormatter?.format(dateTime) ?? dateTime.toString();
         

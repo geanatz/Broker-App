@@ -1,10 +1,10 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/backend/services/sidebar_service.dart';
 import 'package:broker_app/frontend/popups/consultant_popup.dart';
 import 'package:broker_app/frontend/components/headers/widget_header3.dart';
 import 'package:broker_app/frontend/components/buttons/spaced_buttons1.dart';
+import 'package:broker_app/frontend/components/items/light_item7.dart';
 import 'package:broker_app/frontend/areas/dashboard_area.dart';
 import 'package:broker_app/frontend/areas/form_area.dart';
 import 'package:broker_app/frontend/areas/calendar_area.dart';
@@ -12,15 +12,19 @@ import 'package:broker_app/frontend/areas/settings_area.dart';
 import 'package:broker_app/frontend/panes/meetings_pane.dart';
 import 'package:broker_app/frontend/panes/calculator_pane.dart';
 import 'package:broker_app/frontend/panes/clients_pane.dart';
+import 'package:broker_app/frontend/panes/matcher_pane.dart';
 import 'package:broker_app/frontend/popups/clients_popup.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/settings_service.dart';
+import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:broker_app/backend/services/update_service.dart';
+import 'package:broker_app/frontend/components/update_notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Ecranul principal al aplicației care conține cele 3 coloane:
-/// - pane (stânga, lățime 312)
-/// - area (centru, lățime flexibilă)
-/// - sidebar (dreapta, lățime 224)
+/// Ecranul principal al aplicatiei care contine cele 3 coloane:
+/// - pane (stanga, latime 312)
+/// - area (centru, latime flexibila)
+/// - sidebar (dreapta, latime 224)
 class MainScreen extends StatefulWidget {
   final String? consultantName;
   final String? teamName;
@@ -36,8 +40,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
-  // Starea actuală de navigare
-  AreaType _currentArea = AreaType.form;
+  // Starea actuala de navigare
+  AreaType _currentArea = AreaType.dashboard;
   PaneType _currentPane = PaneType.clients;
   
   // Keys for SharedPreferences
@@ -51,22 +55,28 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // GlobalKeys pentru componente
   final GlobalKey<CalendarAreaState> _calendarKey = GlobalKey<CalendarAreaState>();
   final GlobalKey<MeetingsPaneState> _meetingsPaneKey = GlobalKey<MeetingsPaneState>();
+  final GlobalKey<MatcherPaneState> _matcherPaneKey = GlobalKey<MatcherPaneState>();
   
-  // Client service pentru gestionarea popup-urilor
-  final ClientUIService _clientService = ClientUIService();
+  // Splash service pentru servicii pre-încărcate
+  final SplashService _splashService = SplashService();
   
-  // Settings service pentru actualizări în timp real ale temei
+  // Client service pentru gestionarea popup-urilor (folosește cache-ul din splash)
+  late final ClientUIService _clientService;
+  
+  // Settings service pentru actualizari in timp real ale temei
   final SettingsService _settingsService = SettingsService();
+  
+  // Update service pentru notificari de update-uri
+  final UpdateService _updateService = UpdateService();
   
   // Sidebar service pentru navigare
   late final SidebarService _sidebarService;
   
-  // UI state pentru sidebar - secțiuni colapsabile
+  // UI state pentru sidebar - sectiuni colapsabile
   bool _isAreaSectionCollapsed = false;
   bool _isPaneSectionCollapsed = false;
   
-  // UI state pentru hover pe secțiunea consultant
-  bool _isConsultantSectionHovered = false;
+
   
   // State pentru popup-uri
   List<Client> _popupClients = [];
@@ -79,7 +89,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
     
-    // Inițializează sidebar service
+
+    
+    // Folosește serviciile pre-încărcate din splash
+    _clientService = _splashService.clientUIService;
+    
+    // FIX: Resetează cache-ul pentru consultant curent la început
+    _initializeForCurrentConsultant();
+    
+    // Initializeaza sidebar service
     _sidebarService = SidebarService(
       onAreaChanged: _handleAreaChanged,
       onPaneChanged: _handlePaneChanged,
@@ -90,20 +108,32 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Restore navigation state from SharedPreferences
     _restoreNavigationState();
     
-    // Sincronizează popup-ul cu datele din service
+    // Sincronizeaza popup-ul cu datele din service
     _syncPopupWithService();
     
-    // Ascultă schimbările din ClientService
+    // Asculta schimbarile din ClientService
     _clientService.addListener(_onClientServiceChanged);
     
-    // Ascultă schimbările din SettingsService pentru actualizări în timp real ale temei
+    // Asculta schimbarile din SettingsService pentru actualizari in timp real ale temei
     _settingsService.addListener(_onSettingsChanged);
     
-    // Inițializează SettingsService
+    // Initializeaza SettingsService
     _initializeSettings();
     
-    // Ascultă schimbările de brightness pentru modul auto
+    // Asculta schimbarile de brightness pentru modul auto
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// FIX: Inițializează aplicația pentru consultantul curent
+  Future<void> _initializeForCurrentConsultant() async {
+    try {
+      // Resetează cache-ul pentru consultant/echipa curentă
+      await _splashService.resetForNewConsultant();
+      
+
+    } catch (e) {
+      debugPrint('❌ MAIN_SCREEN: Error initializing for current consultant: $e');
+    }
   }
   
   @override
@@ -117,7 +147,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void didChangePlatformBrightness() {
     super.didChangePlatformBrightness();
-    // Actualizează UI-ul când se schimbă brightness-ul sistemului (pentru modul auto)
+    // Actualizeaza UI-ul cand se schimba brightness-ul sistemului (pentru modul auto)
     if (_settingsService.currentThemeMode == AppThemeMode.auto) {
       setState(() {});
     }
@@ -134,7 +164,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
   
-  /// Sincronizează datele popup-ului cu cele din ClientService
+  /// Sincronizeaza datele popup-ului cu cele din ClientService
   void _syncPopupWithService() {
     _popupClients = _clientService.clients.map((clientModel) {
       return Client(
@@ -145,7 +175,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       );
     }).toList();
     
-    // Păstrează selecția curentă dacă există
+    // Pastreaza selectia curenta daca exista
     if (_selectedPopupClient != null) {
       _selectedPopupClient = _popupClients.firstWhere(
         (client) => client.name == _selectedPopupClient!.name && 
@@ -155,18 +185,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
   
-  /// Inițializează SettingsService
+  /// Initializeaza SettingsService
   Future<void> _initializeSettings() async {
     if (!_settingsService.isInitialized) {
       await _settingsService.initialize();
     }
   }
   
-  /// Callback pentru schimbările din SettingsService
+  /// Callback pentru schimbarile din SettingsService
   void _onSettingsChanged() {
     if (mounted) {
       setState(() {
-        // Actualizează întreaga interfață când se schimbă tema
+        // Actualizeaza intreaga interfata cand se schimba tema
       });
     }
   }
@@ -175,19 +205,23 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _restoreNavigationState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final areaIndex = prefs.getInt(_currentAreaKey);
       final paneIndex = prefs.getInt(_currentPaneKey);
       
-      if (areaIndex != null && areaIndex < AreaType.values.length) {
-        _currentArea = AreaType.values[areaIndex];
-        // Update SidebarService state to keep it in sync
-        _sidebarService.syncArea(_currentArea);
-      }
+      // Not reading areaIndex anymore; area always defaults to dashboard
+      _currentArea = AreaType.dashboard;
+      _sidebarService.syncArea(_currentArea);
+      debugPrint('🔧 MAIN_SCREEN: Area set by default to Acasa (dashboard)');
       
       if (paneIndex != null && paneIndex < PaneType.values.length) {
         _currentPane = PaneType.values[paneIndex];
         // Update SidebarService state to keep it in sync
         _sidebarService.syncPane(_currentPane);
+        debugPrint('🔧 MAIN_SCREEN: Restored pane from preferences: $_currentPane');
+      } else {
+        // Nu există preferințe salvate - folosim default-ul (clients)  
+        _currentPane = PaneType.clients;
+        _sidebarService.syncPane(_currentPane);
+        debugPrint('🔧 MAIN_SCREEN: No saved pane preferences, using default: clients');
       }
       
       // Update UI if needed
@@ -196,6 +230,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('Error restoring navigation state: $e');
+      // În caz de eroare, folosim default-urile
+      _currentArea = AreaType.dashboard;
+      _currentPane = PaneType.clients;
+      _sidebarService.syncArea(_currentArea);
+      _sidebarService.syncPane(_currentPane);
+      debugPrint('🔧 MAIN_SCREEN: Error fallback - using defaults: dashboard, clients');
     }
   }
   
@@ -230,7 +270,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       onNavigateToMeeting: _navigateToMeeting,
     ),
     PaneType.calculator: CalculatorPane(),
-    PaneType.matches: const PlaceholderWidget('Matches Pane', Colors.pink),
+    PaneType.matches: MatcherPane(
+      key: _matcherPaneKey,
+    ),
   };
   
   /// Navigates to a specific meeting in the calendar
@@ -262,7 +304,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     });
     
-    return Scaffold(
+    return UpdateNotificationWrapper(
+      updateService: _updateService,
+      child: Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: AppTheme.appBackground,
@@ -275,24 +319,26 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Pane Column (stânga) - lățime fixă 312
-              SizedBox(
-                width: 296,
-                child: _paneWidgets[_currentPane]!,
-              ),
+              // Conditionally render pane column only if current area is not dashboard (Acasa)
+              ...(_currentArea != AreaType.dashboard ? [
+                // Pane Column (stanga) - latime fixa 312
+                SizedBox(
+                  width: 296,
+                  child: _paneWidgets[_currentPane]!,
+                ),
+                // Spacing
+                const SizedBox(width: AppTheme.mediumGap),
+              ] : []),
               
-              // Spacing
-              const SizedBox(width: AppTheme.largeGap),
-              
-              // Area Column (centru) - lățime flexibilă
+              // Area Column (centru) - latime flexibila
               Expanded(
                 child: _areaWidgets[_currentArea]!,
               ),
               
-              // Spacing
-              const SizedBox(width: AppTheme.largeGap),
+              // Spacing intre area si sidebar
+              const SizedBox(width: AppTheme.mediumGap),
               
-              // Sidebar Column (dreapta) - lățime fixă 224
+              // Sidebar Column (dreapta) - latime fixa 224
               _buildSidebar(),
             ],
               ),
@@ -303,6 +349,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               _buildDualPopupOverlay(),
           ],
         ),
+        ),
       ),
     );
   }
@@ -311,19 +358,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Builds dual popup overlay with both popups side by side
   Widget _buildDualPopupOverlay() {
     return GestureDetector(
-      onTap: _closeAllPopups, // Închide popup-ul la click pe background
+      onTap: _closeAllPopups, // Inchide popup-ul la click pe background
       child: Container(
         color: Colors.black.withValues(alpha: 0.5),
         child: Center(
           child: GestureDetector(
-            onTap: () {}, // Previne închiderea când se face click pe popup
+            onTap: () {}, // Previne inchiderea cand se face click pe popup
             child: Material(
               color: Colors.transparent,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Client List Popup (întotdeauna vizibil când e deschis)
+                  // Client List Popup (intotdeauna vizibil cand e deschis)
                   if (_isShowingClientListPopup)
                     ClientsPopup(
                       clients: _popupClients,
@@ -333,9 +380,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       onSaveClient: _handleSaveClient,
                       onDeleteClient: () => _handleDeleteClient(_selectedPopupClient!),
                       onDeleteAllClients: _handleDeleteAllClients,
+                      onDeleteOcrClients: _handleDeleteOcrClients,
                     ),
                   
-                  // Form-ul de editare e acum integrat în ClientsPopup
+                  // Form-ul de editare e acum integrat in ClientsPopup
                 ],
               ),
             ),
@@ -375,6 +423,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       });
     }
     
+    // Refresh matcher data when switching to matches pane
+    if (pane == PaneType.matches) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _matcherPaneKey.currentState?.refreshData();
+      });
+    }
+    
     // Force state sync after a short delay to handle any race conditions
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _forceSyncStates();
@@ -386,7 +441,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       _syncPopupWithService();
       _isShowingClientListPopup = true;
-      // Setează primul client ca selectat implicit
+      // Seteaza primul client ca selectat implicit
       _selectedPopupClient = _popupClients.isNotEmpty ? _popupClients.first : null;
     });
   }
@@ -406,8 +461,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _selectedPopupClient = client;
     });
     
-    // Nu mai focusăm clientul în ClientService pentru a nu afecta clientsPane
-    // Focus-ul din clientsPane rămâne independent de selecția din popup
+    // Nu mai focusam clientul in ClientService pentru a nu afecta clientsPane
+    // Focus-ul din clientsPane ramane independent de selectia din popup
   }
   
   /// Handles edit client (double-tap on client) - now handled internally by ClientsPopup
@@ -447,10 +502,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   /// Performs the actual deletion of all clients
   void _performDeleteAllClients() async {
-    // Șterge toți clienții din ClientService
+    // Sterge toti clientii din ClientService
     await _clientService.deleteAllClients();
     
-    // Închide popup-ul
+    // Inchide popup-ul
     _closeAllPopups();
     
     if (mounted) {
@@ -461,6 +516,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         ),
       );
     }
+  }
+
+  /// Handles delete OCR image completely (removes item from gallery)
+  void _handleDeleteOcrClients() {
+    // Aceasta metoda este apelata cand se sterge complet imaginea OCR selectata
+    // Logica efectiva de stergere se face in ClientsPopup prin _deleteOcrClientsFromSelectedImage()
+    // Aici putem adauga logging sau alte actiuni suplimentare daca e necesar
+    debugPrint('🗑️ OCR image completely removed from gallery');
   }
   
   /// Handles saving a client (create or edit)
@@ -529,12 +592,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           
           // Areas navigation section
           _buildAreasSection(),
-          const SizedBox(height: AppTheme.mediumGap),
+          // Afiseaza sectiunea de pane doar daca area curent nu este Acasa (dashboard)
+          if (_currentArea != AreaType.dashboard) ...[
+            const SizedBox(height: AppTheme.mediumGap),
+            _buildPanesSection(),
+          ],
           
-          // Panes navigation section
-          _buildPanesSection(),
-          
-          // Special functions section (doar dacă există butoane)
+          // Special functions section (doar daca exista butoane)
           if (_sidebarService.specialButtons.isNotEmpty) ...[
             const SizedBox(height: AppTheme.mediumGap),
             _buildSpecialSection(),
@@ -544,83 +608,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Builds the consultant information section with avatar and details
+  /// Builds the consultant information section using LightItem7
   Widget _buildConsultantSection() {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isConsultantSectionHovered = true),
-      onExit: (_) => setState(() => _isConsultantSectionHovered = false),
-      child: GestureDetector(
-        onTap: _showConsultantPopup,
-        child: Container(
-          height: 63,
-          decoration: BoxDecoration(
-            color: _isConsultantSectionHovered ? AppTheme.containerColor2 : AppTheme.containerColor1,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 8, 7),
-            child: Row(
-              children: [
-                // Consultant information
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _consultantName,
-                        style: AppTheme.primaryTitleStyle.copyWith(
-                          color: _isConsultantSectionHovered ? AppTheme.elementColor3 : AppTheme.elementColor2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _teamName,
-                        style: AppTheme.secondaryTitleStyle.copyWith(
-                          color: _isConsultantSectionHovered ? AppTheme.elementColor2 : AppTheme.elementColor1,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Consultant avatar button
-                _buildConsultantAvatar(),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return LightItem7(
+      title: _consultantName,
+      description: _teamName,
+      svgAsset: 'assets/userIcon.svg',
+      onTap: _showConsultantPopup,
     );
   }
 
-  /// Builds the consultant avatar container
-  Widget _buildConsultantAvatar() {
-    return Container(
-      width: 48,
-      height: 47,
-      decoration: BoxDecoration(
-        color: AppTheme.containerColor2,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-      ),
-      child: Center(
-        child: SvgPicture.asset(
-          'assets/userIcon.svg',
-          width: AppTheme.iconSizeMedium,
-          height: AppTheme.iconSizeMedium,
-          colorFilter: ColorFilter.mode(
-            AppTheme.elementColor3,
-            BlendMode.srcIn,
-          ),
-        ),
-      ),
-    );
-  }
+
 
   /// Builds the areas navigation section with collapsible header
   Widget _buildAreasSection() {
@@ -671,7 +669,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final buttons = _sidebarService.specialButtons;
     
     if (buttons.isEmpty) {
-      return const SizedBox.shrink(); // Nu afișa secțiunea dacă nu sunt butoane
+      return const SizedBox.shrink(); // Nu afisa sectiunea daca nu sunt butoane
     }
     
     return Column(
@@ -691,7 +689,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final buttons = _sidebarService.specialButtons;
     
     if (buttons.isEmpty) {
-      return const SizedBox.shrink(); // Nu afișa nimic dacă nu sunt butoane
+      return const SizedBox.shrink(); // Nu afisa nimic daca nu sunt butoane
     }
     
     return Column(
@@ -812,6 +810,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => ConsultantPopup(
         consultantName: _consultantName,
         teamName: _teamName,
@@ -819,22 +818,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Forces complete state synchronization between MainScreen and SidebarService
+  /// Forces complete state synchronization between MainScreen and SidebarService with debouncing
   void _forceSyncStates() {
-    debugPrint('🔄 Forcing state synchronization');
-    debugPrint('📊 MainScreen state: Area=$_currentArea, Pane=$_currentPane');
-    debugPrint('📊 SidebarService state: Area=${_sidebarService.currentArea}, Pane=${_sidebarService.currentPane}');
-    
     // If states are out of sync, update MainScreen to match SidebarService (single source of truth)
     bool needsUpdate = false;
     if (_currentArea != _sidebarService.currentArea) {
-      debugPrint('⚠️ Area states out of sync, updating MainScreen');
       _currentArea = _sidebarService.currentArea;
       needsUpdate = true;
     }
     
     if (_currentPane != _sidebarService.currentPane) {
-      debugPrint('⚠️ Pane states out of sync, updating MainScreen');
       _currentPane = _sidebarService.currentPane ?? PaneType.clients;
       needsUpdate = true;
     }

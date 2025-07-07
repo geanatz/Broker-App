@@ -22,17 +22,17 @@ class _TokenPopupState extends State<TokenPopup> {
   final _tokenController = TextEditingController();
   String? _tokenError;
   
-  // Adăugare stare pentru validare
+  // Adaugare stare pentru validare
   bool _isTokenInvalid = false;
 
   void _submitToken() {
-    // Resetăm starea de validare
+    // Resetam starea de validare
     setState(() {
       _isTokenInvalid = false;
       _tokenError = null;
     });
     
-    // Validare manuală
+    // Validare manuala
     if (_tokenController.text.isEmpty) {
       setState(() {
         _isTokenInvalid = true;
@@ -40,7 +40,7 @@ class _TokenPopupState extends State<TokenPopup> {
       return;
     }
     
-    // Dacă token-ul e valid, continuăm
+    // Daca token-ul e valid, continuam
     widget.onTokenSubmit(_tokenController.text);
   }
 
@@ -139,7 +139,8 @@ class _TokenPopupState extends State<TokenPopup> {
             height: 48,
             child: SvgPicture.asset(
               'assets/logoIcon.svg',
-              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+              fit: BoxFit.contain,
             ),
           ),
         ],
@@ -167,7 +168,7 @@ class _TokenPopupState extends State<TokenPopup> {
                 height: 24,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Token secret",
+                  "Token secret (permanent)",
                   style: AppTheme.primaryTitleStyle.copyWith(
                     fontSize: AppTheme.fontSizeMedium,
                     fontWeight: FontWeight.w600,
@@ -197,12 +198,12 @@ class _TokenPopupState extends State<TokenPopup> {
                   }
                 },
                 decoration: InputDecoration(
-                  hintText: "Introdu token-ul tau",
+                  hintText: "Introdu token-ul tau permanent",
                   hintStyle: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
                 ),
-                validator: null, // Eliminăm validatorul standard
+                validator: null, // Eliminam validatorul standard
               ),
             ),
           ],

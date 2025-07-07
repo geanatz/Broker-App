@@ -1,72 +1,99 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'scanner_ocr.dart';
-import 'filter_ocr.dart';
-import 'parser_ocr.dart';
-import '../services/clients_service.dart';
+import 'package:image/image.dart' as img;
 
-/// Service principal pentru procesarea OCR completă
-/// Orchestrează procesul complet: îmbunătățire → scanare → filtrare → parsare
+/// Service pentru imbunatatirea imaginilor pentru OCR optim
+/// Pre-proceseaza imaginile pentru a imbunatati acuratetea extragerii textului
 class EnhanceOcr {
-  final ScannerOcr _scanner = ScannerOcr();
-  final FilterOcr _filter = FilterOcr();
-  final ParserOcr _parser = ParserOcr();
-  
   /// Singleton instance
   static final EnhanceOcr _instance = EnhanceOcr._internal();
   factory EnhanceOcr() => _instance;
   EnhanceOcr._internal();
 
-  /// Pregătește imaginea pentru OCR optimal
+  /// Imbunatateste o imagine pentru OCR optim
+  /// Aplica filtru grayscale si imbunatateste contrastul pentru claritate maxima
   Future<EnhanceResult> enhanceImageForOcr(File originalImageFile) async {
     try {
-      debugPrint('🔧 Începe pregătirea imaginii: ${originalImageFile.path}');
+      debugPrint('🔧 [EnhanceOcr] Incepe imbunatatirea imaginii: ${originalImageFile.path}');
       
-      // Verifică dacă fișierul există
+      // Verifica daca fisierul exista
       if (!await originalImageFile.exists()) {
         return EnhanceResult(
           success: false,
-          error: 'Fișierul imagine nu există',
+          error: 'Fisierul imagine nu exista',
           originalPath: originalImageFile.path,
         );
       }
 
-      // Verifică mărimea fișierului (max 10MB pentru Google Vision API)
+      // Verifica marimea fisierului (max 10MB pentru Google Vision API)
       final fileSize = await originalImageFile.length();
       const maxFileSize = 10 * 1024 * 1024; // 10MB
       
       if (fileSize > maxFileSize) {
-        debugPrint('❌ Imaginea este prea mare: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB > 10MB');
+        debugPrint('❌ [EnhanceOcr] Imaginea este prea mare: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB > 10MB');
         return EnhanceResult(
           success: false,
-          error: 'Imaginea este prea mare (${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB). Mărimea maximă este 10MB.',
+          error: 'Imaginea este prea mare (${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB). Marimea maxima este 10MB.',
           originalPath: originalImageFile.path,
         );
       }
 
-      // Verifică tipul fișierului
+      // Verifica tipul fisierului
       if (!_isValidImageFormat(originalImageFile)) {
         return EnhanceResult(
           success: false,
-          error: 'Format de imagine nesuportat. Utilizați PNG, JPG, JPEG, BMP sau GIF.',
+          error: 'Format de imagine nesuportat. Utilizati PNG, JPG, JPEG, BMP sau GIF.',
           originalPath: originalImageFile.path,
         );
       }
 
-      debugPrint('📊 Mărimea imaginii: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB');
-      debugPrint('✅ Imagine validată cu succes');
+      debugPrint('📊 [EnhanceOcr] Marimea imaginii: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB');
+      debugPrint('✅ [EnhanceOcr] Imagine validata cu succes');
 
-      // Pentru moment, returnăm imaginea originală fără modificări
-      // În viitor se poate adăuga procesare avansată cu librăriile necesare
+      // Incarca imaginea pentru procesare
+      final imageBytes = await originalImageFile.readAsBytes();
+      final originalImage = img.decodeImage(imageBytes);
+      
+      if (originalImage == null) {
+        return EnhanceResult(
+          success: false,
+          error: 'Nu s-a putut decodifica imaginea pentru procesare',
+          originalPath: originalImageFile.path,
+        );
+      }
+      
+      debugPrint('🔧 [EnhanceOcr] Imagine decodificata: ${originalImage.width}x${originalImage.height}');
+      
+      // Aplica filtru grayscale pentru claritate
+      debugPrint('🎨 [EnhanceOcr] Aplica filtru grayscale...');
+      var processedImage = img.grayscale(originalImage);
+      debugPrint('✅ [EnhanceOcr] Filtru grayscale aplicat cu succes');
+      
+      // Ajusteaza contrastul cu 150% pentru text mai clar
+      debugPrint('🔆 [EnhanceOcr] Imbunatateste contrastul cu 150%...');
+      processedImage = img.adjustColor(processedImage, contrast: 1.5);
+      debugPrint('✅ [EnhanceOcr] Contrast imbunatatit cu succes');
+      
+      // Salveaza imaginea procesata intr-un fisier temporar
+      final tempDir = Directory.systemTemp;
+      final fileName = _getFileName(originalImageFile);
+      final tempFile = File('${tempDir.path}/${fileName}_enhanced.png');
+      
+      final enhancedBytes = img.encodePng(processedImage);
+      await tempFile.writeAsBytes(enhancedBytes);
+      
+      debugPrint('✅ [EnhanceOcr] Imagine imbunatatita salvata: ${tempFile.path}');
+      debugPrint('📊 [EnhanceOcr] Marime noua: ${(enhancedBytes.length / 1024 / 1024).toStringAsFixed(2)}MB');
+      
       return EnhanceResult(
         success: true,
         originalPath: originalImageFile.path,
-        enhancedFile: null, // Utilizăm imaginea originală
-        improvementDetails: 'Imagine validată și pregătită pentru OCR',
+        enhancedFile: tempFile,
+        improvementDetails: 'Aplicat filtru grayscale si imbunatatit contrastul cu 150% pentru claritate optima OCR.',
       );
 
     } catch (e) {
-      debugPrint('❌ Eroare la pregătirea imaginii: $e');
+      debugPrint('❌ [EnhanceOcr] Eroare la pregatirea imaginii: $e');
       return EnhanceResult(
         success: false,
         error: 'Eroare la procesare: $e',
@@ -75,52 +102,59 @@ class EnhanceOcr {
     }
   }
 
-  /// Verifică dacă formatul imaginii este valid pentru Google Vision
+  /// Verifica daca formatul imaginii este valid pentru Google Vision
   bool _isValidImageFormat(File imageFile) {
     final fileName = imageFile.path.toLowerCase();
-    final validExtensions = ['.png', '.jpg', '.jpeg', '.bmp', '.gif'];
+    const validExtensions = ['.png', '.jpg', '.jpeg', '.bmp', '.gif'];
     
     return validExtensions.any((ext) => fileName.endsWith(ext));
   }
 
-  /// Procesează multiple imagini secvențial
+  /// Extrage numele fisierului fara extensie
+  String _getFileName(File file) {
+    final fileName = file.path.split('/').last.split('\\').last;
+    final dotIndex = fileName.lastIndexOf('.');
+    return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+  }
+
+  /// Proceseaza multiple imagini secvential
   Future<List<EnhanceResult>> enhanceMultipleImages(List<File> imageFiles) async {
-    debugPrint('🔧 Începe pregătirea pentru ${imageFiles.length} imagini');
+    debugPrint('🔧 [EnhanceOcr] Incepe imbunatatirea pentru ${imageFiles.length} imagini');
     
     final results = <EnhanceResult>[];
     
     for (int i = 0; i < imageFiles.length; i++) {
-      debugPrint('🔄 Procesează imaginea ${i + 1}/${imageFiles.length}');
+      debugPrint('🔄 [EnhanceOcr] Proceseaza imaginea ${i + 1}/${imageFiles.length}');
       final result = await enhanceImageForOcr(imageFiles[i]);
       results.add(result);
       
-      // Adaugă delay scurt pentru a nu supraîncărca sistemul
+      // Adauga delay scurt pentru a nu supraincarca sistemul
       if (i < imageFiles.length - 1) {
         await Future.delayed(const Duration(milliseconds: 100));
       }
     }
     
-    debugPrint('✅ Pregătire finalizată pentru toate imaginile');
+    debugPrint('✅ [EnhanceOcr] Imbunatatire finalizata pentru toate imaginile');
     return results;
   }
 
-  /// Curăță fișierele temporare create (dacă există)
+  /// Curata fisierele temporare create (daca exista)
   Future<void> cleanupTemporaryFiles(List<EnhanceResult> results) async {
     for (final result in results) {
       if (result.success && result.enhancedFile != null) {
         try {
           if (await result.enhancedFile!.exists()) {
             await result.enhancedFile!.delete();
-            debugPrint('🗑️ Șters fișier temporar: ${result.enhancedFile!.path}');
+            debugPrint('🗑️ [EnhanceOcr] Sters fisier temporar: ${result.enhancedFile!.path}');
           }
         } catch (e) {
-          debugPrint('⚠️ Nu s-a putut șterge fișierul temporar: $e');
+          debugPrint('⚠️ [EnhanceOcr] Nu s-a putut sterge fisierul temporar: $e');
         }
       }
     }
   }
 
-  /// Obține informații despre imagine fără procesare
+  /// Obtine informatii despre imagine fara procesare
   Future<ImageInfo> getImageInfo(File imageFile) async {
     try {
       final fileSize = await imageFile.length();
@@ -135,7 +169,7 @@ class EnhanceOcr {
         isValidSize: fileSize <= 10 * 1024 * 1024,
       );
     } catch (e) {
-      debugPrint('❌ Eroare la obținerea informațiilor despre imagine: $e');
+      debugPrint('❌ [EnhanceOcr] Eroare la obtinerea informatiilor despre imagine: $e');
       return ImageInfo(
         fileName: 'Necunoscut',
         filePath: imageFile.path,
@@ -146,145 +180,9 @@ class EnhanceOcr {
       );
     }
   }
-
-  /// Procesează o listă de imagini și extrage contactele (metoda principală)
-  /// Returnează un Map cu calea imaginii ca key și rezultatul ca value
-  Future<Map<String, OcrImageResult>> processImages(
-    List<File> imageFiles,
-    Function(OcrProgressUpdate)? onProgress,
-  ) async {
-    final results = <String, OcrImageResult>{};
-    
-    try {
-      debugPrint('🚀 Începe procesarea OCR îmbunătățită pentru ${imageFiles.length} imagini');
-      
-      // Verifică dacă Google Vision API este configurat
-      if (!_scanner.isConfigured()) {
-        debugPrint('❌ Google Vision API nu este configurat');
-        throw Exception('Google Vision API nu este configurat. Verifică API key-ul.');
-      }
-      
-      for (int i = 0; i < imageFiles.length; i++) {
-        final imageFile = imageFiles[i];
-        final imagePath = imageFile.path;
-        final imageNumber = i + 1;
-        
-        try {
-          // FAZA 1: Îmbunătățire imagine
-          onProgress?.call(OcrProgressUpdate(
-            phase: OcrPhase.enhancingImage,
-            currentImage: imageNumber,
-            totalImages: imageFiles.length,
-            imageName: _getImageName(imageFile),
-          ));
-          
-          final enhanceResult = await enhanceImageForOcr(imageFile);
-          await Future.delayed(const Duration(milliseconds: 100));
-          
-          if (!enhanceResult.success) {
-            results[imagePath] = OcrImageResult(
-              success: false,
-              error: enhanceResult.error ?? 'Eroare la îmbunătățirea imaginii',
-              imagePath: imagePath,
-              contacts: [],
-            );
-            continue;
-          }
-          
-          // FAZA 2: Scanare cu Google Vision
-          onProgress?.call(OcrProgressUpdate(
-            phase: OcrPhase.extractingText,
-            currentImage: imageNumber,
-            totalImages: imageFiles.length,
-            imageName: _getImageName(imageFile),
-          ));
-          
-          final imageToScan = enhanceResult.imageToUse;
-          final scanResult = await _scanner.extractTextFromImage(imageToScan);
-          await Future.delayed(const Duration(milliseconds: 100));
-          
-          if (!scanResult.success) {
-            results[imagePath] = OcrImageResult(
-              success: false,
-              error: scanResult.error ?? 'Eroare la extragerea textului',
-              imagePath: imagePath,
-              contacts: [],
-            );
-            continue;
-          }
-          
-          // FAZA 3: Filtrare text
-          onProgress?.call(OcrProgressUpdate(
-            phase: OcrPhase.filteringText,
-            currentImage: imageNumber,
-            totalImages: imageFiles.length,
-            imageName: _getImageName(imageFile),
-          ));
-          
-          final filteredText = _filter.filterOcrText(scanResult.extractedText!);
-          await Future.delayed(const Duration(milliseconds: 100));
-          
-          // FAZA 4: Parsare contacte
-          onProgress?.call(OcrProgressUpdate(
-            phase: OcrPhase.extractingContacts,
-            currentImage: imageNumber,
-            totalImages: imageFiles.length,
-            imageName: _getImageName(imageFile),
-          ));
-          
-          final contacts = await _parser.parseContactsFromText(filteredText, imagePath);
-          await Future.delayed(const Duration(milliseconds: 100));
-          
-          results[imagePath] = OcrImageResult(
-            success: true,
-            imagePath: imagePath,
-            extractedText: scanResult.extractedText,
-            filteredText: filteredText,
-            contacts: contacts,
-            confidence: scanResult.confidence,
-            enhanceDetails: enhanceResult.improvementDetails,
-          );
-          
-          debugPrint('✅ Finalizat ${_getImageName(imageFile)}: ${contacts.length} clienți');
-          
-        } catch (e) {
-          debugPrint('❌ Eroare la procesarea ${_getImageName(imageFile)}: $e');
-          results[imagePath] = OcrImageResult(
-            success: false,
-            error: 'Eroare la procesare: $e',
-            imagePath: imagePath,
-            contacts: [],
-          );
-        }
-        
-        // Delay mic între imagini pentru a nu supraîncărca API-ul
-        if (i < imageFiles.length - 1) {
-          await Future.delayed(const Duration(milliseconds: 500));
-        }
-      }
-      
-      debugPrint('🎉 Procesare OCR îmbunătățită finalizată pentru toate imaginile');
-      
-    } catch (e) {
-      debugPrint('❌ Eroare generală la procesarea OCR: $e');
-      rethrow;
-    }
-    
-    return results;
-  }
-
-  /// Obține numele imaginii din calea completă
-  String _getImageName(File imageFile) {
-    return imageFile.path.split('/').last.split('\\').last;
-  }
-
-  /// Verifică dacă serviciul este configurat corect
-  bool isConfigured() {
-    return _scanner.isConfigured();
-  }
 }
 
-/// Rezultatul procesului de pregătire
+/// Rezultatul procesului de pregatire imaginii
 class EnhanceResult {
   final bool success;
   final String? error;
@@ -305,13 +203,18 @@ class EnhanceResult {
     return originalPath.split('/').last.split('\\').last;
   }
 
-  /// Calea către imaginea îmbunătățită sau originală
+  /// Calea catre imaginea imbunatatita sau originala
   File get imageToUse {
     return enhancedFile ?? File(originalPath);
   }
+
+  @override
+  String toString() {
+    return 'EnhanceResult(success: $success, originalPath: $originalPath, enhancedFile: ${enhancedFile?.path}, error: $error)';
+  }
 }
 
-/// Informații despre o imagine
+/// Informatii despre o imagine
 class ImageInfo {
   final String fileName;
   final String filePath;
@@ -329,7 +232,7 @@ class ImageInfo {
     required this.isValidSize,
   });
 
-  /// Verifică dacă imaginea este validă pentru OCR
+  /// Verifica daca imaginea este valida pentru OCR
   bool get isValid => isValidFormat && isValidSize;
 
   /// Mesaj de status pentru imagine
@@ -338,79 +241,9 @@ class ImageInfo {
     if (!isValidSize) return 'Prea mare (>${(fileSizeMB).toStringAsFixed(1)}MB)';
     return 'Gata pentru OCR';
   }
-}
 
-/// Rezultatul procesării unei imagini
-class OcrImageResult {
-  final bool success;
-  final String? error;
-  final String imagePath;
-  final String? extractedText;
-  final String? filteredText;
-  final List<UnifiedClientModel> contacts;
-  final double confidence;
-  final String? enhanceDetails;
-
-  const OcrImageResult({
-    required this.success,
-    this.error,
-    required this.imagePath,
-    this.extractedText,
-    this.filteredText,
-    required this.contacts,
-    this.confidence = 0.0,
-    this.enhanceDetails,
-  });
-
-  /// Numărul de clienți extrași
-  int get contactCount => contacts.length;
-
-  /// Numele imaginii
-  String get imageName {
-    return imagePath.split('/').last.split('\\').last;
+  @override
+  String toString() {
+    return 'ImageInfo(fileName: $fileName, fileSizeMB: ${fileSizeMB.toStringAsFixed(2)}, isValid: $isValid)';
   }
-}
-
-/// Update-ul progresului OCR
-class OcrProgressUpdate {
-  final OcrPhase phase;
-  final int currentImage;
-  final int totalImages;
-  final String imageName;
-
-  const OcrProgressUpdate({
-    required this.phase,
-    required this.currentImage,
-    required this.totalImages,
-    required this.imageName,
-  });
-
-  /// Mesajul de progres formatat
-  String get progressMessage {
-    switch (phase) {
-      case OcrPhase.enhancingImage:
-        return 'Se îmbunătățește imaginea $imageName';
-      case OcrPhase.extractingText:
-        return 'Se extrage textul din imaginea $imageName';
-      case OcrPhase.filteringText:
-        return 'Se filtrează textul pentru imaginea $imageName';
-      case OcrPhase.extractingContacts:
-        return 'Se creeaza clientii pentru imaginea $imageName';
-    }
-  }
-
-  /// Progresul ca procentaj (0.0 - 1.0)
-  double get progress {
-    final baseProgress = (currentImage - 1) / totalImages;
-    final phaseProgress = phase == OcrPhase.extractingText ? 0.0 : 0.5;
-    return baseProgress + (phaseProgress / totalImages);
-  }
-}
-
-/// Fazele procesării OCR
-enum OcrPhase {
-  enhancingImage,
-  extractingText,
-  filteringText,
-  extractingContacts,
 }

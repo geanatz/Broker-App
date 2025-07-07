@@ -329,7 +329,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     );
   }
 
-  /// Calculează 40% din totalul veniturilor pentru clientul activ
+  /// Calculeaza 40% din totalul veniturilor pentru clientul activ
   void _calculateIncomePercentage() {
     final percentage = CalculatorService.calculateIncomePercentage();
     
@@ -476,7 +476,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                           children: [
                             // Monthly Payment
                             LightItem3(
-                              title: 'Rata lunara',
+                              title: 'Rata aviatocco',
                               description: _monthlyPayment > 0 ? _monthlyPayment.toStringAsFixed(1) : '0.0',
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,

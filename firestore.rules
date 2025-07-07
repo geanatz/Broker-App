@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reguli pentru colectia de consultanti
+    match /consultants/{consultantId} {
+      allow read, write: if request.auth != null && request.auth.uid == consultantId;
+    }
+    
+    // Reguli pentru colectia de clienti
+    match /clients/{phoneNumber} {
+      allow read, write: if request.auth != null && 
+        resource.data.consultantToken == getConsultantToken(request.auth.uid);
+      allow create: if request.auth != null && 
+        request.resource.data.consultantToken == getConsultantToken(request.auth.uid);
+    }
+    
+    // Reguli pentru sub-colectiile clientilor (forms, meetings)
+    match /clients/{phoneNumber}/{subcollection=**} {
+      allow read, write: if request.auth != null && 
+        get(/databases/$(database)/documents/clients/$(phoneNumber)).data.consultantToken == getConsultantToken(request.auth.uid);
+    }
+    
+    // Reguli pentru colectia de statistici
+    match /data/stats/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Reguli pentru colectia de meetings
+    match /meetings/{meetingId} {
+      allow read, write: if request.auth != null && 
+        resource.data.consultantToken == getConsultantToken(request.auth.uid);
+      allow create: if request.auth != null && 
+        request.resource.data.consultantToken == getConsultantToken(request.auth.uid);
+    }
+    
+    // Functie helper pentru a obtine consultant token-ul
+    function getConsultantToken(uid) {
+      return get(/databases/$(database)/documents/consultants/$(uid)).data.token;
+    }
+  }
+} 

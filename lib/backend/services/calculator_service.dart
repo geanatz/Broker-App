@@ -4,48 +4,48 @@ import 'package:broker_app/backend/services/clients_service.dart';
 
 /// Serviciul pentru calculare credite
 /// 
-/// Acest serviciu oferă funcționalitatea de calcul pentru credite și 
+/// Acest serviciu ofera functionalitatea de calcul pentru credite si 
 /// generarea graficului de amortizare
 class CalculatorService {
   static final FormService _formService = FormService();
   static final ClientUIService _clientService = ClientUIService();
 
-  /// Calculează rata lunară pentru un credit
+  /// Calculeaza rata lunara pentru un credit
   /// 
-  /// [principal] - suma împrumutată (principal)
-  /// [interestRate] - rata dobânzii anuală (în procente, ex: 5.5 pentru 5.5%)
-  /// [loanTermMonths] - durata creditului în luni
+  /// [principal] - suma imprumutata (principal)
+  /// [interestRate] - rata dobanzii anuala (in procente, ex: 5.5 pentru 5.5%)
+  /// [loanTermMonths] - durata creditului in luni
   /// 
-  /// Returnează rata lunară calculată
+  /// Returneaza rata lunara calculata
   static double calculateMonthlyPayment({
     required double principal,
     required double interestRate,
     required int loanTermMonths,
   }) {
-    // Convertim rata dobânzii anuale în rată lunară (și din procente în zecimală)
+    // Convertim rata dobanzii anuale in rata lunara (si din procente in zecimala)
     final double monthlyRate = interestRate / 100 / 12;
     
-    // Dacă rata dobânzii este 0, returnăm simpla împărțire a principalului la numărul de luni
+    // Daca rata dobanzii este 0, returnam simpla impartire a principalului la numarul de luni
     if (monthlyRate == 0) {
       return principal / loanTermMonths;
     }
     
     // Folosim formula standard pentru calculul ratei lunare
     // M = P * [r(1+r)^n] / [(1+r)^n - 1]
-    // unde M = plata lunară, P = principal, r = rata lunară, n = numărul de luni
+    // unde M = plata lunara, P = principal, r = rata lunara, n = numarul de luni
     final double numerator = monthlyRate * pow(1 + monthlyRate, loanTermMonths);
     final double denominator = pow(1 + monthlyRate, loanTermMonths) - 1;
     
     return principal * (numerator / denominator);
   }
   
-  /// Calculează costul total al creditului
+  /// Calculeaza costul total al creditului
   /// 
-  /// [principal] - suma împrumutată
-  /// [monthlyPayment] - rata lunară calculată
-  /// [loanTermMonths] - durata creditului în luni
+  /// [principal] - suma imprumutata
+  /// [monthlyPayment] - rata lunara calculata
+  /// [loanTermMonths] - durata creditului in luni
   /// 
-  /// Returnează costul total (suma tuturor plăților)
+  /// Returneaza costul total (suma tuturor platilor)
   static double calculateTotalCost({
     required double monthlyPayment,
     required int loanTermMonths,
@@ -53,12 +53,12 @@ class CalculatorService {
     return monthlyPayment * loanTermMonths;
   }
   
-  /// Calculează dobânda totală plătită
+  /// Calculeaza dobanda totala platita
   /// 
   /// [totalCost] - costul total al creditului
-  /// [principal] - suma împrumutată inițial
+  /// [principal] - suma imprumutata initial
   /// 
-  /// Returnează dobânda totală plătită
+  /// Returneaza dobanda totala platita
   static double calculateTotalInterest({
     required double totalCost,
     required double principal,
@@ -66,9 +66,9 @@ class CalculatorService {
     return totalCost - principal;
   }
 
-  /// Calculează 40% din totalul veniturilor pentru clientul activ
+  /// Calculeaza 40% din totalul veniturilor pentru clientul activ
   /// 
-  /// Returnează 40% din suma tuturor veniturilor (client + codebitor)
+  /// Returneaza 40% din suma tuturor veniturilor (client + codebitor)
   static double calculateIncomePercentage() {
     final currentClient = _clientService.focusedClient;
     if (currentClient == null) {
@@ -77,7 +77,7 @@ class CalculatorService {
     
     double totalIncome = 0;
     
-    // Obține veniturile clientului
+    // Obtine veniturile clientului
     final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
     for (final form in clientIncomeForms) {
       if (form.incomeAmount.isNotEmpty && !form.isEmpty) {
@@ -86,7 +86,7 @@ class CalculatorService {
       }
     }
     
-    // Obține veniturile codebitorului
+    // Obtine veniturile codebitorului
     final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
     for (final form in coborrowerIncomeForms) {
       if (form.incomeAmount.isNotEmpty && !form.isEmpty) {
@@ -95,22 +95,22 @@ class CalculatorService {
       }
     }
     
-    // Calculează 40% din total
+    // Calculeaza 40% din total
     return totalIncome * 0.4;
   }
   
-  /// Generează graficul de amortizare pentru un credit
+  /// Genereaza graficul de amortizare pentru un credit
   /// 
-  /// [principal] - suma împrumutată
-  /// [interestRate] - rata dobânzii anuală (în procente)
-  /// [loanTermMonths] - durata creditului în luni
+  /// [principal] - suma imprumutata
+  /// [interestRate] - rata dobanzii anuala (in procente)
+  /// [loanTermMonths] - durata creditului in luni
   /// 
-  /// Returnează o listă de intrări pentru graficul de amortizare, fiecare intrare conținând:
-  /// - numărul ratei
-  /// - suma plătită (rata lunară)
-  /// - dobânda plătită în acea lună
-  /// - principalul plătit în acea lună
-  /// - soldul rămas după plată
+  /// Returneaza o lista de intrari pentru graficul de amortizare, fiecare intrare continand:
+  /// - numarul ratei
+  /// - suma platita (rata lunara)
+  /// - dobanda platita in acea luna
+  /// - principalul platit in acea luna
+  /// - soldul ramas dupa plata
   static List<AmortizationEntry> generateAmortizationSchedule({
     required double principal,
     required double interestRate,
@@ -126,22 +126,22 @@ class CalculatorService {
     );
     
     for (int i = 1; i <= loanTermMonths; i++) {
-      // Calculează dobânda pentru luna curentă (sold * rata lunară)
+      // Calculeaza dobanda pentru luna curenta (sold * rata lunara)
       double interestPayment = balance * monthlyRate;
       
-      // Calculează cât din rată merge către principal (rata lunară - dobânda lunară)
+      // Calculeaza cat din rata merge catre principal (rata lunara - dobanda lunara)
       double principalPayment = monthlyPayment - interestPayment;
       
-      // Actualizează soldul
+      // Actualizeaza soldul
       balance -= principalPayment;
       
-      // Ne asigurăm că la ultima rată soldul ajunge la 0 (pentru a evita diferențe minime datorate rotunjirii)
+      // Ne asiguram ca la ultima rata soldul ajunge la 0 (pentru a evita diferente minime datorate rotunjirii)
       if (i == loanTermMonths) {
         principalPayment += balance;
         balance = 0;
       }
       
-      // Adaugă intrarea în graficul de amortizare
+      // Adauga intrarea in graficul de amortizare
       schedule.add(AmortizationEntry(
         paymentNumber: i,
         payment: monthlyPayment,
@@ -155,13 +155,13 @@ class CalculatorService {
   }
 }
 
-/// Clasa pentru o intrare în graficul de amortizare
+/// Clasa pentru o intrare in graficul de amortizare
 class AmortizationEntry {
-  final int paymentNumber;      // Numărul ratei
-  final double payment;         // Rata lunară
-  final double interestPayment; // Porțiunea din rată care reprezintă dobânda
-  final double principalPayment; // Porțiunea din rată care reduce principalul
-  final double remainingBalance; // Soldul rămas după plată
+  final int paymentNumber;      // Numarul ratei
+  final double payment;         // Rata lunara
+  final double interestPayment; // Portiunea din rata care reprezinta dobanda
+  final double principalPayment; // Portiunea din rata care reduce principalul
+  final double remainingBalance; // Soldul ramas dupa plata
   
   const AmortizationEntry({
     required this.paymentNumber,

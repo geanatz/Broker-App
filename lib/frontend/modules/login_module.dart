@@ -1,4 +1,4 @@
-import 'package:broker_app/app_theme.dart'; // Ajustează calea dacă e necesar
+import 'package:broker_app/app_theme.dart'; // Ajusteaza calea daca e necesar
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import pentru SVG
 import 'package:broker_app/backend/services/auth_service.dart'; // Pentru getConsultantNames
@@ -53,7 +53,7 @@ class _AuthPopupButtonState extends State<AuthPopupButton> {
 class LoginPopup extends StatefulWidget {
   final Function(String consultantName, String password) onLoginAttempt;
   final VoidCallback onGoToRegister;
-  final VoidCallback onForgotPassword; // Pentru link-ul/iconița de "am uitat parola"
+  final VoidCallback onForgotPassword; // Pentru link-ul/iconita de "am uitat parola"
 
   const LoginPopup({
     super.key,
@@ -75,19 +75,39 @@ class _LoginPopupState extends State<LoginPopup> {
   String? _loginError;
   bool _isPasswordVisible = false; // Add password visibility state
   
-  // Adăugare stări pentru validare
+  // Adaugare stari pentru validare
   bool _isConsultantInvalid = false;
   bool _isPasswordInvalid = false;
 
   // Serviciul de autentificare
-  // Ar putea fi injectat sau accesat printr-un provider dacă preferi o arhitectură mai avansată
-  // Pentru simplitate acum, îl instanțiem direct sau îl primim
+  // Ar putea fi injectat sau accesat printr-un provider daca preferi o arhitectura mai avansata
+  // Pentru simplitate acum, il instantiem direct sau il primim
   final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
     _fetchConsultantNames();
+    
+    // Asculta schimbarile din AppTheme pentru actualizari automate ale UI-ului
+    AppTheme().addListener(_onAppThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    AppTheme().removeListener(_onAppThemeChanged);
+    super.dispose();
+  }
+
+  /// Callback pentru schimbarile din AppTheme
+  void _onAppThemeChanged() {
+    if (mounted) {
+      debugPrint('🎨 LOGIN_POPUP: AppTheme changed, updating UI');
+      setState(() {
+        // Actualizeaza UI-ul cand se schimba AppTheme
+      });
+    }
   }
 
   Future<void> _fetchConsultantNames() async {
@@ -102,7 +122,7 @@ class _LoginPopupState extends State<LoginPopup> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          // _loginError = "Eroare la încărcarea consultanților: $e"; // Nu afișăm eroare de la fetch aici
+          // _loginError = "Eroare la incarcarea consultantilor: $e"; // Nu afisam eroare de la fetch aici
           _isLoadingConsultants = false;
         });
       }
@@ -110,14 +130,14 @@ class _LoginPopupState extends State<LoginPopup> {
   }
 
   void _attemptLogin() {
-    // Resetăm stările de validare
+    // Resetam starile de validare
     setState(() {
       _isConsultantInvalid = false;
       _isPasswordInvalid = false;
       _loginError = null;
     });
 
-    // Validăm manual în loc să folosim formKey.currentState!.validate()
+    // Validam manual in loc sa folosim formKey.currentState!.validate()
     bool isValid = true;
     
     if (_selectedConsultant == null) {
@@ -137,12 +157,6 @@ class _LoginPopupState extends State<LoginPopup> {
     if (isValid) {
       widget.onLoginAttempt(_selectedConsultant!, _passwordController.text);
     }
-  }
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
   }
 
   @override
@@ -167,7 +181,7 @@ class _LoginPopupState extends State<LoginPopup> {
           mainAxisSize: MainAxisSize.min, // Ensure column takes minimum space needed
           children: [
             _buildHeader(),
-            SizedBox(height: AppTheme.smallGap), // Gap între elemente: small (8px)
+            SizedBox(height: AppTheme.smallGap), // Gap intre elemente: small (8px)
             _buildLoginForm(),
             SizedBox(height: AppTheme.smallGap),
             _buildGoToRegisterLink(),
@@ -239,10 +253,9 @@ class _LoginPopupState extends State<LoginPopup> {
             height: 48,
             child: SvgPicture.asset(
               'assets/logoIcon.svg',
-              // Ensure the color is applied correctly if needed
-              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
-              // Fit might not be needed if SVG viewport is correct
-              // fit: BoxFit.contain,
+              // Use srcATop for better color blending with transparent backgrounds
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+              fit: BoxFit.contain,
             ),
           ),
         ],
@@ -277,7 +290,7 @@ class _LoginPopupState extends State<LoginPopup> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
           child: Container(
-             height: 24, // Figma: Titlu Câmp height
+             height: 24, // Figma: Titlu Camp height
              alignment: Alignment.centerLeft,
             child: Text(
               "Consultant",
@@ -335,7 +348,7 @@ class _LoginPopupState extends State<LoginPopup> {
             ),
             style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
             dropdownColor: AppTheme.containerColor2,
-            validator: null, // Eliminăm validatorul standard
+            validator: null, // Eliminam validatorul standard
           ),
         ),
       ],
@@ -368,7 +381,7 @@ class _LoginPopupState extends State<LoginPopup> {
                 child: GestureDetector(
                   onTap: widget.onForgotPassword,
                   child: Text(
-                    "Am uitat parola",
+                    "Reseteaza parola",
                     style: AppTheme.primaryTitleStyle.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,

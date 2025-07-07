@@ -1,14 +1,6 @@
-// import 'package:your_app/theme/app_theme.dart';
-// lib/components/items/dark_item1.dart
-
 import 'package:flutter/material.dart';
-// Assuming AppTheme will be located here once you provide it.
+import 'package:google_fonts/google_fonts.dart';
 
-/// A customizable item component with a pill shape background and single text label.
-///
-/// This component displays a single line of text centered vertically within
-/// a container that has a rounded, pill-like shape background. It is typically
-/// used for displaying simple options or tags and can be made tappable.
 class DarkItem1 extends StatelessWidget {
   /// The text label to display inside the item.
   final String title;
@@ -51,7 +43,6 @@ class DarkItem1 extends StatelessWidget {
     final double itemHeight = 48.0;
     final double horizontalPadding = 16.0;
     final double fontSize = 17;
-    final String fontFamily = 'Outfit';
     final FontWeight fontWeight = FontWeight.w500;
     // The original snippet had 'spacing: 16' and 'spacing: 10' on Rows, but they were ineffective
     // as there was only one child in each Row that would consume the space (the Expanded widget).
@@ -83,10 +74,9 @@ class DarkItem1 extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: GoogleFonts.outfit(
                     color: effectiveTextColor,
                     fontSize: fontSize,
-                    fontFamily: fontFamily,
                     fontWeight: fontWeight,
                   ),
                   // Consider adding overflow: TextOverflow.ellipsis if text might exceed width

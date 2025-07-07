@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 
 /// Enum defining the main navigation areas accessible via the sidebar.
 enum AreaType {
+  dashboard,  // Dashboard area - default first  
   form,       // Form area for client information
   calendar,   // Calendar area for meetings
   settings,   // Settings area
-  dashboard   // Dashboard area
 }
 
 /// Enum defining the different pane types that can be displayed.
@@ -144,7 +144,7 @@ class UserStatConfig {
 /// Service class that manages sidebar navigation state and configurations
 class SidebarService {
   // Current navigation state
-  AreaType _currentArea = AreaType.form;
+  AreaType _currentArea = AreaType.dashboard;
   PaneType? _currentPane = PaneType.clients;
   
   // Debounce mechanism to prevent rapid clicks
@@ -163,7 +163,7 @@ class SidebarService {
   SidebarService({
     required this.onAreaChanged,
     required this.onPaneChanged,
-    AreaType initialArea = AreaType.form,
+    AreaType initialArea = AreaType.dashboard,
     PaneType? initialPane,
   }) : 
     _currentArea = initialArea,
@@ -243,9 +243,9 @@ class SidebarService {
   /// Predefined button configurations for the area section
   List<ButtonConfig> get areaButtons => [
     const ButtonConfig(
-      id: 'dashboard',
-      title: 'Dashboard',
-      iconPath: 'assets/dashboardIcon.svg',
+      id: 'home',
+      title: 'Acasa',
+      iconPath: 'assets/homeIcon.svg',
       actionType: ActionType.navigateToArea,
       targetArea: AreaType.dashboard,
     ),
@@ -304,7 +304,7 @@ class SidebarService {
     ),
   ];
 
-  /// Butoane pentru funcții speciale (export etc.)
+  /// Butoane pentru functii speciale (export etc.)
   List<ButtonConfig> get specialButtons => [];
 
   // ========== LEGACY SUPPORT & ADAPTERS ==========
@@ -313,9 +313,9 @@ class SidebarService {
   static final List<SidebarButtonConfig> sidebarButtons = [
     // --- Main Navigation Buttons (visibleOnScreen == null) ---
     const SidebarButtonConfig(
-      id: 'dashboard',
-      title: 'Dashboard',
-      iconPath: 'assets/dashboardIcon.svg',
+      id: 'home',
+      title: 'Acasa',
+      iconPath: 'assets/homeIcon.svg',
       actionType: SidebarButtonActionType.navigateToScreen,
       targetScreen: NavigationScreen.dashboard,
     ),

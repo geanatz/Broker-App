@@ -1,6 +1,6 @@
 {
-    "name": "Broker App",
-    "short_name": "Broker App",
+      "name": "Aplicatie de Consultanta Financiara",
+  "short_name": "Consultanta Financiara",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,3 +1,6 @@
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M10.7119 35.1998L15.0639 12.7998H18.7919L23.9919 26.5118L29.2079 12.7998H32.9359L37.2879 35.1998H32.7759L30.2959 22.3518L25.5119 34.9758H22.4719L17.7039 22.3518L15.2079 35.1998H10.7119Z" fill="#D9D9D9"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" id="hand-waving">
+  <rect width="256" height="256" fill="none"></rect>
+  <path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="12" d="M119.99332,106.41921l-26-45.03332a20,20,0,0,1,34.641-20l40,69.282"></path>
+  <path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="12" d="M89.35231,133.34742l-38-65.81793a20,20,0,1,1,34.641-20l34,58.88972"></path>
+  <path fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="12" d="M153.99332 165.30894a40 40 0 0 1 14.641-54.641l-10-17.32051a20 20 0 1 1 34.641-20l20 34.641a80 80 0 1 1-138.56406 80l-38-65.81793a20 20 0 0 1 34.641-20l18 31.17692M81.09415 240.0027A111.54975 111.54975 0 0 1 48 203.99065M176 31A51.97065 51.97065 0 0 1 221.0258 57.00434"></path>
 </svg>

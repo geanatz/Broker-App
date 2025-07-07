@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/frontend/modules/login_module.dart';
 
 class ResetPasswordPopup extends StatefulWidget {
-  final Function(String newPassword, String confirmPassword) onResetPasswordAttempt;
+  final Function(String currentPassword, String newPassword, String confirmPassword) onResetPasswordAttempt;
   final VoidCallback onGoToLogin;
 
   const ResetPasswordPopup({
@@ -19,28 +19,40 @@ class ResetPasswordPopup extends StatefulWidget {
 
 class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   final _formKey = GlobalKey<FormState>();
+  final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
   String? _resetError;
   
-  // Adăugare stări pentru validare
+  // Adaugare stari pentru validare
+  bool _isCurrentPasswordInvalid = false;
   bool _isNewPasswordInvalid = false;
   bool _isConfirmPasswordInvalid = false;
 
   void _attemptResetPassword() {
-    // Resetăm stările de validare
+    // Resetam starile de validare
     setState(() {
+      _isCurrentPasswordInvalid = false;
       _isNewPasswordInvalid = false;
       _isConfirmPasswordInvalid = false;
       _resetError = null;
     });
     
-    // Validare manuală
+    // Validare manuala
     bool isValid = true;
     
-    // Validare parolă nouă
+    // Validare parola actuală
+    if (_currentPasswordController.text.isEmpty) {
+      setState(() {
+        _isCurrentPasswordInvalid = true;
+        isValid = false;
+      });
+    }
+    
+    // Validare parola noua
     if (_newPasswordController.text.isEmpty) {
       setState(() {
         _isNewPasswordInvalid = true;
@@ -53,7 +65,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
       });
     }
     
-    // Validare confirmare parolă
+    // Validare confirmare parola
     if (_confirmPasswordController.text.isEmpty) {
       setState(() {
         _isConfirmPasswordInvalid = true;
@@ -66,9 +78,10 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
       });
     }
     
-    // Dacă totul e valid, trimitem datele
+    // Daca totul e valid, trimitem datele
     if (isValid) {
       widget.onResetPasswordAttempt(
+        _currentPasswordController.text,
         _newPasswordController.text,
         _confirmPasswordController.text,
       );
@@ -77,6 +90,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
 
   @override
   void dispose() {
+    _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -85,7 +99,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
   @override
   Widget build(BuildContext context) {
     const double popupWidth = 360.0;
-    const double popupHeight = 328.0;
+    const double popupHeight = 408.0; // Increased height for current password field
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -153,11 +167,11 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
                 SizedBox(
                   height: 21,
                   child: Text(
-                    "Una calumea, nu ziua de nastere...",
+                    "Una calumea, nu ziua de nastere.",
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF927B9D),
+                      color: AppTheme.elementColor1,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -171,7 +185,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
             height: 48,
             child: SvgPicture.asset(
               'assets/logoIcon.svg',
-              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+              fit: BoxFit.contain,
             ),
           ),
         ],
@@ -191,14 +206,27 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
         child: Column(
           children: [
             _buildPasswordField(
+              controller: _currentPasswordController,
+              title: "Parola actuală",
+              hintText: "Introdu parola actuală",
+              obscureText: _obscureCurrentPassword,
+              onToggleObscure: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Introdu parola actuală';
+                return null;
+              },
+              isInvalid: _isCurrentPasswordInvalid,
+            ),
+            SizedBox(height: AppTheme.smallGap),
+            _buildPasswordField(
               controller: _newPasswordController,
-              title: "Parola noua",
-              hintText: "Introdu parola",
+              title: "Parola nouă",
+              hintText: "Introdu parola nouă",
               obscureText: _obscureNewPassword,
               onToggleObscure: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Introdu noua parolă';
-                if (value.length < 6) return 'Parola trebuie să aibă minim 6 caractere';
+                if (value == null || value.isEmpty) return 'Introdu noua parola';
+                if (value.length < 6) return 'Parola trebuie sa aiba minim 6 caractere';
                 return null;
               },
               isInvalid: _isNewPasswordInvalid,
@@ -206,12 +234,12 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
             SizedBox(height: AppTheme.smallGap),
             _buildPasswordField(
               controller: _confirmPasswordController,
-              title: "Repeta parola",
-              hintText: "Introdu parola iar",
+              title: "Confirmă parola nouă",
+              hintText: "Introdu parola nouă din nou",
               obscureText: _obscureConfirmPassword,
               onToggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Confirmă noua parolă';
+                if (value == null || value.isEmpty) return 'Confirma noua parola';
                 if (value != _newPasswordController.text) return 'Parolele nu se potrivesc';
                 return null;
               },
@@ -268,7 +296,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
               contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
               suffixIcon: suffixIcon,
             ),
-            validator: null, // Eliminăm validatorul standard
+            validator: null, // Eliminam validatorul standard
           ),
         ),
       ],

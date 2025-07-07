@@ -8,6 +8,9 @@ import 'package:broker_app/frontend/components/fields/input_field3.dart';
 import 'package:broker_app/frontend/components/fields/dropdown_field1.dart';
 import 'package:broker_app/frontend/components/buttons/flex_buttons2.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
+import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:broker_app/backend/services/clients_service.dart';
+import 'package:broker_app/backend/services/auth_service.dart';
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
 class TimeInputFormatter extends TextInputFormatter {
@@ -48,12 +51,12 @@ class TimeInputFormatter extends TextInputFormatter {
   }
 }
 
-/// Popup combinat pentru crearea și editarea întâlnirilor
+/// Popup combinat pentru crearea si editarea intalnirilor
 class MeetingPopup extends StatefulWidget {
-  /// ID-ul întâlnirii pentru editare (null pentru creare nouă)
+  /// ID-ul intalnirii pentru editare (null pentru creare noua)
   final String? meetingId;
   
-  /// Data și ora inițială (pentru creare nouă sau editare)
+  /// Data si ora initiala (pentru creare noua sau editare)
   final DateTime? initialDateTime;
   
   /// Callback pentru salvare cu succes
@@ -72,6 +75,7 @@ class MeetingPopup extends StatefulWidget {
 
 class _MeetingPopupState extends State<MeetingPopup> {
   final MeetingService _meetingService = MeetingService();
+  final SplashService _splashService = SplashService();
   
   // Controllers pentru inputuri
   final TextEditingController _clientNameController = TextEditingController();
@@ -84,7 +88,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
   List<String> _availableTimeSlots = []; // Lista orelor disponibile
   bool _isLoading = false;
 
-  // Pentru a ști dacă suntem în modul editare
+  // Pentru a sti daca suntem in modul editare
   bool get isEditMode => widget.meetingId != null;
   
   String get popupTitle => isEditMode ? 'Editeaza intalnire' : 'Creaza intalnire';
@@ -108,15 +112,15 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
 
     if (isEditMode) {
-      // Modul editare - încarcă datele întâlnirii existente
-      await _loadExistingMeeting();
+      // Modul editare - incarca datele intalnirii existente din cache
+      await _loadExistingMeetingFromCache();
     } else {
-      // Modul creare - folosește data inițială dacă este furnizată
+      // Modul creare - foloseste data initiala daca este furnizata
       if (widget.initialDateTime != null) {
         _selectedDate = widget.initialDateTime;
         _selectedTimeSlot = DateFormat('HH:mm').format(widget.initialDateTime!);
-        // Încarcă orele disponibile pentru data inițială
-        await _loadAvailableTimeSlots();
+        // Incarca orele disponibile pentru data initiala din cache
+        await _loadAvailableTimeSlotsFromCache();
       }
     }
 
@@ -125,32 +129,47 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
   }
 
-  Future<void> _loadExistingMeeting() async {
+  Future<void> _loadExistingMeetingFromCache() async {
     if (widget.meetingId == null) return;
 
     try {
-      final meetingData = await _meetingService.getMeeting(widget.meetingId!);
-      if (meetingData != null) {
-        _clientNameController.text = meetingData.clientName;
-        _phoneController.text = meetingData.phoneNumber;
-        _selectedType = meetingData.type;
-        _selectedDate = meetingData.dateTime;
-        _selectedTimeSlot = DateFormat('HH:mm').format(meetingData.dateTime);
-        // Încarcă orele disponibile pentru data existentă
-        await _loadAvailableTimeSlots();
-      }
+      // Cauta intalnirea in cache-ul din SplashService
+      final cachedMeetings = await _splashService.getCachedMeetings();
+      final targetMeeting = cachedMeetings.firstWhere(
+        (meeting) => meeting.id == widget.meetingId,
+        orElse: () => throw Exception('Meeting not found in cache'),
+      );
+
+      // Extrage datele din additionalData
+      final additionalData = targetMeeting.additionalData ?? {};
+      final clientName = additionalData['clientName'] ?? 'Client nedefinit';
+      final phoneNumber = additionalData['phoneNumber'] ?? '';
+      
+      // Convert ActivityType to MeetingType
+      final meetingType = targetMeeting.type == ClientActivityType.bureauDelete 
+          ? MeetingType.bureauDelete 
+          : MeetingType.meeting;
+
+      _clientNameController.text = clientName;
+      _phoneController.text = phoneNumber;
+      _selectedType = meetingType;
+      _selectedDate = targetMeeting.dateTime;
+      _selectedTimeSlot = DateFormat('HH:mm').format(targetMeeting.dateTime);
+      
+      // Incarca orele disponibile pentru data existenta din cache
+      await _loadAvailableTimeSlotsFromCache();
     } catch (e) {
-      debugPrint("Eroare la încărcarea întâlnirii: $e");
-      _showError("Eroare la încărcarea datelor întâlnirii");
+      debugPrint("Eroare la incarcarea intalnirii din cache: $e");
+      _showError("Eroare la incarcarea datelor intalnirii din cache");
     }
   }
 
-  Future<void> _loadAvailableTimeSlots() async {
+  Future<void> _loadAvailableTimeSlotsFromCache() async {
     if (_selectedDate == null) return;
 
     try {
-      // Folosește MeetingService pentru a obține orele disponibile
-      final availableSlots = await _meetingService.getAvailableTimeSlots(
+      // Foloseste SplashService cache pentru a obtine orele disponibile instant
+      final availableSlots = await _splashService.getAvailableTimeSlots(
         _selectedDate!, 
         excludeId: widget.meetingId // Exclude current meeting when editing
       );
@@ -185,13 +204,13 @@ class _MeetingPopupState extends State<MeetingPopup> {
         });
       }
       
-      // Afișează mesaj dacă nu sunt ore disponibile (only for create mode)
+      // Afiseaza mesaj daca nu sunt ore disponibile (only for create mode)
       if (!isEditMode && _availableTimeSlots.isEmpty) {
-        _showError('Nu sunt ore disponibile în această dată');
+        _showError('Nu sunt ore disponibile in aceasta data');
       }
     } catch (e) {
-      debugPrint('Eroare la încărcarea orelor disponibile: $e');
-      _showError('Eroare la încărcarea orelor disponibile');
+      debugPrint('Eroare la incarcarea orelor disponibile din cache: $e');
+      _showError('Eroare la incarcarea orelor disponibile din cache');
     }
   }
 
@@ -217,13 +236,13 @@ class _MeetingPopupState extends State<MeetingPopup> {
       if (mounted) {
         setState(() {
           _selectedDate = picked;
-          // Resetează ora când se schimbă data
+          // Reseteaza ora cand se schimba data
           _selectedTimeSlot = null;
         });
       }
       
-      // Încarcă orele disponibile pentru noua dată
-      await _loadAvailableTimeSlots();
+      // Incarca orele disponibile pentru noua data
+      await _loadAvailableTimeSlotsFromCache();
     }
   }
 
@@ -244,7 +263,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
 
     try {
-      // Construiește data și ora finale
+      // Construieste data si ora finale
       final timeParts = _selectedTimeSlot!.trim().split(':');
       final finalDateTime = DateTime(
         _selectedDate!.year,
@@ -254,14 +273,20 @@ class _MeetingPopupState extends State<MeetingPopup> {
         int.parse(timeParts[1]),
       );
 
-      // Creează obiectul MeetingData
+      // Obtine datele consultantului curent
+      final authService = AuthService();
+      final consultantData = await authService.getCurrentConsultantData();
+      final consultantName = consultantData?['name'] ?? 'Consultant necunoscut';
+      final consultantToken = consultantData?['token'] ?? '';
+
+      // Creeaza obiectul MeetingData
       final meetingData = MeetingData(
-        clientName: _clientNameController.text.trim().isEmpty ? 'Client nedefinit' : _clientNameController.text.trim(),
+        clientName: _clientNameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         dateTime: finalDateTime,
         type: _selectedType,
-        consultantId: '', // Va fi setat de service
-        consultantName: '', // Va fi setat de service
+        consultantToken: consultantToken,
+        consultantName: consultantName,
       );
 
       Map<String, dynamic> result;
@@ -272,6 +297,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       }
 
       if (result['success']) {
+        // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
+        _splashService.invalidateAllMeetingCaches();
+        
         if (mounted) {
           Navigator.of(context).pop();
           if (widget.onSaved != null) {
@@ -285,9 +313,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
         }
       }
     } catch (e) {
-      debugPrint("Eroare la salvarea întâlnirii: $e");
+      debugPrint("Eroare la salvarea intalnirii: $e");
       if (mounted) {
-        _showError("Eroare la salvarea întâlnirii");
+        _showError("Eroare la salvarea intalnirii");
       }
     } finally {
       if (mounted) {
@@ -304,20 +332,20 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
     debugPrint("Delete meeting called for ID: ${widget.meetingId}");
 
-    // Afișează dialog de confirmare
+    // Afiseaza dialog de confirmare
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmare ștergere'),
-        content: const Text('Ești sigur că vrei să ștergi această întâlnire?'),
+        title: const Text('Confirmare stergere'),
+        content: const Text('Esti sigur ca vrei sa stergi aceasta intalnire?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Anulează'),
+            child: const Text('Anuleaza'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Șterge'),
+            child: const Text('Sterge'),
           ),
         ],
       ),
@@ -339,6 +367,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       debugPrint("Delete result: $result");
       
       if (result['success']) {
+        // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
+        _splashService.invalidateAllMeetingCaches();
+        
         if (mounted) {
           Navigator.of(context).pop();
           if (widget.onSaved != null) {
@@ -352,9 +383,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
         }
       }
     } catch (e) {
-      debugPrint("Eroare la ștergerea întâlnirii: $e");
+      debugPrint("Eroare la stergerea intalnirii: $e");
       if (mounted) {
-        _showError("Eroare la ștergerea întâlnirii");
+        _showError("Eroare la stergerea intalnirii");
       }
     } finally {
       if (mounted) {
@@ -529,7 +560,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                     if (isEditMode) {
                       _deleteMeeting();
                     } else {
-                      _showError("Nu poți șterge o întâlnire care nu există încă");
+                      _showError("Nu poti sterge o intalnire care nu exista inca");
                     }
                   },
                   spacing: AppTheme.smallGap,

@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'dashboard_service.dart' as dashboard;
+import 'firebase_service.dart';
+
 // =================== CLIENT MODELS ===================
 
-/// Model pentru reprezentarea unui client și starea formularului său
+/// Model pentru reprezentarea unui client si starea formularului sau
 class ClientModel {
   final String id;
   final String name;
@@ -17,15 +21,18 @@ class ClientModel {
   // Datele formularului pentru acest client
   Map<String, dynamic> formData;
   
-  // Statusul discuției cu clientul
+  // Statusul discutiei cu clientul
   final String? discussionStatus; // 'Acceptat', 'Amanat', 'Refuzat'
   
-  // Data și ora pentru amânare sau întâlnire
+  // Data si ora pentru amanare sau intalnire
   final DateTime? scheduledDateTime;
   
-  // Informații adiționale despre discuție
+  // Informatii aditionale despre discutie
   final String? additionalInfo;
   
+  // Flag pentru a marca daca formularul a fost contorizat
+  final bool isCompleted;
+
   ClientModel({
     required this.id,
     required this.name,
@@ -38,12 +45,13 @@ class ClientModel {
     this.discussionStatus,
     this.scheduledDateTime,
     this.additionalInfo,
+    this.isCompleted = false, // Valoare default
   }) : formData = formData ?? {};
 
   /// Pentru compatibilitate cu codul existent
   String get phoneNumber => phoneNumber1;
   
-  /// Copiază clientul cu noi valori
+  /// Copiaza clientul cu noi valori
   ClientModel copyWith({
     String? id,
     String? name,
@@ -56,6 +64,7 @@ class ClientModel {
     String? discussionStatus,
     DateTime? scheduledDateTime,
     String? additionalInfo,
+    bool? isCompleted,
   }) {
     return ClientModel(
       id: id ?? this.id,
@@ -69,20 +78,21 @@ class ClientModel {
       discussionStatus: discussionStatus ?? this.discussionStatus,
       scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
       additionalInfo: additionalInfo ?? this.additionalInfo,
+      isCompleted: isCompleted ?? this.isCompleted,
     );
   }
   
-  /// Actualizează datele formularului pentru acest client
+  /// Actualizeaza datele formularului pentru acest client
   void updateFormData(String key, dynamic value) {
     formData[key] = value;
   }
   
-  /// Obține o valoare din datele formularului
+  /// Obtine o valoare din datele formularului
   T? getFormValue<T>(String key) {
     return formData[key] as T?;
   }
   
-  /// Convertește obiectul ClientModel într-un Map pentru Firebase
+  /// Converteste obiectul ClientModel intr-un Map pentru Firebase
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -96,26 +106,49 @@ class ClientModel {
       'discussionStatus': discussionStatus,
       'scheduledDateTime': scheduledDateTime?.millisecondsSinceEpoch,
       'additionalInfo': additionalInfo,
+      'isCompleted': isCompleted,
     };
   }
 
-  /// Creează un ClientModel dintr-un Map din Firebase
+  /// Creeaza un ClientModel dintr-un Map din Firebase (din noua structura)
   static ClientModel fromMap(Map<String, dynamic> map) {
+    // Creating ClientModel from Firebase data
+    
     return ClientModel(
-      id: map['id'] ?? '',
+      id: map['phoneNumber'] ?? map['id'] ?? '', // phoneNumber este ID-ul in noua structura
       name: map['name'] ?? '',
-      phoneNumber1: map['phoneNumber1'] ?? map['phoneNumber'] ?? '',
+      phoneNumber1: map['phoneNumber'] ?? map['phoneNumber1'] ?? '',
       phoneNumber2: map['phoneNumber2'],
       coDebitorName: map['coDebitorName'],
-      status: ClientStatus.values[map['status'] ?? 0],
-      category: ClientCategory.values[map['category'] ?? 0],
+      status: ClientStatus.values[map['status'] is String ? _parseStatus(map['status']) : (map['status'] ?? 0)],
+      category: ClientCategory.values[map['category'] is String ? _parseCategory(map['category']) : (map['category'] ?? 0)],
       formData: Map<String, dynamic>.from(map['formData'] ?? {}),
       discussionStatus: map['discussionStatus'],
       scheduledDateTime: map['scheduledDateTime'] != null 
           ? DateTime.fromMillisecondsSinceEpoch(map['scheduledDateTime'])
           : null,
       additionalInfo: map['additionalInfo'],
+      isCompleted: map['isCompleted'] ?? false,
     );
+  }
+
+  /// Helper pentru parsarea statusului din string
+  static int _parseStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'focused': return 1;
+      case 'normal':
+      default: return 0;
+    }
+  }
+
+  /// Helper pentru parsarea categoriei din string
+  static int _parseCategory(String category) {
+    switch (category.toLowerCase()) {
+      case 'reveniri': return 1;
+      case 'recente': return 2;
+      case 'apeluri':
+      default: return 0;
+    }
   }
 }
 
@@ -125,12 +158,330 @@ enum ClientStatus {
   focused,  // DarkItem7
 }
 
-/// Categoria unui client (în ce secțiune se află)
+/// Categoria unui client (in ce sectiune se afla)
 enum ClientCategory {
-  apeluri,   // Secțiunea "Apeluri"
-  reveniri,  // Secțiunea "Reveniri" 
-  recente,   // Secțiunea "Recente"
+  apeluri,   // Sectiunea "Apeluri"
+  reveniri,  // Sectiunea "Reveniri" 
+  recente,   // Sectiunea "Recente"
 }
+
+// =================== SERVICE CLASS REFACTORIZAT ===================
+
+/// Serviciu refactorizat pentru gestionarea clientilor cu noua structura Firebase
+/// Foloseste NewFirebaseService pentru separarea corecta a datelor per consultant
+class ClientsService {
+  static final ClientsService _instance = ClientsService._internal();
+  factory ClientsService() => _instance;
+  ClientsService._internal();
+
+  final NewFirebaseService _firebaseService = NewFirebaseService();
+
+  // =================== OPERATII CRUD CLIENTS ===================
+
+  /// Creeaza un client nou pentru consultantul curent
+  Future<bool> createClient({
+    required String phoneNumber,
+    required String name,
+    String? coDebitorName,
+    String? phoneNumber2,
+    ClientStatus? status,
+    ClientCategory? category,
+    Map<String, dynamic>? formData,
+  }) async {
+    try {
+      final success = await _firebaseService.createClient(
+        phoneNumber: phoneNumber,
+        name: name,
+        coDebitorName: coDebitorName,
+        status: _statusToString(status ?? ClientStatus.normal),
+        category: _categoryToString(category ?? ClientCategory.apeluri),
+        additionalData: {
+          'phoneNumber2': phoneNumber2,
+          'formData': formData ?? {},
+          'isCompleted': false,
+        },
+      );
+
+      if (success) {
+        debugPrint('✅ Client created successfully: $name ($phoneNumber)');
+        
+        // Notifica dashboard-ul
+        _notifyClientCreated();
+      }
+
+      return success;
+    } catch (e) {
+      debugPrint('❌ Error creating client: $e');
+      return false;
+    }
+  }
+
+  /// Obtine un client dupa numarul de telefon (doar pentru consultantul curent)
+  Future<ClientModel?> getClient(String phoneNumber) async {
+    try {
+      final clientData = await _firebaseService.getClient(phoneNumber);
+      
+      if (clientData != null) {
+        return ClientModel.fromMap(clientData);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error getting client: $e');
+      return null;
+    }
+  }
+
+  /// Obtine toti clientii pentru consultantul curent
+  Future<List<ClientModel>> getAllClients() async {
+    try {
+      final clientsData = await _firebaseService.getAllClients();
+      final clients = clientsData.map((data) => ClientModel.fromMap(data)).toList();
+      return clients;
+    } catch (e) {
+      debugPrint('❌ Error getting all clients: $e');
+      return [];
+    }
+  }
+
+  /// Obtine clientii filtrati dupa categorie
+  Future<List<ClientModel>> getClientsByCategory(ClientCategory category) async {
+    try {
+      final allClients = await getAllClients();
+      return allClients.where((client) => client.category == category).toList();
+    } catch (e) {
+      debugPrint('❌ Error getting clients by category: $e');
+      return [];
+    }
+  }
+
+  /// Actualizeaza un client
+  Future<bool> updateClient(String phoneNumber, {
+    String? name,
+    String? phoneNumber2,
+    String? coDebitorName,
+    ClientStatus? status,
+    ClientCategory? category,
+    Map<String, dynamic>? formData,
+    String? discussionStatus,
+    DateTime? scheduledDateTime,
+    String? additionalInfo,
+    bool? isCompleted,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      
+      if (name != null) updates['name'] = name;
+      if (phoneNumber2 != null) updates['phoneNumber2'] = phoneNumber2;
+      if (coDebitorName != null) updates['coDebitorName'] = coDebitorName;
+      if (status != null) updates['status'] = _statusToString(status);
+      if (category != null) updates['category'] = _categoryToString(category);
+      if (formData != null) updates['formData'] = formData;
+      if (discussionStatus != null) updates['discussionStatus'] = discussionStatus;
+      if (scheduledDateTime != null) updates['scheduledDateTime'] = scheduledDateTime.millisecondsSinceEpoch;
+      if (additionalInfo != null) updates['additionalInfo'] = additionalInfo;
+      if (isCompleted != null) updates['isCompleted'] = isCompleted;
+
+      final success = await _firebaseService.updateClient(phoneNumber, updates);
+      
+      if (success) {
+        debugPrint('✅ Client updated successfully: $phoneNumber');
+      }
+
+      return success;
+    } catch (e) {
+      debugPrint('❌ Error updating client: $e');
+      return false;
+    }
+  }
+
+  /// Sterge un client si toate datele asociate
+  Future<bool> deleteClient(String phoneNumber) async {
+    try {
+      final success = await _firebaseService.deleteClient(phoneNumber);
+      
+      if (success) {
+        // Notifica dashboard-ul
+        _notifyClientDeleted();
+      }
+
+      return success;
+    } catch (e) {
+      debugPrint('❌ Error deleting client: $e');
+      return false;
+    }
+  }
+
+  // =================== FORM OPERATIONS ===================
+
+  /// Salveaza datele formularului pentru un client
+  Future<bool> saveClientForm({
+    required String phoneNumber,
+    required String formType, // 'loan' sau 'income'
+    required Map<String, dynamic> formData,
+  }) async {
+    try {
+      final success = await _firebaseService.saveClientForm(
+        phoneNumber: phoneNumber,
+        formId: formType,
+        formData: formData,
+      );
+
+      if (success) {
+        // Actualizeaza si datele clientului cu formData
+        await updateClient(phoneNumber, formData: formData);
+      }
+
+      return success;
+    } catch (e) {
+      debugPrint('❌ Error saving client form: $e');
+      return false;
+    }
+  }
+
+  /// Obtine formularele pentru un client
+  Future<List<Map<String, dynamic>>> getClientForms(String phoneNumber) async {
+    try {
+      return await _firebaseService.getClientForms(phoneNumber);
+    } catch (e) {
+      debugPrint('❌ Error getting client forms: $e');
+      return [];
+    }
+  }
+
+  // =================== MEETING OPERATIONS ===================
+
+  /// Creeaza o intalnire pentru un client
+  Future<bool> createMeeting({
+    required String phoneNumber,
+    required DateTime dateTime,
+    required String meetingType, // 'meeting' sau 'bureauDelete'
+    String? description,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    try {
+      final success = await _firebaseService.createMeeting(
+        phoneNumber: phoneNumber,
+        dateTime: dateTime,
+        type: meetingType,
+        description: description,
+        additionalData: additionalData,
+      );
+
+      if (success) {
+        // Notifica dashboard-ul
+        await _notifyMeetingCreated();
+      }
+
+      return success;
+    } catch (e) {
+      debugPrint('❌ Error creating meeting: $e');
+      return false;
+    }
+  }
+
+  /// Obtine intalnirile pentru consultantul curent
+  Future<List<Map<String, dynamic>>> getAllMeetings() async {
+    try {
+      return await _firebaseService.getAllMeetings();
+    } catch (e) {
+      debugPrint('❌ Error getting all meetings: $e');
+      return [];
+    }
+  }
+
+  /// Obtine intalnirile pentru echipa consultantului curent
+  Future<List<Map<String, dynamic>>> getTeamMeetings() async {
+    try {
+      return await _firebaseService.getTeamMeetings();
+    } catch (e) {
+      debugPrint('❌ Error getting team meetings: $e');
+      return [];
+    }
+  }
+
+  // =================== HELPER METHODS ===================
+
+  /// Converteste ClientStatus in string pentru Firebase
+  String _statusToString(ClientStatus status) {
+    switch (status) {
+      case ClientStatus.focused:
+        return 'focused';
+      case ClientStatus.normal:
+        return 'normal';
+    }
+  }
+
+  /// Converteste ClientCategory in string pentru Firebase
+  String _categoryToString(ClientCategory category) {
+    switch (category) {
+      case ClientCategory.reveniri:
+        return 'reveniri';
+      case ClientCategory.recente:
+        return 'recente';
+      case ClientCategory.apeluri:
+        return 'apeluri';
+    }
+  }
+
+  // =================== COMPATIBILITY METHODS ===================
+
+  /// Pentru compatibilitate cu codul existent - creeaza un client simple
+  Future<bool> saveClient(ClientModel client) async {
+    return await createClient(
+      phoneNumber: client.phoneNumber,
+      name: client.name,
+      coDebitorName: client.coDebitorName,
+      phoneNumber2: client.phoneNumber2,
+      status: client.status,
+      category: client.category,
+      formData: client.formData,
+    );
+  }
+
+
+
+  /// Notifica dashboard-ul ca un client a fost creat
+  void _notifyClientCreated() {
+    try {
+      // DashboardService nu are metoda onClientCreated, folosim onFormCompleted
+      // În viitor, ar putea fi adăugată o metodă specifică
+    } catch (e) {
+      debugPrint('❌ Error notifying dashboard: $e');
+    }
+  }
+
+  /// Notifica dashboard-ul ca un client a fost sters
+  void _notifyClientDeleted() {
+    try {
+      // Client deleted notification
+    } catch (e) {
+      debugPrint('❌ Error notifying dashboard: $e');
+    }
+  }
+
+  /// Notifica dashboard-ul ca o intalnire a fost creata
+  Future<void> _notifyMeetingCreated() async {
+    try {
+      final consultantToken = await _firebaseService.getCurrentConsultantToken();
+      if (consultantToken != null) {
+        // Pentru moment, folosim token-ul ca identificator
+        // În viitor, ar putea fi nevoie de o conversie token -> uid
+        await dashboard.DashboardService().onMeetingCreated(consultantToken);
+      }
+    } catch (e) {
+      debugPrint('❌ Error notifying meeting created: $e');
+    }
+  }
+
+
+
+
+}
+
+// =================== LEGACY COMPATIBILITY ===================
+
+/// Pentru compatibilitate cu codul existent - aliasuri
+typedef ClientsFirebaseService = ClientsService;
 
 // =================== UNIFIED CLIENT MODELS ===================
 
@@ -199,9 +550,11 @@ class UnifiedClientModel {
       metadata: metadata ?? this.metadata,
     );
   }
+
+  Map<String, dynamic> toJson() => toFirestore();
 }
 
-/// Informații de bază despre client
+/// Informatii de baza despre client
 class ClientBasicInfo {
   final String name;
   final String phoneNumber1;
@@ -242,6 +595,8 @@ class ClientBasicInfo {
       address: map['address'],
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Date formular consolidate
@@ -303,6 +658,8 @@ class ClientFormData {
       additionalData: additionalData ?? this.additionalData,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Date credit
@@ -352,6 +709,8 @@ class CreditData {
       remainingMonths: map['remainingMonths']?.toInt(),
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Date venit
@@ -389,9 +748,11 @@ class IncomeData {
       seniority: map['seniority']?.toInt(),
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
-/// Activități client
+/// Activitati client
 class ClientActivity {
   final String id;
   final ClientActivityType type;
@@ -420,6 +781,10 @@ class ClientActivity {
       'additionalData': additionalData,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'consultantName': additionalData?['consultantName'] ?? '',
+      'clientName': additionalData?['clientName'] ?? '',
+      'consultantToken': additionalData?['consultantToken'] ?? '',
+      'phoneNumber': additionalData?['phoneNumber'] ?? '',
     };
   }
 
@@ -441,9 +806,11 @@ class ClientActivity {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
-/// Tipuri de activități client
+/// Tipuri de activitati client
 enum ClientActivityType {
   meeting,
   bureauDelete,
@@ -499,6 +866,8 @@ class UnifiedClientStatus {
       isFocused: map['isFocused'] ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() => toMap();
 }
 
 /// Categorii client unificate
@@ -508,7 +877,7 @@ enum UnifiedClientCategory {
   recente,
 }
 
-/// Status discuție
+/// Status discutie
 enum ClientDiscussionStatus {
   acceptat,
   amanat,
@@ -556,914 +925,189 @@ class ClientMetadata {
           : null,
     );
   }
-}
 
-// =================== SERVICE CLASS ===================
-
-/// Firebase service pentru gestionarea datelor clienților
-/// Serviciu unificat pentru toate operațiile cu clienții
-class ClientsFirebaseService {
-  static final ClientsFirebaseService _instance = ClientsFirebaseService._internal();
-  factory ClientsFirebaseService() => _instance;
-  ClientsFirebaseService._internal();
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  
-  // Constante pentru organizarea bazei de date
-  static const String _consultantsCollection = 'consultants';
-  static const String _clientsSubcollection = 'clients';
-  static const String _formSubcollection = 'form';
-  static const String _meetingsSubcollection = 'meetings';
-  static const String _loanDocument = 'loan';
-  static const String _incomeDocument = 'income';
-
-  User? get _currentUser => _auth.currentUser;
-
-  /// Obține referința către colecția clienților pentru consultantul curent
-  CollectionReference<Map<String, dynamic>>? get _clientsCollection {
-    final user = _currentUser;
-    if (user == null) return null;
-    
-    return _firestore
-        .collection(_consultantsCollection)
-        .doc(user.uid)
-        .collection(_clientsSubcollection);
-  }
-
-  /// Obține referința către subcollection form pentru un client specific
-  CollectionReference<Map<String, dynamic>>? _getFormCollection(String phoneNumber) {
-    return _clientsCollection?.doc(phoneNumber).collection(_formSubcollection);
-  }
-
-  /// Obține referința către subcollection meetings pentru un client specific
-  CollectionReference<Map<String, dynamic>>? _getMeetingsCollection(String phoneNumber) {
-    return _clientsCollection?.doc(phoneNumber).collection(_meetingsSubcollection);
-  }
-
-  // =================== OPERAȚII CRUD CLIENTS ===================
-
-  /// Creează un client nou (documentul va fi numit cu numărul de telefon)
-  Future<bool> createClient({
-    required String phoneNumber,
-    required String name,
-    String? coDebitorName,
-    String? coDebitorPhone,
-    String? email,
-    String? address,
-    UnifiedClientStatus? status,
-    String? source,
-  }) async {
-    final user = _currentUser;
-    if (user == null) {
-      debugPrint('Error: User not authenticated');
-      return false;
-    }
-
-    final collection = _clientsCollection;
-    if (collection == null) return false;
-
-    try {
-      final now = DateTime.now();
-
-      final clientData = {
-        'phoneNumber': phoneNumber,
-        'name': name,
-        'coDebitorName': coDebitorName,
-        'coDebitorPhone': coDebitorPhone,
-        'email': email,
-        'address': address,
-        'currentStatus': (status ?? UnifiedClientStatus(
-          category: UnifiedClientCategory.apeluri,
-          isFocused: false,
-        )).toMap(),
-        'metadata': {
-          'createdAt': Timestamp.fromDate(now),
-          'updatedAt': Timestamp.fromDate(now),
-          'createdBy': user.uid,
-          'source': source ?? 'manual',
-          'version': 1,
-        },
-      };
-
-      // Folosește numărul de telefon ca ID al documentului
-      await collection.doc(phoneNumber).set(clientData);
-      
-      debugPrint('✅ Client created successfully: $name (Phone: $phoneNumber)');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error creating client: $e');
-      return false;
-    }
-  }
-
-  /// Salvează un client în Firebase pentru un consultant specific
-  /// Folosește numărul de telefon ca ID al documentului
-  Future<void> saveClientForConsultant(String consultantId, ClientModel client) async {
-    try {
-      // Convertește ClientModel în noua structură
-      final success = await createClient(
-        phoneNumber: client.phoneNumber,
-        name: client.name,
-        status: _convertToUnifiedStatus(client),
-        source: 'client_service',
-      );
-      
-      if (!success) {
-        throw Exception('Failed to save client in unified structure');
-      }
-    } catch (e) {
-      throw Exception('Eroare la salvarea clientului: $e');
-    }
-  }
-
-  /// Obține un client după numărul de telefon cu toate datele sale
-  Future<UnifiedClientModel?> getClient(String phoneNumber) async {
-    final collection = _clientsCollection;
-    if (collection == null) return null;
-
-    try {
-      // Obține datele de bază ale clientului
-      final clientDoc = await collection.doc(phoneNumber).get();
-      if (!clientDoc.exists) return null;
-
-      final clientData = clientDoc.data()!;
-
-      // Obține datele formularului (loan și income)
-      final formData = await _getClientFormData(phoneNumber);
-
-      // Obține toate meetings-urile clientului
-      final activities = await _getClientMeetings(phoneNumber);
-
-      return UnifiedClientModel(
-        id: phoneNumber, // ID-ul este numărul de telefon
-        consultantId: _currentUser?.uid ?? '',
-        basicInfo: ClientBasicInfo(
-          name: clientData['name'] ?? '',
-          phoneNumber1: clientData['phoneNumber1'] ?? clientData['phoneNumber'] ?? phoneNumber,
-          phoneNumber2: clientData['phoneNumber2'],
-          coDebitorName: clientData['coDebitorName'],
-          email: clientData['email'],
-          address: clientData['address'],
-        ),
-        formData: formData,
-        activities: activities,
-        currentStatus: UnifiedClientStatus.fromMap(clientData['currentStatus'] ?? {}),
-        metadata: ClientMetadata.fromMap(clientData['metadata'] ?? {}),
-      );
-    } catch (e) {
-      debugPrint('❌ Error getting client: $e');
-      return null;
-    }
-  }
-
-  /// Obține toți clienții pentru consultantul curent
-  Future<List<UnifiedClientModel>> getAllClients() async {
-    final collection = _clientsCollection;
-    if (collection == null) {
-      debugPrint('❌ ClientsFirebaseService: Collection is null (user not authenticated)');
-      return [];
-    }
-
-    try {
-      debugPrint('🔍 ClientsFirebaseService: Început interogare Firebase...');
-      
-      final snapshot = await collection
-          .orderBy('metadata.updatedAt', descending: true)
-          .get();
-      
-      debugPrint('🔍 ClientsFirebaseService: Firebase snapshot obținut cu ${snapshot.docs.length} documente');
-      
-      final List<UnifiedClientModel> clients = [];
-      for (final doc in snapshot.docs) {
-        debugPrint('🔍 ClientsFirebaseService: Procesez client: ${doc.id}');
-        final client = await getClient(doc.id);
-        if (client != null) {
-          clients.add(client);
-        }
-      }
-      
-      debugPrint('🔍 ClientsFirebaseService: Finalizat cu ${clients.length} clienți valizi');
-      return clients;
-    } catch (e) {
-      debugPrint('❌ Error getting all clients: $e');
-      return [];
-    }
-  }
-
-  /// Obține toți clienții pentru un consultant specific (compatibility method)
-  Future<List<ClientModel>> getAllClientsForConsultant(String consultantId) async {
-    try {
-      final unifiedClients = await getAllClients();
-      return unifiedClients.map((unifiedClient) => _convertToClientModel(unifiedClient)).toList();
-    } catch (e) {
-      throw Exception('Eroare la încărcarea clienților: $e');
-    }
-  }
-
-  /// Actualizează informațiile de bază ale unui client
-  Future<bool> updateClient(String phoneNumber, {
-    String? name,
-    String? coDebitorName,
-    String? coDebitorPhone,
-    String? email,
-    String? address,
-    UnifiedClientStatus? currentStatus,
-  }) async {
-    final collection = _clientsCollection;
-    if (collection == null) return false;
-
-    try {
-      final updateData = <String, dynamic>{
-        'metadata.updatedAt': Timestamp.fromDate(DateTime.now()),
-        'metadata.version': FieldValue.increment(1),
-      };
-
-      if (name != null) updateData['name'] = name;
-      if (coDebitorName != null) updateData['coDebitorName'] = coDebitorName;
-      if (coDebitorPhone != null) updateData['coDebitorPhone'] = coDebitorPhone;
-      if (email != null) updateData['email'] = email;
-      if (address != null) updateData['address'] = address;
-      if (currentStatus != null) updateData['currentStatus'] = currentStatus.toMap();
-
-      await collection.doc(phoneNumber).update(updateData);
-      
-      debugPrint('✅ Client updated successfully: $phoneNumber');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error updating client: $e');
-      return false;
-    }
-  }
-
-  /// Șterge un client și toate subcollections-urile sale
-  Future<bool> deleteClient(String phoneNumber) async {
-    final collection = _clientsCollection;
-    if (collection == null) return false;
-
-    try {
-      final batch = _firestore.batch();
-
-      // Șterge toate meetings-urile
-      final meetingsSnapshot = await _getMeetingsCollection(phoneNumber)?.get();
-      if (meetingsSnapshot != null) {
-        for (final doc in meetingsSnapshot.docs) {
-          batch.delete(doc.reference);
-        }
-      }
-
-      // Șterge documentele form (loan și income)
-      final formCollection = _getFormCollection(phoneNumber);
-      if (formCollection != null) {
-        batch.delete(formCollection.doc(_loanDocument));
-        batch.delete(formCollection.doc(_incomeDocument));
-      }
-
-      // Șterge clientul
-      batch.delete(collection.doc(phoneNumber));
-
-      await batch.commit();
-      
-      debugPrint('✅ Client deleted successfully: $phoneNumber');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error deleting client: $e');
-      return false;
-    }
-  }
-
-  /// Șterge un client din Firebase pentru un consultant specific
-  Future<void> deleteClientForConsultant(String consultantId, String clientId) async {
-    try {
-      // În noua structură, clientId este de fapt phoneNumber
-      final success = await deleteClient(clientId);
-      
-      if (!success) {
-        throw Exception('Failed to delete client in unified structure');
-      }
-    } catch (e) {
-      throw Exception('Eroare la ștergerea clientului: $e');
-    }
-  }
-
-  /// Actualizează un client în Firebase pentru un consultant specific
-  Future<void> updateClientForConsultant(String consultantId, ClientModel client) async {
-    try {
-      final success = await updateClient(
-        client.phoneNumber,
-        name: client.name,
-        currentStatus: _convertToUnifiedStatus(client),
-      );
-      
-      if (!success) {
-        throw Exception('Failed to update client in unified structure');
-      }
-    } catch (e) {
-      throw Exception('Eroare la actualizarea clientului: $e');
-    }
-  }
-
-  /// Șterge toți clienții pentru consultantul curent în mod optimizat (batch operation)
-  Future<bool> deleteAllClients() async {
-    final collection = _clientsCollection;
-    if (collection == null) return false;
-
-    try {
-      // Obține toți clienții pentru consultantul curent
-      final snapshot = await collection.get();
-      
-      if (snapshot.docs.isEmpty) {
-        debugPrint('✅ No clients to delete');
-        return true;
-      }
-
-      // Folosește batch pentru ștergerea optimizată
-      final batch = _firestore.batch();
-      int batchCount = 0;
-      const maxBatchSize = 500; // Firestore limit pentru batch
-
-      for (final clientDoc in snapshot.docs) {
-        final phoneNumber = clientDoc.id;
-        
-        // Șterge meetings-urile clientului
-        final meetingsSnapshot = await _getMeetingsCollection(phoneNumber)?.get();
-        if (meetingsSnapshot != null) {
-          for (final meetingDoc in meetingsSnapshot.docs) {
-            batch.delete(meetingDoc.reference);
-            batchCount++;
-            
-            // Commit batch dacă ajungem la limită
-            if (batchCount >= maxBatchSize) {
-              await batch.commit();
-              batchCount = 0;
-            }
-          }
-        }
-
-        // Șterge documentele form (loan și income)
-        final formCollection = _getFormCollection(phoneNumber);
-        if (formCollection != null) {
-          batch.delete(formCollection.doc(_loanDocument));
-          batch.delete(formCollection.doc(_incomeDocument));
-          batchCount += 2;
-        }
-
-        // Șterge clientul
-        batch.delete(clientDoc.reference);
-        batchCount++;
-
-        // Commit batch dacă ajungem la limită
-        if (batchCount >= maxBatchSize) {
-          await batch.commit();
-          batchCount = 0;
-        }
-      }
-
-      // Commit ultimul batch dacă mai sunt operații rămase
-      if (batchCount > 0) {
-        await batch.commit();
-      }
-
-      debugPrint('✅ All clients deleted successfully (${snapshot.docs.length} clients)');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error deleting all clients: $e');
-      return false;
-    }
-  }
-
-  /// Șterge toți clienții pentru un consultant specific
-  Future<void> deleteAllClientsForConsultant(String consultantId) async {
-    try {
-      // Folosește metoda optimizată pentru ștergerea în lot
-      final success = await deleteAllClients();
-      
-      if (!success) {
-        throw Exception('Failed to delete all clients in unified structure');
-      }
-    } catch (e) {
-      throw Exception('Eroare la ștergerea tuturor clienților: $e');
-    }
-  }
-
-  /// Stream pentru toți clienții consultantului curent
-  Stream<List<UnifiedClientModel>> getClientsStream() {
-    final collection = _clientsCollection;
-    if (collection == null) {
-      return Stream.value([]);
-    }
-
-    return collection
-        .orderBy('metadata.updatedAt', descending: true)
-        .snapshots()
-        .asyncMap((snapshot) async {
-          final List<UnifiedClientModel> clients = [];
-          for (final doc in snapshot.docs) {
-            final client = await getClient(doc.id);
-            if (client != null) {
-              clients.add(client);
-            }
-          }
-          return clients;
-        });
-  }
-
-  /// Stream pentru ascultarea modificărilor în timp real pentru un consultant specific
-  Stream<List<ClientModel>> getClientsStreamForConsultant(String consultantId) {
-    return getClientsStream().map((unifiedClients) =>
-        unifiedClients.map((unifiedClient) => _convertToClientModel(unifiedClient)).toList());
-  }
-
-  // =================== HELPER METHODS ===================
-
-  /// Obține datele formularului pentru un client
-  Future<ClientFormData> _getClientFormData(String phoneNumber) async {
-    try {
-      final formCollection = _getFormCollection(phoneNumber);
-      if (formCollection == null) {
-        return _emptyFormData();
-      }
-
-      // Obține datele de loan
-      final loanDoc = await formCollection.doc(_loanDocument).get();
-      final loanData = loanDoc.exists ? loanDoc.data()! : <String, dynamic>{};
-
-      // Obține datele de income
-      final incomeDoc = await formCollection.doc(_incomeDocument).get();
-      final incomeData = incomeDoc.exists ? incomeDoc.data()! : <String, dynamic>{};
-
-      return ClientFormData(
-        clientCredits: (loanData['clientCredits'] as List<dynamic>? ?? [])
-            .map((credit) => CreditData.fromMap(credit))
-            .toList(),
-        coDebitorCredits: (loanData['coDebitorCredits'] as List<dynamic>? ?? [])
-            .map((credit) => CreditData.fromMap(credit))
-            .toList(),
-        clientIncomes: (incomeData['clientIncomes'] as List<dynamic>? ?? [])
-            .map((income) => IncomeData.fromMap(income))
-            .toList(),
-        coDebitorIncomes: (incomeData['coDebitorIncomes'] as List<dynamic>? ?? [])
-            .map((income) => IncomeData.fromMap(income))
-            .toList(),
-        additionalData: {
-          ...Map<String, dynamic>.from(loanData['additionalData'] ?? {}),
-          ...Map<String, dynamic>.from(incomeData['additionalData'] ?? {}),
-        },
-      );
-    } catch (e) {
-      debugPrint('❌ Error getting client form data: $e');
-      return _emptyFormData();
-    }
-  }
-
-  /// Obține meetings-urile pentru un client
-  Future<List<ClientActivity>> _getClientMeetings(String phoneNumber) async {
-    try {
-      final meetingsCollection = _getMeetingsCollection(phoneNumber);
-      if (meetingsCollection == null) return [];
-
-      final meetingsSnapshot = await meetingsCollection
-          .orderBy('dateTime', descending: false)
-          .get();
-      
-      return meetingsSnapshot.docs.map((doc) {
-        final data = doc.data();
-        return ClientActivity(
-          id: doc.id,
-          type: data['type'] == 'bureauDelete' 
-              ? ClientActivityType.bureauDelete 
-              : ClientActivityType.meeting,
-          dateTime: (data['dateTime'] as Timestamp).toDate(),
-          description: data['description'] ?? 'Întâlnire',
-          additionalData: Map<String, dynamic>.from(data['additionalData'] ?? {}),
-          createdAt: data['createdAt'] != null 
-              ? (data['createdAt'] as Timestamp).toDate()
-              : DateTime.now(),
-          updatedAt: data['updatedAt'] != null 
-              ? (data['updatedAt'] as Timestamp).toDate()
-              : null,
-        );
-      }).toList();
-    } catch (e) {
-      debugPrint('❌ Error getting client meetings: $e');
-      return [];
-    }
-  }
-
-  /// Returnează date formular goale
-  ClientFormData _emptyFormData() {
-    return ClientFormData(
-      clientCredits: [],
-      coDebitorCredits: [],
-      clientIncomes: [],
-      coDebitorIncomes: [],
-      additionalData: {},
-    );
-  }
-
-  /// Convertește ClientModel în UnifiedClientStatus pentru noua structură
-  UnifiedClientStatus _convertToUnifiedStatus(ClientModel client) {
-    return UnifiedClientStatus(
-      category: _convertToUnifiedCategory(client.category),
-      isFocused: client.status == ClientStatus.focused,
-      discussionStatus: _convertDiscussionStatus(client.discussionStatus),
-      scheduledDateTime: client.scheduledDateTime,
-      additionalInfo: client.additionalInfo,
-    );
-  }
-
-  /// Convertește ClientCategory din vechea structură în noua structură
-  UnifiedClientCategory _convertToUnifiedCategory(ClientCategory oldCategory) {
-    switch (oldCategory) {
-      case ClientCategory.apeluri:
-        return UnifiedClientCategory.apeluri;
-      case ClientCategory.reveniri:
-        return UnifiedClientCategory.reveniri;
-      case ClientCategory.recente:
-        return UnifiedClientCategory.recente;
-    }
-  }
-
-  /// Convertește string discussion status în enum
-  ClientDiscussionStatus? _convertDiscussionStatus(String? discussionStatus) {
-    if (discussionStatus == null) return null;
-    
-    switch (discussionStatus.toLowerCase()) {
-      case 'acceptat':
-        return ClientDiscussionStatus.acceptat;
-      case 'amanat':
-        return ClientDiscussionStatus.amanat;
-      case 'refuzat':
-        return ClientDiscussionStatus.refuzat;
-      default:
-        return null;
-    }
-  }
-
-  /// Convertește UnifiedClientModel în ClientModel pentru compatibilitate
-  ClientModel _convertToClientModel(UnifiedClientModel unifiedClient) {
-    return ClientModel(
-      id: unifiedClient.basicInfo.phoneNumber1, // Folosește phoneNumber1 ca ID
-      name: unifiedClient.basicInfo.name,
-      phoneNumber1: unifiedClient.basicInfo.phoneNumber1,
-      phoneNumber2: unifiedClient.basicInfo.phoneNumber2,
-      coDebitorName: unifiedClient.basicInfo.coDebitorName,
-      status: unifiedClient.currentStatus.isFocused ? ClientStatus.focused : ClientStatus.normal,
-      category: _convertFromUnifiedCategory(unifiedClient.currentStatus.category),
-      formData: {}, // FormData este gestionat separat în noua structură
-      discussionStatus: unifiedClient.currentStatus.discussionStatus?.name,
-      scheduledDateTime: unifiedClient.currentStatus.scheduledDateTime,
-      additionalInfo: unifiedClient.currentStatus.additionalInfo,
-    );
-  }
-
-  /// Convertește ClientCategory din noua structură în vechea structură
-  ClientCategory _convertFromUnifiedCategory(UnifiedClientCategory unifiedCategory) {
-    switch (unifiedCategory) {
-      case UnifiedClientCategory.apeluri:
-        return ClientCategory.apeluri;
-      case UnifiedClientCategory.reveniri:
-        return ClientCategory.reveniri;
-      case UnifiedClientCategory.recente:
-        return ClientCategory.recente;
-    }
-  }
-
-  // =================== ADDITIONAL METHODS ===================
-  
-  /// Salvează datele de credite (loan) pentru un client
-  Future<bool> saveLoanData(String phoneNumber, {
-    required List<CreditData> clientCredits,
-    required List<CreditData> coDebitorCredits,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    final formCollection = _getFormCollection(phoneNumber);
-    if (formCollection == null) return false;
-
-    try {
-      final loanData = {
-        'clientCredits': clientCredits.map((c) => c.toMap()).toList(),
-        'coDebitorCredits': coDebitorCredits.map((c) => c.toMap()).toList(),
-        'additionalData': additionalData ?? {},
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      await formCollection.doc(_loanDocument).set(loanData, SetOptions(merge: true));
-
-      // Actualizează timestamp-ul clientului
-      await _updateClientTimestamp(phoneNumber);
-      
-      debugPrint('✅ Loan data saved successfully for client: $phoneNumber');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error saving loan data: $e');
-      return false;
-    }
-  }
-
-  /// Salvează datele de venituri (income) pentru un client
-  Future<bool> saveIncomeData(String phoneNumber, {
-    required List<IncomeData> clientIncomes,
-    required List<IncomeData> coDebitorIncomes,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    final formCollection = _getFormCollection(phoneNumber);
-    if (formCollection == null) return false;
-
-    try {
-      final incomeData = {
-        'clientIncomes': clientIncomes.map((i) => i.toMap()).toList(),
-        'coDebitorIncomes': coDebitorIncomes.map((i) => i.toMap()).toList(),
-        'additionalData': additionalData ?? {},
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      await formCollection.doc(_incomeDocument).set(incomeData, SetOptions(merge: true));
-
-      // Actualizează timestamp-ul clientului
-      await _updateClientTimestamp(phoneNumber);
-      
-      debugPrint('✅ Income data saved successfully for client: $phoneNumber');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error saving income data: $e');
-      return false;
-    }
-  }
-
-  /// Programează o întâlnire pentru un client
-  Future<bool> scheduleMeeting(String phoneNumber, DateTime dateTime, {
-    String? description,
-    String? type,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    final meetingsCollection = _getMeetingsCollection(phoneNumber);
-    if (meetingsCollection == null) return false;
-
-    try {
-      // Obține numele clientului pentru a-l include în additionalData
-      final client = await getClient(phoneNumber);
-      final clientName = client?.basicInfo.name ?? 'Client necunoscut';
-      
-      // Combină additionalData cu informațiile esențiale
-      final combinedAdditionalData = <String, dynamic>{
-        'phoneNumber': phoneNumber,
-        'clientName': clientName,
-        ...?additionalData,
-      };
-
-      final meetingData = {
-        'type': type ?? 'meeting',
-        'dateTime': Timestamp.fromDate(dateTime),
-        'description': description ?? 'Întâlnire programată',
-        'additionalData': combinedAdditionalData,
-        'createdAt': FieldValue.serverTimestamp(),
-      };
-
-      await meetingsCollection.add(meetingData);
-
-      // Actualizează timestamp-ul clientului
-      await _updateClientTimestamp(phoneNumber);
-      
-      debugPrint('✅ Meeting scheduled successfully for client: $phoneNumber ($clientName)');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error scheduling meeting: $e');
-      return false;
-    }
-  }
-
-  /// Actualizează timestamp-ul clientului
-  Future<void> _updateClientTimestamp(String phoneNumber) async {
-    try {
-      await updateClient(phoneNumber);
-    } catch (e) {
-      debugPrint('❌ Error updating client timestamp: $e');
-    }
-  }
-
-  /// Obține toate meetings-urile pentru consultantul curent
-  Future<List<ClientActivity>> getAllMeetings() async {
-    final collection = _clientsCollection;
-    if (collection == null) return [];
-
-    try {
-      final snapshot = await collection.get();
-      final List<ClientActivity> allMeetings = [];
-
-      for (final clientDoc in snapshot.docs) {
-        final phoneNumber = clientDoc.id;
-        final meetings = await _getClientMeetings(phoneNumber);
-        allMeetings.addAll(meetings);
-      }
-
-      // Sortează toate meetings-urile după dată
-      allMeetings.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-      
-      debugPrint('✅ Retrieved ${allMeetings.length} total meetings');
-      return allMeetings;
-    } catch (e) {
-      debugPrint('❌ Error getting all meetings: $e');
-      return [];
-    }
-  }
-
-  /// Obține toate meetings-urile pentru toată echipa (alias pentru getAllMeetings)
-  Future<List<ClientActivity>> getAllTeamMeetings() async {
-    // Pentru moment, întoarce meetings-urile consultantului curent
-    // În viitor, poate fi extins pentru a include meetings-urile de la toată echipa
-    return await getAllMeetings();
-  }
-
-  /// Actualizează o întâlnire existentă
-  Future<bool> updateMeeting(String phoneNumber, String meetingId, {
-    DateTime? dateTime,
-    String? description,
-    String? type,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    final meetingsCollection = _getMeetingsCollection(phoneNumber);
-    if (meetingsCollection == null) return false;
-
-    try {
-      final updateData = <String, dynamic>{
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      if (dateTime != null) updateData['dateTime'] = Timestamp.fromDate(dateTime);
-      if (description != null) updateData['description'] = description;
-      if (type != null) updateData['type'] = type;
-      if (additionalData != null) {
-        updateData['additionalData'] = additionalData;
-      }
-
-      await meetingsCollection.doc(meetingId).update(updateData);
-
-      // Actualizează timestamp-ul clientului
-      await _updateClientTimestamp(phoneNumber);
-      
-      debugPrint('✅ Meeting updated successfully: $meetingId for $phoneNumber');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error updating meeting: $e');
-      return false;
-    }
-  }
-
-  /// Șterge o întâlnire
-  Future<bool> deleteMeeting(String phoneNumber, String meetingId) async {
-    final meetingsCollection = _getMeetingsCollection(phoneNumber);
-    if (meetingsCollection == null) return false;
-
-    try {
-      await meetingsCollection.doc(meetingId).delete();
-
-      // Actualizează timestamp-ul clientului
-      await _updateClientTimestamp(phoneNumber);
-      
-      debugPrint('✅ Meeting deleted successfully: $meetingId for $phoneNumber');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error deleting meeting: $e');
-      return false;
-    }
-  }
-
-  /// Obține întâlnirile pentru o dată specifică (pentru tot team-ul)
-  Future<List<ClientActivity>> getTeamMeetingsForDate(DateTime date) async {
-    try {
-      final allMeetings = await getAllMeetings();
-      
-      // Filtrează întâlnirile pentru data specificată
-      final meetingsForDate = allMeetings.where((meeting) {
-        final meetingDate = DateTime(
-          meeting.dateTime.year,
-          meeting.dateTime.month,
-          meeting.dateTime.day,
-        );
-        final targetDate = DateTime(date.year, date.month, date.day);
-        return meetingDate.isAtSameMomentAs(targetDate);
-      }).toList();
-
-      debugPrint('✅ Found ${meetingsForDate.length} meetings for date: ${date.toString().split(' ')[0]}');
-      return meetingsForDate;
-    } catch (e) {
-      debugPrint('❌ Error getting team meetings for date: $e');
-      return [];
-    }
-  }
-
-  /// Verifică dacă un slot de timp este disponibil
-  Future<bool> isTimeSlotAvailable(DateTime dateTime, {String? excludePhoneNumber}) async {
-    try {
-      final allMeetings = await getAllMeetings();
-      
-      // Verifică dacă există conflicte în intervalul de 30 de minute
-      final conflictingMeetings = allMeetings.where((meeting) {
-        // Exclude meeting-ul pentru același client dacă este specificat
-        if (excludePhoneNumber != null && 
-            meeting.additionalData?['phoneNumber'] == excludePhoneNumber) {
-          return false;
-        }
-        
-        final timeDifference = meeting.dateTime.difference(dateTime).abs();
-        return timeDifference.inMinutes < 30; // Interval de 30 minute între întâlniri
-      }).toList();
-
-      final isAvailable = conflictingMeetings.isEmpty;
-      debugPrint('✅ Time slot ${dateTime.toString()} is ${isAvailable ? 'available' : 'not available'}');
-      
-      return isAvailable;
-    } catch (e) {
-      debugPrint('❌ Error checking time slot availability: $e');
-      return false;
-    }
-  }
+  Map<String, dynamic> toJson() => toMap();
 }
 
 // =================== UI STATE MANAGEMENT SERVICE ===================
 
-/// Service pentru gestionarea stării clienților în UI și sincronizarea datelor formularelor
-/// între clientsPane și formArea. Acest service se ocupă doar de UI state management.
+  /// Service pentru gestionarea starii clientilor in UI si sincronizarea datelor formularelor
 class ClientUIService extends ChangeNotifier {
   static final ClientUIService _instance = ClientUIService._internal();
   factory ClientUIService() => _instance;
   ClientUIService._internal();
 
-  // Lista tuturor clienților
+  // Timer pentru actualizarea automată
+  Timer? _autoRefreshTimer;
+  
+  // Debouncing pentru evitarea apelurilor multiple rapide
+  Timer? _loadDebounceTimer;
+  bool _isLoading = false;
+  DateTime? _lastLoadTime;
+  static const int _cacheValidityMinutes = 2;
+  
+  // Lista tuturor clientilor
   List<ClientModel> _clients = [];
   
-  // Clientul curent focusat (pentru care se afișează formularul)
+  // Clientul curent focusat (pentru care se afiseaza formularul)
   ClientModel? _focusedClient;
   
-  // Firebase service pentru persistența datelor
-  final ClientsFirebaseService _firebaseService = ClientsFirebaseService();
+  // Firebase service pentru persistenta datelor
+  final ClientsService _firebaseService = ClientsService();
   
   // Getters
   List<ClientModel> get clients => List.unmodifiable(_clients);
   ClientModel? get focusedClient => _focusedClient;
   
-  /// Obține clienții dintr-o anumită categorie
+  /// Expune ClientsService pentru componente care au nevoie de el direct
+  ClientsService get firebaseService => _firebaseService;
+  
+  /// Obtine clientii dintr-o anumita categorie
   List<ClientModel> getClientsByCategory(ClientCategory category) {
     return _clients.where((client) => client.category == category).toList();
   }
   
-  /// Obține clienții din categoria "Apeluri"
+  /// Obtine clientii din categoria "Apeluri"
   List<ClientModel> get apeluri => getClientsByCategory(ClientCategory.apeluri);
   
-  /// Obține clienții din categoria "Reveniri"
+  /// Obtine clientii din categoria "Reveniri"
   List<ClientModel> get reveniri => getClientsByCategory(ClientCategory.reveniri);
   
-  /// Obține clienții din categoria "Recente"
+  /// Obtine clientii din categoria "Recente"
   List<ClientModel> get recente => getClientsByCategory(ClientCategory.recente);
   
-  /// Inițializează serviciul și încarcă clienții din Firebase pentru consultantul curent
+  /// Initializeaza serviciul si incarca clientii din Firebase pentru consultantul curent
   Future<void> initializeDemoData() async {
     try {
-      // Verifică dacă utilizatorul este autentificat
+      // Verifica daca utilizatorul este autentificat
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
-        // Încarcă clienții din Firebase pentru consultantul curent
+        // Incarca clientii din Firebase pentru consultantul curent
         await loadClientsFromFirebase();
+        // Pornește actualizarea automată
+        _startAutoRefresh();
       } else {
-        // Dacă nu este autentificat, inițializează cu listă goală
+        // Daca nu este autentificat, initializeaza cu lista goala
         _clients = [];
         _focusedClient = null;
       }
     } catch (e) {
       debugPrint('Error initializing client data: $e');
-      // În caz de eroare, inițializează cu listă goală
+      // In caz de eroare, initializeaza cu lista goala
       _clients = [];
       _focusedClient = null;
     }
     notifyListeners();
   }
+
+  /// Pornește actualizarea automată a clientilor din Firebase cu delay pentru evitarea apelurilor redundante
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+      if (_clients.isEmpty) return;
+      loadClientsFromFirebase();
+    });
+  }
+
+  /// Oprește actualizarea automată
+  void _stopAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = null;
+  }
+
+  /// Cleanup când serviciul este distrus
+  @override
+  void dispose() {
+    _stopAutoRefresh();
+    _loadDebounceTimer?.cancel();
+    super.dispose();
+  }
   
-  /// Încarcă clienții din Firebase pentru consultantul curent
+  /// OPTIMIZARE: Incarca clientii din Firebase pentru consultantul curent cu caching și debouncing
   Future<void> loadClientsFromFirebase() async {
+    // OPTIMIZARE: Verifică cache-ul mai întâi
+    if (_lastLoadTime != null && 
+        DateTime.now().difference(_lastLoadTime!).inMinutes < _cacheValidityMinutes &&
+        _clients.isNotEmpty) {
+      debugPrint('🚀 CLIENT_UI_SERVICE: Using cached clients (${_clients.length} clients)');
+      return;
+    }
+    
+    // Anulează request-ul anterior dacă există unul pending
+    _loadDebounceTimer?.cancel();
+    
+    // Dacă deja se încarcă, nu mai face alt request
+    if (_isLoading) return;
+    
+    // OPTIMIZARE: Debouncing redus de la 300ms la 150ms
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 150), () async {
+      await _performLoadClients();
+    });
+  }
+
+  /// OPTIMIZAT: Execută încărcarea efectivă a clienților cu caching
+  Future<void> _performLoadClients() async {
+    if (_isLoading) return;
+    
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        _clients = await _firebaseService.getAllClientsForConsultant(currentUser.uid);
+      _isLoading = true;
+      
+      // Pastreaza clientul focusat curent pentru a nu pierde focus-ul din cauza auto-refresh-ului
+      final currentFocusedPhoneNumber = _focusedClient?.phoneNumber;
+      
+      // OPTIMIZARE: Foloseste cache-ul din NewFirebaseService
+      final newClients = await _firebaseService.getAllClients();
+      
+      // OPTIMIZARE: Verifică dacă datele s-au schimbat cu adevărat
+      final hasChanged = _clients.length != newClients.length ||
+          !_clients.every((client) => newClients.any((newClient) => 
+              newClient.phoneNumber == client.phoneNumber &&
+              newClient.name == client.name));
+      
+      if (hasChanged || _clients.isEmpty) {
+        // Actualizeaza lista de clienti doar dacă s-au schimbat
+        _clients = newClients;
+        _lastLoadTime = DateTime.now();
         
-        // Focusează primul client dacă există
-        if (_clients.isNotEmpty) {
-          _focusedClient = _clients.first;
-          focusClient(_clients.first.phoneNumber); // Folosește phoneNumber ca ID
+        // Incearca sa pastreze clientul focusat daca inca exista
+        if (currentFocusedPhoneNumber != null) {
+          final stillExists = _clients.any((client) => client.phoneNumber == currentFocusedPhoneNumber);
+          if (stillExists) {
+            // Clientul focusat inca exista, pastreaza focus-ul
+            focusClient(currentFocusedPhoneNumber);
+          } else {
+            // Clientul focusat nu mai exista, focuseaza primul disponibil
+            if (_clients.isNotEmpty) {
+              _focusedClient = _clients.first;
+              focusClient(_clients.first.phoneNumber);
+            } else {
+              _focusedClient = null;
+            }
+          }
         } else {
-          _focusedClient = null;
+          // Nu avea client focusat, focuseaza primul daca exista
+          if (_clients.isNotEmpty) {
+            _focusedClient = _clients.first;
+            focusClient(_clients.first.phoneNumber);
+          } else {
+            _focusedClient = null;
+          }
         }
         
         notifyListeners();
+      } else {
+        debugPrint('🚀 CLIENT_UI_SERVICE: No changes detected, skipping UI update');
       }
     } catch (e) {
-      debugPrint('Error loading clients from Firebase: $e');
+      debugPrint('❌ CLIENT_UI_SERVICE: Error loading clients from Firebase: $e');
+    } finally {
+      _isLoading = false;
     }
   }
   
-  /// Focusează un client (schimbă starea la focused și afișează formularul său)
+  /// Focuseaza un client (schimba starea la focused si afiseaza formularul sau)
   void focusClient(String clientPhoneNumber) {
-    // Defocusează clientul anterior
+    // Defocuseaza clientul anterior
     if (_focusedClient != null) {
       final oldClientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
       if (oldClientIndex != -1) {
@@ -1471,7 +1115,7 @@ class ClientUIService extends ChangeNotifier {
       }
     }
     
-    // Focusează noul client
+    // Focuseaza noul client
     final newClientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (newClientIndex != -1) {
       _clients[newClientIndex] = _clients[newClientIndex].copyWith(status: ClientStatus.focused);
@@ -1480,7 +1124,7 @@ class ClientUIService extends ChangeNotifier {
     }
   }
   
-  /// Defocusează clientul curent
+  /// Defocuseaza clientul curent
   void defocusCurrentClient() {
     if (_focusedClient != null) {
       final clientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
@@ -1492,12 +1136,12 @@ class ClientUIService extends ChangeNotifier {
     }
   }
   
-  /// Actualizează datele formularului pentru clientul focusat
+  /// Actualizeaza datele formularului pentru clientul focusat
   void updateFocusedClientFormData(String key, dynamic value) {
     if (_focusedClient != null) {
       _focusedClient!.updateFormData(key, value);
       
-      // Actualizează și în lista principală
+      // Actualizeaza si in lista principala
       final clientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
       if (clientIndex != -1) {
         _clients[clientIndex] = _focusedClient!;
@@ -1507,12 +1151,12 @@ class ClientUIService extends ChangeNotifier {
     }
   }
   
-  /// Actualizează datele formularului pentru clientul focusat fără notificare
+  /// Actualizeaza datele formularului pentru clientul focusat fara notificare
   void updateFocusedClientFormDataSilent(String key, dynamic value) {
     if (_focusedClient != null) {
       _focusedClient!.updateFormData(key, value);
       
-      // Actualizează și în lista principală
+      // Actualizeaza si in lista principala
       final clientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
       if (clientIndex != -1) {
         _clients[clientIndex] = _focusedClient!;
@@ -1520,27 +1164,33 @@ class ClientUIService extends ChangeNotifier {
     }
   }
   
-  /// Obține o valoare din formularul clientului focusat
+  /// Obtine o valoare din formularul clientului focusat
   T? getFocusedClientFormValue<T>(String key) {
     return _focusedClient?.getFormValue<T>(key);
   }
   
-  /// Adaugă un client nou și îl salvează în Firebase
-  /// Folosește numărul de telefon ca ID unic
+  /// Adauga un client nou si il salveaza in Firebase
+  /// Foloseste numarul de telefon ca ID unic
   Future<void> addClient(ClientModel client) async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        // Creează un client cu phoneNumber ca ID
-        final clientWithPhoneId = client.copyWith(id: client.phoneNumber);
-        
-        // Salvează în Firebase
-        await _firebaseService.saveClientForConsultant(currentUser.uid, clientWithPhoneId);
-        
-        // Adaugă în lista locală
+      // Creeaza un client cu phoneNumber ca ID
+      final clientWithPhoneId = client.copyWith(id: client.phoneNumber);
+      
+      // Salveaza in Firebase folosind noua structura
+      final success = await _firebaseService.createClient(
+        phoneNumber: clientWithPhoneId.phoneNumber,
+        name: clientWithPhoneId.name,
+        coDebitorName: clientWithPhoneId.coDebitorName,
+        status: clientWithPhoneId.status,
+        category: clientWithPhoneId.category,
+        formData: clientWithPhoneId.formData,
+      );
+      
+      if (success) {
+        // Adauga in lista locala
         _clients.add(clientWithPhoneId);
         
-        // Focusează primul client dacă este primul client adăugat
+        // Focuseaza primul client daca este primul client adaugat
         if (_clients.length == 1) {
           _focusedClient = _clients.first;
           focusClient(_clients.first.phoneNumber);
@@ -1550,54 +1200,84 @@ class ClientUIService extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error adding client: $e');
-      // Poți adăuga aici o notificare de eroare pentru utilizator
+      // Poti adauga aici o notificare de eroare pentru utilizator
     }
   }
   
-  /// Șterge un client și îl elimină din Firebase
-  /// Folosește phoneNumber pentru identificare
+  /// Sterge un client si il elimina din Firebase
+  /// Foloseste phoneNumber pentru identificare
   Future<void> removeClient(String clientPhoneNumber) async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        // Șterge din Firebase folosind phoneNumber ca ID
-        await _firebaseService.deleteClientForConsultant(currentUser.uid, clientPhoneNumber);
-        
-        // Șterge din lista locală
-        _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
-        
-        // Dacă clientul șters era focusat, focusează primul client disponibil
-        if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-          _focusedClient = _clients.isNotEmpty ? _clients.first : null;
-          if (_focusedClient != null) {
-            focusClient(_focusedClient!.phoneNumber);
-          }
+      // Primul pas: sterge din lista locala IMEDIAT pentru UI responsive
+      final clientsBefore = _clients.length;
+      _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
+      final wasDeleted = _clients.length < clientsBefore;
+      
+      // Daca clientul sters era focusat, focuseaza primul client disponibil
+      if (_focusedClient?.phoneNumber == clientPhoneNumber) {
+        _focusedClient = _clients.isNotEmpty ? _clients.first : null;
+        if (_focusedClient != null) {
+          focusClient(_focusedClient!.phoneNumber);
         }
-        
+      }
+      
+      // Actualizeaza UI-ul imediat
+      if (wasDeleted) {
         notifyListeners();
+      }
+      
+      // Al doilea pas: sterge din Firebase (poate sa dureze mai mult)
+      final success = await _firebaseService.deleteClient(clientPhoneNumber);
+      
+      if (!success) {
+        debugPrint('❌ Failed to delete client from Firebase: $clientPhoneNumber');
+        // Daca stergerea din Firebase a esuat, reincarca datele pentru consistenta
+        await loadClientsFromFirebase();
+      } else {
+        debugPrint('✅ Client deleted successfully from Firebase: $clientPhoneNumber');
+        
+        // IMPORTANT: Opreste auto-refresh-ul temporar pentru a evita conflictele
+        _stopAutoRefresh();
+        
+        // Reporneeste auto-refresh-ul dupa 5 secunde pentru a da timp Firebase-ului sa se sincronizeze
+        Timer(const Duration(seconds: 5), () {
+          _startAutoRefresh();
+        });
       }
     } catch (e) {
       debugPrint('Error removing client: $e');
+      // In caz de eroare, reincarca datele pentru consistenta
+      await loadClientsFromFirebase();
     }
   }
   
-  /// Actualizează un client existent și îl salvează în Firebase
+  /// Actualizeaza un client existent si il salveaza in Firebase
   Future<void> updateClient(ClientModel updatedClient) async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        // Asigură-te că ID-ul este phoneNumber
-        final clientWithPhoneId = updatedClient.copyWith(id: updatedClient.phoneNumber);
-        
-        // Actualizează în Firebase
-        await _firebaseService.updateClientForConsultant(currentUser.uid, clientWithPhoneId);
-        
-        // Actualizează în lista locală
+      // Asigura-te ca ID-ul este phoneNumber
+      final clientWithPhoneId = updatedClient.copyWith(id: updatedClient.phoneNumber);
+      
+      // Actualizeaza in Firebase folosind noua structura
+      final success = await _firebaseService.updateClient(
+        clientWithPhoneId.phoneNumber,
+        name: clientWithPhoneId.name,
+        coDebitorName: clientWithPhoneId.coDebitorName,
+        status: clientWithPhoneId.status,
+        category: clientWithPhoneId.category,
+        formData: clientWithPhoneId.formData,
+        discussionStatus: clientWithPhoneId.discussionStatus,
+        scheduledDateTime: clientWithPhoneId.scheduledDateTime,
+        additionalInfo: clientWithPhoneId.additionalInfo,
+        isCompleted: clientWithPhoneId.isCompleted,
+      );
+      
+      if (success) {
+        // Actualizeaza in lista locala
         final clientIndex = _clients.indexWhere((client) => client.phoneNumber == updatedClient.phoneNumber);
         if (clientIndex != -1) {
           _clients[clientIndex] = clientWithPhoneId;
           
-          // Dacă clientul actualizat este cel focusat, actualizează și referința
+          // Daca clientul actualizat este cel focusat, actualizeaza si referinta
           if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
             _focusedClient = clientWithPhoneId;
           }
@@ -1610,22 +1290,38 @@ class ClientUIService extends ChangeNotifier {
     }
   }
   
-  /// Mută un client în categoria "Recente" cu statusul "Acceptat"
+  /// Muta un client in categoria "Recente" cu statusul "Acceptat"
   Future<void> moveClientToRecente(String clientPhoneNumber, {
     String? additionalInfo,
+    DateTime? scheduledDateTime,
   }) async {
     final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
-      final updatedClient = _clients[clientIndex].copyWith(
+      final client = _clients[clientIndex];
+      
+      // Notifica DashboardService doar daca formularul nu a fost deja contorizat
+      if (!client.isCompleted) {
+        final firebaseService = NewFirebaseService();
+        final consultantToken = await firebaseService.getCurrentConsultantToken();
+        if (consultantToken != null) {
+          final dashboardService = dashboard.DashboardService();
+          await dashboardService.onFormCompleted(consultantToken);
+          dashboardService.refreshData();
+        }
+      }
+
+      final updatedClient = client.copyWith(
         category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: 'Acceptat',
+        scheduledDateTime: scheduledDateTime, // IMPORTANT: Salvează data și ora întâlnirii
         additionalInfo: additionalInfo,
+        isCompleted: true, // Marcheaza ca si contorizat
       );
       
       await updateClient(updatedClient);
       
-      // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Apeluri"
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
         final apeluri = getClientsByCategory(ClientCategory.apeluri);
         if (apeluri.isNotEmpty) {
@@ -1636,28 +1332,42 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      debugPrint('✅ Client mutat în Recente (Acceptat): ${updatedClient.name}');
+      debugPrint('✅ Client mutat in Recente (Acceptat): ${updatedClient.name}');
     }
   }
 
-  /// Mută un client în categoria "Reveniri" cu statusul "Amânat"
+  /// Muta un client in categoria "Reveniri" cu statusul "Amanat"
   Future<void> moveClientToReveniri(String clientPhoneNumber, {
     required DateTime scheduledDateTime,
     String? additionalInfo,
   }) async {
     final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
-      final updatedClient = _clients[clientIndex].copyWith(
+      final client = _clients[clientIndex];
+
+      // Notifica DashboardService doar daca formularul nu a fost deja contorizat
+      if (!client.isCompleted) {
+        final firebaseService = NewFirebaseService();
+        final consultantToken = await firebaseService.getCurrentConsultantToken();
+        if (consultantToken != null) {
+          final dashboardService = dashboard.DashboardService();
+          await dashboardService.onFormCompleted(consultantToken);
+          dashboardService.refreshData();
+        }
+      }
+
+      final updatedClient = client.copyWith(
         category: ClientCategory.reveniri,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: 'Amanat',
         scheduledDateTime: scheduledDateTime,
         additionalInfo: additionalInfo,
+        isCompleted: true, // Marcheaza ca si contorizat
       );
       
       await updateClient(updatedClient);
       
-      // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Apeluri"
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
         final apeluri = getClientsByCategory(ClientCategory.apeluri);
         if (apeluri.isNotEmpty) {
@@ -1668,26 +1378,40 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      debugPrint('✅ Client mutat în Reveniri (Amânat): ${updatedClient.name}');
+      debugPrint('✅ Client mutat in Reveniri (Amanat): ${updatedClient.name}');
     }
   }
 
-  /// Mută un client în categoria "Recente" cu statusul "Refuzat"
+  /// Muta un client in categoria "Recente" cu statusul "Refuzat"
   Future<void> moveClientToRecenteRefuzat(String clientPhoneNumber, {
     String? additionalInfo,
   }) async {
     final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
-      final updatedClient = _clients[clientIndex].copyWith(
+      final client = _clients[clientIndex];
+
+      // Notifica DashboardService doar daca formularul nu a fost deja contorizat
+      if (!client.isCompleted) {
+        final firebaseService = NewFirebaseService();
+        final consultantToken = await firebaseService.getCurrentConsultantToken();
+        if (consultantToken != null) {
+          final dashboardService = dashboard.DashboardService();
+          await dashboardService.onFormCompleted(consultantToken);
+          dashboardService.refreshData();
+        }
+      }
+
+      final updatedClient = client.copyWith(
         category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: 'Refuzat',
         additionalInfo: additionalInfo,
+        isCompleted: true, // Marcheaza ca si contorizat
       );
       
       await updateClient(updatedClient);
       
-      // Dacă clientul mutat era focusat, focusează primul client disponibil din "Apeluri"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Apeluri"
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
         final apeluri = getClientsByCategory(ClientCategory.apeluri);
         if (apeluri.isNotEmpty) {
@@ -1698,33 +1422,60 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      debugPrint('✅ Client mutat în Recente (Refuzat): ${updatedClient.name}');
+      debugPrint('✅ Client mutat in Recente (Refuzat): ${updatedClient.name}');
     }
   }
 
-  /// Șterge toți clienții pentru consultantul curent
+  /// Sterge toti clientii pentru consultantul curent
   Future<void> deleteAllClients() async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        // Șterge toți clienții din Firebase
-        await _firebaseService.deleteAllClientsForConsultant(currentUser.uid);
-        
-        // Curăță lista locală
-        _clients.clear();
-        _focusedClient = null;
-        
-        notifyListeners();
+      // Obtine toti clientii pentru consultantul curent
+      final allClients = await _firebaseService.getAllClients();
+      
+      // Sterge fiecare client individual
+      for (final client in allClients) {
+        await _firebaseService.deleteClient(client.phoneNumber);
       }
+      
+      // Curata lista locala
+      _clients.clear();
+      _focusedClient = null;
+      
+      notifyListeners();
+      debugPrint('✅ All clients deleted for current consultant');
     } catch (e) {
-      debugPrint('Error deleting all clients: $e');
+      debugPrint('❌ Error deleting all clients: $e');
     }
   }
+
+  /// FIX: Resetează serviciul pentru un consultant nou (separarea datelor per consultant)
+  Future<void> resetForNewConsultant() async {
+    try {
+      // Oprește actualizarea automată
+      _stopAutoRefresh();
+      
+      // Șterge cache-ul local
+      _clients.clear();
+      _focusedClient = null;
+      
+      // Încarcă datele pentru noul consultant (fără auto-refresh pentru a evita apelurile multiple)
+      await loadClientsFromFirebase();
+      
+      // Pornește auto-refresh cu delay pentru a evita conflictele
+      Timer(const Duration(seconds: 5), () {
+        _startAutoRefresh();
+      });
+      
+    } catch (e) {
+      debugPrint('❌ CLIENT_UI_SERVICE: Error resetting for new consultant: $e');
+    }
+  }
+
 }
 
 // =================== BACKWARD COMPATIBILITY ALIAS ===================
 
 /// Alias pentru compatibilitate cu codul existent
-/// @deprecated Folosește ClientUIService() în schimb
+/// @deprecated Foloseste ClientUIService() in schimb
 @Deprecated('Use ClientUIService() instead')
 typedef ClientService = ClientUIService;

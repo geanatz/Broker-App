@@ -8,7 +8,7 @@ import 'package:broker_app/backend/services/firebase_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/screens/auth_screen.dart';
-import 'package:broker_app/frontend/screens/main_screen.dart';
+import 'package:broker_app/frontend/screens/splash_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
@@ -138,7 +138,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final SettingsService _settingsService = SettingsService();
 
   @override
@@ -146,17 +146,48 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     // Listen to theme changes
     _settingsService.addListener(_onThemeChanged);
+    
+    // Listen to AppTheme changes
+    AppTheme().addListener(_onAppThemeChanged);
+    
+    // Listen to system brightness changes at app level
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     _settingsService.removeListener(_onThemeChanged);
+    AppTheme().removeListener(_onAppThemeChanged);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    // Update AppTheme when system brightness changes
+    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    debugPrint('🎨 MYAPP: System brightness changed to: $brightness');
+    debugPrint('🎨 MYAPP: Current theme mode: ${AppTheme.currentThemeMode}');
+    debugPrint('🎨 MYAPP: Settings service theme mode: ${_settingsService.currentThemeMode}');
+    debugPrint('🎨 MYAPP: AppTheme.isDarkMode: ${AppTheme.isDarkMode}');
+    debugPrint('🎨 MYAPP: AppTheme.popupBackground: ${AppTheme.popupBackground}');
+    debugPrint('🎨 MYAPP: AppTheme.containerColor1: ${AppTheme.containerColor1}');
+    
+    AppTheme.refreshSystemBrightness();
+    // Note: setState will be triggered by AppTheme listener
   }
 
   void _onThemeChanged() {
     setState(() {
       // Rebuild the app when theme changes
+    });
+  }
+
+  void _onAppThemeChanged() {
+    debugPrint('🎨 MYAPP: AppTheme changed, rebuilding entire app');
+    setState(() {
+      // Rebuild the entire app when AppTheme changes
     });
   }
 
@@ -167,7 +198,7 @@ class _MyAppState extends State<MyApp> {
         gradient: AppTheme.appBackground,
       ),
       child: MaterialApp(
-        title: 'Broker App',
+        title: 'Aplicatie de Consultanta Financiara',
         debugShowCheckedModeBanner: false,
         locale: const Locale('ro', 'RO'),
         localizationsDelegates: const [
@@ -222,17 +253,33 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   final SettingsService _settingsService = SettingsService();
+  late StreamSubscription<User?> _authSubscription;
+  User? _lastKnownUser;
 
   @override
   void initState() {
     super.initState();
     // Listen to theme changes from SettingsService
     _settingsService.addListener(_onSettingsChanged);
+    
+    // Listener manual optimizat - doar când se schimbă efectiv starea
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      // Doar dacă utilizatorul s-a schimbat efectiv
+      if (_lastKnownUser?.uid != user?.uid) {
+        _lastKnownUser = user;
+        if (mounted) {
+          setState(() {
+            // Force rebuild when auth state actually changes
+          });
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _settingsService.removeListener(_onSettingsChanged);
+    _authSubscription.cancel();
     super.dispose();
   }
 
@@ -246,6 +293,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    // Simplificam folosind doar authStateChanges pentru consistency
     return StreamBuilder<User?>( 
       stream: FirebaseAuth.instance.authStateChanges(), 
       builder: (context, snapshot) {
@@ -255,14 +303,21 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
         
-        if (snapshot.hasData) {
+        // Folosim datele din stream ca sursă primară de adevăr
+        final streamUser = snapshot.data;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        
+        // Verificare dublă - considerăm utilizatorul autentificat doar dacă ambele confirmă
+        final hasUser = streamUser != null && currentUser != null;
+        
+        if (hasUser) {
           return const MainAppWrapper();
         }
         
         // When user is logged out, reset to default theme
         _resetToDefaultTheme();
         
-        return const AuthScreen(); // Navighează la noul AuthScreen
+        return const AuthScreen(); // Navigheaza la noul AuthScreen
       },
     );
   }
@@ -297,6 +352,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
 
   Future<void> _fetchConsultantData() async {
     final currentUser = FirebaseAuth.instance.currentUser;
+    
     if (currentUser == null) {
       if (mounted) {
         setState(() {
@@ -304,7 +360,7 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
           _consultantData = null;
         });
       }
-      // Nu mai facem signOut aici, AuthWrapper va duce la AuthScreen dacă user e null
+      // Nu mai facem signOut aici, AuthWrapper va duce la AuthScreen daca user e null
       return;
     }
 
@@ -324,8 +380,8 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
           _isLoading = false;
         });
       } else {
-        // Dacă utilizatorul autentificat nu are date în Firestore, ar trebui deconectat
-        // pentru a preveni o stare invalidă în aplicație.
+        // Daca utilizatorul autentificat nu are date in Firestore, ar trebui deconectat
+        // pentru a preveni o stare invalida in aplicatie.
         await FirebaseAuth.instance.signOut(); // Acest signOut va fi detectat de AuthWrapper
         // setState-ul de mai jos nu va mai fi relevant imediat, dar e bun ca fallback.
         setState(() {
@@ -334,12 +390,12 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching consultant data: $e");
+      debugPrint("❌ MAIN_APP_WRAPPER: Error fetching consultant data: $e");
       if (mounted) {
         setState(() {
           _consultantData = null;
           _isLoading = false;
-          // Consideră deconectarea și aici în caz de eroare la fetch
+          // Considera deconectarea si aici in caz de eroare la fetch
           // await FirebaseAuth.instance.signOut();
         });
       }
@@ -355,25 +411,21 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     }
 
     if (_consultantData == null) {
-      // Această stare nu ar trebui atinsă dacă AuthWrapper funcționează corect
-      // și dacă _fetchConsultantData deconectează user-ul dacă nu are date.
-      // Ca fallback, afișăm un mesaj și AuthWrapper ar trebui să intervină.
+      // Aceasta stare nu ar trebui atinsa daca AuthWrapper functioneaza corect
+      // si daca _fetchConsultantData deconecteaza user-ul daca nu are date.
+      // Ca fallback, afisam un mesaj si AuthWrapper ar trebui sa intervina.
       debugPrint("MainAppWrapper: _consultantData is null, user should be redirected to AuthScreen by AuthWrapper.");
       return Scaffold(
         body: Center(
-          child: Text("Date consultant indisponibile. Redirecționare...",
+          child: Text("Date consultant indisponibile. Redirectionare...",
              style: TextStyle(color: AppTheme.elementColor2)),
         ),
       );
     }
 
-    final String consultantName = _consultantData!['name'] ?? 'Consultant';
-    final String teamName = _consultantData!['team'] ?? 'Echipa';
-
-    // Pass consultant data to MainScreen
-    return MainScreen(
-      consultantName: consultantName,
-      teamName: teamName,
+    // Pass consultant data to SplashScreen which will pre-load services
+    return SplashScreen(
+      consultantData: _consultantData!,
     );
   }
 }

@@ -1,0 +1,1589 @@
+Restarted application in 392ms.
+🟦 AUTH_SCREEN: initState called - hashCode: 268321109
+🟦 AUTH_SCREEN: build called - hashCode: 268321109, step: AuthStep.login, mounted: true
+🟪 AUTH_SCREEN: Building popup for step: AuthStep.login
+🟪 AUTH_SCREEN: Building LoginPopup
+🟦 AUTH_SCREEN: No pending token found
+🎨 MYAPP: AppTheme changed, rebuilding entire app
+🎨 AUTH_SCREEN: AppTheme changed, updating UI
+🎨 LOGIN_POPUP: AppTheme changed, updating UI
+🟦 AUTH_SCREEN: build called - hashCode: 268321109, step: AuthStep.login, mounted: true
+🟪 AUTH_SCREEN: Building popup for step: AuthStep.login
+🟪 AUTH_SCREEN: Building LoginPopup
+🟢 AUTH_SCREEN: Starting login attempt for: Claudiu
+🔵 AUTH_SERVICE: Starting loginConsultant for: Claudiu
+🔵 AUTH_SERVICE: Found consultant with email: claudiu@brokerapp.dev
+🔵 AUTH_SERVICE: Consultant token: 4690428c...
+🟢 AUTH_SERVICE: Firebase Auth successful for: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔴 AUTH_SCREEN: dispose called - hashCode: 268321109
+🟢 AUTH_SCREEN: Login result: true
+🟢 AUTH_SCREEN: Login message: Autentificare reusita
+🔴 AUTH_SCREEN: Widget not mounted after login attempt
+🎨 MYAPP: AppTheme changed, rebuilding entire app
+🔄 UpdateService initialized - Current version: 0.1.0
+CalendarService initialized successfully
+🔍 CLIENTS_SERVICE: getAllClients() called
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 CLIENTS_SERVICE: Received 1 clients from Firebase
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777333222
+🔍 CLIENTS_SERVICE: Converted to 1 ClientModel objects
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+ℹ️ MATCHER_SERVICE: No saved criteria found, using defaults
+🏦 MATCHER_SERVICE: Set default bank criteria (6 banks)
+  - BCR: maxLoanAmount = 200000.0 lei
+  - BRD: maxLoanAmount = 250000.0 lei
+  - Raiffeisen: maxLoanAmount = 250000.0 lei
+  - CEC Bank: maxLoanAmount = 200000.0 lei
+  - ING: maxLoanAmount = 200000.0 lei
+  - Garanti: maxLoanAmount = 200000.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService START ==========
+🚀 SPLASH_SERVICE: Creating GoogleDriveService instance...
+✅ SPLASH_SERVICE: GoogleDriveService instance created
+🚀 SPLASH_SERVICE: Calling GoogleDriveService.initialize()...
+🚀 GOOGLE_DRIVE_SERVICE: ========== INITIALIZE START ==========
+🔍 GOOGLE_DRIVE_SERVICE: Step 1 - Getting current consultant token...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 GOOGLE_DRIVE_SERVICE: Current consultant token: 4690428c
+🔍 GOOGLE_DRIVE_SERVICE: Step 2 - Checking platform compatibility...
+🔍 GOOGLE_DRIVE_SERVICE: _isPlatformSupported() = false
+🔍 GOOGLE_DRIVE_SERVICE: _isDesktopPlatform() = true
+🔍 GOOGLE_DRIVE_SERVICE: kIsWeb = false
+🔍 GOOGLE_DRIVE_SERVICE: Platform.isAndroid = false
+🔍 GOOGLE_DRIVE_SERVICE: Platform.isIOS = false
+🔍 GOOGLE_DRIVE_SERVICE: Platform.isWindows = true
+🔍 GOOGLE_DRIVE_SERVICE: Platform.isMacOS = false
+🔍 GOOGLE_DRIVE_SERVICE: Platform.isLinux = false
+🔍 GOOGLE_DRIVE_SERVICE: Step 3a - Desktop platform detected, checking saved tokens...
+🔍 GOOGLE_DRIVE_SERVICE: Step 3b - Checking saved desktop tokens...
+🔍🔍 GOOGLE_DRIVE_SERVICE: ========== _checkSavedDesktopToken START ==========
+🔍 GOOGLE_DRIVE_SERVICE: Loading SharedPreferences...
+✅ GOOGLE_DRIVE_SERVICE: SharedPreferences loaded successfully
+🔍 GOOGLE_DRIVE_SERVICE: Looking for tokens with keys:
+🔍 GOOGLE_DRIVE_SERVICE: - access_token: google_access_token_4690428c-a045-4264-8268-f01e6bd66a93
+🔍 GOOGLE_DRIVE_SERVICE: - refresh_token: google_refresh_token_4690428c-a045-4264-8268-f01e6bd66a93
+🔍 GOOGLE_DRIVE_SERVICE: - user_email: google_user_email_4690428c-a045-4264-8268-f01e6bd66a93
+🔍 GOOGLE_DRIVE_SERVICE: - user_name: google_user_name_4690428c-a045-4264-8268-f01e6bd66a93
+🔍 GOOGLE_DRIVE_SERVICE: - token_expiration: google_token_expiration_4690428c-a045-4264-8268-f01e6bd66a93
+🔍 GOOGLE_DRIVE_SERVICE: Values found in SharedPreferences:
+🔍 GOOGLE_DRIVE_SERVICE: - accessToken: NULL
+🔍 GOOGLE_DRIVE_SERVICE: - refreshToken: NULL
+🔍 GOOGLE_DRIVE_SERVICE: - email: null
+🔍 GOOGLE_DRIVE_SERVICE: - name: null
+🔍 GOOGLE_DRIVE_SERVICE: - expirationString: null
+! GOOGLE_DRIVE_SERVICE: No saved tokens found for current consultant
+! GOOGLE_DRIVE_SERVICE: Missing access token: true
+! GOOGLE_DRIVE_SERVICE: Missing email: true
+🔍🔍 GOOGLE_DRIVE_SERVICE: ========== _checkSavedDesktopToken END ==========
+🔍 GOOGLE_DRIVE_SERVICE: Step 4 - Final state check...
+🔍 GOOGLE_DRIVE_SERVICE: _isAuthenticated = false
+🔍 GOOGLE_DRIVE_SERVICE: _userEmail = null
+🔍 GOOGLE_DRIVE_SERVICE: _userName = null
+🔍 GOOGLE_DRIVE_SERVICE: _accessToken length = 0
+🔍 GOOGLE_DRIVE_SERVICE: _refreshToken available = false
+🔍 GOOGLE_DRIVE_SERVICE: _tokenExpiration = null
+🔍 GOOGLE_DRIVE_SERVICE: _driveApi configured = false
+🔍 GOOGLE_DRIVE_SERVICE: _sheetsApi configured = false
+! GOOGLE_DRIVE_SERVICE: Initialized for consultant: 4690428c - NOT AUTHENTICATED (this is normal for first time)
+🚀 GOOGLE_DRIVE_SERVICE: Background refresh timer started (every 20 minutes)
+🚀 GOOGLE_DRIVE_SERVICE: ========== INITIALIZE END ==========
+✅ SPLASH_SERVICE: GoogleDriveService.initialize() completed
+🚀 SPLASH_SERVICE: Final state - isAuthenticated: false
+🚀 SPLASH_SERVICE: Final state - userEmail: null
+🚀 SPLASH_SERVICE: Final state - lastError: null
+🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService END ==========
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+🔍 Checking for updates...
+🔍 Checking for updates... (attempt 1/5)
+🔍 Latest version found: 0.1.0
+🔍 Current version: 0.1.0
+✅ App is up to date
+✅ No updates available
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: NULL
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: null
+🔄 SPLASH_SERVICE: New team: Echipa 1
+🔄 SPLASH_SERVICE: Consultant or team changed - resetting...
+✅ SPLASH_SERVICE: Updated current consultant and team
+🔄 SPLASH_SERVICE: Loading meetings for new team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Resetting dashboard service...
+🔄 SPLASH_SERVICE: Resetting client UI service...
+🔄 SPLASH_SERVICE: Calling GoogleDriveService.switchConsultant...
+🔄🔄 GOOGLE_DRIVE_SERVICE: ========== switchConsultant START ==========
+🔄 GOOGLE_DRIVE_SERVICE: Current consultant: 4690428c
+🔄 GOOGLE_DRIVE_SERVICE: New consultant: 4690428c
+ℹ️ GOOGLE_DRIVE_SERVICE: Same consultant - no action needed
+✅ SPLASH_SERVICE: GoogleDriveService.switchConsultant completed
+✅ SPLASH_SERVICE: All services reset for new consultant
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔧 MAIN_SCREEN: Area set by default to Acasa (dashboard)
+🔧 MAIN_SCREEN: No saved pane preferences, using default: clients
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENTS_SERVICE: getAllClients() called
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔍 CLIENTS_SERVICE: Received 1 clients from Firebase
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777333222
+🔍 CLIENTS_SERVICE: Converted to 1 ClientModel objects
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+🔘 Button clicked: Formular (form) - Action: ActionType.navigateToArea
+🔘 Navigating to area: AreaType.form
+🏠 SidebarService: Changing area from AreaType.dashboard to AreaType.form
+🔄 Area changed to: AreaType.form
+Loading form data for client: Gabriel (0777333222)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777333222
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+📊 MATCHER_SERVICE: Found 2 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 37000.0 lei
+Controllers cleared, will be recreated with fresh data
+Form data loaded and UI refreshed for client: Gabriel
+Controller 0777333222_client_credit_0_sold initialized with formatted value: "12,000" (from model: "12000")
+Controller 0777333222_client_credit_0_rata initialized with formatted value: "3,000" (from model: "3000")
+Controller 0777333222_client_credit_0_perioada initialized with: "5/7"
+Controller 0777333222_client_credit_1_sold initialized with formatted value: "20,000" (from model: "20000")
+Controller 0777333222_client_credit_1_consumat initialized with formatted value: "10,000" (from model: "10000")
+Controller 0777333222_client_income_0_incomeAmount initialized with formatted value: "37,000" (from model: "37000")
+Controller 0777333222_client_income_0_vechime initialized with: "3/3"
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+✅ Client updated successfully: 0777333222
+📊 MATCHER_SERVICE: Found 2 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 37000.0 lei
+📊 MATCHER_SERVICE: Found 2 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 37000.0 lei
+Loading data for new client: Robert (0777333222)
+Loading form data for client: Robert (0777333222)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+Controller 0777333222_client_credit_0_sold initialized with formatted value: "12,000" (from model: "12000")
+Controller 0777333222_client_credit_0_rata initialized with formatted value: "3,000" (from model: "3000")
+Controller 0777333222_client_credit_0_perioada initialized with: "5/7"
+Controller 0777333222_client_credit_1_sold initialized with formatted value: "20,000" (from model: "20000")
+Controller 0777333222_client_credit_1_consumat initialized with formatted value: "10,000" (from model: "10000")
+Controller 0777333222_client_income_0_incomeAmount initialized with formatted value: "37,000" (from model: "37000")
+Controller 0777333222_client_income_0_vechime initialized with: "3/3"
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Robert, phoneNumber: 0777333222
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+📊 MATCHER_SERVICE: Found 2 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 37000.0 lei
+Controllers cleared, will be recreated with fresh data
+Form data loaded and UI refreshed for client: Robert
+Controller 0777333222_client_credit_0_sold initialized with formatted value: "12,000" (from model: "12000")
+Controller 0777333222_client_credit_0_rata initialized with formatted value: "3,000" (from model: "3000")
+Controller 0777333222_client_credit_0_perioada initialized with: "5/7"
+Controller 0777333222_client_credit_1_sold initialized with formatted value: "20,000" (from model: "20000")
+Controller 0777333222_client_credit_1_consumat initialized with formatted value: "10,000" (from model: "10000")
+Controller 0777333222_client_income_0_incomeAmount initialized with formatted value: "37,000" (from model: "37000")
+Controller 0777333222_client_income_0_vechime initialized with: "3/3"
+Saving data for previous client: Robert (0777333222)
+Manually saving form data for client: Robert (0777333222)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Robert, phoneNumber: 0777333222
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+✅ Client deleted successfully from Firebase: 0777333222
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+✅ Successfully saved form data for client: Robert
+🔘 Button clicked: Calendar (calendar) - Action: ActionType.navigateToArea
+🔘 Navigating to area: AreaType.calendar
+🏠 SidebarService: Changing area from AreaType.form to AreaType.calendar
+🔄 Area changed to: AreaType.calendar
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+✅ Meeting created successfully: Gabriel
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔔 MEETING_SERVICE: Notifying meeting created for consultant: 4690428c
+🔄 MEETING_SERVICE: Client not in current list, refreshing...
+! MEETING_SERVICE: Client not found for phone: 0777888999
+🔄 Refreshing calendar data...
+🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing
+🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing
+🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing
+📈 DASHBOARD_SERVICE: Recording meeting for consultant 4690428c... in 2025-07
+🔍 CLIENTS_SERVICE: getAllClients() called
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in 2025-07
+🔄 DASHBOARD_SERVICE: Refreshing rankings after meeting creation...
+🔍 CLIENTS_SERVICE: Received 1 clients from Firebase
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍 CLIENTS_SERVICE: Converted to 1 ClientModel objects
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified
+✅ MEETING_SERVICE: Dashboard notified successfully
+🚀 CLIENT_UI_SERVICE: Using cached clients (1 clients)
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔍 CALENDAR_AREA: Building meeting slot:
+  - consultantName: "Claudiu"
+  - clientName: "Gabriel"
+  - meetingData keys: [id, type, dateTime, description, additionalData, createdAt, updatedAt, consultantName, clientName, consultantToken, phoneNumber]
+  - additionalData keys: [consultantToken, phoneNumber, clientName, consultantName, consultantId, type]
+  - consultantId: "null"
+  - currentUserId: "GeGjIWdjZyPT4v4SFli8pcufDc12"
+  - meetingConsultantToken: "4690428c-a045-4264-8268-f01e6bd66a93"
+  - isOwner: true
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+Delete button tapped. isEditMode: true, meetingId: tMvMR47ae9TbqsWNH2FO
+Delete meeting called for ID: tMvMR47ae9TbqsWNH2FO
+Attempting to delete meeting with ID: tMvMR47ae9TbqsWNH2FO
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+✅ Meeting deleted: tMvMR47ae9TbqsWNH2FO
+📉 Meeting deleted - dashboard notified
+Delete result: {success: true, message: Intalnire stearsa cu succes}
+🔄 Refreshing calendar data...
+🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing
+🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing
+🔄 SPLASH_SERVICE: All meeting caches invalidated and refreshed with debouncing
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🚀 CLIENT_UI_SERVICE: Using cached clients (1 clients)
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+📊 MATCHER_SERVICE: Found 1 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔘 Button clicked: Setari (settings) - Action: ActionType.navigateToArea
+🔘 Navigating to area: AreaType.settings
+🏠 SidebarService: Changing area from AreaType.calendar to AreaType.settings
+🔄 Area changed to: AreaType.settings
+🔧 SETTINGS_AREA: Starting Google Drive connection...
+🔧 GOOGLE_DRIVE_SERVICE: connect() called
+🔧 GOOGLE_DRIVE_SERVICE: Checking platform support...
+🔧 GOOGLE_DRIVE_SERVICE: _isPlatformSupported() = false
+🔧 GOOGLE_DRIVE_SERVICE: _isDesktopPlatform() = true
+🔧 GOOGLE_DRIVE_SERVICE: Using desktop webview auth
+🔧 GOOGLE_DRIVE_SERVICE: Starting OAuth2 browser auth...
+🔧 GOOGLE_DRIVE_SERVICE: OAuth2 config:
+🔧 GOOGLE_DRIVE_SERVICE: - clientId: 417121374106-54bs43o4e6o2k95n5dp3oa30aepciooi.apps.googleusercontent.com
+🔧 GOOGLE_DRIVE_SERVICE: - redirectUri: http://localhost:8080
+🔧 GOOGLE_DRIVE_SERVICE: - authEndpoint: https://accounts.google.com/o/oauth2/v2/auth
+🔧 GOOGLE_DRIVE_SERVICE: - tokenEndpoint: https://oauth2.googleapis.com/token
+🔧 GOOGLE_DRIVE_SERVICE: Local HTTP server started on localhost:8080
+🔧 GOOGLE_DRIVE_SERVICE: Authorization URL generated with offline access
+🔧 GOOGLE_DRIVE_SERVICE: Opening browser for authentication...
+✅ GOOGLE_DRIVE_SERVICE: Browser opened successfully
+🔧 GOOGLE_DRIVE_SERVICE: Waiting for redirect on local server...
+🔧 GOOGLE_DRIVE_SERVICE: Received redirect with params: (code, scope, authuser, prompt)
+✅ GOOGLE_DRIVE_SERVICE: Authorization code received
+🔧 GOOGLE_DRIVE_SERVICE: Exchanging authorization code for access token...
+✅ GOOGLE_DRIVE_SERVICE: Access token received
+🔧 GOOGLE_DRIVE_SERVICE: Access token length: 222
+🔧 GOOGLE_DRIVE_SERVICE: Refresh token available: true
+🔧 GOOGLE_DRIVE_SERVICE: Token expires at: 2025-07-06 21:28:00.553263 (UTC: false)
+✅ GOOGLE_DRIVE_SERVICE: API clients configured with OAuth2 client
+🔧 GOOGLE_DRIVE_SERVICE: Getting user info from Google...
+🔧 GOOGLE_DRIVE_SERVICE: User info - email: geanatzz@gmail.com, name: Ionut Trif
+💾💾 GOOGLE_DRIVE_SERVICE: ========== _saveDesktopTokens START ==========
+💾 GOOGLE_DRIVE_SERVICE: Consultant token: 4690428c
+💾 GOOGLE_DRIVE_SERVICE: Access token length: 222
+💾 GOOGLE_DRIVE_SERVICE: Refresh token available: true
+💾 GOOGLE_DRIVE_SERVICE: Email: geanatzz@gmail.com
+💾 GOOGLE_DRIVE_SERVICE: Name: Ionut Trif
+💾 GOOGLE_DRIVE_SERVICE: Loading SharedPreferences...
+✅ GOOGLE_DRIVE_SERVICE: SharedPreferences loaded
+💾 GOOGLE_DRIVE_SERVICE: Saving with keys:
+💾 GOOGLE_DRIVE_SERVICE: - access_token: google_access_token_4690428c-a045-4264-8268-f01e6bd66a93
+💾 GOOGLE_DRIVE_SERVICE: - user_email: google_user_email_4690428c-a045-4264-8268-f01e6bd66a93
+✅ GOOGLE_DRIVE_SERVICE: Access token saved
+✅ GOOGLE_DRIVE_SERVICE: Email saved
+💾 GOOGLE_DRIVE_SERVICE: - refresh_token: google_refresh_token_4690428c-a045-4264-8268-f01e6bd66a93
+✅ GOOGLE_DRIVE_SERVICE: Refresh token saved
+💾 GOOGLE_DRIVE_SERVICE: - user_name: google_user_name_4690428c-a045-4264-8268-f01e6bd66a93
+✅ GOOGLE_DRIVE_SERVICE: Name saved
+💾 GOOGLE_DRIVE_SERVICE: - token_expiration: google_token_expiration_4690428c-a045-4264-8268-f01e6bd66a93
+💾 GOOGLE_DRIVE_SERVICE: - expiration value: 2025-07-06T18:28:00.553263Z (UTC: true)
+✅ GOOGLE_DRIVE_SERVICE: Expiration saved
+✅ GOOGLE_DRIVE_SERVICE: Desktop tokens saved with refresh token
+🔍 GOOGLE_DRIVE_SERVICE: Verifying saved tokens...
+🔍 GOOGLE_DRIVE_SERVICE: Verification - Access token: SAVED
+🔍 GOOGLE_DRIVE_SERVICE: Verification - Refresh token: SAVED
+🔍 GOOGLE_DRIVE_SERVICE: Verification - Email: SAVED
+💾💾 GOOGLE_DRIVE_SERVICE: ========== _saveDesktopTokens END ==========
+✅ GOOGLE_DRIVE_SERVICE: OAuth2 authentication successful for geanatzz@gmail.com
+🔧 GOOGLE_DRIVE_SERVICE: Connection completed, authenticated: true
+🔧 SETTINGS_AREA: Connection result: true
+✅ SETTINGS_AREA: Connection successful
+🧹🧹 GOOGLE_DRIVE_SERVICE: ========== _clearSavedDesktopToken START ==========
+🧹 GOOGLE_DRIVE_SERVICE: Consultant token: 4690428c
+🧹 GOOGLE_DRIVE_SERVICE: Loading SharedPreferences...
+✅ GOOGLE_DRIVE_SERVICE: SharedPreferences loaded
+🧹 GOOGLE_DRIVE_SERVICE: Removing keys:
+🧹 GOOGLE_DRIVE_SERVICE: - access_token: google_access_token_4690428c-a045-4264-8268-f01e6bd66a93
+🧹 GOOGLE_DRIVE_SERVICE: - refresh_token: google_refresh_token_4690428c-a045-4264-8268-f01e6bd66a93
+🧹 GOOGLE_DRIVE_SERVICE: - user_email: google_user_email_4690428c-a045-4264-8268-f01e6bd66a93
+🧹 GOOGLE_DRIVE_SERVICE: - user_name: google_user_name_4690428c-a045-4264-8268-f01e6bd66a93
+🧹 GOOGLE_DRIVE_SERVICE: - token_expiration: google_token_expiration_4690428c-a045-4264-8268-f01e6bd66a93
+✅ GOOGLE_DRIVE_SERVICE: All keys removed from SharedPreferences
+✅ GOOGLE_DRIVE_SERVICE: Local variables cleared
+🧹 GOOGLE_DRIVE_SERVICE: Cleared saved desktop tokens
+🧹🧹 GOOGLE_DRIVE_SERVICE: ========== _clearSavedDesktopToken END ==========
+✅ GOOGLE_DRIVE_SERVICE: Disconnected successfully for consultant: 4690428c
+🔘 Button clicked: Intalniri (meetings) - Action: ActionType.openPane
+🔘 Opening pane: PaneType.meetings
+📋 SidebarService: Changing pane from PaneType.clients to PaneType.meetings
+🔄 Pane changed to: PaneType.meetings
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant START ==========
+🔄 SPLASH_SERVICE: Getting current consultant token and team...
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔄 SPLASH_SERVICE: Current consultant token: 4690428c
+🔄 SPLASH_SERVICE: New consultant token: 4690428c
+🔄 SPLASH_SERVICE: Current team: Echipa 1
+🔄 SPLASH_SERVICE: New team: Echipa 1
+ℹ️ SPLASH_SERVICE: No change in consultant or team - no reset needed
+🔄 SPLASH_SERVICE: ========== resetForNewConsultant END ==========
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔘 Button clicked: Calculator (calculator) - Action: ActionType.openPane
+🔘 Opening pane: PaneType.calculator
+📋 SidebarService: Changing pane from PaneType.meetings to PaneType.calculator
+🔄 Pane changed to: PaneType.calculator
+🧹 MEETING_SERVICE: Client cache cleared
+🔘 Button clicked: Recomandare (matches) - Action: ActionType.openPane
+🔘 Opening pane: PaneType.matches
+📋 SidebarService: Changing pane from PaneType.calculator to PaneType.matches
+🔄 Pane changed to: PaneType.matches
+🚀 MATCHER_SERVICE: Using cached income: 0.0 lei for 0777888999
+🔘 Button clicked: Formular (form) - Action: ActionType.navigateToArea
+🔘 Navigating to area: AreaType.form
+🏠 SidebarService: Changing area from AreaType.settings to AreaType.form
+🔄 Area changed to: AreaType.form
+Loading form data for client: Gabriel (0777888999)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+Error loading form data for client 0777888999: type '_Map<dynamic, dynamic>' is not a subtype of type 'FutureOr<Map<String, dynamic>?>'
+Controllers cleared, will be recreated with fresh data
+Form data loaded and UI refreshed for client: Gabriel
+🔘 Button clicked: Clienti (clients) - Action: ActionType.openPane
+🔘 Opening pane: PaneType.clients
+📋 SidebarService: Changing pane from PaneType.matches to PaneType.clients
+🔄 Pane changed to: PaneType.clients
+DEBUG: Income bank selected: Banca Transilvania
+DEBUG: Income type selected: Indemnizatie
+DEBUG: Both income fields completed, transforming...
+DEBUG: Transforming income form - Bank: Banca Transilvania, Type: Indemnizatie, IsClient: true
+DEBUG: Current forms count: 1
+DEBUG: Updating form at index: 0
+📊 MATCHER_SERVICE: Found 2 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 0.0 lei
+FormService: Auto-saving data for client: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+Auto-saving form data to Firebase for client: Gabriel (0777888999)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+DEBUG: Resetting income form selections
+DEBUG: Income selections reset to null
+DEBUG: Income form selections reset
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+Skipping save for field incomeAmount - value unchanged: ""
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+✅ Client updated successfully: 0777888999
+✅ FormService: Successfully auto-saved form data to Firebase for client: 0777888999
+✅ Client updated successfully: 0777888999
+✅ Successfully auto-saved form data to Firebase for client: Gabriel
+Saving field incomeAmount with value: "1200" (original: "1,200")
+_updateFormField called: client=0777888999, index=0, field=incomeAmount, value="1200", isCreditForm=false, isClient=true
+Original income form values: bank=Banca Transilvania, incomeAmount=, vechime=
+Updated income form values: bank=Banca Transilvania, incomeAmount=1200, vechime=
+📊 MATCHER_SERVICE: Found 2 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 1200.0 lei
+FormService: Auto-saving data for client: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+Income form updated in FormService
+Auto-saving form data to Firebase for client: Gabriel (0777888999)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+Auto-saving form data to Firebase for client: Gabriel (0777888999)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+Saving field incomeAmount with value: "12000" (original: "12,000")
+_updateFormField called: client=0777888999, index=0, field=incomeAmount, value="12000", isCreditForm=false, isClient=true
+Original income form values: bank=Banca Transilvania, incomeAmount=1200, vechime=
+Updated income form values: bank=Banca Transilvania, incomeAmount=12000, vechime=
+📊 MATCHER_SERVICE: Found 2 client income forms and 1 coborrower income forms
+💵 MATCHER_SERVICE: Total income calculated: 12000.0 lei
+FormService: Auto-saving data for client: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+Income form updated in FormService
+Auto-saving form data to Firebase for client: Gabriel (0777888999)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+Auto-saving form data to Firebase for client: Gabriel (0777888999)
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 CLIENT_MODEL: Creating from map with consultantToken: 4690428c-a045-4264-8268-f01e6bd66a93
+🔍 CLIENT_MODEL: Client name: Gabriel, phoneNumber: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+✅ Client updated successfully: 0777888999
+✅ FormService: Successfully auto-saved form data to Firebase for client: 0777888999
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+✅ Client updated successfully: 0777888999
+✅ Successfully auto-saved form data to Firebase for client: Gabriel
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+🔍🔍 FIREBASE_SERVICE: ========== getCurrentConsultantToken START ==========
+🔍 FIREBASE_SERVICE: Current user: GeGjIWdjZyPT4v4SFli8pcufDc12
+🔍 FIREBASE_SERVICE: User email: claudiu@brokerapp.dev
+🔍 FIREBASE_SERVICE: Fetching consultant document for UID: GeGjIWdjZyPT4v4SFli8pcufDc12
+✅ Client updated successfully: 0777888999
+✅ Successfully auto-saved form data to Firebase for client: Gabriel
+🔍 FIREBASE_SERVICE: Document exists: true
+🔍 FIREBASE_SERVICE: Document data keys: (createdAt, email, lastActive, name, settings, team, token, updatedAt)
+🔍 FIREBASE_SERVICE: Token found: 4690428c
+✅ FIREBASE_SERVICE: Successfully retrieved consultant token
+✅ Client updated successfully: 0777888999
+✅ FormService: Successfully auto-saved form data to Firebase for client: 0777888999
+✅ Client updated successfully: 0777888999
+✅ Successfully auto-saved form data to Firebase for client: Gabriel
+✅ Client updated successfully: 0777888999
+✅ Successfully auto-saved form data to Firebase for client: Gabriel
+🔘 Button clicked: Recomandare (matches) - Action: ActionType.openPane
+🔘 Opening pane: PaneType.matches
+📋 SidebarService: Changing pane from PaneType.clients to PaneType.matches
+🔄 Pane changed to: PaneType.matches
+🚀 MATCHER_SERVICE: Using cached income: 12000.0 lei for 0777888999
+Generated 6 recommendations for client: Gabriel
+  BRD: ELIGIBLE (100.0%)
+  ING: ELIGIBLE (100.0%)
+  BCR: NOT ELIGIBLE (55.0%)
+  Raiffeisen: NOT ELIGIBLE (55.0%)
+  CEC Bank: NOT ELIGIBLE (55.0%)
+  Garanti: NOT ELIGIBLE (55.0%)
+Generated 6 recommendations for client: Gabriel
+  BRD: ELIGIBLE (100.0%)
+  ING: ELIGIBLE (100.0%)
+  BCR: NOT ELIGIBLE (55.0%)
+  Raiffeisen: NOT ELIGIBLE (55.0%)
+  CEC Bank: NOT ELIGIBLE (55.0%)
+  Garanti: NOT ELIGIBLE (55.0%)
+💰 MATCHER_SERVICE: calculateLoanAmount for BRD = 250000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for ING = 200000.0 lei
+Generated 6 recommendations for client: Gabriel
+  BRD: ELIGIBLE (100.0%)
+  ING: ELIGIBLE (100.0%)
+  BCR: NOT ELIGIBLE (55.0%)
+  Raiffeisen: NOT ELIGIBLE (55.0%)
+  CEC Bank: NOT ELIGIBLE (55.0%)
+  Garanti: NOT ELIGIBLE (55.0%)
+Generated 6 recommendations for client: Gabriel
+  BRD: ELIGIBLE (100.0%)
+  ING: ELIGIBLE (100.0%)
+  BCR: NOT ELIGIBLE (55.0%)
+  Raiffeisen: NOT ELIGIBLE (55.0%)
+  CEC Bank: NOT ELIGIBLE (55.0%)
+  Garanti: NOT ELIGIBLE (55.0%)
+💰 MATCHER_SERVICE: calculateLoanAmount for BRD = 250000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for ING = 200000.0 lei
+Generated 6 recommendations for client: Gabriel
+  BRD: ELIGIBLE (100.0%)
+  ING: ELIGIBLE (100.0%)
+  Garanti: ELIGIBLE (100.0%)
+  BCR: NOT ELIGIBLE (55.0%)
+  Raiffeisen: NOT ELIGIBLE (55.0%)
+  CEC Bank: NOT ELIGIBLE (55.0%)
+Generated 6 recommendations for client: Gabriel
+  BRD: ELIGIBLE (100.0%)
+  ING: ELIGIBLE (100.0%)
+  Garanti: ELIGIBLE (100.0%)
+  BCR: NOT ELIGIBLE (55.0%)
+  Raiffeisen: NOT ELIGIBLE (55.0%)
+  CEC Bank: NOT ELIGIBLE (55.0%)
+💰 MATCHER_SERVICE: calculateLoanAmount for BRD = 250000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for ING = 200000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for Garanti = 200000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for BRD = 250000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for ING = 200000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for Garanti = 200000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for BRD = 250000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for ING = 200000.0 lei
+💰 MATCHER_SERVICE: calculateLoanAmount for Garanti = 200000.0 lei

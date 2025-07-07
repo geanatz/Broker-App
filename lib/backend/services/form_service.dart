@@ -19,7 +19,7 @@ enum IncomeType {
   indemnizatie 
 }
 
-/// Extensii pentru afișarea tipurilor de credite
+/// Extensii pentru afisarea tipurilor de credite
 extension CreditTypeExtension on CreditType {
   String get displayTitle {
     switch (this) {
@@ -37,7 +37,7 @@ extension CreditTypeExtension on CreditType {
   }
 }
 
-/// Extensii pentru afișarea tipurilor de venituri
+/// Extensii pentru afisarea tipurilor de venituri
 extension IncomeTypeExtension on IncomeType {
   String get displayTitle {
     switch (this) {
@@ -75,16 +75,16 @@ class CreditFormModel {
     this.isNew = true,
   }) : id = id ?? 'credit_${DateTime.now().millisecondsSinceEpoch}_${objectRuntimeType(CreditFormModel, 'CreditFormModel')}';
 
-  /// Verifică dacă formularul are informații minime
+  /// Verifica daca formularul are informatii minime
   bool hasMinimumInfo() {
     return bank != 'Selecteaza' && bank != 'Selecteaza banca' && 
            creditType != 'Selecteaza' && creditType != 'Selecteaza tipul';
   }
 
-  /// Verifică dacă formularul este gol
+  /// Verifica daca formularul este gol
   bool get isEmpty => !hasMinimumInfo();
 
-  /// Actualizează din alt model
+  /// Actualizeaza din alt model
   void updateFrom(CreditFormModel other) {
     bank = other.bank;
     creditType = other.creditType;
@@ -96,7 +96,7 @@ class CreditFormModel {
     isNew = other.isNew;
   }
 
-  /// Convertește la Map pentru salvare
+  /// Converteste la Map pentru salvare
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -111,7 +111,7 @@ class CreditFormModel {
     };
   }
 
-  /// Creează din Map
+  /// Creeaza din Map
   factory CreditFormModel.fromMap(Map<String, dynamic> map) {
     return CreditFormModel(
       id: map['id'],
@@ -126,7 +126,7 @@ class CreditFormModel {
     );
   }
 
-  /// Migrează valorile placeholder vechi la noile valori
+  /// Migreaza valorile placeholder vechi la noile valori
   static String _migrateOldPlaceholder(String value) {
     if (value == 'Selecteaza banca' || value == 'Selecteaza tipul') {
       return 'Selecteaza';
@@ -158,16 +158,16 @@ class IncomeFormModel {
     this.isNew = true,
   }) : id = id ?? 'income_${DateTime.now().millisecondsSinceEpoch}_${objectRuntimeType(IncomeFormModel, 'IncomeFormModel')}';
 
-  /// Verifică dacă formularul are informații minime
+  /// Verifica daca formularul are informatii minime
   bool hasMinimumInfo() {
     return bank != 'Selecteaza' && bank != 'Selecteaza banca' && 
            incomeType != 'Selecteaza' && incomeType != 'Selecteaza tipul';
   }
 
-  /// Verifică dacă formularul este gol
+  /// Verifica daca formularul este gol
   bool get isEmpty => !hasMinimumInfo();
 
-  /// Actualizează din alt model
+  /// Actualizeaza din alt model
   void updateFrom(IncomeFormModel other) {
     bank = other.bank;
     incomeType = other.incomeType;
@@ -176,7 +176,7 @@ class IncomeFormModel {
     isNew = other.isNew;
   }
 
-  /// Convertește la Map pentru salvare
+  /// Converteste la Map pentru salvare
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -188,7 +188,7 @@ class IncomeFormModel {
     };
   }
 
-  /// Creează din Map
+  /// Creeaza din Map
   factory IncomeFormModel.fromMap(Map<String, dynamic> map) {
     return IncomeFormModel(
       id: map['id'],
@@ -238,10 +238,8 @@ class FormService extends ChangeNotifier {
     'First Bank',
     'Garanti Bank',
     'Idea Bank',
-    'ING',
     'ING Bank',
     'Libra Bank',
-    'OTP Bank',
     'Patria Bank',
     'Raiffeisen Bank',
     'TBI Bank',
@@ -251,13 +249,13 @@ class FormService extends ChangeNotifier {
   static const List<String> creditBanks = [
     'Alpha Bank',
     'Axi IFN',
-    'Banca Românească',
+    'Banca Romaneasca',
     'BCR',
     'Best Credit',
-    'BNP Paribas Personal Finance',
+    'BNP Paribas',
     'BRD',
     'BRD Finance',
-    'BT',
+    'Banca Transilvania',
     'BT Direct',
     'BT Leasing',
     'CAR',
@@ -268,8 +266,7 @@ class FormService extends ChangeNotifier {
     'Credex',
     'Credius',
     'Eco Finance',
-    'EximBank',
-    'Ferratum Bank',
+    'Exim Bank',
     'First Bank',
     'Garanti Bank',
     'Happy Credit',
@@ -277,12 +274,10 @@ class FormService extends ChangeNotifier {
     'iCredit',
     'Idea Bank',
     'IFN',
-    'ING',
+    'ING Bank',
     'Intesa Sanpaolo',
     'Leasing IFN',
-    'Libra Internet Bank',
-    'OTP Bank',
-    'OTP Leasing',
+    'Libra Bank',
     'Patria Bank',
     'Pireus Bank',
     'ProCredit Bank',
@@ -293,7 +288,7 @@ class FormService extends ChangeNotifier {
     'Salt Bank',
     'Simplu Credit',
     'TBI Bank',
-    'UniCredit Bank',
+    'Uni Credit',
     'UniCredit Consumer Financing',
     'UniCredit Leasing',
     'Viva Credit',
@@ -331,7 +326,7 @@ class FormService extends ChangeNotifier {
   List<String> get availableRateTypes => rateTypes;
   List<String> get availableIncomeTypes => incomeTypes;
 
-  /// Inițializează service-ul
+  /// Initializeaza service-ul
   Future<void> initialize() async {
     // Listen to client changes
     _clientService.addListener(_onClientChanged);
@@ -344,12 +339,12 @@ class FormService extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Gestionează schimbarea clientului
+  /// Gestioneaza schimbarea clientului
   void _onClientChanged() {
     notifyListeners();
   }
 
-  /// Obține formularele de credit pentru client
+  /// Obtine formularele de credit pentru client
   List<CreditFormModel> getClientCreditForms(String clientId) {
     if (!_clientCreditForms.containsKey(clientId)) {
       _clientCreditForms[clientId] = [CreditFormModel()];
@@ -357,7 +352,7 @@ class FormService extends ChangeNotifier {
     return _clientCreditForms[clientId]!;
   }
 
-  /// Obține formularele de credit pentru codebitor
+  /// Obtine formularele de credit pentru codebitor
   List<CreditFormModel> getCoborrowerCreditForms(String clientId) {
     if (!_coborrowerCreditForms.containsKey(clientId)) {
       // Create separate empty form for coborrower, not sharing client data
@@ -366,7 +361,7 @@ class FormService extends ChangeNotifier {
     return _coborrowerCreditForms[clientId]!;
   }
 
-  /// Obține formularele de venit pentru client
+  /// Obtine formularele de venit pentru client
   List<IncomeFormModel> getClientIncomeForms(String clientId) {
     if (!_clientIncomeForms.containsKey(clientId)) {
       _clientIncomeForms[clientId] = [IncomeFormModel()];
@@ -374,7 +369,7 @@ class FormService extends ChangeNotifier {
     return _clientIncomeForms[clientId]!;
   }
 
-  /// Obține formularele de venit pentru codebitor
+  /// Obtine formularele de venit pentru codebitor
   List<IncomeFormModel> getCoborrowerIncomeForms(String clientId) {
     if (!_coborrowerIncomeForms.containsKey(clientId)) {
       // Create separate empty form for coborrower, not sharing client data
@@ -383,17 +378,17 @@ class FormService extends ChangeNotifier {
     return _coborrowerIncomeForms[clientId]!;
   }
 
-  /// Verifică dacă se afișează formularul clientului pentru credite
+  /// Verifica daca se afiseaza formularul clientului pentru credite
   bool isShowingClientLoanForm(String clientId) {
     return _showingClientLoanForm[clientId] ?? true;
   }
 
-  /// Verifică dacă se afișează formularul clientului pentru venituri
+  /// Verifica daca se afiseaza formularul clientului pentru venituri
   bool isShowingClientIncomeForm(String clientId) {
     return _showingClientIncomeForm[clientId] ?? true;
   }
 
-  /// Comută între client și codebitor pentru credite
+  /// Comuta intre client si codebitor pentru credite
   void toggleLoanFormType(String clientId) {
     _showingClientLoanForm[clientId] = !isShowingClientLoanForm(clientId);
     notifyListeners();
@@ -402,7 +397,7 @@ class FormService extends ChangeNotifier {
     _autoSaveToFirebaseForClient(clientId);
   }
 
-  /// Comută între client și codebitor pentru venituri
+  /// Comuta intre client si codebitor pentru venituri
   void toggleIncomeFormType(String clientId) {
     _showingClientIncomeForm[clientId] = !isShowingClientIncomeForm(clientId);
     notifyListeners();
@@ -411,14 +406,14 @@ class FormService extends ChangeNotifier {
     _autoSaveToFirebaseForClient(clientId);
   }
 
-  /// Actualizează un formular de credit
+  /// Actualizeaza un formular de credit
   void updateCreditForm(String clientId, int index, CreditFormModel updatedForm, {bool isClient = true}) {
     final forms = isClient ? getClientCreditForms(clientId) : getCoborrowerCreditForms(clientId);
     
     if (index < forms.length) {
       forms[index].updateFrom(updatedForm);
       
-      // Adaugă un formular nou dacă ultimul nu mai este gol
+      // Adauga un formular nou daca ultimul nu mai este gol
       if (index == forms.length - 1 && !forms[index].isEmpty) {
         forms.add(CreditFormModel());
       }
@@ -430,14 +425,14 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// Actualizează un formular de venit
+  /// Actualizeaza un formular de venit
   void updateIncomeForm(String clientId, int index, IncomeFormModel updatedForm, {bool isClient = true}) {
     final forms = isClient ? getClientIncomeForms(clientId) : getCoborrowerIncomeForms(clientId);
     
     if (index < forms.length) {
       forms[index].updateFrom(updatedForm);
       
-      // Adaugă un formular nou dacă ultimul nu mai este gol
+      // Adauga un formular nou daca ultimul nu mai este gol
       if (index == forms.length - 1 && !forms[index].isEmpty) {
         forms.add(IncomeFormModel());
       }
@@ -449,11 +444,11 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// Șterge un formular de credit
+  /// sterge un formular de credit
   void removeCreditForm(String clientId, int index, {bool isClient = true}) {
     final forms = isClient ? getClientCreditForms(clientId) : getCoborrowerCreditForms(clientId);
     
-    // Nu permite ștergerea ultimului formular dacă este singurul și este gol
+    // Nu permite stergerea ultimului formular daca este singurul si este gol
     if (forms.length == 1 && forms[0].isEmpty) {
       return;
     }
@@ -461,7 +456,7 @@ class FormService extends ChangeNotifier {
     if (index < forms.length) {
       forms.removeAt(index);
       
-      // Asigură-te că există întotdeauna un formular gol la sfârșit
+      // Asigura-te ca exista intotdeauna un formular gol la sfarsit
       if (forms.isEmpty || !forms.last.isEmpty) {
         forms.add(CreditFormModel());
       }
@@ -473,11 +468,11 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// Șterge un formular de venit
+  /// sterge un formular de venit
   void removeIncomeForm(String clientId, int index, {bool isClient = true}) {
     final forms = isClient ? getClientIncomeForms(clientId) : getCoborrowerIncomeForms(clientId);
     
-    // Nu permite ștergerea ultimului formular dacă este singurul și este gol
+    // Nu permite stergerea ultimului formular daca este singurul si este gol
     if (forms.length == 1 && forms[0].isEmpty) {
       return;
     }
@@ -485,7 +480,7 @@ class FormService extends ChangeNotifier {
     if (index < forms.length) {
       forms.removeAt(index);
       
-      // Asigură-te că există întotdeauna un formular gol la sfârșit
+      // Asigura-te ca exista intotdeauna un formular gol la sfarsit
       if (forms.isEmpty || !forms.last.isEmpty) {
         forms.add(IncomeFormModel());
       }
@@ -500,7 +495,7 @@ class FormService extends ChangeNotifier {
   /// Automatically saves form data to Firebase for a client by phone number
   Future<void> _autoSaveToFirebaseForClient(String clientPhoneNumber) async {
     try {
-      debugPrint('FormService: Auto-saving data for client: $clientPhoneNumber');
+
       
       // Find client name - for now use phone number as fallback
       String clientName = clientPhoneNumber;
@@ -513,21 +508,19 @@ class FormService extends ChangeNotifier {
       
       if (!success) {
         debugPrint('❌ FormService: Failed to auto-save form data to Firebase for client: $clientPhoneNumber');
-      } else {
-        debugPrint('✅ FormService: Successfully auto-saved form data to Firebase for client: $clientPhoneNumber');
       }
     } catch (e) {
       debugPrint('❌ FormService: Error auto-saving form data to Firebase: $e');
     }
   }
 
-  /// Încarcă datele formularului pentru un client
+  /// incarca datele formularului pentru un client
   Future<void> loadFormDataForClient(String clientId, String phoneNumber) async {
     try {
       final formData = await _firebaseFormService.loadAllFormData(phoneNumber);
       
       if (formData != null) {
-        // Încarcă datele de credit
+        // incarca datele de credit
         final creditForms = formData['creditForms'];
         if (creditForms != null) {
           final clientCreditData = creditForms['client'] as List?;
@@ -535,7 +528,7 @@ class FormService extends ChangeNotifier {
             _clientCreditForms[clientId] = clientCreditData
                 .map((data) => CreditFormModel.fromMap(data))
                 .toList();
-            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            // Asigura-te ca exista intotdeauna un formular gol la sfarsit
             if (_clientCreditForms[clientId]!.isEmpty || !_clientCreditForms[clientId]!.last.isEmpty) {
               _clientCreditForms[clientId]!.add(CreditFormModel());
             }
@@ -546,14 +539,14 @@ class FormService extends ChangeNotifier {
             _coborrowerCreditForms[clientId] = coborrowerCreditData
                 .map((data) => CreditFormModel.fromMap(data))
                 .toList();
-            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            // Asigura-te ca exista intotdeauna un formular gol la sfarsit
             if (_coborrowerCreditForms[clientId]!.isEmpty || !_coborrowerCreditForms[clientId]!.last.isEmpty) {
               _coborrowerCreditForms[clientId]!.add(CreditFormModel());
             }
           }
         }
         
-        // Încarcă datele de venit
+        // incarca datele de venit
         final incomeForms = formData['incomeForms'];
         if (incomeForms != null) {
           final clientIncomeData = incomeForms['client'] as List?;
@@ -561,7 +554,7 @@ class FormService extends ChangeNotifier {
             _clientIncomeForms[clientId] = clientIncomeData
                 .map((data) => IncomeFormModel.fromMap(data))
                 .toList();
-            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            // Asigura-te ca exista intotdeauna un formular gol la sfarsit
             if (_clientIncomeForms[clientId]!.isEmpty || !_clientIncomeForms[clientId]!.last.isEmpty) {
               _clientIncomeForms[clientId]!.add(IncomeFormModel());
             }
@@ -572,14 +565,14 @@ class FormService extends ChangeNotifier {
             _coborrowerIncomeForms[clientId] = coborrowerIncomeData
                 .map((data) => IncomeFormModel.fromMap(data))
                 .toList();
-            // Asigură-te că există întotdeauna un formular gol la sfârșit
+            // Asigura-te ca exista intotdeauna un formular gol la sfarsit
             if (_coborrowerIncomeForms[clientId]!.isEmpty || !_coborrowerIncomeForms[clientId]!.last.isEmpty) {
               _coborrowerIncomeForms[clientId]!.add(IncomeFormModel());
             }
           }
         }
         
-        // Încarcă starea UI
+        // incarca starea UI
         _showingClientLoanForm[clientId] = formData['showingClientLoanForm'] ?? true;
         _showingClientIncomeForm[clientId] = formData['showingClientIncomeForm'] ?? true;
         
@@ -590,7 +583,7 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// Salvează datele formularului pentru un client
+  /// Salveaza datele formularului pentru un client
   Future<bool> saveFormDataForClient(String clientId, String phoneNumber, String clientName) async {
     try {
       final clientCreditData = getClientCreditForms(clientId)
@@ -631,7 +624,7 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// Curăță datele pentru un client
+  /// Curata datele pentru un client
   void clearFormDataForClient(String clientId) {
     _clientCreditForms[clientId] = [CreditFormModel()];
     _coborrowerCreditForms[clientId] = [CreditFormModel()];
@@ -642,11 +635,11 @@ class FormService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Pregătește datele pentru export
+  /// Pregateste datele pentru export
   Map<String, dynamic> prepareDataForExport() {
     final result = <String, dynamic>{};
     
-    // Iterează prin toți clienții cu date
+    // Itereaza prin toti clientii cu date
     final allClientIds = <String>{
       ..._clientCreditForms.keys,
       ..._coborrowerCreditForms.keys,

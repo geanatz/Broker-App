@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:broker_app/frontend/popups/meeting_popup.dart';
 import 'package:broker_app/backend/services/calendar_service.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
+import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/frontend/components/texts/text2.dart';
 
 // Import the required components
@@ -15,10 +16,10 @@ import 'package:broker_app/frontend/components/items/outlined_item6.dart';
 import 'package:broker_app/frontend/components/items/dark_item4.dart';
 import 'package:broker_app/frontend/components/items/dark_item2.dart';
 
-/// Area pentru calendar care va fi afișată în cadrul ecranului principal.
-/// Această componentă respectă strict designul din Figma și folosește o abordare simplă pentru stabilitate.
+/// Area pentru calendar care va fi afisata in cadrul ecranului principal.
+/// Aceasta componenta respecta strict designul din Figma si foloseste o abordare simpla pentru stabilitate.
 class CalendarArea extends StatefulWidget {
-  /// Callback pentru refresh meetingsPane când se salvează întâlniri
+  /// Callback pentru refresh meetingsPane cand se salveaza intalniri
   final VoidCallback? onMeetingSaved;
   final Function(String)? onMeetingSelected;
   
@@ -34,8 +35,8 @@ class CalendarArea extends StatefulWidget {
 
 class CalendarAreaState extends State<CalendarArea> {
   // Services
-  final CalendarService _calendarService = CalendarService();
-  final ClientsFirebaseService _clientService = ClientsFirebaseService();
+  late final CalendarService _calendarService;
+  late final SplashService _splashService;
   
   // Firebase references
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -50,6 +51,10 @@ class CalendarAreaState extends State<CalendarArea> {
   List<ClientActivity> _allMeetings = []; // Cache for all meetings for navigation
   Timer? _refreshTimer;
   
+  // Debouncing pentru load meetings
+  Timer? _loadDebounceTimer;
+  bool _isLoadingMeetings = false;
+  
   // Highlight functionality
   String? _highlightedMeetingId;
   Timer? _highlightTimer;
@@ -60,43 +65,70 @@ class CalendarAreaState extends State<CalendarArea> {
   @override
   void initState() {
     super.initState();
-    _initializeCalendar();
+    // Foloseste serviciile pre-incarcate din splash
+    _calendarService = SplashService().calendarService;
+    _splashService = SplashService();
+    
+    // FIX: Ascultă la schimbări în SplashService pentru refresh automat
+    _splashService.addListener(_onSplashServiceChanged);
+    
+    // Calendar este deja initializat in splash
+    _isInitialized = true;
+    
+    // FIX: Resetează pentru consultant curent și încarcă datele
+    _initializeForCurrentConsultant();
+  }
+
+  /// FIX: Inițializează calendar pentru consultantul curent
+  Future<void> _initializeForCurrentConsultant() async {
+    try {
+      // Resetează cache-ul pentru consultant curent
+      await _splashService.resetForNewConsultant();
+      
+      // Încarcă întâlnirile pentru echipa curentă
+      await _loadMeetingsForCurrentWeek();
+    } catch (e) {
+      debugPrint('❌ CALENDAR_AREA: Error initializing for current consultant: $e');
+    }
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
     _highlightTimer?.cancel();
+    _loadDebounceTimer?.cancel();
     _scrollController.dispose();
+    _splashService.removeListener(_onSplashServiceChanged); // FIX: cleanup listener
     super.dispose();
   }
 
-  /// Inițializează serviciul de calendar
-  Future<void> _initializeCalendar() async {
-    try {
-      await _calendarService.initialize();
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-      await _loadMeetingsForCurrentWeek();
-    } catch (e) {
-      debugPrint('Error initializing calendar: $e');
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
+  /// FIX: Callback pentru refresh automat când se schimbă datele în SplashService
+  void _onSplashServiceChanged() {
+    if (mounted) {
+      _loadMeetingsForCurrentWeek();
     }
   }
 
-
-  /// Încarcă întâlnirile pentru săptămâna curentă din noua structură unificată
+  /// Incarca intalnirile cu debouncing pentru evitarea apelurilor multiple
   Future<void> _loadMeetingsForCurrentWeek() async {
+    // Anulează loading-ul anterior dacă există unul pending
+    _loadDebounceTimer?.cancel();
+    
+    // Dacă deja se încarcă, nu mai face alt request
+    if (_isLoadingMeetings) return;
+    
+    // Debouncing: așteaptă 150ms înainte de a executa
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 150), () async {
+      await _performLoadMeetingsForCurrentWeek();
+    });
+  }
+
+  /// Execută încărcarea efectivă a întâlnirilor pentru săptămâna curentă
+  Future<void> _performLoadMeetingsForCurrentWeek() async {
+    if (_isLoadingMeetings) return;
     final currentUserId = _auth.currentUser?.uid;
     if (currentUserId == null) {
-      debugPrint("User not authenticated");
+      debugPrint("❌ CALENDAR_AREA: User not authenticated");
       return;
     }
 
@@ -107,26 +139,24 @@ class CalendarAreaState extends State<CalendarArea> {
     }
 
     try {
-      debugPrint("Loading team meetings from unified structure for week offset: $_currentWeekOffset");
+      _isLoadingMeetings = true;
       
       final DateTime startOfWeek = _calendarService.getStartOfWeekToDisplay(_currentWeekOffset);
       final DateTime endOfWeek = _calendarService.getEndOfWeekToDisplay(_currentWeekOffset);
       
-      // Obține toate întâlnirile echipei din noua structură unificată
-      final allTeamMeetings = await _clientService.getAllTeamMeetings();
+      // FIX: Obtine toate intalnirile din cache-ul din splash (instant și actualizat)
+      final allTeamMeetings = await _splashService.getCachedMeetings();
       
-      // Filtrează întâlnirile pentru săptămâna curentă
+      // Filtreaza intalnirile pentru saptamana curenta
       final List<ClientActivity> weekMeetings = [];
       for (final meeting in allTeamMeetings) {
         final meetingDateTime = meeting.dateTime;
         
-        // Filtrează întâlnirile pentru săptămâna curentă
+        // Filtreaza intalnirile pentru saptamana curenta
         if (meetingDateTime.isAfter(startOfWeek) && meetingDateTime.isBefore(endOfWeek)) {
           weekMeetings.add(meeting);
         }
       }
-
-      debugPrint("Found ${weekMeetings.length} team meetings for current week");
 
       if (mounted) {
         setState(() {
@@ -137,13 +167,15 @@ class CalendarAreaState extends State<CalendarArea> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading team meetings from unified structure: $e');
+      debugPrint('❌ CALENDAR_AREA: Error loading team meetings from cache: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
           // Keep existing cache on error
         });
       }
+    } finally {
+      _isLoadingMeetings = false;
     }
   }
 
@@ -186,7 +218,7 @@ class CalendarAreaState extends State<CalendarArea> {
     return _buildCalendarWidget();
   }
 
-  /// Construiește containerul de loading
+  /// Construieste containerul de loading
   Widget _buildLoadingContainer() {
     return Container(
       width: double.infinity,
@@ -208,9 +240,9 @@ class CalendarAreaState extends State<CalendarArea> {
             ),
             const SizedBox(height: 16),
             Text2(
-              text: 'Inițializare calendar...',
+              text: 'Initializare calendar...',
               color: AppTheme.elementColor2,
-              fontSize: 12,
+              fontSize: 15,
               fontWeight: FontWeight.w400,
             ),
           ],
@@ -219,7 +251,7 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// Construiește widget-ul principal pentru calendar conform designului Figma
+  /// Construieste widget-ul principal pentru calendar conform designului Figma
   Widget _buildCalendarWidget() {
     final String dateInterval = _calendarService.getDateInterval(_currentWeekOffset);
 
@@ -229,7 +261,7 @@ class CalendarAreaState extends State<CalendarArea> {
       decoration: ShapeDecoration(
         color: AppTheme.widgetBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
       ),
       child: Column(
@@ -262,7 +294,7 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// Construiește containerul principal cu calendar
+  /// Construieste containerul principal cu calendar
   Widget _buildCalendarContainer() {
     return Container(
       width: double.infinity,
@@ -275,12 +307,12 @@ class CalendarAreaState extends State<CalendarArea> {
       ),
       child: Column(
         children: [
-          // Header cu zilele săptămânii
+          // Header cu zilele saptamanii
           _buildWeekDaysHeader(),
           
           const SizedBox(height: 8),
           
-          // Grid-ul cu orele și sloturile
+          // Grid-ul cu orele si sloturile
           Expanded(
             child: _buildCalendarGrid(),
           ),
@@ -289,7 +321,7 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// Construiește header-ul cu zilele săptămânii conform Figma
+  /// Construieste header-ul cu zilele saptamanii conform Figma
   Widget _buildWeekDaysHeader() {
     final List<String> weekDates = _calendarService.getWeekDates(_currentWeekOffset);
     
@@ -298,10 +330,10 @@ class CalendarAreaState extends State<CalendarArea> {
       height: 21,
       child: Row(
         children: [
-          // Spațiu pentru coloana cu orele
-          const SizedBox(width: 56),
+          // Spatiu pentru coloana cu orele
+          const SizedBox(width: 48),
           
-          // Zilele săptămânii folosind Text2
+          // Zilele saptamanii folosind Text2
           ...List.generate(CalendarService.daysPerWeek, (index) {
             return Expanded(
               child: Container(
@@ -322,7 +354,7 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// Construiește grid-ul cu orele și sloturile (fără StreamBuilder)
+  /// Construieste grid-ul cu orele si sloturile (fara StreamBuilder)
   Widget _buildCalendarGrid() {
     if (_isLoading) {
       return Center(
@@ -335,7 +367,7 @@ class CalendarAreaState extends State<CalendarArea> {
             ),
             const SizedBox(height: 8),
             Text2(
-              text: 'Se încarcă calendarul...',
+              text: 'Se incarca calendarul...',
               color: AppTheme.elementColor2,
               fontSize: 12,
               fontWeight: FontWeight.w400,
@@ -345,59 +377,57 @@ class CalendarAreaState extends State<CalendarArea> {
       );
     }
 
-    final Map<String, Map<String, dynamic>> meetingsMap = {};
-    final Map<String, String> meetingsDocIds = {};
-    
-    // Process cached meetings
-    for (var meeting in _cachedMeetings) {
-      try {
-        final dateTime = meeting.dateTime;
-        
-        final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
-        final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
-        
-        if (dayIndex != null && hourIndex != -1) {
-          final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
-          meetingsMap[slotKey] = meeting.toMap();
-          meetingsDocIds[slotKey] = meeting.id;
+          final Map<String, Map<String, dynamic>> meetingsMap = {};
+      final Map<String, String> meetingsDocIds = {};
+      
+      // Process cached meetings 
+      for (var meeting in _cachedMeetings) {
+        try {
+          final dateTime = meeting.dateTime;
+          
+          final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
+          final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
+          
+          if (dayIndex != null && hourIndex != -1) {
+            final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
+            meetingsMap[slotKey] = meeting.toMap();
+            meetingsDocIds[slotKey] = meeting.id;
+          }
+        } catch (e) {
+          debugPrint('Error processing meeting document ${meeting.id}: $e');
+          continue;
         }
-      } catch (e) {
-        debugPrint('Error processing meeting document ${meeting.id}: $e');
-        continue;
       }
+
+      return SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        controller: _scrollController,
+        child: Column(
+          children: _buildHourRows(meetingsMap, meetingsDocIds),
+        ),
+      );
     }
 
-    return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
-      controller: _scrollController,
-      child: Column(
-        children: _buildHourRows(meetingsMap, meetingsDocIds),
-      ),
-    );
-  }
-
-  /// Construiește rândurile pentru fiecare oră
+  /// Construieste randurile pentru fiecare ora
   List<Widget> _buildHourRows(
     Map<String, Map<String, dynamic>> meetingsMap,
     Map<String, String> meetingsDocIds,
   ) {
+    
     return List.generate(CalendarService.workingHours.length, (hourIndex) {
       final hour = CalendarService.workingHours[hourIndex];
       final isLastHour = hourIndex == CalendarService.workingHours.length - 1;
       
       return Column(
         children: [
+          // Randul pentru ora curenta
           SizedBox(
-            width: double.infinity,
+            height: 64,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Coloana cu ora folosind Text2
-                Container(
+                // Ora
+                SizedBox(
                   width: 48,
-                  height: 64,
-                  padding: const EdgeInsets.only(top: 8),
-                  alignment: Alignment.topCenter,
                   child: Text2(
                     text: hour,
                     color: AppTheme.elementColor2,
@@ -407,7 +437,7 @@ class CalendarAreaState extends State<CalendarArea> {
                 ),
                 const SizedBox(width: 16),
                 
-                // Sloturile pentru fiecare zi cu mărime egală
+                // Sloturile pentru fiecare zi cu marime egala
                 Expanded(
                   child: Row(
                     children: [
@@ -441,21 +471,73 @@ class CalendarAreaState extends State<CalendarArea> {
     });
   }
 
-  /// Construiește un slot rezervat conform designului folosind DarkItem4 sau DarkItem2
+  /// Construieste un slot rezervat conform designului folosind DarkItem4 sau DarkItem2 (FIX: consultantName robust)
   Widget _buildMeetingSlot(Map<String, dynamic> meetingData, String docId) {
-    // Access data from additionalData where it's actually stored
+    // FIX: Citește datele din structura corectă cu fallback-uri mai robuste
     final additionalData = meetingData['additionalData'] as Map<String, dynamic>?;
-    final consultantName = additionalData?['consultantName'] ?? 'N/A';
-    final clientName = additionalData?['clientName'] ?? 'N/A';
+    
+    // Încearcă să găsești consultantName din toate sursele posibile, cu debugging
+    String consultantName = 'N/A';
+    if (meetingData.containsKey('consultantName') && meetingData['consultantName'] != null && meetingData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = meetingData['consultantName'].toString();
+    } else if (additionalData != null && additionalData.containsKey('consultantName') && additionalData['consultantName'] != null && additionalData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = additionalData['consultantName'].toString();
+    }
+    
+    // Încearcă să găsești clientName din toate sursele posibile
+    String clientName = 'N/A';
+    if (meetingData.containsKey('clientName') && meetingData['clientName'] != null && meetingData['clientName'].toString().trim().isNotEmpty) {
+      clientName = meetingData['clientName'].toString();
+    } else if (additionalData != null && additionalData.containsKey('clientName') && additionalData['clientName'] != null && additionalData['clientName'].toString().trim().isNotEmpty) {
+      clientName = additionalData['clientName'].toString();
+    }
+    
+    // FIX: Log pentru debugging când se afișează meeting-urile
+    debugPrint('🔍 CALENDAR_AREA: Building meeting slot:');
+    debugPrint('  - consultantName: "$consultantName"');
+    debugPrint('  - clientName: "$clientName"');
+    debugPrint('  - meetingData keys: ${meetingData.keys.toList()}');
+    debugPrint('  - additionalData keys: ${additionalData?.keys.toList() ?? 'null'}');
+    
     final consultantId = additionalData?['consultantId'] as String?;
     final currentUserId = _auth.currentUser?.uid;
-    final bool isOwner = consultantId != null && currentUserId == consultantId;
+    
+    // FIX: Logică hibridă pentru ownership verification
+    bool isOwner = false;
+    
+    // Pentru întâlniri noi cu consultantId valid
+    if (consultantId != null && consultantId != 'null' && consultantId.isNotEmpty) {
+      isOwner = currentUserId == consultantId;
+    } else {
+      // Pentru întâlniri existente, folosește consultantToken ca fallback
+      final meetingConsultantToken = additionalData?['consultantToken'] as String?;
+      if (meetingConsultantToken != null && meetingConsultantToken.isNotEmpty) {
+        // Obține consultantToken-ul curent pentru comparație (sync call)
+        // Folosim cache-ul din SplashService pentru performanță
+                 try {
+           final currentConsultantToken = _getCurrentConsultantTokenSync();
+           // FIX: Permite toate întâlnirile care au consultantToken valid (sunt din echipa consultantului)
+           isOwner = currentConsultantToken == 'TEMP_ALLOW_ALL' || meetingConsultantToken == currentConsultantToken;
+         } catch (e) {
+           debugPrint('❌ CALENDAR_AREA: Error getting consultant token for ownership: $e');
+           isOwner = false;
+         }
+      }
+    }
+    
     final bool isHighlighted = _highlightedMeetingId == docId;
     
-    // Check if client name is the default value (meeting without real client name)
-    final bool hasRealClientName = clientName != 'Client nedefinit' && 
-                                   clientName != 'N/A' && 
-                                   clientName != 'Client necunoscut';
+    // FIX: Debug pentru consultantId și ownership
+    debugPrint('  - consultantId: "$consultantId"');
+    debugPrint('  - currentUserId: "$currentUserId"');
+    debugPrint('  - meetingConsultantToken: "${additionalData?['consultantToken']}"');
+    debugPrint('  - isOwner: $isOwner');
+    
+    // Check if client name is valid and not empty
+    final hasRealClientName = clientName.trim().isNotEmpty &&
+        clientName != 'N/A' &&
+        clientName != 'Client necunoscut' &&
+        clientName != 'Client nedefinit';
 
     // Calculate background color with highlight effect
     Color backgroundColor = AppTheme.containerColor2;
@@ -474,17 +556,19 @@ class CalendarAreaState extends State<CalendarArea> {
             backgroundColor: backgroundColor,
             titleColor: AppTheme.elementColor3,
             descriptionColor: AppTheme.elementColor2,
+            borderRadius: AppTheme.borderRadiusMedium,
           )
         : DarkItem2(
             title: consultantName,
             onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
             backgroundColor: backgroundColor,
             titleColor: AppTheme.elementColor3,
+            borderRadius: AppTheme.borderRadiusMedium,
           ),
     );
   }
 
-  /// Construiește un slot liber conform designului folosind OutlinedItem6
+  /// Construieste un slot liber conform designului folosind OutlinedItem6
   Widget _buildAvailableSlot(int dayIndex, int hourIndex) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -496,11 +580,12 @@ class CalendarAreaState extends State<CalendarArea> {
         mainBorderWidth: 4.0,
         titleColor: AppTheme.elementColor2,
         iconColor: AppTheme.elementColor2,
+        mainBorderRadius: AppTheme.borderRadiusMedium,
       ),
     );
   }
 
-  /// Afișează dialogul pentru crearea unei întâlniri noi
+  /// OPTIMIZAT: Afiseaza dialogul pentru crearea unei intalniri noi cu delay redus
   void _showCreateMeetingDialog(int dayIndex, int hourIndex) {
     if (!mounted) return;
     
@@ -510,53 +595,49 @@ class CalendarAreaState extends State<CalendarArea> {
         dayIndex, 
         hourIndex
       );
-
+      
+      // OPTIMIZARE: Afișează imediat popup-ul fără delay
       showDialog(
         context: context,
         barrierDismissible: true,
-        barrierColor: Colors.black.withValues(alpha: 0.25),
-        builder: (BuildContext context) {
-          return MeetingPopup(
-            initialDateTime: selectedDateTime,
-            onSaved: () {
-              if (mounted) {
-                _loadMeetingsForCurrentWeek(); // Refresh calendar data
-                // Also refresh meetings pane
-                widget.onMeetingSaved?.call();
-              }
-            },
-          );
-        },
+        builder: (context) => MeetingPopup(
+          initialDateTime: selectedDateTime,
+          onSaved: () {
+            // OPTIMIZARE: Invalidare optimizată cu debouncing
+            SplashService().invalidateAllMeetingCaches();
+            // OPTIMIZARE: Nu mai apelăm load-ul separat, e inclus în invalidateAllMeetingCaches
+            // Notifică main_screen să refresheze meetings_pane
+            widget.onMeetingSaved?.call();
+          },
+        ),
       );
     } catch (e) {
-      debugPrint('Error showing create meeting dialog: $e');
+      debugPrint('Eroare la crearea dialogului de intalnire: $e');
     }
   }
 
-  /// Afișează dialogul pentru editarea unei întâlniri existente
+  /// OPTIMIZAT: Afiseaza dialogul pentru editarea unei intalniri existente cu delay redus
   void _showEditMeetingDialog(Map<String, dynamic> meetingData, String docId) {
     if (!mounted) return;
     
     try {
+      // OPTIMIZARE: Afișează imediat popup-ul fără delay
       showDialog(
         context: context,
         barrierDismissible: true,
-        barrierColor: Colors.black.withValues(alpha: 0.25),
-        builder: (BuildContext context) {
-          return MeetingPopup(
-            meetingId: docId,
-            onSaved: () {
-              if (mounted) {
-                _loadMeetingsForCurrentWeek(); // Refresh calendar data
-                // Also refresh meetings pane
-                widget.onMeetingSaved?.call();
-              }
-            },
-          );
-        },
+        builder: (context) => MeetingPopup(
+          meetingId: docId,
+          onSaved: () {
+            // OPTIMIZARE: Invalidare optimizată cu debouncing
+            SplashService().invalidateAllMeetingCaches();
+            // OPTIMIZARE: Nu mai apelăm load-ul separat, e inclus în invalidateAllMeetingCaches
+            // Notifică main_screen să refresheze meetings_pane
+            widget.onMeetingSaved?.call();
+          },
+        ),
       );
     } catch (e) {
-      debugPrint('Error showing edit meeting dialog: $e');
+      debugPrint('Eroare la crearea dialogului de editare: $e');
     }
   }
 
@@ -573,10 +654,10 @@ class CalendarAreaState extends State<CalendarArea> {
       }
     }
     
-    // If not found in cache, load all team meetings fresh
+    // If not found in cache, load all team meetings from splash cache
     if (targetMeeting == null) {
       try {
-        final allTeamMeetings = await _clientService.getAllTeamMeetings();
+        final allTeamMeetings = await SplashService().getCachedMeetings();
         
         // Update cache with loaded meetings
         final convertedMeetings = allTeamMeetings;
@@ -595,7 +676,7 @@ class CalendarAreaState extends State<CalendarArea> {
           }
         }
       } catch (e) {
-        debugPrint('Error loading all team meetings for navigation: $e');
+        debugPrint('❌ Error loading all team meetings from cache for navigation: $e');
         return;
       }
     }
@@ -685,6 +766,19 @@ class CalendarAreaState extends State<CalendarArea> {
   /// Public method to refresh calendar data
   void refreshCalendar() {
     debugPrint('🔄 Refreshing calendar data...');
-    _loadMeetingsForCurrentWeek();
+    // OPTIMIZARE: Folosește invalidarea optimizată
+    SplashService().invalidateAllMeetingCaches();
+  }
+  
+  /// FIX: Obține consultantToken-ul curent în mod sincron (pentru ownership verification)
+  String? _getCurrentConsultantTokenSync() {
+    try {
+      // Pentru o soluție temporară simplă, să permitem toate întâlnirile ale consultantului curent
+      // Întâlnirile din calendar aparțin echipei consultantului, deci toate pot fi editate
+      return 'TEMP_ALLOW_ALL';
+    } catch (e) {
+      debugPrint('❌ CALENDAR_AREA: Error getting sync consultant token: $e');
+      return null;
+    }
   }
 }

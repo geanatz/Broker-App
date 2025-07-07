@@ -6,21 +6,22 @@ import '../components/headers/widget_header3.dart';
 import '../components/items/dark_item7.dart';
 import '../components/items/light_item7.dart';
 import '../../backend/services/clients_service.dart';
+import '../../backend/services/splash_service.dart';
 
 import '../popups/status_popup.dart';
 
-/// ClientsPane - Interfața pentru gestionarea apelurilor clienților
+/// ClientsPane - Interfata pentru gestionarea apelurilor clientilor
 /// 
-/// Această interfață este împărțită în 3 secțiuni:
+/// Aceasta interfata este impartita in 3 sectiuni:
 /// 1. Apeluri - toate apelurile active (FILL - nu se poate collapse)
-/// 2. Reveniri - apelurile care sună ocupat sau sunt amânate (HUG - se poate collapse)
+/// 2. Reveniri - apelurile care suna ocupat sau sunt amanate (HUG - se poate collapse)
 /// 3. Recente - apelurile respinse sau finalizate cu succes (HUG - se poate collapse)
 /// 
 /// Logica de focus:
-/// - LightItem7: starea normală (viewIcon)
-/// - DarkItem7: starea focusată (doneIcon)
+/// - LightItem7: starea normala (viewIcon)
+/// - DarkItem7: starea focusata (doneIcon)
 class ClientsPane extends StatefulWidget {
-  /// Callback pentru deschiderea popup-ului de clienți
+  /// Callback pentru deschiderea popup-ului de clienti
   final VoidCallback? onClientsPopupRequested;
 
   const ClientsPane({
@@ -33,16 +34,19 @@ class ClientsPane extends StatefulWidget {
 }
 
 class _ClientsPaneState extends State<ClientsPane> {
-  final ClientUIService _clientService = ClientUIService();
+  late final ClientUIService _clientService;
   
-  // Stări pentru collapse/expand secțiuni (doar pentru Reveniri și Recente)
+  // Stari pentru collapse/expand sectiuni (doar pentru Reveniri si Recente)
   bool _isReveniriCollapsed = false;
   bool _isRecenteCollapsed = false;
 
   @override
   void initState() {
     super.initState();
-    // Inițializează datele demo dacă nu există clienți
+    // Foloseste serviciul pre-incarcat din splash
+    _clientService = SplashService().clientUIService;
+    
+    // Initializeaza datele demo daca nu exista clienti
     _initializeClients();
     _clientService.addListener(_onClientServiceChanged);
   }
@@ -62,13 +66,13 @@ class _ClientsPaneState extends State<ClientsPane> {
     });
   }
 
-  /// Construiește lista de clienți pentru o anumită categorie
+  /// Construieste lista de clienti pentru o anumita categorie
   Widget _buildClientsList(ClientCategory category) {
     final clients = _clientService.getClientsByCategory(category);
     
     if (clients.isEmpty) {
       return SizedBox(
-        height: 60, // Înălțime fixă pentru mesajul de empty state
+        height: 60, // Inaltime fixa pentru mesajul de empty state
         child: Center(
           child: Text(
             'Nu exista clienti',
@@ -84,19 +88,19 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isApeluri = category == ClientCategory.apeluri;
     
     if (isApeluri) {
-      // Pentru secțiunea Apeluri (care e Expanded), folosim ListView normal
+      // Pentru sectiunea Apeluri (care e Expanded), folosim ListView normal
       return ListView.separated(
         itemCount: clients.length,
         separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
         itemBuilder: (context, index) => _buildClientItem(clients[index]),
       );
     } else {
-      // Pentru Reveniri și Recente, limitez la maxim 3 clienți vizibili
+      // Pentru Reveniri si Recente, limitez la maxim 3 clienti vizibili
       const int maxVisibleClients = 3;
-      const double itemHeight = 64.0; // Înălțime ajustată pentru LightItem7/DarkItem7 (56px + padding)
-      final double gapHeight = AppTheme.smallGap; // Folosesc valoarea exactă din temă
+      const double itemHeight = 64.0; // Inaltime ajustata pentru LightItem7/DarkItem7 (56px + padding)
+      final double gapHeight = AppTheme.smallGap; // Folosesc valoarea exacta din tema
       
-      // Calculez înălțimea necesară pentru maximum 3 clienți
+      // Calculez inaltimea necesara pentru maximum 3 clienti
       final int itemsToShow = clients.length > maxVisibleClients ? maxVisibleClients : clients.length;
       final double totalHeight = itemsToShow > 0 
           ? (itemHeight * itemsToShow) + (gapHeight * (itemsToShow - 1))
@@ -113,17 +117,21 @@ class _ClientsPaneState extends State<ClientsPane> {
     }
   }
 
-  /// Construiește un item pentru un client
+  /// Construieste un item pentru un client
   Widget _buildClientItem(ClientModel client) {
     final bool isFocused = client.status == ClientStatus.focused;
+    final bool hasDiscussionStatus = client.discussionStatus != null && client.discussionStatus!.isNotEmpty;
     
-    // Determină ce să afișeze ca descriere
+    // Determina ce sa afiseze ca descriere
     String description;
-    if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
-      // Pentru clienții amânați, afișează data și ora
+    if (hasDiscussionStatus) {
+      // Daca are status salvat, afiseaza statusul
+      description = client.discussionStatus!;
+    } else if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
+      // Pentru clientii amanati, afiseaza data si ora
       description = DateFormat('dd/MM/yy HH:mm').format(client.scheduledDateTime!);
     } else {
-      // Pentru ceilalți clienți, afișează numărul de telefon
+      // Pentru ceilalti clienti, afiseaza numarul de telefon
       description = client.phoneNumber;
     }
     
@@ -131,7 +139,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       return DarkItem7(
         title: client.name,
         description: description,
-        svgAsset: 'assets/doneIcon.svg',
+        svgAsset: 'assets/editIcon.svg', // Întotdeauna editIcon pentru client focusat
         onTap: () => _showClientSavePopup(client),
         onIconTap: () => _showClientSavePopup(client),
       );
@@ -139,29 +147,32 @@ class _ClientsPaneState extends State<ClientsPane> {
       return LightItem7(
         title: client.name,
         description: description,
-        svgAsset: 'assets/viewIcon.svg',
-        onTap: () => _clientService.focusClient(client.id),
+        svgAsset: 'assets/viewIcon.svg', // Întotdeauna viewIcon pentru client nefocusat
+        onTap: () {
+          // Prima data face focus pentru a afisa formularul
+          _clientService.focusClient(client.phoneNumber);
+        },
       );
     }
   }
 
-  /// Afișează popup-ul pentru salvarea statusului clientului
+  /// Afiseaza popup-ul pentru salvarea statusului clientului
   void _showClientSavePopup(ClientModel client) {
     showDialog(
       context: context,
       builder: (context) => ClientSavePopup(
         client: client,
         onSaved: () {
-          // Refresh UI sau alte acțiuni după salvare
+          // Refresh UI sau alte actiuni dupa salvare
           setState(() {});
         },
       ),
     );
   }
 
-  /// Construiește o secțiune (Apeluri, Reveniri, Recente)
+  /// Construieste o sectiune (Apeluri, Reveniri, Recente)
   Widget _buildSection(String title, ClientCategory category, {bool canCollapse = true}) {
-    // Determină starea de collapse pentru această secțiune
+    // Determina starea de collapse pentru aceasta sectiune
     bool isCollapsed = false;
     VoidCallback? toggleCallback;
     
@@ -181,7 +192,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       }
     }
     
-    // Pentru secțiunea Apeluri (care e Expanded), folosim o structură special adaptată
+    // Pentru sectiunea Apeluri (care e Expanded), folosim o structura special adaptata
     final bool isApeluri = category == ClientCategory.apeluri;
     
     return Container(
@@ -197,29 +208,29 @@ class _ClientsPaneState extends State<ClientsPane> {
       ),
       child: isApeluri 
           ? Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Header pentru Apeluri
-                WidgetHeader2(
-                  title: title,
-                  altText: 'Editeaza',
-                  onAltTextTap: widget.onClientsPopupRequested,
-                ),
-                
-                SizedBox(height: AppTheme.smallGap),
-                
-                // Lista de clienți expandabilă pentru Apeluri
-                Expanded(child: _buildClientsList(category)),
-              ],
-            )
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Header pentru Apeluri
+                  WidgetHeader2(
+                    title: title,
+                    altText: 'Editeaza',
+                    onAltTextTap: widget.onClientsPopupRequested,
+                  ),
+                  
+                  SizedBox(height: AppTheme.smallGap),
+                  
+                  // Lista de clienti expandabila pentru Apeluri
+                  Expanded(child: _buildClientsList(category)),
+                ],
+              )
           : Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Header pentru Reveniri și Recente
+                // Header pentru Reveniri si Recente
                 WidgetHeader3(
                   title: title,
                   trailingIcon: isCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
@@ -229,7 +240,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                 if (!isCollapsed) ...[
                   SizedBox(height: AppTheme.smallGap),
                   
-                  // Lista de clienți pentru Reveniri și Recente
+                  // Lista de clienti pentru Reveniri si Recente
                   _buildClientsList(category),
                 ],
               ],
@@ -247,26 +258,26 @@ class _ClientsPaneState extends State<ClientsPane> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Secțiunea Apeluri - FILL (expandează să ocupe tot spațiul disponibil)
+          // Sectiunea Apeluri - FILL (expandeaza sa ocupe tot spatiul disponibil)
           Expanded(
             child: _buildSection('Apeluri', ClientCategory.apeluri, canCollapse: false),
           ),
           
           SizedBox(height: AppTheme.mediumGap),
           
-          // Secțiunea Reveniri - HUG (doar cât îi trebuie)
+          // Sectiunea Reveniri - HUG (doar cat ii trebuie)
           _buildSection('Reveniri', ClientCategory.reveniri),
           
           SizedBox(height: AppTheme.mediumGap),
           
-          // Secțiunea Recente - HUG (doar cât îi trebuie)
+          // Sectiunea Recente - HUG (doar cat ii trebuie)
           _buildSection('Recente', ClientCategory.recente),
         ],
       ),
     );
   }
 
-  /// Inițializează clienții async
+  /// Initializeaza clientii async
   Future<void> _initializeClients() async {
     if (_clientService.clients.isEmpty) {
       await _clientService.initializeDemoData();

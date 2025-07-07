@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class AccountCreatedPopup extends StatelessWidget {
+class AccountCreatedPopup extends StatefulWidget {
   final String token;
   final VoidCallback onContinue;
 
@@ -14,9 +14,52 @@ class AccountCreatedPopup extends StatelessWidget {
   });
 
   @override
+  State<AccountCreatedPopup> createState() => _AccountCreatedPopupState();
+}
+
+class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
+  late TextEditingController _tokenController;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Asculta schimbarile din AppTheme pentru actualizari automate ale UI-ului
+    AppTheme().addListener(_onAppThemeChanged);
+
+    _tokenController = TextEditingController(text: widget.token);
+  }
+
+  @override
+  void dispose() {
+    _tokenController.dispose();
+    AppTheme().removeListener(_onAppThemeChanged);
+    super.dispose();
+  }
+
+  /// Callback pentru schimbarile din AppTheme
+  void _onAppThemeChanged() {
+    if (mounted) {
+      debugPrint('🎨 TOKEN_POPUP: AppTheme changed, updating UI');
+      setState(() {
+        // Actualizeaza UI-ul cand se schimba AppTheme
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    debugPrint('🟫 TOKEN_MODULE: Building AccountCreatedPopup');
+    if (widget.token.isNotEmpty && widget.token != 'Token indisponibil') {
+      debugPrint('🟫 TOKEN_MODULE: Token received: ${widget.token.substring(0, 8)}...');
+      debugPrint('🟫 TOKEN_MODULE: Full token: ${widget.token}');
+      debugPrint('🟫 TOKEN_MODULE: Token length: ${widget.token.length}');
+    } else {
+      debugPrint('🔴 TOKEN_MODULE: Invalid or missing token: ${widget.token}');
+    }
+    
     const double popupWidth = 360.0;
-    const double popupHeight = 216.0;
+    const double popupHeight = 220.0;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -73,11 +116,11 @@ class AccountCreatedPopup extends StatelessWidget {
                 SizedBox(
                   height: 24,
                   child: Text(
-                    "Mai jos ai cheia contului tau.",
+                    "Cheia permanenta a contului tau.",
                     style: AppTheme.subHeaderStyle.copyWith(
                       fontSize: AppTheme.fontSizeMedium,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF927B9D),
+                      color: AppTheme.elementColor1,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -91,7 +134,8 @@ class AccountCreatedPopup extends StatelessWidget {
             height: 48,
             child: SvgPicture.asset(
               'assets/logoIcon.svg',
-              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+              fit: BoxFit.contain,
             ),
           ),
         ],
@@ -112,7 +156,7 @@ class AccountCreatedPopup extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
             child: Text(
-              "Token-ul tau",
+              "Token-ul tau permanent",
               style: AppTheme.primaryTitleStyle.copyWith(
                 fontSize: AppTheme.fontSizeMedium,
                 fontWeight: FontWeight.w600,
@@ -134,7 +178,7 @@ class AccountCreatedPopup extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
                     child: Text(
-                      token,
+                      widget.token,
                       style: AppTheme.smallTextStyle.copyWith(
                         color: AppTheme.elementColor3,
                         fontSize: AppTheme.fontSizeMedium,
@@ -152,11 +196,11 @@ class AccountCreatedPopup extends StatelessWidget {
                     colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
                   ),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: token));
+                    Clipboard.setData(ClipboardData(text: widget.token));
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Token copiat în clipboard'),
+                          content: Text('Token copiat in clipboard'),
                           duration: Duration(seconds: 2),
                         ),
                       );
@@ -182,7 +226,10 @@ class AccountCreatedPopup extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: TextButton(
-        onPressed: onContinue,
+        onPressed: () {
+          debugPrint('🟫 TOKEN_MODULE: Continue button pressed, calling onContinue');
+          widget.onContinue();
+        },
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),

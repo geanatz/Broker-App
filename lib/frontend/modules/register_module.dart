@@ -28,14 +28,22 @@ class _RegisterPopupState extends State<RegisterPopup> {
   bool _obscureConfirmPassword = true;
   String? _registerError;
 
-  // Adăugare stări pentru validare vizuală
+  // Adaugare stari pentru validare vizuala
   bool _isNameInvalid = false;
   bool _isPasswordInvalid = false;
   bool _isConfirmPasswordInvalid = false;
   bool _isTeamInvalid = false;
 
+  @override
+  void initState() {
+    super.initState();
+    
+    // Asculta schimbarile din AppTheme pentru actualizari automate ale UI-ului
+    AppTheme().addListener(_onAppThemeChanged);
+  }
+
   void _attemptRegister() {
-    // Resetăm stările de validare
+    // Resetam starile de validare
     setState(() {
       _isNameInvalid = false;
       _isPasswordInvalid = false;
@@ -44,7 +52,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
       _registerError = null;
     });
 
-    // Validăm manual
+    // Validam manual
     bool isValid = true;
     
     // Validare nume
@@ -55,7 +63,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
       });
     }
     
-    // Validare parolă
+    // Validare parola
     if (_passwordController.text.isEmpty) {
       setState(() {
         _isPasswordInvalid = true;
@@ -68,7 +76,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
       });
     }
     
-    // Validare confirmare parolă
+    // Validare confirmare parola
     if (_confirmPasswordController.text.isEmpty) {
       setState(() {
         _isConfirmPasswordInvalid = true;
@@ -81,7 +89,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
       });
     }
     
-    // Validare echipă
+    // Validare echipa
     if (_selectedTeam == null) {
       setState(() {
         _isTeamInvalid = true;
@@ -89,7 +97,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
       });
     }
     
-    // Dacă totul e valid, trimitem datele
+    // Daca totul e valid, trimitem datele
     if (isValid) {
       widget.onRegisterAttempt(
         _nameController.text,
@@ -105,7 +113,18 @@ class _RegisterPopupState extends State<RegisterPopup> {
     _nameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    AppTheme().removeListener(_onAppThemeChanged);
     super.dispose();
+  }
+
+  /// Callback pentru schimbarile din AppTheme
+  void _onAppThemeChanged() {
+    if (mounted) {
+      debugPrint('🎨 REGISTER_POPUP: AppTheme changed, updating UI');
+      setState(() {
+        // Actualizeaza UI-ul cand se schimba AppTheme
+      });
+    }
   }
 
   @override
@@ -197,7 +216,8 @@ class _RegisterPopupState extends State<RegisterPopup> {
             height: 48,
             child: SvgPicture.asset(
               'assets/logoIcon.svg',
-              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+              fit: BoxFit.contain,
             ),
           ),
         ],
@@ -239,7 +259,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
               onToggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
               validator: (value) {
                 if (value == null || value.isEmpty) return 'Introdu parola';
-                if (value.length < 6) return 'Parola trebuie să aibă minim 6 caractere';
+                if (value.length < 6) return 'Parola trebuie sa aiba minim 6 caractere';
                 return null;
               },
               isInvalid: _isPasswordInvalid,
@@ -252,7 +272,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
               obscureText: _obscureConfirmPassword,
               onToggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Confirmă parola';
+                if (value == null || value.isEmpty) return 'Confirma parola';
                 if (value != _passwordController.text) return 'Parolele nu se potrivesc';
                 return null;
               },
@@ -311,7 +331,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
               contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
               suffixIcon: suffixIcon,
             ),
-            validator: null, // Eliminăm validatorul standard
+            validator: null, // Eliminam validatorul standard
           ),
         ),
       ],
@@ -423,7 +443,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
             ),
             style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
             dropdownColor: AppTheme.containerColor2,
-            validator: null, // Eliminăm validatorul standard
+            validator: null, // Eliminam validatorul standard
           ),
         ),
       ],

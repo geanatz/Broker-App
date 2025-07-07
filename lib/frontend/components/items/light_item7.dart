@@ -38,17 +38,9 @@ class LightItem7 extends StatefulWidget {
   /// Defaults to AppTheme.elementColor3 for contrast.
   final Color? iconColor;
 
-  /// Optional custom background color for the icon's immediate container.
-  /// Defaults to AppTheme.containerColor2.
-  final Color? iconContainerColor;
-
   /// Optional custom border radius for the main container.
   /// Defaults to 24.0.
   final double? mainBorderRadius;
-
-  /// Optional custom border radius for the icon's container.
-  /// Defaults to 16.0.
-  final double? iconContainerBorderRadius;
 
   /// Optional size for the icon itself.
   /// Defaults to 24.0.
@@ -65,9 +57,7 @@ class LightItem7 extends StatefulWidget {
     this.titleColor,
     this.descriptionColor,
     this.iconColor,
-    this.iconContainerColor,
     this.mainBorderRadius,
-    this.iconContainerBorderRadius,
     this.iconSize,
   });
 
@@ -87,16 +77,22 @@ class _LightItem7State extends State<LightItem7> {
         (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2);
     final Color effectiveDescriptionColor = widget.descriptionColor ?? 
         (_isHovered ? AppTheme.elementColor2 : AppTheme.elementColor1);
-    final Color effectiveIconContainerColor = widget.iconContainerColor ?? AppTheme.containerColor2;
-    final Color effectiveIconColor = widget.iconColor ?? 
-        (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor3); // Icon always elementColor3
+    // Set icon color based on hover state and icon type
+    Color effectiveIconColor;
+    if (widget.iconColor != null) {
+      effectiveIconColor = widget.iconColor!;
+    } else if (widget.svgAsset == 'assets/userIcon.svg') {
+      // Special handling for userIcon: elementColor2 when not hovered, elementColor3 when hovered
+      effectiveIconColor = _isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2;
+    } else {
+      // Default behavior for other icons
+      effectiveIconColor = AppTheme.elementColor3;
+    }
 
     final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
-    final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;
-    final double iconContainerSize = 48.0;
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
 
@@ -111,29 +107,35 @@ class _LightItem7State extends State<LightItem7> {
       fontWeight: FontWeight.w500,
     );
 
-    // Determine if we should show an icon (either SVG or IconData)
-    final bool hasIcon = widget.svgAsset != null || widget.icon != null;
+    // Determine if we should show an icon (either SVG or IconData) - show only on hover
+    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && _isHovered;
+    
+    // Determine which icon to show: userIcon when not hovered, logoutIcon when hovered
+    String? effectiveSvgAsset;
+    if (widget.svgAsset != null) {
+      if (widget.svgAsset == 'assets/userIcon.svg') {
+        effectiveSvgAsset = _isHovered ? 'assets/logoutIcon.svg' : 'assets/userIcon.svg';
+      } else {
+        effectiveSvgAsset = widget.svgAsset;
+      }
+    }
 
     Widget iconButton = hasIcon ? Container(
-      width: iconContainerSize,
-      height: iconContainerSize,
+      width: 48.0,
+      height: 48.0,
       padding: const EdgeInsets.all(12),
-      decoration: ShapeDecoration(
-        color: effectiveIconContainerColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(effectiveIconContainerBorderRadius),
-        ),
-      ),
       child: Center(
         child: SizedBox(
           width: 24.0,
           height: 24.0,
-          child: widget.svgAsset != null
+          child: effectiveSvgAsset != null
               ? SvgPicture.asset(
-                  widget.svgAsset!,
+                  effectiveSvgAsset,
                   width: 24.0,
                   height: 24.0,
-                  colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                  colorFilter: widget.iconColor == Colors.transparent 
+                      ? null 
+                      : ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
                   fit: BoxFit.contain,
                 )
               : widget.icon != null
