@@ -198,7 +198,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         gradient: AppTheme.appBackground,
       ),
       child: MaterialApp(
-        title: 'Broker App',
+        title: 'Aplicatie de Consultanta Financiara',
         debugShowCheckedModeBanner: false,
         locale: const Locale('ro', 'RO'),
         localizationsDelegates: const [

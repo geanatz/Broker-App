@@ -1,5 +1,5 @@
 name: broker_app
-description: "A new Flutter project."
+description: "Aplicatie de consultanta financiara pentru gestionarea clientilor si proceselor de creditare."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
