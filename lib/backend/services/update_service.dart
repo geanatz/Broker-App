@@ -53,7 +53,7 @@ class UpdateService {
   
   /// Initializeaza serviciul si obtine versiunea curenta
   Future<void> initialize() async {
-    if (!Platform.isWindows) {
+    if (kIsWeb || !Platform.isWindows) {
       debugPrint('⚠️ UpdateService: Only Windows platform is supported for in-app updates');
       return;
     }
@@ -69,7 +69,7 @@ class UpdateService {
   
   /// Verifica daca exista update-uri disponibile
   Future<bool> checkForUpdates() async {
-    if (_isChecking || _currentVersion == null || !Platform.isWindows) return false;
+    if (_isChecking || _currentVersion == null || kIsWeb || !Platform.isWindows) return false;
     
     if (UpdateConfig.skipVersionCheck) {
       debugPrint('🔍 Skipping version check (debug mode)');
@@ -135,7 +135,7 @@ class UpdateService {
   
   /// Porneste download-ul update-ului (Discord-style)
   Future<bool> startDownload() async {
-    if (_isDownloading || !hasUpdate || !Platform.isWindows) return false;
+    if (_isDownloading || !hasUpdate || kIsWeb || !Platform.isWindows) return false;
     
     _isDownloading = true;
     _downloadProgress = 0.0;
@@ -168,7 +168,7 @@ class UpdateService {
   
   /// Instaleaza update-ul descarcat
   Future<bool> installUpdate() async {
-    if (!_isUpdateReady || _updateFilePath == null || !Platform.isWindows) return false;
+    if (!_isUpdateReady || _updateFilePath == null || kIsWeb || !Platform.isWindows) return false;
     
     _isInstalling = true;
     
@@ -212,7 +212,7 @@ class UpdateService {
   
   /// Obtine mesajul de update pentru Windows
   String getUpdateMessage() {
-    if (!Platform.isWindows) {
+    if (kIsWeb || !Platform.isWindows) {
       return 'Update-urile in-app sunt disponibile doar pe Windows.';
     }
     return 'O versiune noua este disponibila. Doriti sa o descarcati si instalati?';
@@ -412,6 +412,11 @@ class UpdateService {
   
   /// Creaza backup inainte de update
   Future<bool> _createBackup(Directory appDir) async {
+    if (kIsWeb) {
+      debugPrint('⚠️ Backup not supported on web platform');
+      return false;
+    }
+    
     try {
       debugPrint('💾 Creating backup...');
       
@@ -487,6 +492,11 @@ class UpdateService {
   
   /// Rollback la versiunea anterioara
   Future<bool> _rollbackUpdate() async {
+    if (kIsWeb) {
+      debugPrint('⚠️ Rollback not supported on web platform');
+      return false;
+    }
+    
     try {
       debugPrint('🔄 Rolling back update...');
       
@@ -529,6 +539,11 @@ class UpdateService {
   
   /// Restarteaza aplicatia
   Future<void> _restartApplication() async {
+    if (kIsWeb) {
+      debugPrint('⚠️ Restart not supported on web platform');
+      return;
+    }
+    
     try {
       debugPrint('🔄 Restarting application...');
       
@@ -558,7 +573,7 @@ class UpdateService {
   
   /// Verifica daca exista un update descarcat si gata pentru instalare
   Future<bool> checkForReadyUpdate() async {
-    if (!Platform.isWindows) return false;
+    if (kIsWeb || !Platform.isWindows) return false;
     
     try {
       final appSupportDir = await getApplicationSupportDirectory();
@@ -588,7 +603,7 @@ class UpdateService {
   
   /// Verifica periodic daca există update-uri în background (Discord-style)
   void startBackgroundUpdateCheck() {
-    if (!Platform.isWindows || !UpdateConfig.isBackgroundDownloadEnabled()) return;
+    if (kIsWeb || !Platform.isWindows || !UpdateConfig.isBackgroundDownloadEnabled()) return;
     
     Timer.periodic(UpdateConfig.checkInterval, (timer) async {
       if (_isChecking || _isDownloading) return;

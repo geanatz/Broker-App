@@ -92,7 +92,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     
     // Folosește serviciile pre-încărcate din splash
-    _clientService = _splashService.clientUIService;
+    // Verifică dacă serviciile sunt disponibile
+    if (_splashService.areServicesReady) {
+      _clientService = _splashService.clientUIService;
+    } else {
+      // Initialize service directly if splash service isn't ready yet
+      _clientService = ClientUIService();
+    }
     
     // FIX: Resetează cache-ul pentru consultant curent la început
     _initializeForCurrentConsultant();

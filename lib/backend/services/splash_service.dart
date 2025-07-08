@@ -55,13 +55,13 @@ class SplashService extends ChangeNotifier {
   String get currentTask => _currentTask;
   String? get lastError => _lastError;
   
-  // Cached services getters
-  CalendarService get calendarService => _calendarService!;
-  ClientUIService get clientUIService => _clientUIService!;
-  FormService get formService => _formService!;
-  DashboardService get dashboardService => _dashboardService!;
-  MatcherService get matcherService => _matcherService!;
-  GoogleDriveService get googleDriveService => _googleDriveService!;
+  // Cached services getters - safely handle null services
+  CalendarService get calendarService => _calendarService ?? CalendarService();
+  ClientUIService get clientUIService => _clientUIService ?? ClientUIService();
+  FormService get formService => _formService ?? FormService();
+  DashboardService get dashboardService => _dashboardService ?? DashboardService();
+  MatcherService get matcherService => _matcherService ?? MatcherService();
+  GoogleDriveService get googleDriveService => _googleDriveService ?? GoogleDriveService();
 
   /// FIX: Resetează cache-ul când consultantul se schimbă
   Future<void> resetForNewConsultant() async {
