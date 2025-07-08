@@ -1,809 +1,814 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:broker_app/backend/services/clients_service.dart';
 
-import 'ocr_logger.dart';
+/// Parser inteligent pentru extragerea contactelor din textul OCR
+class ParserOCR {
+  static final ParserOCR _instance = ParserOCR._internal();
+  factory ParserOCR() => _instance;
+  ParserOCR._internal();
 
-/// Service pentru parsarea si filtrarea contactelor din textul extras prin OCR
-/// Implementeaza logica avansata din better-ocr: stop words, corecție OCR, validare nume
-class ParserOcr {
-  /// Singleton instance
-  static final ParserOcr _instance = ParserOcr._internal();
-  factory ParserOcr() => _instance;
-  ParserOcr._internal();
-
-  static List<String> _romanianNames = [];
-  final _logger = OcrDebugLogger();
-
-  // Stop words extinse pentru filtrarea textului - am adaugat cuvintele problematice din output
-  static final Set<String> _stopWords = {
-    // UI & Common
-    "import", "copy", "paste", "view", "open", "delete", "insert", "format", "painter",
-    "clipboard", "font", "general", "alignment", "sheet1", "sheet2", "sheet3", "sheet4",
-    "fara", "feedback", "status", "nume", "telefon", "data", "rezultate",
-    "pagina", "inapoi", "crt", "nr", "total", "sector", "bucuresti", "ready", "close",
-    "save", "print", "export", "type", "here", "accessibility", "investigate", "to", "from",
-    "undo", "redo", "cut", "select", "all", "text", "cont", "contract", "cod", "persoana",
-    // Months & Days
-    "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie",
-    "august", "septembrie", "octombrie", "noiembrie", "decembrie",
-    "luni", "marti", "miercuri", "joi", "vineri", "sambata", "duminica",
-    // Common places/prepositions
-    "strada", "alee", "bloc", "scara", "apartament", "etaj", "judet", "oras",
-    "la", "de", "din", "pe", "langa", "sub", "peste",
-    // Other common words
-    "scoala", "generala", "fabrica", "paine", "poate", "veni", "astazi", "ora",
-    "tarziu", "inv", "search", "inceput", "ocupat", "liber", "munca", "raspunde",
-    "nu", "da", "vrea", "sfarsit", "devreme", "pensie", "",
-    // Noise words
-    "nc", "vu", "rev", "mr", "inu", "vr", "schimbat", "maine", "mas", "una",
-    "cand", "vine", "ara", "tarsio", "remai", "nev", "sunat",
-    // Problematic words identified in OCR output
-    "calibri", "sheets", "sheet", "ilfov", "teleorma", "calarasi", "ialomita",
-    "filtreaza", "alege", "campanii", "creditul", "unitate",
-    "corima", "volentino", "gatan", "bouzidi", "ene", "odette",
-    "brateanu", "chiran", "ursu", "savu", "caramlau", "gradinaru",
-    "neagu", "georgescu", "negoita", "dragici", "gaglighor",
-    "cornelia", "surcel", "andreescu", "bratu", "chiriac", "maleika", "volha",
-    "albu", "radu", "stana", "neagoe", "vlasceanu"
-  };
-
-  /// Incarca baza de date cu nume romanesti din fisierul JSON
+  // Cache pentru numele românești
+  Set<String>? _romanianNames;
+  
+  // Expresii regulate pentru detectarea informațiilor - DOAR numere COMPLETE (fără word boundaries pentru text concatenat)
+  static final _phoneRegex = RegExp(r'(?:07[0-9]{8}|0[2-6][0-9]{8}|\+407[0-9]{8}|\+40[2-6][0-9]{8})');
+  static final _cnpRegex = RegExp(r'\b[1-8]\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{6}\b');
+  static final _nameRegex = RegExp(r'^[A-ZĂÂÎȘȚ][a-zăâîșț]+(?:\s+[A-ZĂÂÎȘȚ][a-zăâîșț]+)+$');
+  
+  /// Încarcă baza de date cu nume românești
   Future<void> _loadRomanianNames() async {
-    if (_romanianNames.isNotEmpty) {
-      debugPrint('📚 [ParserOcr] Romanian names already loaded: ${_romanianNames.length} names');
-      return;
-    }
-
+    if (_romanianNames != null) return;
+    
     try {
-      debugPrint('📚 [ParserOcr] Incarc baza de date cu nume romanesti din assets/names.json...');
-      final String jsonString = await rootBundle.loadString('assets/names.json');
-      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
-      final List<dynamic> jsonList = jsonMap['names'] as List<dynamic>;
-      _romanianNames = jsonList.map((name) => (name as String).toLowerCase()).toList();
-      debugPrint('✅ [ParserOcr] Loaded ${_romanianNames.length} Romanian names from JSON');
+      final jsonString = await rootBundle.loadString('lib/backend/ocr/names.json');
+      final data = json.decode(jsonString) as Map<String, dynamic>;
+      
+      final names = <String>{};
+      if (data['names'] is List) {
+        names.addAll((data['names'] as List).cast<String>());
+      }
+      if (data['prenume'] is List) {
+        names.addAll((data['prenume'] as List).cast<String>());
+      }
+      if (data['nume'] is List) {
+        names.addAll((data['nume'] as List).cast<String>());
+      }
+      
+      _romanianNames = names;
+      debugPrint('✅ PARSER_OCR: Încărcate ${names.length} nume românești');
     } catch (e) {
-      debugPrint('❌ [ParserOcr] Error loading Romanian names from JSON: $e');
-      _romanianNames = ['ion', 'maria', 'popescu', 'ionescu', 'gheorghe', 'elena', 'vasile', 'ana'];
-      debugPrint('⚠️ [ParserOcr] Using fallback with ${_romanianNames.length} names');
+      debugPrint('❌ PARSER_OCR: Eroare la încărcarea numelor: $e');
+      _romanianNames = <String>{}; // Set gol pentru a evita încărcarea repetată
     }
   }
 
-  /// Extrage contactele din textul brut OCR - filtreaza si parseaza
-  Future<List<ContactDetection>> parseContactsFromText(String rawText) async {
-    debugPrint('📝 [ParserOcr] Processing ${rawText.length} chars, ${rawText.split('\n').length} lines');
-
+  /// Extrage contacte din textul OCR
+  Future<List<UnifiedClientModel>> extractContacts(String text) async {
+    await _loadRomanianNames();
+    
     try {
-      await _loadRomanianNames();
+      debugPrint('🔍 PARSER_OCR: Analizare text de ${text.length} caractere');
       
-      _logger.addParsingStep('--- Inceput Parsare ---');
+      // Preprocesează textul
+      final cleanText = _preprocessText(text);
       
-      List<String> cleanLines = _cleanText(rawText);
-      _logger.addParsingStep('1. Text curatat: ${cleanLines.length} linii\n${cleanLines.take(5).join('\n')}...');
-
-      // Add a more aggressive filtering step as requested
-      List<String> filteredLines = _filterLines(cleanLines);
-      _logger.addParsingStep('2. Linii filtrate agresiv: ${filteredLines.length} linii\n${filteredLines.take(5).join('\n')}...');
-
-      // Strategy: Run both direct and fallback detection, then merge results.
+      // Împarte textul în linii și blokuri
+      final lines = cleanText.split('\n').where((line) => line.trim().isNotEmpty).toList();
       
-      // 1. Direct detection on filtered text
-      List<ContactDetection> directContacts = _detectDirectContacts(filteredLines);
-      _logger.addParsingStep('3. Detectie directa: ${directContacts.length} contacte gasite.');
+      // Detectează structura documentului
+      final documentType = _detectDocumentType(lines);
+      debugPrint('📄 PARSER_OCR: Tip document detectat: $documentType');
       
-      if (directContacts.isNotEmpty) {
-        _logger.addParsingStep('--> Folosind detectia directa ca rezultat final.');
-        return directContacts;
-      }
-
-      // 2. Fallback detection on filtered text
-      _logger.addParsingStep('4. Ruleaza detectia de rezerva (fallback)...');
-      List<PhoneDetection> phones = _detectPhones(filteredLines);
-      _logger.addParsingStep('   - Telefoane detectate: ${phones.length}');
-
-      List<NameDetection> names = _detectNames(filteredLines);
-      _logger.addParsingStep('   - Nume detectate: ${names.length}');
-
-      List<ContactDetection> fallbackContacts = _associateContacts(names, phones, filteredLines);
-      _logger.addParsingStep('5. Asociere fallback: ${fallbackContacts.length} contacte create.');
+      // Extrage contacte în funcție de tipul documentului
+      final contacts = await _extractContactsByType(lines, documentType);
       
-      // 3. Merge results
-      List<ContactDetection> allContacts = [];
-      Set<String> usedPhones = {};
-
-      // Add direct contacts first
-      for (var contact in directContacts) {
-        if (!usedPhones.contains(contact.phone1)) {
-          allContacts.add(contact);
-          usedPhones.add(contact.phone1);
-          if (contact.phone2 != null) {
-            usedPhones.add(contact.phone2!);
-          }
-        }
-      }
-
-      // Add fallback contacts if not already found
-      for (var contact in fallbackContacts) {
-        if (!usedPhones.contains(contact.phone1)) {
-          allContacts.add(contact);
-          usedPhones.add(contact.phone1);
-          if (contact.phone2 != null) {
-            usedPhones.add(contact.phone2!);
-          }
-        }
-      }
-      
-      _logger.addParsingStep('6. Total contacte unice: ${allContacts.length}');
-      _logger.addParsingStep('--- Sfarsit Parsare ---');
-      return allContacts;
+      debugPrint('✅ PARSER_OCR: Extrase ${contacts.length} contacte');
+      return contacts;
 
     } catch (e) {
-      debugPrint('❌ [ParserOcr] Eroare: $e');
-      _logger.addParsingStep('❌ EROARE PARSARE: $e');
+      debugPrint('❌ PARSER_OCR: Eroare la extragerea contactelor: $e');
       return [];
     }
   }
 
-  /// Curata si filtreaza textul prin eliminarea diacriticelor si stop words
-  List<String> _cleanText(String text) {
-    debugPrint('🧹 [ParserOcr] Cleaning text...');
+  /// Preprocesează textul pentru parsing mai bun
+  String _preprocessText(String text) {
+    var processed = text;
     
-    List<String> lines = text.split('\n');
-    List<String> cleanLines = [];
-    int removedWords = 0;
+    // Înlocuiește caractere speciale OCR
+    processed = processed.replaceAll(RegExp(r'[|]'), 'I');
+    processed = processed.replaceAll(RegExp(r'[°]'), '0');
+    processed = processed.replaceAll(RegExp(r'[§]'), '5');
+    
+    // Standardizează spațiile
+    processed = processed.replaceAll(RegExp(r'\s+'), ' ');
+    
+    // Înlocuiește separatorii de telefon
+    processed = processed.replaceAll(RegExp(r'[-\s\.]+'), '');
+    
+    return processed.trim();
+  }
 
+  /// Detectează tipul documentului
+  DocumentType _detectDocumentType(List<String> lines) {
+    final allText = lines.join(' ').toLowerCase();
+    
+    // Detectează tabel cu coloane
+    final hasTableStructure = lines.any((line) {
+      final parts = line.split(RegExp(r'\s{2,}'));
+      return parts.length >= 3;
+    });
+    
+    // Detectează listă cu bullet points
+    final hasListStructure = lines.any((line) => 
+      line.trimLeft().startsWith(RegExp(r'[•\-\*\d+\.]')));
+    
+    // Detectează formular structurat
+    final hasFormStructure = allText.contains(RegExp(r'nume.*:.*telefon|telefon.*:.*nume'));
+    
+    if (hasTableStructure) return DocumentType.table;
+    if (hasFormStructure) return DocumentType.form;
+    if (hasListStructure) return DocumentType.list;
+    
+    return DocumentType.freeText;
+  }
+
+  /// Extrage contacte în funcție de tipul documentului
+  Future<List<UnifiedClientModel>> _extractContactsByType(List<String> lines, DocumentType type) async {
+    switch (type) {
+      case DocumentType.table:
+        return await _extractFromTable(lines);
+      case DocumentType.form:
+        return await _extractFromForm(lines);
+      case DocumentType.list:
+        return await _extractFromList(lines);
+      case DocumentType.freeText:
+        return await _extractFromFreeText(lines);
+    }
+  }
+
+  /// Extrage contacte din tabel
+  Future<List<UnifiedClientModel>> _extractFromTable(List<String> lines) async {
+    final contacts = <UnifiedClientModel>[];
+    
+    // Găsește antetul tabelului
+    int headerIndex = -1;
     for (int i = 0; i < lines.length; i++) {
-      String line = lines[i].trim();
-      if (line.isEmpty) continue;
-
-      List<String> words = line.split(RegExp(r'\s+'));
-      List<String> cleanWords = [];
-
-      for (String word in words) {
-        String cleanWord = word.replaceAll(RegExp(r'[^\w\s+]'), '');
-        if (cleanWord.isEmpty) continue;
-
-        if (_stopWords.contains(cleanWord.toLowerCase()) || 
-            cleanWord.length <= 2 || 
-            RegExp(r'^\d{2}$').hasMatch(cleanWord)) {
-          removedWords++;
-          continue;
-        }
-
-        cleanWords.add(cleanWord);
-      }
-
-      if (cleanWords.isNotEmpty) {
-        cleanLines.add(cleanWords.join(' '));
+      final line = lines[i].toLowerCase();
+      if (line.contains('nume') && line.contains('telefon')) {
+        headerIndex = i;
+        break;
       }
     }
-
-    debugPrint('🧹 [ParserOcr] Removed $removedWords words, kept ${cleanLines.length} lines');
-    return cleanLines;
-  }
-
-  /// Noua functie de filtrare agresiva
-  List<String> _filterLines(List<String> lines) {
-    debugPrint('🔬 [ParserOcr] Filtering ${lines.length} lines to keep only names and phones...');
-    List<String> hyperFilteredLines = [];
-    int removedWords = 0;
-    int keptWords = 0;
-
-    for (String line in lines) {
-        List<String> words = line.split(' ');
-        List<String> filteredWords = [];
-        for (String word in words) {
-            String cleanWord = word.replaceAll(RegExp(r'[,.;:]$'), '').toLowerCase();
-            String normalizedPhone = _normalizePhone(cleanWord);
-
-            if (_isValidRomanianPhone(normalizedPhone) || _romanianNames.contains(cleanWord)) {
-                filteredWords.add(word); // Pastram capitalizarea originala
-                keptWords++;
-            } else {
-                removedWords++;
-            }
-        }
-        if (filteredWords.isNotEmpty) {
-            hyperFilteredLines.add(filteredWords.join(' '));
-        }
-    }
-
-    debugPrint('🔬 [ParserOcr] Filtering complete. Kept $keptWords words, removed $removedWords words. Result: ${hyperFilteredLines.length} lines.');
-    return hyperFilteredLines;
-  }
-
-  /// Detecteaza telefoanele cu validare si corecție avansata
-  List<PhoneDetection> _detectPhones(List<String> lines) {
-    debugPrint('📞 [ParserOcr] Detecting phones...');
     
-    List<PhoneDetection> phones = [];
-    Set<String> uniquePhones = {};
-
-    for (int i = 0; i < lines.length; i++) {
-      String line = lines[i];
+    // Procesează rândurile de date
+    for (int i = headerIndex + 1; i < lines.length; i++) {
+      final line = lines[i];
+      final parts = line.split(RegExp(r'\s{2,}'));
       
-      // Enhanced phone patterns for different formats found in real data
-      List<RegExp> phonePatterns = [
-        // Standard Romanian mobile numbers
-        RegExp(r'\b0[7][0-9]{8}\b'),                    // 07xxxxxxxx mobile
-        RegExp(r'\b0[2-3][0-9]{8}\b'),                  // 02xxxxxxxx, 03xxxxxxxx fixed
-        // International format
-        RegExp(r'\+40[0-9]{9}\b'),                      // +40xxxxxxxxx
-        // Multiple phones separated by comma (like in real_clients)
-        RegExp(r'\b0[0-9]{9}(?:,0[0-9]{9})+\b'),       // 0xxxxxxxxx,0xxxxxxxxx
-      ];
-
-      for (RegExp pattern in phonePatterns) {
-        Iterable<RegExpMatch> matches = pattern.allMatches(line);
-        
-        for (RegExpMatch match in matches) {
-          String phoneText = match.group(0)!;
-          
-          // Handle multiple phones separated by comma
-          if (phoneText.contains(',')) {
-            List<String> multiplePhones = phoneText.split(',');
-            for (String singlePhone in multiplePhones) {
-              String cleanPhone = _normalizePhone(singlePhone.trim());
-              if (_isValidRomanianPhone(cleanPhone) && !uniquePhones.contains(cleanPhone)) {
-                phones.add(PhoneDetection(
-                  number: cleanPhone,
-                  lineIndex: i,
-                  position: match.start + phoneText.indexOf(singlePhone),
-                  raw: singlePhone.trim(),
-                  confidence: 100.0,
-                ));
-                uniquePhones.add(cleanPhone);
-              }
-            }
-          } else {
-            String cleanPhone = _normalizePhone(phoneText);
-            if (_isValidRomanianPhone(cleanPhone) && !uniquePhones.contains(cleanPhone)) {
-              phones.add(PhoneDetection(
-                number: cleanPhone,
-                lineIndex: i,
-                position: match.start,
-                raw: phoneText,
-                confidence: 100.0,
-              ));
-              uniquePhones.add(cleanPhone);
-            }
-          }
-        }
-      }
-    }
-
-    debugPrint('📞 [ParserOcr] Found ${phones.length} valid phones');
-    return phones;
-  }
-  
-  /// Normalizeaza un numar de telefon la formatul standard
-  String _normalizePhone(String phone) {
-    // Remove all non-digit characters
-    String cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
-    
-    // Handle international format
-    if (cleanPhone.startsWith('40') && cleanPhone.length == 11) {
-      cleanPhone = '0${cleanPhone.substring(2)}';
-    }
-    
-    return cleanPhone;
-  }
-  
-  /// Verifica daca un telefon este valid pentru Romania
-  bool _isValidRomanianPhone(String phone) {
-    if (phone.length != 10) return false;
-    if (!phone.startsWith('0')) return false;
-    
-    // Check if it's likely a CNP (Romanian personal code) instead of phone
-    if (_isLikelyCNP(phone)) return false;
-    
-    // Valid Romanian prefixes
-    String prefix = phone.substring(0, 3);
-    List<String> validPrefixes = [
-      // Mobile prefixes
-      '070', '071', '072', '073', '074', '075', '076', '077', '078', '079',
-      // Fixed line prefixes (major cities)
-      '021', '022', '023', '024', '025', '026', '027', '028', '029',
-      '031', '033', '034', '035', '036', '037', '038', '039'
-    ];
-    
-    return validPrefixes.contains(prefix);
-  }
-
-  /// Verifica daca un numar este probabil un CNP (Cod Numeric Personal) sau ID
-  bool _isLikelyCNP(String phone) {
-    if (phone.length != 10) return false;
-    
-    String first = phone.substring(0, 1);
-    // CNPs start with 1,2,5,6 for birth dates, but phones start with 0
-    if (['1', '2', '5', '6'].contains(first)) return true;
-    
-    // Additional checks for ID numbers or sequential numbers
-    if (_isSequentialNumber(phone)) return true;
-    if (_hasRepeatingPattern(phone)) return true;
-    
-    return false;
-  }
-  
-  /// Verifica daca numarul este secvential (1234567890, etc.)
-  bool _isSequentialNumber(String phone) {
-    for (int i = 0; i < phone.length - 1; i++) {
-      int current = int.parse(phone[i]);
-      int next = int.parse(phone[i + 1]);
-      if (next != current + 1) return false;
-    }
-    return true;
-  }
-  
-  /// Verifica daca numarul are pattern repetitiv (1111111111, 1212121212, etc.)
-  bool _hasRepeatingPattern(String phone) {
-    // Check for all same digits
-    if (phone.split('').every((digit) => digit == phone[0])) return true;
-    
-    // Check for alternating pattern (1212...)
-    if (phone.length >= 4) {
-      String pattern = phone.substring(0, 2);
-      for (int i = 0; i < phone.length - 1; i += 2) {
-        if (i + 1 < phone.length && phone.substring(i, i + 2) != pattern) {
-          return false;
-        }
-      }
-      return true;
-    }
-    
-    return false;
-  }
-
-  /// Detecteaza numele folosind baza de date romaneasca
-  List<NameDetection> _detectNames(List<String> lines) {
-    debugPrint('👤 [ParserOcr] Detecting names from ${lines.length} lines...');
-    
-    List<NameDetection> names = [];
-    Set<String> uniqueNames = {};
-    
-    int processedLines = 0;
-    int potentialNamesFound = 0;
-
-    for (int i = 0; i < lines.length; i++) {
-      String line = lines[i];
-      
-      // Enhanced name detection with multiple strategies
-      List<String> detectedNames = _extractNamesFromLine(line);
-      potentialNamesFound += detectedNames.length;
-      
-      if (detectedNames.isNotEmpty) {
-        debugPrint('📋 [ParserOcr] Line ${i + 1}: "${line.substring(0, line.length > 40 ? 40 : line.length)}..." -> ${detectedNames.length} potential names: ${detectedNames.join(", ")}');
-      }
-      
-      for (String name in detectedNames) {
-        if (!uniqueNames.contains(name)) {
-          double confidence = _calculateNameConfidence(name);
-          debugPrint('🎯 [ParserOcr] Evaluating name "$name" -> confidence: ${confidence.toStringAsFixed(1)}%');
-          
-          if (confidence >= 50.0) {  // Lowered threshold for better detection
-            names.add(NameDetection(
-              name: name,
-              lineIndex: i,
-              position: 0,
-              confidence: confidence,
-            ));
-            uniqueNames.add(name);
-            debugPrint('✅ [ParserOcr] Added valid name: "$name" (confidence: ${confidence.toStringAsFixed(1)}%)');
-          } else {
-            debugPrint('❌ [ParserOcr] Rejected name: "$name" (confidence: ${confidence.toStringAsFixed(1)}% < 50%)');
-          }
-        }
-      }
-      
-      processedLines++;
-    }
-
-    debugPrint('👤 [ParserOcr] Name detection summary: $processedLines lines processed, $potentialNamesFound potential names found, ${names.length} valid names accepted');
-    return names;
-  }
-
-  /// Extrage numele dintr-o linie cu pattern matching avansat
-  List<String> _extractNamesFromLine(String line) {
-    List<String> names = [];
-    
-    // Pattern 1: Tabular format with numbers "1506 LASTNAME FIRSTNAME phone"
-    RegExp numberedTabular = RegExp(r'\d+\s+([a-z]+)\s+([a-z]+)(?:\s+([a-z]+))?\s+0[0-9]{9}', caseSensitive: false);
-    Iterable<RegExpMatch> numberedMatches = numberedTabular.allMatches(line);
-    
-    for (RegExpMatch match in numberedMatches) {
-      String lastname = match.group(1)!;
-      String firstname = match.group(2)!;
-      String? surname = match.group(3);
-      
-      String fullName = surname != null 
-          ? '$firstname $lastname $surname'
-          : '$firstname $lastname';
-      
-      if (_isValidRomanianName(fullName)) {
-        names.add(fullName);
-      }
-    }
-    
-    // Pattern 2: Standard tabular "LASTNAME FIRSTNAME phone" 
-    if (names.isEmpty) {
-      RegExp tabularPattern = RegExp(r'\b([a-z]+)\s+([a-z]+)(?:\s+([a-z]+))?\s+0[0-9]{9}', caseSensitive: false);
-      Iterable<RegExpMatch> tabularMatches = tabularPattern.allMatches(line);
-      
-      for (RegExpMatch match in tabularMatches) {
-        String lastname = match.group(1)!;
-        String firstname = match.group(2)!;
-        String? surname = match.group(3);
-        
-        String fullName = surname != null 
-            ? '$firstname $lastname $surname'
-            : '$firstname $lastname';
-        
-        if (_isValidRomanianName(fullName)) {
-          names.add(fullName);
-        }
-      }
-    }
-    
-    // Pattern 3: Single Romanian names on individual lines (common in real data)
-    if (names.isEmpty) {
-      String trimmedLine = line.trim();
-      
-      // Check if line contains a single Romanian name
-      if (_isSingleRomanianName(trimmedLine)) {
-        names.add(trimmedLine);
-      }
-      
-      // Check for multiple names on same line separated by spaces
-      List<String> words = trimmedLine.split(RegExp(r'\s+'));
-      if (words.length >= 2 && words.length <= 4) {
-        bool allRomanianNames = true;
-        for (String word in words) {
-          if (!_isSingleRomanianName(word)) {
-            allRomanianNames = false;
-            break;
-          }
-        }
-        if (allRomanianNames) {
-          names.add(words.join(' '));
-        }
-      }
-    }
-    
-    // Pattern 4: Mixed case names "Firstname Lastname" format
-    if (names.isEmpty) {
-      RegExp mixedCasePattern = RegExp(r'\b([a-z]+)\s+([a-z]+)(?:\s+([a-z]+))?\b', caseSensitive: false);
-      Iterable<RegExpMatch> mixedMatches = mixedCasePattern.allMatches(line);
-      
-      for (RegExpMatch match in mixedMatches) {
-        String fullName = match.group(0)!.trim();
-        if (_isValidRomanianName(fullName)) {
-          names.add(fullName);
-        }
-      }
-    }
-
-    return names;
-  }
-
-  /// Verifica daca un cuvant este nume romanesc individual
-  bool _isSingleRomanianName(String word) {
-    if (word.length < 3) return false;
-    
-    // Check basic format (starts with capital letter)
-    if (!RegExp(r'^[A-Z][a-zA-Z]*$').hasMatch(word)) return false;
-    
-    // Check if it's in Romanian names database
-    return _romanianNames.contains(word.toLowerCase());
-  }
-
-  /// Verifica daca numele este valid romanesc (more flexible)
-  bool _isValidRomanianName(String name) {
-    List<String> words = name.split(' ');
-    if (words.isEmpty || words.length > 4) return false;
-    
-    // For single words, must be a Romanian name
-    if (words.length == 1) {
-      return _isSingleRomanianName(words[0]);
-    }
-    
-    // For multiple words, at least one must be a Romanian name
-    int romanianNameCount = 0;
-    for (String word in words) {
-      if (_romanianNames.contains(word.toLowerCase())) {
-        romanianNameCount++;
-      }
-    }
-    
-    // Be more flexible: at least one Romanian name is enough
-    return romanianNameCount >= 1;
-  }
-
-  /// Calculeaza confidence-ul pentru un nume (more flexible scoring)
-  double _calculateNameConfidence(String name) {
-    double confidence = 50.0;  // Higher base confidence
-    List<String> words = name.split(' ');
-    
-    int romanianCount = 0;
-    for (String word in words) {
-      if (_romanianNames.contains(word.toLowerCase())) {
-        romanianCount++;
-        confidence += 25.0;  // Good bonus for Romanian names
-      }
-    }
-    
-    // Bonus for complete names
-    if (words.length == 1) confidence += 0.0;    // Single name
-    if (words.length == 2) confidence += 15.0;   // Standard firstname lastname
-    if (words.length == 3) confidence += 20.0;   // Full name with surname
-    if (words.length == 4) confidence += 10.0;   // Complex name
-    
-    // Extra bonus for multiple Romanian names
-    if (romanianCount >= 2) confidence += 15.0;
-    if (romanianCount >= 3) confidence += 10.0;
-    
-    return confidence > 100.0 ? 100.0 : confidence;
-  }
-
-  /// Asociaza numele cu telefoanele pe baza proximității (improved for tabular data)
-  List<ContactDetection> _associateContacts(
-    List<NameDetection> names,
-    List<PhoneDetection> phones,
-    List<String> lines,
-  ) {
-    if (names.isEmpty || phones.isEmpty) {
-      debugPrint('❌ [ParserOcr] No names or phones to associate');
-      return [];
-    }
-
-    List<ContactDetection> contacts = [];
-    Set<String> usedPhones = {};
-
-    for (NameDetection name in names) {
-      List<PhoneDetection> associatedPhones = _findAssociatedPhones(name, phones, usedPhones);
-      
-      if (associatedPhones.isNotEmpty) {
-        String primaryPhone = associatedPhones[0].number;
-        String? secondaryPhone = associatedPhones.length > 1 ? associatedPhones[1].number : null;
-        
-        double confidence = _calculateAssociationConfidence(name, associatedPhones);
-        
-        contacts.add(ContactDetection(
-          name: name.name,
-          phone1: primaryPhone,
-          phone2: secondaryPhone,
-          confidence: confidence,
-        ));
-        
-        // Mark phones as used
-        for (PhoneDetection phone in associatedPhones) {
-          usedPhones.add(phone.number);
-        }
-      }
-    }
-
-    // Log unused phones for debugging
-    List<PhoneDetection> unusedPhones = phones.where((phone) => !usedPhones.contains(phone.number)).toList();
-    if (unusedPhones.isNotEmpty) {
-      debugPrint('⚠️ [ParserOcr] ${unusedPhones.length} unused phones detected:');
-      for (var phone in unusedPhones) {
-        debugPrint('  - ${phone.number} on line ${phone.lineIndex + 1} ("${lines[phone.lineIndex]}")');
-      }
-    }
-
-    return contacts;
-  }
-
-  /// Gaseste telefoanele asociate cu un nume (improved algorithm for tabular data)
-  List<PhoneDetection> _findAssociatedPhones(
-    NameDetection name,
-    List<PhoneDetection> phones,
-    Set<String> usedPhones,
-  ) {
-    List<Map<String, dynamic>> scoredPhones = [];
-
-    for (PhoneDetection phone in phones) {
-      if (usedPhones.contains(phone.number)) continue;
-
-      int distance = (phone.lineIndex - name.lineIndex).abs();
-      double score = 0;
-
-      if (distance == 0) {
-        score = 100; // Highest score for same line
-      } else if (distance <= 2) {
-        score = 50 - (distance * 10); // High score for adjacent lines
-      } else if (distance <= 5) {
-        score = 20 - (distance * 2); // Lower score for nearby lines
-      }
-
-      if (score > 0) {
-        scoredPhones.add({'phone': phone, 'score': score});
-      }
-    }
-
-    // Sort by score (descending)
-    scoredPhones.sort((a, b) => (b['score'] as double).compareTo(a['score'] as double));
-
-    // Return the top 2 matches
-    return scoredPhones.take(2).map((e) => e['phone'] as PhoneDetection).toList();
-  }
-
-  /// Calculeaza confidence-ul asociatiei dintre un nume si telefoane (improved)
-  double _calculateAssociationConfidence(
-    NameDetection name,
-    List<PhoneDetection> phones,
-  ) {
-    double confidence = name.confidence;
-    
-    // Major bonus for same line association (typical in contact lists)
-    int distance = (phones.first.lineIndex - name.lineIndex).abs();
-    if (distance == 0) {
-      confidence += 25.0; // Same line = very high confidence
-    } else if (distance == 1) {
-      confidence += 15.0; // Adjacent line = high confidence
-    } else if (distance == 2) {
-      confidence += 10.0; // 2 lines away = medium confidence
-    } else if (distance >= 3) {
-      confidence -= 10.0; // Further away = lower confidence
-    }
-
-    // Bonus for multiple phones (common in contact lists)
-    if (phones.length > 1) {
-      confidence += 10.0;
-    }
-
-    // Bonus if phone appears immediately after name in same line
-    if (distance == 0 && phones.first.position > 0) {
-      confidence += 10.0;
-    }
-
-    return confidence > 100.0 ? 100.0 : confidence;
-  }
-
-  /// Detecteaza contactele complete direct din linii individuale (pattern matching)
-  List<ContactDetection> _detectDirectContacts(List<String> lines) {
-    debugPrint('🎯 [ParserOcr] Trying direct contact detection on ${lines.length} lines');
-    
-    List<ContactDetection> contacts = [];
-    Set<String> usedPhones = {};
-
-    int processedLines = 0;
-    for (String line in lines) {
-      List<ContactDetection> lineContacts = _extractContactsFromLine(line);
-      
-      if (lineContacts.isNotEmpty) {
-        debugPrint('📋 [ParserOcr] Line ${processedLines + 1}: "${line.substring(0, line.length > 50 ? 50 : line.length)}..." -> ${lineContacts.length} contacts');
-      }
-      
-      for (ContactDetection contact in lineContacts) {
-        // Avoid duplicate phones
-        if (!usedPhones.contains(contact.phone1)) {
+      if (parts.length >= 2) {
+        final contact = await _createContactFromParts(parts);
+        if (contact != null) {
           contacts.add(contact);
-          usedPhones.add(contact.phone1);
-          if (contact.phone2 != null) {
-            usedPhones.add(contact.phone2!);
+        }
+      }
+    }
+    
+    return contacts;
+  }
+
+  /// Extrage contacte din formular structurat
+  Future<List<UnifiedClientModel>> _extractFromForm(List<String> lines) async {
+    final contacts = <UnifiedClientModel>[];
+    String? currentName;
+    String? currentPhone;
+    String? currentPhone2;
+    String? currentCNP;
+    
+    for (final line in lines) {
+      final cleanLine = line.trim();
+      
+      // Detectează câmpuri nume
+      if (cleanLine.toLowerCase().contains('nume')) {
+        final nameMatch = RegExp(r'nume\s*:?\s*(.+)', caseSensitive: false).firstMatch(cleanLine);
+        if (nameMatch != null) {
+          currentName = _cleanName(nameMatch.group(1)!);
+        }
+      }
+      
+      // Detectează câmpuri telefon
+      if (cleanLine.toLowerCase().contains('telefon')) {
+        final phones = _extractPhones(cleanLine);
+        if (phones.isNotEmpty) {
+          currentPhone = phones.first;
+          if (phones.length > 1) {
+            currentPhone2 = phones[1];
           }
         }
       }
       
-      processedLines++;
-    }
-
-    debugPrint('🎯 [ParserOcr] Direct detection: processed $processedLines lines, found ${contacts.length} contacts');
-    return contacts;
-  }
-
-  /// Extrage contactele dintr-o singura linie folosind pattern matching
-  List<ContactDetection> _extractContactsFromLine(String line) {
-    List<ContactDetection> contacts = [];
-
-    // Pattern Unificat si Imbunatatit
-    // Cauta un grup de cuvinte (nume) urmat de unul sau mai multe telefoane
-    // Numele poate avea 2-4 cuvinte. Telefoanele sunt separate prin virgula, cu spatii optionale.
-    final RegExp mainPattern = RegExp(
-      r'([A-Za-z\-]+\s+[A-Za-z\-]+(?:\s+[A-Za-z\-]+){0,2})\s+((?:0\d{9})(?:\s*,\s*0\d{9})*)',
-      caseSensitive: false,
-    );
-
-    Iterable<RegExpMatch> matches = mainPattern.allMatches(line);
-
-    for (final match in matches) {
-      String name = match.group(1)!.trim();
-      String phonesString = match.group(2)!.trim();
+      // Detectează CNP
+      final cnpMatch = _cnpRegex.firstMatch(cleanLine);
+      if (cnpMatch != null) {
+        currentCNP = cnpMatch.group(0);
+      }
       
-      // Curata numele de posibile erori
-      name = name.split(' ')
-          .where((w) => w.length > 2 && !_stopWords.contains(w.toLowerCase()))
-          .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
-          .join(' ');
-
-      if (name.split(' ').length < 2) continue; // Daca dupa curatare numele e prea scurt
-
-      // Extrage si valideaza telefoanele
-      List<String> phones = phonesString
-          .split(',')
-          .map((p) => _normalizePhone(p.trim()))
-          .where(_isValidRomanianPhone)
-          .toList();
-
-      if (phones.isNotEmpty) {
-        _logger.addParsingStep('   -> Match direct gasit: Nume="$name", Telefoane="${phones.join(',')}"');
-        contacts.add(ContactDetection(
-          name: name,
-          phone1: phones[0],
-          phone2: phones.length > 1 ? phones[1] : null,
-          confidence: 98.0, // Incredere mare pentru acest pattern
-        ));
-        // Oprim dupa primul match de incredere pe linie
-        return contacts; 
+      // Creează contact când avem informații suficiente
+      if (currentName != null && currentPhone != null) {
+        final contact = await _createContact(
+          name: currentName,
+          phone1: currentPhone,
+          phone2: currentPhone2,
+          cnp: currentCNP,
+        );
+        
+        if (contact != null) {
+          contacts.add(contact);
+        }
+        
+        // Reset pentru următorul contact
+        currentName = null;
+        currentPhone = null;
+        currentPhone2 = null;
+        currentCNP = null;
       }
     }
-
+    
     return contacts;
+  }
+
+  /// Extrage contacte din listă
+  Future<List<UnifiedClientModel>> _extractFromList(List<String> lines) async {
+    final contacts = <UnifiedClientModel>[];
+    
+    for (final line in lines) {
+      // Înlătură bullet points
+      final cleanLine = line.replaceFirst(RegExp(r'^[\s\-\*•\d+\.]+'), '').trim();
+      
+      if (cleanLine.isEmpty) continue;
+      
+      // Încearcă să extragă nume și telefon din aceeași linie
+      final phones = _extractPhones(cleanLine);
+      if (phones.isNotEmpty) {
+        // Înlătură numerele de telefon pentru a găsi numele
+        var nameCandidate = cleanLine;
+        for (final phone in phones) {
+          nameCandidate = nameCandidate.replaceAll(phone, '').trim();
+        }
+        
+        final cleanName = _cleanName(nameCandidate);
+        if (await _isValidName(cleanName)) {
+          final contact = await _createContact(
+            name: cleanName,
+            phone1: phones.first,
+            phone2: phones.length > 1 ? phones[1] : null,
+          );
+          
+          if (contact != null) {
+            contacts.add(contact);
+          }
+        }
+      }
+    }
+    
+    return contacts;
+  }
+
+  /// Extrage contacte din text liber
+  Future<List<UnifiedClientModel>> _extractFromFreeText(List<String> lines) async {
+    final contacts = <UnifiedClientModel>[];
+    final allText = lines.join(' ');
+    
+    debugPrint('🔍 PARSER_OCR: Analizez text liber: "${allText.substring(0, allText.length.clamp(0, 200))}..."');
+    
+    // Prima strategie: încearcă să analizezi linie cu linie (pentru formate structurate)
+    final lineContacts = await _extractFromStructuredLines(lines);
+    if (lineContacts.isNotEmpty) {
+      debugPrint('✅ PARSER_OCR: Folosesc metoda linie cu linie: ${lineContacts.length} contacte');
+      return lineContacts;
+    }
+    
+    // A doua strategie: analiză generală de text liber
+    final phoneMatches = _phoneRegex.allMatches(allText);
+    final phones = phoneMatches.map((m) => m.group(0)!).toSet().toList();
+    
+    debugPrint('📞 PARSER_OCR: Găsite ${phones.length} numere de telefon: $phones');
+    
+    // Pentru fiecare telefon, încearcă să găsești numele asociat
+    for (final phone in phones) {
+      debugPrint('🔍 PARSER_OCR: Caut nume pentru telefonul: $phone');
+      final name = await _findNameNearPhone(allText, phone);
+      if (name != null) {
+        debugPrint('✅ PARSER_OCR: Găsit nume "$name" pentru telefonul $phone');
+        final contact = await _createContact(
+          name: name,
+          phone1: phone,
+        );
+        
+        if (contact != null) {
+          contacts.add(contact);
+          debugPrint('✅ PARSER_OCR: Contact creat cu succes: ${contact.basicInfo.name}');
+        } else {
+          debugPrint('❌ PARSER_OCR: Nu s-a putut crea contactul pentru "$name" - $phone');
+        }
+      } else {
+        debugPrint('❌ PARSER_OCR: Nu s-a găsit nume pentru telefonul: $phone');
+      }
+    }
+    
+    return contacts;
+  }
+
+  /// Extrage contacte din linii structurate (nume telefon pe aceeași linie sau linii consecutive)
+  Future<List<UnifiedClientModel>> _extractFromStructuredLines(List<String> lines) async {
+    final contacts = <UnifiedClientModel>[];
+    
+    for (final line in lines) {
+      final trimmedLine = line.trim();
+      if (trimmedLine.isEmpty || trimmedLine.length < 10) continue;
+      
+      // Caută nume și telefon pe aceeași linie
+      // Format: "TAT FLORIAN 0258812138" sau "TAT FLORIAN 0258812138 0730652"
+      final phoneMatches = _phoneRegex.allMatches(trimmedLine);
+      if (phoneMatches.isNotEmpty) {
+        final phones = phoneMatches.map((m) => m.group(0)!).toList();
+        final firstPhone = phones.first;
+        
+        // Găsește numele - text înainte de primul telefon
+        final phoneIndex = trimmedLine.indexOf(firstPhone);
+        if (phoneIndex > 5) { // Trebuie să existe măcar 5 caractere pentru nume
+          final nameCandidate = trimmedLine.substring(0, phoneIndex).trim();
+          
+          // Curăță numele de caractere ciudate
+          final cleanedName = nameCandidate
+              .replaceAll(RegExp(r'[^A-ZĂÂÎȘȚa-zăâîșț\s]'), '')
+              .replaceAll(RegExp(r'\s+'), ' ')
+              .trim();
+          
+          if (cleanedName.length >= 5 && cleanedName.split(' ').length >= 2) {
+            // Încearcă să validezi și să capitalizezi numele
+            final finalName = _cleanName(cleanedName);
+            
+            debugPrint('🔍 PARSER_OCR: Linie: "$trimmedLine"');
+            debugPrint('📱 PARSER_OCR: Telefon găsit: $firstPhone');
+            debugPrint('👤 PARSER_OCR: Nume candidat: "$finalName"');
+            
+            // Creează contactul (cu validare mai relaxată pentru numele din OCR)
+            final contact = await _createContactRelaxed(
+              name: finalName,
+              phone1: firstPhone,
+              phone2: phones.length > 1 ? phones[1] : null,
+            );
+            
+            if (contact != null) {
+              contacts.add(contact);
+              debugPrint('✅ PARSER_OCR: Contact din linie creat: ${contact.basicInfo.name}');
+            } else {
+              debugPrint('❌ PARSER_OCR: Nu s-a putut crea contactul din linie pentru: "$finalName"');
+            }
+          }
+        }
+      }
+    }
+    
+    return contacts;
+  }
+
+  /// Creează contact din părți separate
+  Future<UnifiedClientModel?> _createContactFromParts(List<String> parts) async {
+    String? name;
+    String? phone1;
+    String? phone2;
+    
+    for (final part in parts) {
+      final trimmed = part.trim();
+      
+      if (await _isValidName(trimmed)) {
+        name = trimmed;
+      } else if (_isValidPhone(trimmed)) {
+        if (phone1 == null) {
+          phone1 = trimmed;
+        } else {
+          phone2 = trimmed;
+        }
+      }
+    }
+    
+    if (name != null && phone1 != null) {
+      return await _createContact(
+        name: name,
+        phone1: phone1,
+        phone2: phone2,
+      );
+    }
+    
+    return null;
+  }
+
+  /// Creează un contact valid
+  Future<UnifiedClientModel?> _createContact({
+    required String name,
+    required String phone1,
+    String? phone2,
+    String? cnp,
+  }) async {
+    try {
+      final cleanName = _cleanName(name);
+      final cleanPhone1 = _cleanPhone(phone1);
+      final cleanPhone2 = phone2 != null ? _cleanPhone(phone2) : null;
+      
+      if (!await _isValidName(cleanName) || !_isValidPhone(cleanPhone1)) {
+        return null;
+      }
+      
+      return UnifiedClientModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        consultantId: 'ocr',
+        basicInfo: ClientBasicInfo(
+          name: cleanName,
+          phoneNumber1: cleanPhone1,
+          phoneNumber2: cleanPhone2,
+          cnp: cnp,
+        ),
+        formData: const ClientFormData(
+          clientCredits: [],
+          coDebitorCredits: [],
+          clientIncomes: [],
+          coDebitorIncomes: [],
+          additionalData: {},
+        ),
+        activities: [],
+        currentStatus: const UnifiedClientStatus(
+          category: UnifiedClientCategory.apeluri,
+          isFocused: false,
+          additionalInfo: 'Extras din OCR',
+        ),
+        metadata: ClientMetadata(
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          createdBy: 'ocr',
+          source: 'ocr_extraction',
+          version: 1,
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ PARSER_OCR: Eroare la crearea contactului: $e');
+      return null;
+    }
+  }
+
+  /// Creează un contact cu validare mai relaxată (pentru OCR)
+  Future<UnifiedClientModel?> _createContactRelaxed({
+    required String name,
+    required String phone1,
+    String? phone2,
+    String? cnp,
+  }) async {
+    try {
+      final cleanName = _cleanName(name);
+      final cleanPhone1 = _cleanPhone(phone1);
+      final cleanPhone2 = phone2 != null ? _cleanPhone(phone2) : null;
+      
+      // Validare doar pentru telefon - numele acceptate mai relaxat pentru OCR
+      if (!_isValidPhone(cleanPhone1)) {
+        debugPrint('❌ PARSER_OCR: Telefon invalid: $cleanPhone1');
+        return null;
+      }
+      
+      // Validare minimă pentru nume - cel puțin 2 cuvinte de cel puțin 2 litere
+      final nameParts = cleanName.split(' ');
+      if (nameParts.length < 2 || nameParts.any((part) => part.length < 2)) {
+        debugPrint('❌ PARSER_OCR: Nume invalid: $cleanName');
+        return null;
+      }
+      
+      return UnifiedClientModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        consultantId: 'ocr',
+        basicInfo: ClientBasicInfo(
+          name: cleanName,
+          phoneNumber1: cleanPhone1,
+          phoneNumber2: cleanPhone2,
+          cnp: cnp,
+        ),
+        formData: const ClientFormData(
+          clientCredits: [],
+          coDebitorCredits: [],
+          clientIncomes: [],
+          coDebitorIncomes: [],
+          additionalData: {},
+        ),
+        activities: [],
+        currentStatus: const UnifiedClientStatus(
+          category: UnifiedClientCategory.apeluri,
+          isFocused: false,
+          additionalInfo: 'Extras din OCR',
+        ),
+        metadata: ClientMetadata(
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          createdBy: 'ocr',
+          source: 'ocr_extraction',
+          version: 1,
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ PARSER_OCR: Eroare la crearea contactului relaxat: $e');
+      return null;
+    }
+  }
+
+  /// Găsește numele din apropierea unui telefon
+  Future<String?> _findNameNearPhone(String text, String phone) async {
+    final phoneIndex = text.indexOf(phone);
+    if (phoneIndex == -1) return null;
+    
+    // Caută în 100 de caractere înainte și după telefon
+    final start = (phoneIndex - 100).clamp(0, text.length);
+    final end = (phoneIndex + phone.length + 100).clamp(0, text.length);
+    final context = text.substring(start, end);
+    
+    debugPrint('🔍 PARSER_OCR: Context pentru $phone: "${context.substring(0, context.length.clamp(0, 100))}..."');
+    
+    // Încearcă să găsească nume în text lipit (fără spații)
+    final nameFromConcatenated = await _extractNameFromConcatenatedText(context, phone);
+    if (nameFromConcatenated != null) {
+      debugPrint('✅ PARSER_OCR: Nume găsit din text lipit: "$nameFromConcatenated"');
+      return nameFromConcatenated;
+    }
+    
+    // Împarte în cuvinte și caută numele (pentru texte normale cu spații)
+    final words = context.split(RegExp(r'\s+'));
+    
+    debugPrint('🔍 PARSER_OCR: Cuvinte găsite: ${words.take(10).toList()}');
+    
+    for (int i = 0; i < words.length - 1; i++) {
+      final candidate = '${words[i]} ${words[i + 1]}';
+      debugPrint('🔍 PARSER_OCR: Verific candidat: "$candidate"');
+      if (await _isValidName(candidate)) {
+        final cleaned = _cleanName(candidate);
+        debugPrint('✅ PARSER_OCR: Nume valid găsit: "$cleaned"');
+        return cleaned;
+      }
+    }
+    
+    debugPrint('❌ PARSER_OCR: Nu s-a găsit nume valid în contextul pentru $phone');
+    return null;
+  }
+
+  /// Extrage nume din text concatenat (fără spații)
+  Future<String?> _extractNameFromConcatenatedText(String context, String phone) async {
+    final phoneIndex = context.indexOf(phone);
+    if (phoneIndex == -1) return null;
+    
+    // Caută înainte de telefon pentru nume
+    final beforePhone = context.substring(0, phoneIndex);
+    
+    debugPrint('🔍 PARSER_OCR: Text înainte de telefon: "${beforePhone.substring((beforePhone.length - 50).clamp(0, beforePhone.length))}"');
+    
+    // Încearcă să separe numele din textul lipit
+    // Caută ultimele 30-50 de caractere înainte de telefon
+    final searchLength = 50.clamp(0, beforePhone.length);
+    final searchText = beforePhone.substring(beforePhone.length - searchLength);
+    
+         // Încearcă să găsească nume cu diferite lungimi
+     for (int nameLength = 15; nameLength <= 30; nameLength++) {
+       if (nameLength > searchText.length) continue;
+       
+       final candidateName = searchText.substring(searchText.length - nameLength);
+       
+       // Curăță numele candidat
+       final cleanCandidate = _cleanConcatenatedName(candidateName);
+       if (cleanCandidate != null) {
+         debugPrint('🔍 PARSER_OCR: Testez nume candidat: "$cleanCandidate"');
+         
+         // Verifică dacă conține cel puțin două nume românești
+         if (await _isValidConcatenatedName(cleanCandidate)) {
+           return cleanCandidate;
+         }
+       }
+     }
+     
+     // Abordare alternativă: încearcă să extragă nume chiar și fără validare strictă
+     final fallbackName = _extractNameFallback(beforePhone, phone);
+     if (fallbackName != null) {
+       debugPrint('🔍 PARSER_OCR: Folosesc nume fallback: "$fallbackName"');
+       return fallbackName;
+     }
+    
+    return null;
+  }
+
+  /// Curăță un nume din text concatenat
+  String? _cleanConcatenatedName(String concatenated) {
+    // Înlătură caractere nevalide
+    final cleaned = concatenated.replaceAll(RegExp(r'[^A-ZĂÂÎȘȚa-zăâîșț]'), '');
+    
+    if (cleaned.length < 10 || cleaned.length > 40) return null;
+    
+    // Încearcă să separe numele folosind baza de date
+    return _separateNames(cleaned);
+  }
+
+  /// Separă numele dintr-un string concatenat
+  String? _separateNames(String concatenated) {
+    // Încearcă să găsească două nume consecutive în baza de date
+    for (int i = 3; i < concatenated.length - 3; i++) {
+      final firstPart = concatenated.substring(0, i);
+      final remaining = concatenated.substring(i);
+      
+      // Încearcă să găsească un al doilea nume în restul stringului
+      for (int j = 3; j < remaining.length && j <= 15; j++) {
+        final secondPart = remaining.substring(0, j);
+        final thirdPart = remaining.length > j ? remaining.substring(j) : '';
+        
+        // Verifică dacă avem 2-3 nume valide
+        if (_isRomanianName(firstPart) && _isRomanianName(secondPart)) {
+          if (thirdPart.isEmpty || thirdPart.length < 3) {
+            // Doar 2 nume
+            return '${_capitalizeWord(firstPart)} ${_capitalizeWord(secondPart)}';
+          } else if (thirdPart.length >= 3 && thirdPart.length <= 15 && _isRomanianName(thirdPart)) {
+            // 3 nume
+            return '${_capitalizeWord(firstPart)} ${_capitalizeWord(secondPart)} ${_capitalizeWord(thirdPart)}';
+          }
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /// Verifică dacă un string este un nume românesc din baza de date
+  bool _isRomanianName(String name) {
+    return _romanianNames?.contains(name.toUpperCase()) ?? false;
+  }
+
+  /// Capitalizează prima literă a unui cuvânt
+  String _capitalizeWord(String word) {
+    if (word.isEmpty) return word;
+    return word[0].toUpperCase() + word.substring(1).toLowerCase();
+  }
+
+  /// Verifică dacă un nume concatenat este valid
+  Future<bool> _isValidConcatenatedName(String name) async {
+    await _loadRomanianNames();
+    
+    if (name.length < 6 || name.length > 50) return false;
+    
+    // Verifică dacă conține cel puțin 2 cuvinte
+    final words = name.split(' ');
+    if (words.length < 2) return false;
+    
+    // Verifică dacă cel puțin jumătate din cuvinte sunt nume românești
+    int validWords = 0;
+    for (final word in words) {
+      if (_romanianNames?.contains(word.toUpperCase()) ?? false) {
+        validWords++;
+      }
+    }
+    
+         return validWords >= (words.length * 0.5).ceil();
+   }
+
+   /// Extrage nume folosind abordare fallback (mai puțin strictă)
+   String? _extractNameFallback(String beforePhone, String phone) {
+     // Caută ultimele 20-40 caractere înainte de telefon
+     final searchLength = 40.clamp(0, beforePhone.length);
+     if (searchLength < 10) return null;
+     
+     final searchText = beforePhone.substring(beforePhone.length - searchLength);
+     
+     // Înlătură caractere nevalide și păstrează doar litere
+     final lettersOnly = searchText.replaceAll(RegExp(r'[^A-ZĂÂÎȘȚa-zăâîșț]'), '');
+     
+     if (lettersOnly.length < 10 || lettersOnly.length > 40) return null;
+     
+     // Încearcă să împartă în 2-3 nume de lungimi rezonabile
+     final result = _splitIntoNames(lettersOnly);
+     if (result != null && result.split(' ').length >= 2) {
+       debugPrint('🔍 PARSER_OCR: Nume fallback găsit: "$result"');
+       return result;
+     }
+     
+     return null;
+   }
+
+   /// Împarte un string în nume de lungimi rezonabile
+   String? _splitIntoNames(String text) {
+     // Încearcă diferite combinații de împărțire
+     final patterns = [
+       [5, 7, 8], // prenume scurt, nume mediu, nume mediu
+       [6, 8, 6], // prenume mediu, nume lung, nume scurt
+       [7, 7, 6], // prenume lung, nume mediu, nume scurt
+       [8, 8],    // doar 2 nume, ambele lungi
+       [6, 10],   // prenume scurt, nume lung
+       [10, 8],   // prenume lung, nume mediu
+     ];
+     
+     for (final pattern in patterns) {
+       if (pattern.reduce((a, b) => a + b) <= text.length && 
+           pattern.reduce((a, b) => a + b) >= text.length - 2) {
+         
+         final names = <String>[];
+         int start = 0;
+         
+         for (int i = 0; i < pattern.length; i++) {
+           final length = pattern[i];
+           if (start + length <= text.length) {
+             final name = text.substring(start, start + length);
+             names.add(_capitalizeWord(name));
+             start += length;
+           }
+         }
+         
+         if (names.length >= 2) {
+           final result = names.join(' ');
+           debugPrint('🔍 PARSER_OCR: Încercare împărțire: "$result" (pattern: $pattern)');
+           return result;
+         }
+       }
+     }
+     
+     return null;
+   }
+
+   /// Extrage numerele de telefon dintr-un text
+  List<String> _extractPhones(String text) {
+    final matches = _phoneRegex.allMatches(text);
+    return matches.map((m) => _cleanPhone(m.group(0)!)).toList();
+  }
+
+  /// Verifică dacă un string este un nume valid
+  Future<bool> _isValidName(String candidate) async {
+    await _loadRomanianNames();
+    
+    if (candidate.length < 3 || candidate.length > 50) return false;
+    
+    // Verifică format
+    if (!_nameRegex.hasMatch(candidate)) return false;
+    
+    // Verifică în baza de date de nume
+    final parts = candidate.split(' ');
+    if (parts.length < 2) return false;
+    
+    final firstName = parts.first;
+    final lastName = parts.last;
+    
+    // Dacă baza de date e goală sau nu s-a încărcat, folosește validare mai permisivă
+    if (_romanianNames == null || _romanianNames!.isEmpty) {
+      debugPrint('⚠️ PARSER_OCR: Baza de nume nu e disponibilă, folosesc validare permisivă pentru: $candidate');
+      // Verifică că sunt doar litere și spații, și că fiecare cuvânt începe cu majusculă
+      return parts.every((part) => RegExp(r'^[A-ZĂÂÎȘȚ][a-zăâîșț]+$').hasMatch(part));
+    }
+    
+    return _romanianNames!.contains(firstName) || _romanianNames!.contains(lastName);
+  }
+
+  /// Verifică dacă un string este un telefon valid - DOAR numere COMPLETE de 10 cifre
+  bool _isValidPhone(String candidate) {
+    final clean = _cleanPhone(candidate);
+    // Trebuie să aibă EXACT 10 cifre pentru numerele românești fără prefix
+    if (clean.startsWith('+40')) {
+      return clean.length == 13 && _phoneRegex.hasMatch(clean);
+    } else {
+      return clean.length == 10 && _phoneRegex.hasMatch(clean);
+    }
+  }
+
+  /// Curăță un nume
+  String _cleanName(String name) {
+    return name
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  /// Curăță un număr de telefon
+  String _cleanPhone(String phone) {
+    // Înlătură toate caracterele non-numerice și + pentru internațional
+    var clean = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    
+    // Standardizează format pentru România
+    if (clean.startsWith('+407')) {
+      clean = '07${clean.substring(4)}';
+    } else if (clean.startsWith('+402') || clean.startsWith('+403') || 
+               clean.startsWith('+404') || clean.startsWith('+405') || 
+               clean.startsWith('+406')) {
+      clean = '0${clean.substring(3)}';
+    }
+    
+    return clean;
   }
 }
 
-/// Rezultatul validarii unui telefon
-class PhoneValidationResult {
-  final bool isValid;
-  final String? correctedPhone;
-  final double confidence;
-
-  const PhoneValidationResult({
-    required this.isValid,
-    this.correctedPhone,
-    required this.confidence,
-  });
+/// Tipuri de documente recunoscute
+enum DocumentType {
+  table,    // Tabel structurat cu coloane
+  form,     // Formular cu câmpuri etichetate
+  list,     // Listă cu bullet points
+  freeText, // Text liber
 }
 
-/// Telefon detectat
-class PhoneDetection {
-  final String number;
-  final int lineIndex;
-  final int position;
-  final String raw;
+/// Rezultatul parsării
+class ParseResult {
+  final List<UnifiedClientModel> contacts;
+  final DocumentType documentType;
   final double confidence;
-
-  const PhoneDetection({
-    required this.number,
-    required this.lineIndex,
-    required this.position,
-    required this.raw,
+  final String originalText;
+  
+  const ParseResult({
+    required this.contacts,
+    required this.documentType,
     required this.confidence,
-  });
-}
-
-/// Nume detectat
-class NameDetection {
-  final String name;
-  final int lineIndex;
-  final int position;
-  final double confidence;
-
-  const NameDetection({
-    required this.name,
-    required this.lineIndex,
-    required this.position,
-    required this.confidence,
-  });
-}
-
-/// Contact detectat final
-class ContactDetection {
-  final String name;
-  final String phone1;
-  final String? phone2;
-  final double confidence;
-
-  const ContactDetection({
-    required this.name,
-    required this.phone1,
-    this.phone2,
-    required this.confidence,
+    required this.originalText,
   });
 
-  /// Pentru compatibilitate
-  String get phone => phone1;
+  @override
+  String toString() => 'ParseResult(contacts: ${contacts.length}, type: $documentType, confidence: $confidence)';
 }
 
 

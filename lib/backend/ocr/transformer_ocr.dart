@@ -1,163 +1,421 @@
-import '../services/clients_service.dart';
-import 'ocr_logger.dart';
-import 'parser_ocr.dart';
+import 'package:flutter/foundation.dart';
 
-/// Service pentru transformarea contactelor detectate in modele client
-/// Converteste simplu ContactDetection -> UnifiedClientModel
-class TransformerOcr {
-  /// Singleton instance
-  static final TransformerOcr _instance = TransformerOcr._internal();
-  factory TransformerOcr() => _instance;
-  TransformerOcr._internal();
+/// Service pentru transformarea și curățarea textului OCR
+class TransformerOCR {
+  static final TransformerOCR _instance = TransformerOCR._internal();
+  factory TransformerOCR() => _instance;
+  TransformerOCR._internal();
 
-  final _logger = OcrDebugLogger();
-
-  /// Transforma lista de contacte detectate in clienti unificati
-  Future<List<UnifiedClientModel>> transformContactsToClients(
-    List<ContactDetection> detectedContacts,
-  ) async {
-    _logger.addTransformationStep('--- Inceput Transformare ---');
-    _logger.addTransformationStep('Input: ${detectedContacts.length} contacte detectate.');
-
-    final clients = <UnifiedClientModel>[];
-
-    for (int i = 0; i < detectedContacts.length; i++) {
-      final contact = detectedContacts[i];
+  /// Transformă textul OCR brut într-un format curat și structurat
+  Future<TransformResult> transformText(String rawText) async {
+    try {
+      debugPrint('🔄 TRANSFORMER_OCR: Începe transformarea textului (${rawText.length} caractere)');
       
-      try {
-        // Valideaza contactul
-        if (!_isValidContact(contact)) {
-          _logger.addTransformationStep('⚠️ Contact invalid ignorat: Nume="${contact.name}", Tel1="${contact.phone1}", Tel2="${contact.phone2 ?? 'N/A'}"');
-          continue;
-        }
-
-        // Creeaza client
-        final client = _createClient(contact, i);
-        clients.add(client);
-
-        _logger.addTransformationStep('✅ Client creat: ${client.basicInfo.name} (${client.basicInfo.phoneNumber1})');
+      if (rawText.isEmpty) {
+        return TransformResult(
+          originalText: rawText,
+          cleanedText: '',
+          confidence: 0.0,
+          improvements: [],
+        );
+      }
+      
+      var transformedText = rawText;
+      final improvements = <String>[];
+      
+      // 1. Curățarea caracterelor OCR greșite
+      final characterResult = _fixOCRCharacters(transformedText);
+      transformedText = characterResult.text;
+      improvements.addAll(characterResult.improvements);
+      
+      // 2. Corectarea numerelor de telefon
+      final phoneResult = _fixPhoneNumbers(transformedText);
+      transformedText = phoneResult.text;
+      improvements.addAll(phoneResult.improvements);
+      
+      // 3. Standardizarea spațiilor și formatării
+      final spacingResult = _standardizeSpacing(transformedText);
+      transformedText = spacingResult.text;
+      improvements.addAll(spacingResult.improvements);
+      
+      // 4. Corectarea CNP-urilor
+      final cnpResult = _fixCNPs(transformedText);
+      transformedText = cnpResult.text;
+      improvements.addAll(cnpResult.improvements);
+      
+      // 5. Îmbunătățirea numelor proprii
+      final nameResult = _fixProperNames(transformedText);
+      transformedText = nameResult.text;
+      improvements.addAll(nameResult.improvements);
+      
+      // 6. Curățarea finală
+      transformedText = _finalCleanup(transformedText);
+      
+      // Calculează confidence score
+      final confidence = _calculateConfidence(rawText, transformedText, improvements);
+      
+      debugPrint('✅ TRANSFORMER_OCR: Text transformat cu ${improvements.length} îmbunătățiri');
+      debugPrint('📊 TRANSFORMER_OCR: Confidence score: ${(confidence * 100).toStringAsFixed(1)}%');
+      
+      return TransformResult(
+        originalText: rawText,
+        cleanedText: transformedText,
+        confidence: confidence,
+        improvements: improvements,
+      );
 
       } catch (e) {
-        _logger.addTransformationStep('❌ Eroare la transformarea contactului ${contact.name}: $e');
+      debugPrint('❌ TRANSFORMER_OCR: Eroare la transformarea textului: $e');
+      return TransformResult(
+        originalText: rawText,
+        cleanedText: rawText,
+        confidence: 0.0,
+        improvements: ['Eroare la procesare: $e'],
+      );
+    }
+  }
+
+  /// Corectează caracterele OCR comune greșite
+  TransformStep _fixOCRCharacters(String text) {
+    var fixed = text;
+    final improvements = <String>[];
+    
+    // Mapă de caractere OCR comune greșite
+    final characterMap = {
+      // Cifre comune greșite
+      'O': '0', 'o': '0', '°': '0',
+      'I': '1', 'l': '1', '|': '1',
+      'S': '5', '§': '5',
+      'G': '6', 'g': '6',
+      'T': '7', 't': '7',
+      'B': '8',
+      
+      // Litere comune greșite
+      '0': 'O', '1': 'I', '5': 'S', '6': 'G', '7': 'T', '8': 'B',
+      
+      // Caractere speciale românești
+      'ã': 'a', 'â': 'a', 'ă': 'a',
+      'î': 'i', 'ï': 'i',
+      'ş': 's', 'ș': 's',
+      'ţ': 't', 'ț': 't',
+    };
+    
+    int changes = 0;
+    
+    // Aplică corectările în context
+    for (final entry in characterMap.entries) {
+      final before = fixed;
+      
+      // Pentru numere de telefon și CNP-uri
+      if (RegExp(r'\d').hasMatch(entry.value)) {
+        // Înlocuiește doar în contexte numerice
+        fixed = fixed.replaceAllMapped(
+          RegExp('${RegExp.escape(entry.key)}(?=\\d)|(?<=\\d)${RegExp.escape(entry.key)}'),
+          (match) => entry.value,
+        );
+      } else {
+        // Pentru text normal
+        fixed = fixed.replaceAllMapped(
+          RegExp('\\b${RegExp.escape(entry.key)}(?=[a-zA-Z])|(?<=[a-zA-Z])${RegExp.escape(entry.key)}\\b'),
+          (match) => entry.value,
+        );
+      }
+      
+      if (before != fixed) {
+        changes++;
       }
     }
-
-    _logger.addTransformationStep('Output: ${clients.length} clienti creati.');
-    _logger.addTransformationStep('--- Sfarsit Transformare ---');
-    return clients;
-  }
-
-  /// Valideaza daca contactul este valid pentru conversie
-  bool _isValidContact(ContactDetection contact) {
-    // Nume valid (minim 2 caractere)
-    if (contact.name.trim().length < 2) return false;
     
-    // Telefon valid (exact 10 cifre, incepe cu 0)
-    if (contact.phone1.length != 10 || !contact.phone1.startsWith('0')) return false;
-    
-    // Al doilea telefon (optional) trebuie sa fie valid daca exista
-    if (contact.phone2 != null) {
-      if (contact.phone2!.length != 10 || !contact.phone2!.startsWith('0')) return false;
+    if (changes > 0) {
+      improvements.add('Corectate $changes caractere OCR greșite');
     }
-
-    return true;
+    
+    return TransformStep(text: fixed, improvements: improvements);
   }
 
-  /// Creeaza un client din contactul detectat
-  UnifiedClientModel _createClient(ContactDetection contact, int index) {
-    final now = DateTime.now();
-    final formattedName = _formatName(contact.name);
-    final phone1 = _formatPhone(contact.phone1);
-    final phone2 = contact.phone2 != null ? _formatPhone(contact.phone2!) : null;
-    final clientId = 'ocr_${now.millisecondsSinceEpoch}_$index';
-
-    return UnifiedClientModel(
-      id: clientId,
-      consultantId: 'current_consultant', // Placeholder
-      basicInfo: ClientBasicInfo(
-        name: formattedName,
-        phoneNumber1: phone1,
-        phoneNumber2: phone2,
-      ),
-      formData: const ClientFormData(
-        clientCredits: [],
-        coDebitorCredits: [],
-        clientIncomes: [],
-        coDebitorIncomes: [],
-        additionalData: {},
-      ),
-      activities: [
-        ClientActivity(
-          id: 'ocr_activity_${now.millisecondsSinceEpoch}_$index',
-          type: ClientActivityType.other,
-          dateTime: now,
-          description: 'Client extras automat prin OCR (confidence: ${(contact.confidence * 100).toStringAsFixed(1)}%)',
-          createdAt: now,
-          additionalData: {
-            'confidence': contact.confidence.toString(),
-            'extraction_method': 'enhanced_ocr',
-            'source': 'better_ocr_engine',
-          },
-        ),
-      ],
-      currentStatus: const UnifiedClientStatus(
-        category: UnifiedClientCategory.apeluri,
-        isFocused: false,
-        additionalInfo: 'Extras prin OCR - necesita verificare',
-      ),
-      metadata: ClientMetadata(
-        createdAt: now,
-        updatedAt: now,
-        createdBy: 'ocr_system',
-        source: 'enhanced_ocr_extraction',
-        version: 1,
-      ),
-    );
+  /// Corectează și standardizează numerele de telefon
+  TransformStep _fixPhoneNumbers(String text) {
+    var fixed = text;
+    final improvements = <String>[];
+    
+    // Regex pentru identificarea numerelor de telefon posibile
+    final phonePatterns = [
+      RegExp(r'(\+?4?0?[7][0-9O][0-9O][0-9O][0-9O][0-9O][0-9O][0-9O][0-9O])'),
+      RegExp(r'(\+?4?0?[2-6][0-9O][0-9O][0-9O][0-9O][0-9O][0-9O][0-9O][0-9O])'),
+    ];
+    
+    int fixes = 0;
+    
+    for (final pattern in phonePatterns) {
+      fixed = fixed.replaceAllMapped(pattern, (match) {
+        var phone = match.group(0)!;
+        
+        // Curăță caracterele non-numerice (păstrează +)
+        var cleaned = phone.replaceAll(RegExp(r'[^\d+]'), '');
+        
+        // Corectează caracterele OCR în numere
+        cleaned = cleaned
+            .replaceAll('O', '0')
+            .replaceAll('o', '0')
+            .replaceAll('I', '1')
+            .replaceAll('l', '1')
+            .replaceAll('|', '1')
+            .replaceAll('S', '5')
+            .replaceAll('§', '5');
+        
+        // Standardizează formatul
+        if (cleaned.startsWith('+407')) {
+          cleaned = '07${cleaned.substring(4)}';
+        } else if (cleaned.startsWith('+40') && cleaned.length == 12) {
+          cleaned = '0${cleaned.substring(3)}';
+        } else if (cleaned.startsWith('407')) {
+          cleaned = '07${cleaned.substring(3)}';
+        } else if (cleaned.startsWith('40') && cleaned.length == 11) {
+          cleaned = '0${cleaned.substring(2)}';
+        }
+        
+        // Validează lungimea
+        if (cleaned.length == 10 && cleaned.startsWith('07')) {
+          fixes++;
+          return cleaned;
+        } else if (cleaned.length == 10 && RegExp(r'^0[2-6]').hasMatch(cleaned)) {
+          fixes++;
+          return cleaned;
+        }
+        
+        return phone; // Returnează originalul dacă nu poate fi corectat
+      });
+    }
+    
+    if (fixes > 0) {
+      improvements.add('Corectate și standardizate $fixes numere de telefon');
+    }
+    
+    return TransformStep(text: fixed, improvements: improvements);
   }
 
-  /// Formateaza numele (majuscula la inceput)
-  String _formatName(String name) {
-    return name.split(' ')
-        .map((word) => word.isEmpty ? '' : 
-             '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
-        .join(' ')
+  /// Standardizează spațiile și formatarea
+  TransformStep _standardizeSpacing(String text) {
+    var fixed = text;
+    final improvements = <String>[];
+    
+    // Înlocuiește multiple spații cu unul singur
+    final beforeSpaces = fixed;
+    fixed = fixed.replaceAll(RegExp(r'\s+'), ' ');
+    if (beforeSpaces != fixed) {
+      improvements.add('Standardizate spațiile multiple');
+    }
+    
+    // Curăță spațiile de la început și sfârșit
+    final beforeTrim = fixed;
+    fixed = fixed.trim();
+    if (beforeTrim != fixed) {
+      improvements.add('Eliminate spațiile de la capete');
+    }
+    
+    // Standardizează separatorii de linie
+    final beforeLines = fixed;
+    fixed = fixed.replaceAll(RegExp(r'\r\n|\r'), '\n');
+    if (beforeLines != fixed) {
+      improvements.add('Standardizate separatorii de linie');
+    }
+    
+    // Elimină liniile goale multiple
+    final beforeEmptyLines = fixed;
+    fixed = fixed.replaceAll(RegExp(r'\n\s*\n\s*\n'), '\n\n');
+    if (beforeEmptyLines != fixed) {
+      improvements.add('Eliminate liniile goale multiple');
+    }
+    
+    return TransformStep(text: fixed, improvements: improvements);
+  }
+
+  /// Corectează CNP-urile
+  TransformStep _fixCNPs(String text) {
+    var fixed = text;
+    final improvements = <String>[];
+    
+    // Regex pentru identificarea CNP-urilor posibile
+    final cnpPattern = RegExp(r'\b[1-8O][0-9O]{12}\b');
+    
+    int fixes = 0;
+    
+    fixed = fixed.replaceAllMapped(cnpPattern, (match) {
+      var cnp = match.group(0)!;
+      
+      // Corectează caracterele OCR
+      cnp = cnp
+          .replaceAll('O', '0')
+          .replaceAll('o', '0')
+          .replaceAll('I', '1')
+          .replaceAll('l', '1')
+          .replaceAll('|', '1')
+          .replaceAll('S', '5')
+          .replaceAll('§', '5');
+      
+      // Validează prima cifră (gen)
+      if (RegExp(r'^[1-8]').hasMatch(cnp) && cnp.length == 13) {
+        fixes++;
+        return cnp;
+      }
+      
+      return match.group(0)!; // Returnează originalul
+    });
+    
+    if (fixes > 0) {
+      improvements.add('Corectate $fixes CNP-uri');
+    }
+    
+    return TransformStep(text: fixed, improvements: improvements);
+  }
+
+  /// Îmbunătățește numele proprii (capitalize)
+  TransformStep _fixProperNames(String text) {
+    var fixed = text;
+    final improvements = <String>[];
+    
+    // Regex pentru identificarea numelor (2+ cuvinte cu prima literă mare)
+    final namePattern = RegExp(r'\b[A-ZĂÂÎȘȚ][a-zăâîșț]+\s+[A-ZĂÂÎȘȚ][a-zăâîșț]+(?:\s+[A-ZĂÂÎȘȚ][a-zăâîșț]+)*\b');
+    
+    int fixes = 0;
+    
+    fixed = fixed.replaceAllMapped(namePattern, (match) {
+      final name = match.group(0)!;
+      final words = name.split(' ');
+      
+      // Capitalize fiecare cuvânt
+      final capitalizedWords = words.map((word) {
+        if (word.isEmpty) return word;
+        return word[0].toUpperCase() + word.substring(1).toLowerCase();
+      }).toList();
+      
+      final capitalizedName = capitalizedWords.join(' ');
+      
+      if (capitalizedName != name) {
+        fixes++;
+        return capitalizedName;
+      }
+      
+      return name;
+    });
+    
+    if (fixes > 0) {
+      improvements.add('Corectate $fixes nume proprii');
+    }
+    
+    return TransformStep(text: fixed, improvements: improvements);
+  }
+
+  /// Curățarea finală a textului
+  String _finalCleanup(String text) {
+    return text
+        .replaceAll(RegExp(r'[^\w\s\+\-\.\(\)\[\]\/\\:;,!?@#\$%&*=\u0100-\u017F]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
   }
 
-  /// Formateaza telefonul (pastreaza exact cum e)
-  String _formatPhone(String phone) {
-    return phone.trim();
+  /// Calculează confidence score bazat pe îmbunătățiri
+  double _calculateConfidence(String original, String cleaned, List<String> improvements) {
+    if (original.isEmpty) return 0.0;
+    
+    // Baza de confidence
+    double confidence = 0.7; // 70% de bază
+    
+    // Adaugă puncte pentru fiecare îmbunătățire
+    confidence += improvements.length * 0.05;
+    
+    // Adaugă puncte pentru lungimea textului (mai mult text = mai multă încredere)
+    final lengthFactor = (cleaned.length / 1000).clamp(0.0, 0.2);
+    confidence += lengthFactor;
+    
+    // Scade puncte pentru diferențe mari (posibile erori)
+    final diffRatio = (original.length - cleaned.length).abs() / original.length;
+    if (diffRatio > 0.3) {
+      confidence -= 0.1;
+    }
+    
+    return confidence.clamp(0.0, 1.0);
+  }
+
+  /// Obține statistici despre text
+  TextStatistics getTextStatistics(String text) {
+    final lines = text.split('\n').where((line) => line.trim().isNotEmpty).length;
+    final words = text.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
+    final characters = text.length;
+    
+    final phoneMatches = RegExp(r'\b0[7][0-9]{8}\b|\b0[2-6][0-9]{8}\b').allMatches(text).length;
+    final cnpMatches = RegExp(r'\b[1-8][0-9]{12}\b').allMatches(text).length;
+    final nameMatches = RegExp(r'\b[A-ZĂÂÎȘȚ][a-zăâîșț]+\s+[A-ZĂÂÎȘȚ][a-zăâîșț]+\b').allMatches(text).length;
+    
+    return TextStatistics(
+      lines: lines,
+      words: words,
+      characters: characters,
+      phoneNumbers: phoneMatches,
+      cnps: cnpMatches,
+      names: nameMatches,
+    );
   }
 }
 
-/// Statistici despre procesul de transformare
-class TransformationStats {
-  final int originalContacts;
-  final int validContacts;
-  final int createdClients;
-  final int highConfidenceCount;
-  final int mediumConfidenceCount;
-  final int lowConfidenceCount;
-  final int contactsWithTwoPhones;
-  final double rejectionRate;
+/// Rezultatul unei etape de transformare
+class TransformStep {
+  final String text;
+  final List<String> improvements;
+  
+  const TransformStep({
+    required this.text,
+    required this.improvements,
+  });
+}
 
-  const TransformationStats({
-    required this.originalContacts,
-    required this.validContacts,
-    required this.createdClients,
-    required this.highConfidenceCount,
-    required this.mediumConfidenceCount,
-    required this.lowConfidenceCount,
-    required this.contactsWithTwoPhones,
-    required this.rejectionRate,
+/// Rezultatul transformării complete
+class TransformResult {
+  final String originalText;
+  final String cleanedText;
+  final double confidence;
+  final List<String> improvements;
+  
+  const TransformResult({
+    required this.originalText,
+    required this.cleanedText,
+    required this.confidence,
+    required this.improvements,
+  });
+  
+  /// Statistici comparate
+  String get improvementSummary {
+    if (improvements.isEmpty) {
+      return 'Nu au fost necesare îmbunătățiri';
+    }
+    
+    return '${improvements.length} îmbunătățiri aplicate:\n${improvements.map((i) => '• $i').join('\n')}';
+  }
+  
+  @override
+  String toString() => 'TransformResult(confidence: $confidence, improvements: ${improvements.length})';
+}
+
+/// Statistici despre text
+class TextStatistics {
+  final int lines;
+  final int words;
+  final int characters;
+  final int phoneNumbers;
+  final int cnps;
+  final int names;
+  
+  const TextStatistics({
+    required this.lines,
+    required this.words,
+    required this.characters,
+    required this.phoneNumbers,
+    required this.cnps,
+    required this.names,
   });
 
   @override
-  String toString() {
-    return 'TransformationStats(contacts: $originalContacts→$validContacts→$createdClients, '
-           'confidence: H:$highConfidenceCount M:$mediumConfidenceCount L:$lowConfidenceCount, '
-           'rejection: ${rejectionRate.toStringAsFixed(1)}%)';
-  }
+  String toString() => 'TextStatistics(lines: $lines, words: $words, phones: $phoneNumbers, cnps: $cnps, names: $names)';
 }
 
  

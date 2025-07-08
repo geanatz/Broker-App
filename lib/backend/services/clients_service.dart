@@ -569,7 +569,7 @@ class ClientBasicInfo {
     this.phoneNumber2,
     this.coDebitorName,
     this.email,
-    this.address,
+    this.address, String? cnp,
   });
 
   String get phoneNumber => phoneNumber1;

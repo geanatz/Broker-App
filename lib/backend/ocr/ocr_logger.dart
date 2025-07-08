@@ -1,145 +1,353 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:intl/intl.dart';
-import '../services/clients_service.dart';
 
-// O clasa simpla pentru a reprezenta un client din fisierul de referinta
-class GroundTruthClient {
-  final String name;
-  final List<String> phones;
+/// Logger specializat pentru operațiile OCR
+class OCRLogger {
+  static final OCRLogger _instance = OCRLogger._internal();
+  factory OCRLogger() => _instance;
+  OCRLogger._internal();
 
-  GroundTruthClient({required this.name, required this.phones});
+  final List<LogEntry> _logs = [];
+  bool _isEnabled = true;
+  LogLevel _minLevel = LogLevel.info;
 
-  @override
-  String toString() => '$name: ${phones.join(', ')}';
-}
-
-class OcrDebugLog {
-  final String imageName;
-  final String timestamp;
-  String? rawOcrText;
-  final List<String> parsingSteps = [];
-  final List<String> transformationSteps = [];
-  List<UnifiedClientModel>? finalClients;
-  List<GroundTruthClient>? groundTruthClients;
-  final Map<String, List<String>> comparison = {};
-
-  OcrDebugLog({required this.imageName})
-      : timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-
-  Map<String, dynamic> toJson() {
-    return {
-      'imageName': imageName,
-      'timestamp': timestamp,
-      'rawOcrText': rawOcrText,
-      'parsingSteps': parsingSteps,
-      'transformationSteps': transformationSteps,
-      'finalClients': finalClients?.map((c) => c.toJson()).toList(),
-      'groundTruthClients': groundTruthClients?.map((c) => {'name': c.name, 'phones': c.phones}).toList(),
-      'comparison': comparison,
-    };
-  }
-}
-
-class OcrDebugLogger {
-  static final OcrDebugLogger _instance = OcrDebugLogger._internal();
-  factory OcrDebugLogger() => _instance;
-  OcrDebugLogger._internal();
-
-  OcrDebugLog? _currentLog;
-
-  void startLog(String imageName) {
-    _currentLog = OcrDebugLog(imageName: imageName);
+  /// Activează/dezactivează logging-ul
+  void setEnabled(bool enabled) {
+    _isEnabled = enabled;
+    if (enabled) {
+      info('OCR_LOGGER', 'Logging activat');
+    }
   }
 
-  void addParsingStep(String step) {
-    _currentLog?.parsingSteps.add(step);
+  /// Setează nivelul minim de logging
+  void setMinLevel(LogLevel level) {
+    _minLevel = level;
+    info('OCR_LOGGER', 'Nivel minim setat la: ${level.name}');
   }
 
-  void addTransformationStep(String step) {
-    _currentLog?.transformationSteps.add(step);
+  /// Log de tip DEBUG
+  void debug(String category, String message, [Map<String, dynamic>? data]) {
+    _log(LogLevel.debug, category, message, data);
   }
 
-  void setRawOcrText(String text) {
-    _currentLog?.rawOcrText = text;
+  /// Log de tip INFO
+  void info(String category, String message, [Map<String, dynamic>? data]) {
+    _log(LogLevel.info, category, message, data);
   }
 
-  void setFinalClients(List<UnifiedClientModel> clients) {
-    _currentLog?.finalClients = clients;
-  }
-  
-  void setGroundTruth(File groundTruthFile) {
-    final lines = groundTruthFile.readAsLinesSync();
-    _currentLog?.groundTruthClients = lines.map((line) {
-      final parts = line.split(RegExp(r'\s+(?=\d)'));
-      if (parts.length == 2) {
-        final name = parts[0].trim();
-        final phones = parts[1].split(',').map((p) => p.trim()).toList();
-        return GroundTruthClient(name: name, phones: phones);
-      }
-      return null;
-    }).where((c) => c != null).cast<GroundTruthClient>().toList();
+  /// Log de tip WARNING
+  void warning(String category, String message, [Map<String, dynamic>? data]) {
+    _log(LogLevel.warning, category, message, data);
   }
 
-  void compareResults() {
-    if (_currentLog == null || _currentLog!.finalClients == null || _currentLog!.groundTruthClients == null) {
-      return;
+  /// Log de tip ERROR
+  void error(String category, String message, [Map<String, dynamic>? data]) {
+    _log(LogLevel.error, category, message, data);
+  }
+
+  /// Log intern
+  void _log(LogLevel level, String category, String message, Map<String, dynamic>? data) {
+    if (!_isEnabled || level.priority < _minLevel.priority) return;
+
+    final entry = LogEntry(
+      level: level,
+      category: category,
+      message: message,
+      timestamp: DateTime.now(),
+      data: data ?? {},
+    );
+
+    _logs.add(entry);
+    
+    // Limitează numărul de log-uri (păstrează ultimele 1000)
+    if (_logs.length > 1000) {
+      _logs.removeRange(0, _logs.length - 1000);
     }
 
-    final finalClients = _currentLog!.finalClients!;
-    final groundTruthClients = _currentLog!.groundTruthClients!;
+    // Output în consolă
+    _printToConsole(entry);
+  }
+
+  /// Afișează log-ul în consolă cu formatare colorată
+  void _printToConsole(LogEntry entry) {
+    final emoji = _getEmojiForLevel(entry.level);
+    final timestamp = _formatTimestamp(entry.timestamp);
+    final categoryFormatted = entry.category.padRight(15);
     
-    final groundTruthMap = { for (var c in groundTruthClients) c.name.toLowerCase().trim() : c.phones };
-    final finalClientsMap = { for (var c in finalClients) c.basicInfo.name.toLowerCase().trim() : [c.basicInfo.phoneNumber1, c.basicInfo.phoneNumber2].where((p) => p != null).cast<String>().toList() };
+    var logMessage = '$emoji [$timestamp] $categoryFormatted: ${entry.message}';
+    
+    if (entry.data.isNotEmpty) {
+      logMessage += ' | Data: ${entry.data}';
+    }
 
-    final found = <String>[];
-    final notFound = <String>[];
-    final wrongPhones = <String>[];
+    debugPrint(logMessage);
+  }
 
-    for (var truthEntry in groundTruthMap.entries) {
-      if (finalClientsMap.containsKey(truthEntry.key)) {
-        found.add(truthEntry.key);
-        final finalPhones = finalClientsMap[truthEntry.key]!;
-        final truthPhones = truthEntry.value;
-        if (Set.from(finalPhones).intersection(Set.from(truthPhones)).length != truthPhones.length) {
-          wrongPhones.add('${truthEntry.key} -> Expected: $truthPhones, Got: $finalPhones');
-        }
-      } else {
-        notFound.add(truthEntry.key);
+  /// Emoji pentru fiecare nivel de log
+  String _getEmojiForLevel(LogLevel level) {
+    switch (level) {
+      case LogLevel.debug:
+        return '🔍';
+      case LogLevel.info:
+        return '📝';
+      case LogLevel.warning:
+        return '⚠️';
+      case LogLevel.error:
+        return '❌';
+    }
+  }
+
+  /// Formatează timestamp-ul
+  String _formatTimestamp(DateTime timestamp) {
+    return '${timestamp.hour.toString().padLeft(2, '0')}:'
+           '${timestamp.minute.toString().padLeft(2, '0')}:'
+           '${timestamp.second.toString().padLeft(2, '0')}.'
+           '${timestamp.millisecond.toString().padLeft(3, '0')}';
+  }
+
+  // Metode specifice pentru OCR
+
+  /// Log pentru începutul procesării unei imagini
+  void startImageProcessing(String imageName, int imageSize) {
+    info('IMAGE_PROCESSING', 'Începe procesarea imaginii: $imageName (${_formatFileSize(imageSize)})', {
+      'image_name': imageName,
+      'image_size_bytes': imageSize,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  /// Log pentru finalizarea procesării unei imagini
+  void completeImageProcessing(String imageName, int duration, bool success, [String? error]) {
+    if (success) {
+      info('IMAGE_PROCESSING', 'Imagine procesată cu succes: $imageName în ${duration}ms', {
+        'image_name': imageName,
+        'duration_ms': duration,
+        'success': true,
+      });
+    } else {
+      error!;
+    }
+  }
+
+  /// Log pentru extragerea textului OCR
+  void logTextExtraction(String imageName, int textLength, double confidence) {
+    info('TEXT_EXTRACTION', 'Text extras din $imageName: $textLength caractere (confidence: ${(confidence * 100).toStringAsFixed(1)}%)', {
+      'image_name': imageName,
+      'text_length': textLength,
+      'confidence': confidence,
+    });
+  }
+
+  /// Log pentru contactele detectate
+  void logContactsDetected(String imageName, int contactCount, List<String> contactNames) {
+    info('CONTACT_DETECTION', 'Detectate $contactCount contacte în $imageName: ${contactNames.join(', ')}', {
+      'image_name': imageName,
+      'contact_count': contactCount,
+      'contact_names': contactNames,
+    });
+  }
+
+  /// Log pentru îmbunătățirea imaginii
+  void logImageEnhancement(String imageName, String enhancements) {
+    debug('IMAGE_ENHANCEMENT', 'Imagine îmbunătățită: $imageName - $enhancements', {
+      'image_name': imageName,
+      'enhancements': enhancements,
+    });
+  }
+
+  /// Log pentru transformarea textului
+  void logTextTransformation(String originalLength, String cleanedLength, int improvements) {
+    debug('TEXT_TRANSFORMATION', 'Text transformat: $originalLength → $cleanedLength caractere, $improvements îmbunătățiri', {
+      'original_length': originalLength,
+      'cleaned_length': cleanedLength,
+      'improvements_count': improvements,
+    });
+  }
+
+  /// Log pentru performanță
+  void logPerformanceMetric(String operation, int durationMs, Map<String, dynamic> metrics) {
+    debug('PERFORMANCE', '$operation completată în ${durationMs}ms', {
+      'operation': operation,
+      'duration_ms': durationMs,
+      ...metrics,
+    });
+  }
+
+  /// Obține log-urile filtrate
+  List<LogEntry> getLogs({
+    LogLevel? minLevel,
+    String? category,
+    DateTime? since,
+  }) {
+    return _logs.where((log) {
+      if (minLevel != null && log.level.priority < minLevel.priority) return false;
+      if (category != null && log.category != category) return false;
+      if (since != null && log.timestamp.isBefore(since)) return false;
+      return true;
+    }).toList();
+  }
+
+  /// Obține statistici de logging
+  LogStatistics getStatistics() {
+    final now = DateTime.now();
+    final last24h = now.subtract(const Duration(hours: 24));
+    
+    final recentLogs = _logs.where((log) => log.timestamp.isAfter(last24h)).toList();
+    
+    final debugCount = recentLogs.where((log) => log.level == LogLevel.debug).length;
+    final infoCount = recentLogs.where((log) => log.level == LogLevel.info).length;
+    final warningCount = recentLogs.where((log) => log.level == LogLevel.warning).length;
+    final errorCount = recentLogs.where((log) => log.level == LogLevel.error).length;
+    
+    final categories = <String, int>{};
+    for (final log in recentLogs) {
+      categories[log.category] = (categories[log.category] ?? 0) + 1;
+    }
+    
+    return LogStatistics(
+      totalLogs: _logs.length,
+      recentLogs: recentLogs.length,
+      debugCount: debugCount,
+      infoCount: infoCount,
+      warningCount: warningCount,
+      errorCount: errorCount,
+      categories: categories,
+      oldestLog: _logs.isNotEmpty ? _logs.first.timestamp : null,
+      newestLog: _logs.isNotEmpty ? _logs.last.timestamp : null,
+    );
+  }
+
+  /// Exportă log-urile într-un format text
+  String exportLogs({
+    LogLevel? minLevel,
+    String? category,
+    DateTime? since,
+  }) {
+    final logs = getLogs(minLevel: minLevel, category: category, since: since);
+    final buffer = StringBuffer();
+    
+    buffer.writeln('=== OCR LOGS EXPORT ===');
+    buffer.writeln('Generated: ${DateTime.now()}');
+    buffer.writeln('Total logs: ${logs.length}');
+    buffer.writeln('');
+    
+    for (final log in logs) {
+      buffer.writeln('${_formatTimestamp(log.timestamp)} [${log.level.name.toUpperCase()}] ${log.category}: ${log.message}');
+      if (log.data.isNotEmpty) {
+        buffer.writeln('  Data: ${log.data}');
       }
     }
     
-    final unexpected = finalClientsMap.keys.where((k) => !groundTruthMap.containsKey(k)).toList();
-    
-    _currentLog!.comparison['FOUND'] = found;
-    _currentLog!.comparison['NOT_FOUND_IN_EXTRACTION'] = notFound;
-    _currentLog!.comparison['PHONES_MISMATCH'] = wrongPhones;
-    _currentLog!.comparison['UNEXPECTED_IN_EXTRACTION'] = unexpected;
+    return buffer.toString();
   }
 
-  Future<void> saveLog() async {
-    if (_currentLog == null) return;
-    
-    compareResults();
+  /// Salvează log-urile într-un fișier (doar pe desktop)
+  Future<bool> saveLogsToFile(String filePath) async {
+    if (kIsWeb) {
+      warning('FILE_EXPORT', 'Salvarea în fișier nu este suportată pe web');
+      return false;
+    }
     
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final logDir = Directory('${directory.path}/ocr_logs');
-      if (!await logDir.exists()) {
-        await logDir.create(recursive: true);
-      }
-      final logFileName = 'log_${_currentLog!.imageName.split('.').first}_${DateTime.now().millisecondsSinceEpoch}.json';
-      final logFile = File('${logDir.path}/$logFileName');
+      final file = File(filePath);
+      final content = exportLogs();
+      await file.writeAsString(content);
       
-      final jsonString = JsonEncoder.withIndent('  ').convert(_currentLog!.toJson());
-      await logFile.writeAsString(jsonString);
-      debugPrint('✅ [OcrDebugLogger] Log salvat: ${logFile.path}');
+      info('FILE_EXPORT', 'Log-uri salvate în: $filePath');
+      return true;
     } catch (e) {
-      debugPrint('❌ [OcrDebugLogger] Eroare la salvarea logului: $e');
+      error('FILE_EXPORT', 'Eroare la salvarea log-urilor: $e');
+      return false;
     }
+  }
 
-    _currentLog = null;
+  /// Curăță log-urile vechi
+  void clearOldLogs([Duration? olderThan]) {
+    final cutoff = DateTime.now().subtract(olderThan ?? const Duration(days: 7));
+    final oldCount = _logs.length;
+    
+    _logs.removeWhere((log) => log.timestamp.isBefore(cutoff));
+    
+    final removedCount = oldCount - _logs.length;
+    if (removedCount > 0) {
+      info('MAINTENANCE', 'Șterse $removedCount log-uri vechi');
+    }
+  }
+
+  /// Curăță toate log-urile
+  void clearAllLogs() {
+    final count = _logs.length;
+    _logs.clear();
+    info('MAINTENANCE', 'Șterse toate log-urile ($count intrări)');
+  }
+
+  /// Formatează dimensiunea fișierului
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '${bytes}B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+  }
+}
+
+/// Nivelurile de logging
+enum LogLevel {
+  debug(0),
+  info(1),
+  warning(2),
+  error(3);
+
+  const LogLevel(this.priority);
+  final int priority;
+}
+
+/// O intrare în log
+class LogEntry {
+  final LogLevel level;
+  final String category;
+  final String message;
+  final DateTime timestamp;
+  final Map<String, dynamic> data;
+
+  const LogEntry({
+    required this.level,
+    required this.category,
+    required this.message,
+    required this.timestamp,
+    required this.data,
+  });
+
+  @override
+  String toString() => '${level.name.toUpperCase()}: [$category] $message';
+}
+
+/// Statistici de logging
+class LogStatistics {
+  final int totalLogs;
+  final int recentLogs;
+  final int debugCount;
+  final int infoCount;
+  final int warningCount;
+  final int errorCount;
+  final Map<String, int> categories;
+  final DateTime? oldestLog;
+  final DateTime? newestLog;
+
+  const LogStatistics({
+    required this.totalLogs,
+    required this.recentLogs,
+    required this.debugCount,
+    required this.infoCount,
+    required this.warningCount,
+    required this.errorCount,
+    required this.categories,
+    this.oldestLog,
+    this.newestLog,
+  });
+
+  @override
+  String toString() {
+    return 'LogStatistics(total: $totalLogs, recent: $recentLogs, '
+           'errors: $errorCount, warnings: $warningCount, '
+           'categories: ${categories.length})';
   }
 } 

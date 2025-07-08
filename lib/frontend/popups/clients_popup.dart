@@ -1,6 +1,7 @@
 import '../../app_theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import '../components/headers/widget_header1.dart';
 import '../components/items/light_item3.dart';
@@ -13,6 +14,8 @@ import '../components/buttons/flex_buttons1.dart';
 import '../components/fields/input_field1.dart';
 import '../../backend/services/ocr_service.dart';
 import '../../backend/services/clients_service.dart';
+import '../../backend/ocr/scanner_ocr.dart';
+import 'package:image/image.dart' as img;
 
 /// Client model to represent client data
 class Client {
@@ -109,6 +112,7 @@ class ClientsPopup extends StatefulWidget {
 class _ClientsPopupState extends State<ClientsPopup> {
   PopupState _currentState = PopupState.clientsOnly;
   List<File> _selectedImages = [];
+  List<PlatformFile>? _webFiles; // Pentru fișierele selectate pe web
   Map<String, OcrResult>? _ocrResults;
   String? _selectedOcrImagePath;
   bool _isOcrProcessing = false;
@@ -122,40 +126,43 @@ class _ClientsPopupState extends State<ClientsPopup> {
     try {
       debugPrint('🔍 Deschide file picker pentru selectia imaginilor OCR...');
       
-      // Verifica daca Google Vision API este configurat
-      final ocrService = OcrService();
-      if (!ocrService.isConfigured()) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Google Vision API nu este configurat corect'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-        return;
+
+      
+      FilePickerResult? result;
+      
+      if (kIsWeb) {
+        // Pe web folosim FileType.custom cu extensii specifice
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowMultiple: true,
+          allowedExtensions: ['jpg', 'jpeg', 'png', 'bmp', 'gif'],
+          dialogTitle: 'Selecteaza imaginile pentru extragerea contactelor',
+        );
+      } else {
+        // Pe desktop/mobile folosim FileType.image fără extensii
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: true,
+          dialogTitle: 'Selecteaza imaginile pentru extragerea contactelor',
+        );
       }
       
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'bmp', 'gif'],
-        dialogTitle: 'Selecteaza imaginile pentru extragerea contactelor',
-      );
-      
       if (result != null && result.files.isNotEmpty) {
-        final imageFiles = result.files
-            .where((file) => file.path != null)
-            .map((file) => File(file.path!))
-            .toList();
+        debugPrint('📁 Selectate ${result.files.length} imagini pentru OCR');
         
-        debugPrint('📁 Selectate ${imageFiles.length} imagini pentru OCR');
-        
-        if (mounted && imageFiles.isNotEmpty) {
+        if (mounted) {
           setState(() {
-            _selectedImages = imageFiles;
-            _currentState = PopupState.ocrOnly; // Doar OCR la inceput
+            if (kIsWeb) {
+              _webFiles = result!.files;
+              _selectedImages = [];
+            } else {
+              _selectedImages = result!.files
+                  .where((file) => file.path != null)
+                  .map((file) => File(file.path!))
+                  .toList();
+              _webFiles = null;
+            }
+            _currentState = PopupState.ocrOnly;
           });
           _startOcrProcess();
         }
@@ -179,6 +186,8 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Incepe procesul OCR
   Future<void> _startOcrProcess() async {
+    debugPrint('🚀 CLIENTS_POPUP: Incepe procesul OCR...');
+    
     setState(() {
       _isOcrProcessing = true;
       _ocrMessage = 'Se extrage textul din imaginea...';
@@ -189,12 +198,84 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
     try {
       final ocrService = OcrService();
+      
+      // Creează lista de imagini pentru procesare
+      List<dynamic> imagesToProcess = [];
+      if (kIsWeb && _webFiles != null) {
+        // Pe web procesăm imaginile asincron pentru a nu bloca UI-ul
+        setState(() {
+          _ocrMessage = 'Se prepara imaginile pentru procesare...';
+          _ocrProgress = 0.0;
+        });
+        
+        for (int i = 0; i < _webFiles!.length; i++) {
+          final file = _webFiles![i];
+          if (file.bytes != null) {
+            setState(() {
+              _ocrMessage = 'Se prepara imaginea ${i + 1} din ${_webFiles!.length}...';
+              _ocrProgress = (i + 1) / _webFiles!.length * 0.3; // 30% pentru preparare
+            });
+            
+            // Procesează fiecare imagine asincron cu delay pentru a nu bloca UI-ul
+            await Future.delayed(const Duration(milliseconds: 50));
+            
+            try {
+              final image = img.decodeImage(file.bytes!);
+              if (image != null) {
+                imagesToProcess.add(ImageFile(
+                  name: file.name,
+                  bytes: file.bytes!,
+                  size: file.size,
+                  width: image.width,
+                  height: image.height,
+                ));
+                debugPrint('✅ Imaginea ${file.name} pregatita pentru OCR (${image.width}x${image.height})');
+              } else {
+                debugPrint('❌ Nu se poate decoda imaginea ${file.name}');
+              }
+            } catch (e) {
+              debugPrint('❌ Eroare la decodarea imaginii ${file.name}: $e');
+            }
+          }
+        }
+        
+        setState(() {
+          _ocrMessage = 'Imaginile sunt pregatite, se incepe extragerea...';
+          _ocrProgress = 0.3;
+        });
+        
+        debugPrint('✅ Pregatite ${imagesToProcess.length} imagini pentru OCR pe web');
+        
+        // Pe web limitez numărul de imagini pentru a evita blocarea
+        if (imagesToProcess.length > 5) {
+          debugPrint('⚠️ Pe web se vor procesa doar primele 5 imagini din ${imagesToProcess.length}');
+          imagesToProcess = imagesToProcess.take(5).toList();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Pe web se proceseaza maxim 5 imagini simultan. Selectate ${imagesToProcess.length} imagini.'),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } else {
+        // Pe desktop folosim fișierele direct
+        imagesToProcess = _selectedImages;
+        debugPrint('✅ Folosim ${imagesToProcess.length} imagini pentru OCR pe desktop');
+      }
+      
       final batchResult = await ocrService.processMultipleImages(
-        _selectedImages,
+        imagesToProcess,
         onProgress: (current, total) {
           setState(() {
             _ocrMessage = 'Se proceseaza imaginea $current din $total...';
-            _ocrProgress = total > 0 ? current / total : 0.0;
+            // Pe web începem de la 30% (după preparare), pe desktop de la 0%
+            final baseProgress = kIsWeb ? 0.3 : 0.0;
+            final progressRange = kIsWeb ? 0.7 : 1.0;
+            _ocrProgress = baseProgress + (total > 0 ? (current / total * progressRange) : 0.0);
           });
         },
       );
@@ -210,8 +291,12 @@ class _ClientsPopupState extends State<ClientsPopup> {
         _ocrResults = resultsMap;
         _ocrMessage = 'Extragere finalizata!';
       });
+      
+      debugPrint('✅ OCR complet - procesate ${batchResult.individualResults.length} imagini');
 
     } catch (e) {
+      debugPrint('❌ CLIENTS_POPUP: Eroare la procesul OCR: $e');
+      
       setState(() {
         _isOcrProcessing = false;
         _ocrError = e.toString();
@@ -224,6 +309,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
   void _cancelOcrProcess() {
     setState(() {
       _selectedImages = [];
+      _webFiles = null;
       _ocrResults = null;
       _isOcrProcessing = false;
       _ocrError = null;
@@ -475,7 +561,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       final result = _ocrResults![_selectedOcrImagePath];
       if (result?.extractedClients != null) {
         final clientCount = result!.extractedClients!.length;
-        final imageName = result.imageName;
+        final imageName = result.imagePath.split('/').last;
         
         // Sterge complet imaginea din rezultatele OCR si din lista de imagini selectate
         setState(() {
@@ -797,9 +883,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            for (int i = 0; i < _selectedImages.length; i++) ...[
+            for (int i = 0; i < (kIsWeb ? (_webFiles?.length ?? 0) : _selectedImages.length); i++) ...[
               GestureDetector(
-                onTap: () => _selectOcrImage(_selectedImages[i].path),
+                onTap: () => _selectOcrImage(kIsWeb ? 'web_image_$i' : _selectedImages[i].path),
                 child: Container(
                   width: 56,
                   height: 56,
@@ -814,21 +900,51 @@ class _ClientsPopupState extends State<ClientsPopup> {
                     child: Stack(
                       children: [
                         // Imaginea
-                        Image.file(
-                          _selectedImages[i],
-                          fit: BoxFit.cover,
-                          width: 56,
-                          height: 56,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.image,
-                              color: AppTheme.elementColor2,
-                              size: 24,
-                            );
-                          },
-                        ),
+                        kIsWeb 
+                          ? (_webFiles != null && i < _webFiles!.length && _webFiles![i].bytes != null)
+                            ? Image.memory(
+                                _webFiles![i].bytes!,
+                                fit: BoxFit.cover,
+                                width: 56,
+                                height: 56,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.image,
+                                    color: AppTheme.elementColor2,
+                                    size: 24,
+                                  );
+                                },
+                              )
+                            : Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.containerColor1,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Icon(
+                                  Icons.image,
+                                  color: AppTheme.elementColor2,
+                                  size: 24,
+                                ),
+                              )
+                          : Image.file(
+                              _selectedImages[i],
+                              fit: BoxFit.cover,
+                              width: 56,
+                              height: 56,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.image,
+                                  color: AppTheme.elementColor2,
+                                  size: 24,
+                                );
+                              },
+                            ),
                         // Overlay negru pentru imaginile nefocusate
-                        if (_selectedOcrImagePath != _selectedImages[i].path)
+                        if (kIsWeb 
+                            ? (_selectedOcrImagePath != 'web_image_$i')
+                            : (_selectedOcrImagePath != _selectedImages[i].path))
                           Container(
                             width: 56,
                             height: 56,
