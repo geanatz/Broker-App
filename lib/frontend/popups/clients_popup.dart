@@ -352,6 +352,12 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Selecteaza o imagine din rezultatele OCR si afiseaza clientii
   void _selectOcrImage(String imagePath) {
+    final fileName = imagePath.split('/').last.split('\\').last;
+    final result = _ocrResults?[imagePath];
+    final clientCount = result?.extractedClients?.length ?? 0;
+    
+    debugPrint('✅ CLIENTS_POPUP: Imaginea $fileName selectata - $clientCount clienti');
+    
     setState(() {
       _selectedOcrImagePath = imagePath;
       _currentState = PopupState.ocrWithClients; // Afiseaza OCR + lista de clienti
@@ -470,11 +476,16 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Gestioneaza click-ul pe item-ul imaginii OCR
   void _handleOcrImageTap(String imagePath) {
+    final fileName = imagePath.split('/').last.split('\\').last;
+    debugPrint('🔍 CLIENTS_POPUP: Click pe imagine: $fileName (path: $imagePath)');
+    
     if (_selectedOcrImagePath == imagePath) {
       // Daca imaginea e deja selectata, afiseaza popup de confirmare pentru salvare
+      debugPrint('📤 CLIENTS_POPUP: Imaginea $fileName e selectata - afisez dialog salvare');
       _showSaveConfirmationDialog(imagePath);
     } else {
       // Daca imaginea nu e selectata, o selecteaza si afiseaza clientii
+      debugPrint('📋 CLIENTS_POPUP: Selectez imaginea $fileName pentru afisarea clientilor');
       _selectOcrImage(imagePath);
     }
   }
@@ -797,16 +808,20 @@ class _ClientsPopupState extends State<ClientsPopup> {
           final result = sortedResults[i].value;
           final isSelected = _selectedOcrImagePath == imagePath;
           
+          // Extracts numele real al imaginii din path
+          final fileName = imagePath.split('/').last.split('\\').last;
+          final displayName = fileName.length > 15 ? '${fileName.substring(0, 12)}...' : fileName;
+          
           if (isSelected) {
             return DarkItem7(
-              title: 'Imaginea ${i + 1}',
+              title: displayName,
               description: '${result.extractedClients?.length ?? 0} clienti',
               svgAsset: 'assets/doneIcon.svg',
               onTap: () => _handleOcrImageTap(imagePath),
             );
           } else {
             return LightItem7(
-              title: 'Imaginea ${i + 1}',
+              title: displayName,
               description: '${result.extractedClients?.length ?? 0} clienti',
               svgAsset: 'assets/viewIcon.svg',
               onTap: () => _handleOcrImageTap(imagePath),
@@ -885,7 +900,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
           children: [
             for (int i = 0; i < (kIsWeb ? (_webFiles?.length ?? 0) : _selectedImages.length); i++) ...[
               GestureDetector(
-                onTap: () => _selectOcrImage(kIsWeb ? 'web_image_$i' : _selectedImages[i].path),
+                onTap: () => _selectOcrImage(kIsWeb ? (_webFiles![i].name) : _selectedImages[i].path),
                 child: Container(
                   width: 56,
                   height: 56,
@@ -943,7 +958,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
                             ),
                         // Overlay negru pentru imaginile nefocusate
                         if (kIsWeb 
-                            ? (_selectedOcrImagePath != 'web_image_$i')
+                            ? (_selectedOcrImagePath != _webFiles![i].name)
                             : (_selectedOcrImagePath != _selectedImages[i].path))
                           Container(
                             width: 56,

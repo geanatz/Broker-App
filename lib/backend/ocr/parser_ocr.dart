@@ -77,6 +77,8 @@ class ParserOCR {
   String _preprocessText(String text) {
     var processed = text;
     
+    debugPrint('🔧 PARSER_OCR: Text original: "${text.substring(0, text.length.clamp(0, 100))}..."');
+    
     // Înlocuiește caractere speciale OCR
     processed = processed.replaceAll(RegExp(r'[|]'), 'I');
     processed = processed.replaceAll(RegExp(r'[°]'), '0');
@@ -85,9 +87,10 @@ class ParserOCR {
     // Standardizează spațiile
     processed = processed.replaceAll(RegExp(r'\s+'), ' ');
     
-    // Înlocuiește separatorii de telefon
-    processed = processed.replaceAll(RegExp(r'[-\s\.]+'), '');
+    // NU mai înlocuim spațiile! Păstrăm structura textului
+    // processed = processed.replaceAll(RegExp(r'[-\s\.]+'), '');
     
+    debugPrint('🔧 PARSER_OCR: Text procesat: "${processed.substring(0, processed.length.clamp(0, 100))}..."');
     return processed.trim();
   }
 
@@ -271,9 +274,11 @@ class ParserOCR {
     }
     
     // A doua strategie: analiză generală de text liber
+    debugPrint('🔍 PARSER_OCR: Text complet pentru regex: "$allText"');
     final phoneMatches = _phoneRegex.allMatches(allText);
     final phones = phoneMatches.map((m) => m.group(0)!).toSet().toList();
     
+    debugPrint('📞 PARSER_OCR: Regex pattern: ${_phoneRegex.pattern}');
     debugPrint('📞 PARSER_OCR: Găsite ${phones.length} numere de telefon: $phones');
     
     // Pentru fiecare telefon, încearcă să găsești numele asociat
@@ -305,55 +310,107 @@ class ParserOCR {
   Future<List<UnifiedClientModel>> _extractFromStructuredLines(List<String> lines) async {
     final contacts = <UnifiedClientModel>[];
     
-    for (final line in lines) {
+    debugPrint('🔍 PARSER_OCR: Analizez ${lines.length} linii structurate');
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
       final trimmedLine = line.trim();
+      debugPrint('🔍 PARSER_OCR: Linia $i: "$trimmedLine"');
       if (trimmedLine.isEmpty || trimmedLine.length < 10) continue;
       
-      // Caută nume și telefon pe aceeași linie
-      // Format: "TAT FLORIAN 0258812138" sau "TAT FLORIAN 0258812138 0730652"
-      final phoneMatches = _phoneRegex.allMatches(trimmedLine);
-      if (phoneMatches.isNotEmpty) {
-        final phones = phoneMatches.map((m) => m.group(0)!).toList();
-        final firstPhone = phones.first;
-        
-        // Găsește numele - text înainte de primul telefon
-        final phoneIndex = trimmedLine.indexOf(firstPhone);
-        if (phoneIndex > 5) { // Trebuie să existe măcar 5 caractere pentru nume
-          final nameCandidate = trimmedLine.substring(0, phoneIndex).trim();
-          
-          // Curăță numele de caractere ciudate
-          final cleanedName = nameCandidate
-              .replaceAll(RegExp(r'[^A-ZĂÂÎȘȚa-zăâîșț\s]'), '')
-              .replaceAll(RegExp(r'\s+'), ' ')
-              .trim();
-          
-          if (cleanedName.length >= 5 && cleanedName.split(' ').length >= 2) {
-            // Încearcă să validezi și să capitalizezi numele
-            final finalName = _cleanName(cleanedName);
-            
-            debugPrint('🔍 PARSER_OCR: Linie: "$trimmedLine"');
-            debugPrint('📱 PARSER_OCR: Telefon găsit: $firstPhone');
-            debugPrint('👤 PARSER_OCR: Nume candidat: "$finalName"');
-            
-            // Creează contactul (cu validare mai relaxată pentru numele din OCR)
-            final contact = await _createContactRelaxed(
-              name: finalName,
-              phone1: firstPhone,
-              phone2: phones.length > 1 ? phones[1] : null,
-            );
-            
-            if (contact != null) {
-              contacts.add(contact);
-              debugPrint('✅ PARSER_OCR: Contact din linie creat: ${contact.basicInfo.name}');
-            } else {
-              debugPrint('❌ PARSER_OCR: Nu s-a putut crea contactul din linie pentru: "$finalName"');
-            }
-          }
-        }
+             // Caută toate perechile nume-telefon din linie
+       // Pentru text ca: "MUNTEANU VASILE 0721234567 DUMITRU ELENA 0722345678"
+       final phoneMatches = _phoneRegex.allMatches(trimmedLine);
+       if (phoneMatches.isNotEmpty) {
+         final phones = phoneMatches.map((m) => m.group(0)!).toList();
+         
+         debugPrint('🔍 PARSER_OCR: Linie: "$trimmedLine"');
+         debugPrint('📱 PARSER_OCR: Găsite ${phones.length} telefoane: $phones');
+         
+         // Procesează fiecare telefon pentru a găsi numele asociat
+         for (int phoneIndex = 0; phoneIndex < phones.length; phoneIndex++) {
+           final phone = phones[phoneIndex];
+           
+           if (!_isValidPhone(phone)) {
+             debugPrint('❌ PARSER_OCR: Telefon invalid ignorat: $phone');
+             continue;
+           }
+           
+           // Găsește numele pentru acest telefon
+           final name = _extractNameForPhone(trimmedLine, phone, phones);
+           if (name != null && name.isNotEmpty) {
+             final finalName = _cleanName(name);
+             
+             debugPrint('📱 PARSER_OCR: Telefon: $phone');
+             debugPrint('👤 PARSER_OCR: Nume găsit: "$finalName"');
+             
+             // Creează contactul
+             final contact = await _createContactRelaxed(
+               name: finalName,
+               phone1: phone,
+             );
+             
+             if (contact != null) {
+               contacts.add(contact);
+               debugPrint('✅ PARSER_OCR: Contact creat: ${contact.basicInfo.name}');
+             } else {
+               debugPrint('❌ PARSER_OCR: Nu s-a putut crea contactul pentru: "$finalName"');
+             }
+           } else {
+             debugPrint('❌ PARSER_OCR: Nu s-a găsit nume pentru telefonul: $phone');
+           }
+         }
+       }
+    }
+    
+         return contacts;
+   }
+
+  /// Extrage numele asociat cu un telefon specific din text
+  String? _extractNameForPhone(String text, String targetPhone, List<String> allPhones) {
+    final phoneIndex = text.indexOf(targetPhone);
+    if (phoneIndex == -1) return null;
+    
+    // Determină limitele pentru căutarea numelui
+    int startIndex = 0;
+    int endIndex = phoneIndex;
+    
+    // Găsește telefonul anterior pentru a limita căutarea
+    for (final phone in allPhones) {
+      if (phone == targetPhone) continue;
+      
+      final otherPhoneIndex = text.indexOf(phone);
+      if (otherPhoneIndex != -1 && otherPhoneIndex < phoneIndex) {
+        // Există un telefon anterior - începe căutarea după el
+        startIndex = otherPhoneIndex + phone.length;
       }
     }
     
-    return contacts;
+    // Extrage textul dintre limitele stabilite
+    final nameSection = text.substring(startIndex, endIndex).trim();
+    
+    debugPrint('🔍 PARSER_OCR: Căutare nume pentru $targetPhone în: "$nameSection"');
+    
+    // Curăță textul pentru a extrage doar numele
+    final cleanedName = nameSection
+        .replaceAll(RegExp(r'[^A-ZĂÂÎȘȚa-zăâîșț\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    
+    // Verifică dacă avem cel puțin 2 cuvinte pentru nume + prenume
+    final words = cleanedName.split(' ');
+    if (words.length >= 2 && words.every((word) => word.length >= 2)) {
+      // Ia ultimele 2-3 cuvinte (numele cel mai probabil)
+      final nameWords = words.length >= 3 
+          ? words.sublist(words.length - 3) 
+          : words.sublist(words.length - 2);
+      
+      final result = nameWords.join(' ');
+      debugPrint('✅ PARSER_OCR: Nume extras: "$result"');
+      return result;
+    }
+    
+    debugPrint('❌ PARSER_OCR: Nume invalid în secțiunea: "$cleanedName"');
+    return null;
   }
 
   /// Creează contact din părți separate

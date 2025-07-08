@@ -308,10 +308,15 @@ class TransformerOCR {
 
   /// Curățarea finală a textului
   String _finalCleanup(String text) {
-    return text
-        .replaceAll(RegExp(r'[^\w\s\+\-\.\(\)\[\]\/\\:;,!?@#\$%&*=\u0100-\u017F]'), '')
+    debugPrint('🧹 TRANSFORMER_OCR: Text înainte de curățare finală: "${text.substring(0, text.length.clamp(0, 100))}..."');
+    
+    final cleaned = text
+        .replaceAll(RegExp(r'[^\w\s\+\-\.\(\)\[\]\/\\:;,!?@#\$%&*=\u0100-\u017F\u0102\u0103\u00C2\u00E2\u00CE\u00EE\u0218\u0219\u021A\u021B]'), '')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
+    
+    debugPrint('🧹 TRANSFORMER_OCR: Text după curățare finală: "${cleaned.substring(0, cleaned.length.clamp(0, 100))}..."');
+    return cleaned;
   }
 
   /// Calculează confidence score bazat pe îmbunătățiri
