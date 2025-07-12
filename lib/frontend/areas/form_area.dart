@@ -11,6 +11,7 @@ import 'package:broker_app/frontend/components/forms/form3.dart';
 import 'package:broker_app/frontend/components/forms/form_new.dart';
 import 'package:broker_app/frontend/components/headers/widget_header2.dart';
 import 'package:intl/intl.dart';
+import 'package:broker_app/backend/services/firebase_service.dart';
 
 /// Area pentru formulare care va fi afisata in cadrul ecranului principal.
 /// Aceasta componenta inlocuieste vechiul FormScreen pastrand functionalitatea
@@ -48,7 +49,11 @@ class _FormAreaState extends State<FormArea> {
   @override
   void initState() {
     super.initState();
+    debugPrint('🚀 FORM: initState called');
+    PerformanceMonitor.startTimer('formAreaInit');
     _initializeServices();
+    PerformanceMonitor.endTimer('formAreaInit');
+    debugPrint('✅ FORM: initState completed');
   }
 
   @override
@@ -102,28 +107,50 @@ class _FormAreaState extends State<FormArea> {
   /// Callback pentru schimbarile din FormService
   void _onFormServiceChanged() {
     if (mounted) {
-      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
   /// Callback pentru schimbarile din ClientService
   void _onClientServiceChanged() {
-    _handleClientChange();
+    // OPTIMIZARE: Folosește microtask pentru a evita blocking
+    Future.microtask(() {
+      _handleClientChange();
+    });
   }
 
   /// Gestioneaza schimbarea clientului
+  /// OPTIMIZAT: Cu loading instant și debouncing
   Future<void> _handleClientChange() async {
     final currentClient = _clientService.focusedClient;
     
-    // Salveaza datele clientului anterior daca exista
-    if (_previousClient != null && currentClient?.phoneNumber != _previousClient?.phoneNumber) {
-      await _saveFormDataForClient(_previousClient!);
+    // OPTIMIZARE: Nu face nimic dacă clientul nu s-a schimbat
+    if (currentClient?.phoneNumber == _previousClient?.phoneNumber) {
+      return;
+    }
+    
+    // Salveaza datele clientului anterior daca exista (doar pentru clienti reali)
+    if (_previousClient != null && !_previousClient!.id.startsWith('temp_')) {
+      // FIX: Verifică dacă clientul anterior încă există înainte de a salva datele
+      final clientStillExists = _clientService.clients.any(
+        (client) => client.phoneNumber == _previousClient!.phoneNumber
+      );
+      
+      if (clientStillExists) {
+        await _saveFormDataForClient(_previousClient!);
+      } else {
+        debugPrint('⚠️ FORM: Skipping form save for deleted client: ${_previousClient!.phoneNumber}');
+      }
     }
     
     // Curata controller-ele pentru noul client
     _disposeControllers();
     
-    // Incarca datele pentru noul client
+    // OPTIMIZARE: Încarcă datele pentru noul client instant
     if (currentClient != null) {
       await _loadFormDataForCurrentClient();
     }
@@ -131,29 +158,49 @@ class _FormAreaState extends State<FormArea> {
     // Actualizeaza referinta clientului anterior
     _previousClient = currentClient;
     
-    // Actualizeaza UI-ul
+    // OPTIMIZARE: Actualizeaza UI-ul imediat pentru a afișa schimbarea
     if (mounted) {
-      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
   /// Incarca datele formularului pentru clientul curent
+  /// OPTIMIZAT: Cu loading instant și cache
   Future<void> _loadFormDataForCurrentClient() async {
+    PerformanceMonitor.startTimer('loadFormData');
     final currentClient = _clientService.focusedClient;
     if (currentClient != null) {
-      await _formService.loadFormDataForClient(
-        currentClient.phoneNumber,
-        currentClient.phoneNumber,
-      );
-      
-      // Clear all controllers to force fresh data loading
-      _disposeControllers();
-      
-      // Force refresh controllers after loading data
-      if (mounted) {
-        setState(() {
-          // This will trigger rebuild and sync controllers with loaded data
+      try {
+        // OPTIMIZARE: Nu încerca să încarci date pentru clienti temporari
+        if (currentClient.id.startsWith('temp_')) {
+          return;
+        }
+        
+        // OPTIMIZARE: Încarcă datele instant din cache dacă sunt disponibile
+        await _formService.loadFormDataForClient(
+          currentClient.phoneNumber,
+          currentClient.phoneNumber,
+        );
+        
+        // Clear all controllers to force fresh data loading
+        _disposeControllers();
+        
+        // OPTIMIZARE: Force refresh controllers after loading data cu delay
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              // This will trigger rebuild and sync controllers with loaded data
+            });
+          }
         });
+      } catch (e) {
+        debugPrint('❌ FORM: Error loading form data: $e');
+      } finally {
+        PerformanceMonitor.endTimer('loadFormData');
       }
     }
   }
@@ -169,8 +216,12 @@ class _FormAreaState extends State<FormArea> {
 
   /// Store GLOBAL tap position
   void _getTapPosition(TapDownDetails details) {
-    setState(() {
-      _globalTapPosition = details.globalPosition;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _globalTapPosition = details.globalPosition;
+        });
+      }
     });
   }
 
@@ -280,22 +331,26 @@ class _FormAreaState extends State<FormArea> {
           // Controller is empty, set initial value with proper formatting
           final formattedValue = _formatValueForDisplay(cleanValue, fieldType);
           controller.text = formattedValue;
-          debugPrint('Controller $key initialized with formatted value: "$formattedValue" (from model: "$cleanValue")');
+          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
+          // debugPrint('Controller $key initialized with formatted value: "$formattedValue" (from model: "$cleanValue")');
         } else if (controllerNumericValue != cleanValue && cleanValue != '0') {
           // Only update if the numeric values are actually different and not just placeholder
           final formattedValue = _formatValueForDisplay(cleanValue, fieldType);
           controller.text = formattedValue;
-          debugPrint('Controller $key updated to formatted value: "$formattedValue" (from model: "$cleanValue")');
+          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
+          // debugPrint('Controller $key updated to formatted value: "$formattedValue" (from model: "$cleanValue")');
         }
         // Don't update if only formatting differs (e.g., "12000" vs "12,000")
       } else {
         // For non-numeric fields, use exact comparison
         if (controller.text.isEmpty) {
           controller.text = cleanValue;
-          debugPrint('Controller $key initialized with: "$cleanValue"');
+          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
+          // debugPrint('Controller $key initialized with: "$cleanValue"');
         } else if (controller.text != cleanValue && cleanValue != '0') {
           controller.text = cleanValue;
-          debugPrint('Controller $key updated to: "$cleanValue" (from model: "$modelValue")');
+          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
+          // debugPrint('Controller $key updated to: "$cleanValue" (from model: "$modelValue")');
         }
       }
     }
@@ -429,29 +484,46 @@ class _FormAreaState extends State<FormArea> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: _buildFormContent(),
-          ),
-        ],
-      ),
-    );
+    final focusedClient = _clientService.focusedClient;
+    
+    debugPrint('📋 FORM_AREA: Building form content - focusedClient: ${focusedClient?.name} (${focusedClient?.phoneNumber})');
+    debugPrint('📋 FORM_AREA: Total clients in service: ${_clientService.apeluri.length + _clientService.reveniri.length + _clientService.recente.length}');
+    debugPrint('📋 FORM_AREA: Focused clients count: ${_clientService.apeluri.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
+    
+    // OPTIMIZARE: Nu mai loga build-ul pentru a reduce noise-ul
+    // debugPrint('🏗️ FORM_AREA: Build method called');
+    
+    // Verifica daca clientul focusat este temporar
+    if (focusedClient != null && focusedClient.id.startsWith('temp_')) {
+      return _buildTemporaryClientPlaceholder(focusedClient);
+    }
+    
+    // Verifica daca nu exista client focusat
+    if (focusedClient == null) {
+      return _buildNoClientSelectedPlaceholder();
+    }
+    
+    // Construieste formularul pentru clientul real
+    return _buildFormContent(focusedClient);
   }
 
   /// Construieste continutul formularului conform design-ului din formArea.md
-  Widget _buildFormContent() {
+  Widget _buildFormContent(ClientModel client) {
     final focusedClient = _clientService.focusedClient;
+    
+    // OPTIMIZARE: Debug pentru focus detection
+    debugPrint('📋 FORM_AREA: Building form content - focusedClient: ${focusedClient?.name} (${focusedClient?.phoneNumber})');
     
     // Daca nu exista client focusat, afiseaza un placeholder
     if (focusedClient == null) {
+      debugPrint('⚠️ FORM_AREA: No focused client, showing placeholder');
       return _buildNoClientSelectedPlaceholder();
+    }
+    
+    // Daca este un client temporar, afiseaza un placeholder special
+    if (focusedClient.id.startsWith('temp_')) {
+      debugPrint('📋 FORM_AREA: Temporary client focused, showing temporary placeholder');
+      return _buildTemporaryClientPlaceholder(focusedClient);
     }
     
     // Afiseaza formularele pentru client conform design-ului exact din Figma
@@ -461,13 +533,72 @@ class _FormAreaState extends State<FormArea> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: _buildCreditSection(focusedClient),
+          child: _buildCreditSection(client),
         ),
         const SizedBox(width: AppTheme.mediumGap),
         Expanded(
-          child: _buildIncomeSection(focusedClient),
+          child: _buildIncomeSection(client),
         ),
       ],
+    );
+  }
+
+  /// Construieste placeholder-ul pentru client temporar
+  Widget _buildTemporaryClientPlaceholder(ClientModel client) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.largeGap),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: AppTheme.popupBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
+        ),
+        shadows: [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 15,
+            offset: Offset(0, 0),
+            spreadRadius: 0,
+          )
+        ],
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset(
+              'assets/addIcon.svg',
+              width: 64,
+              height: 64,
+              colorFilter: ColorFilter.mode(
+                AppTheme.elementColor2,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(height: AppTheme.mediumGap),
+            Text(
+              'Client nou',
+              style: TextStyle(
+                fontSize: AppTheme.fontSizeLarge,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.elementColor2,
+              ),
+            ),
+            const SizedBox(height: AppTheme.smallGap),
+            Text(
+              'Completeaza datele clientului in popup-ul de clienti',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: AppTheme.fontSizeMedium,
+                color: AppTheme.elementColor1,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

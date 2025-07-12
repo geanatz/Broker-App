@@ -9,6 +9,7 @@ import 'package:broker_app/frontend/screens/main_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Splash screen care pre-încarcă toate serviciile aplicației pentru o experiență fluidă
+/// OPTIMIZAT: Interfață îmbunătățită cu loading indicators avansate
 class SplashScreen extends StatefulWidget {
   final Map<String, dynamic> consultantData;
   
@@ -23,14 +24,23 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   // Animation controllers
-  late AnimationController _fadeController;
-  late AnimationController _progressController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _progressAnimation;
+  AnimationController? _fadeController;
+  AnimationController? _progressController;
+  AnimationController? _pulseController;
+  Animation<double>? _fadeAnimation;
+  Animation<double>? _progressAnimation;
+  Animation<double>? _pulseAnimation;
   
   // Service instances
   final SplashService _splashService = SplashService();
   final UpdateService _updateService = UpdateService();
+
+  // OPTIMIZARE: Loading states pentru componente specifice
+  bool _calendarLoaded = false;
+  bool _meetingsLoaded = false;
+  bool _clientsLoaded = false;
+  bool _dashboardLoaded = false;
+  bool _googleDriveLoaded = false;
 
   @override
   void initState() {
@@ -41,8 +51,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _progressController.dispose();
+    _fadeController?.dispose();
+    _progressController?.dispose();
+    _pulseController?.dispose();
     super.dispose();
   }
 
@@ -53,19 +64,32 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
     
     _progressController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
     
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _fadeController!, curve: Curves.easeInOut),
     );
     
     _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _progressController!, curve: Curves.easeInOut),
     );
     
-    _fadeController.forward();
+    // Start progress animation immediately
+    _progressController!.forward();
+    
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _pulseController!, curve: Curves.easeInOut),
+    );
+    
+    _fadeController!.forward();
+    _pulseController!.repeat(reverse: true);
   }
 
   Future<void> _startPreloading() async {
@@ -112,12 +136,43 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   void _onSplashServiceChanged() {
     if (mounted) {
       setState(() {
-        // UI will update based on splash service state
+        // Update loading states based on splash service progress
+        _updateLoadingStates();
       });
       
-      // Update progress animation
-      _progressController.reset();
-      _progressController.forward();
+      // OPTIMIZARE: Nu reseta progress-ul, lasa-l sa continue fluid
+      // _progressController?.reset();
+      // _progressController?.forward();
+    }
+  }
+
+  /// OPTIMIZARE: Actualizează stările de loading pentru componente specifice
+  void _updateLoadingStates() {
+    final progress = _splashService.progress;
+    
+    // Calendar loaded after core services (15% + 25% = 40%)
+    if (progress >= 0.4) {
+      _calendarLoaded = true;
+    }
+    
+    // Meetings loaded after data preload (40% + 20% = 60%)
+    if (progress >= 0.6) {
+      _meetingsLoaded = true;
+    }
+    
+    // Clients loaded after data preload (40% + 20% = 60%)
+    if (progress >= 0.6) {
+      _clientsLoaded = true;
+    }
+    
+    // Dashboard loaded after sync (60% + 15% = 75%)
+    if (progress >= 0.75) {
+      _dashboardLoaded = true;
+    }
+    
+    // Google Drive loaded after sync (60% + 15% = 75%)
+    if (progress >= 0.75) {
+      _googleDriveLoaded = true;
     }
   }
 
@@ -380,7 +435,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   void _showInstallDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.widgetBackground,
         title: Text(
@@ -494,17 +548,25 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         children: [
           Center(
             child: FadeTransition(
-              opacity: _fadeAnimation,
+              opacity: _fadeAnimation ?? const AlwaysStoppedAnimation(1.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // SVG Logo
-                  SvgPicture.asset(
-                    'assets/logoIcon.svg',
-                    width: 120,
-                    height: 120,
-                    colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
-                    fit: BoxFit.contain,
+                  // SVG Logo with pulse animation
+                  AnimatedBuilder(
+                    animation: _pulseAnimation ?? const AlwaysStoppedAnimation(1.0),
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _pulseAnimation?.value ?? 1.0,
+                        child: SvgPicture.asset(
+                          'assets/logoIcon.svg',
+                          width: 120,
+                          height: 120,
+                          colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
+                          fit: BoxFit.contain,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
 
@@ -530,6 +592,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   ),
                   const SizedBox(height: 48),
 
+                  // OPTIMIZARE: Loading indicators pentru componente specifice
+                  _buildComponentLoadingIndicators(),
+                  
+                  const SizedBox(height: 32),
+
                   // Loading Text & Progress
                   SizedBox(
                     width: 300,
@@ -546,10 +613,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         ),
                         const SizedBox(height: 16),
                         AnimatedBuilder(
-                          animation: _progressAnimation,
+                          animation: _progressAnimation ?? const AlwaysStoppedAnimation(1.0),
                           builder: (context, child) {
                             return LinearProgressIndicator(
-                              value: _splashService.progress * _progressAnimation.value,
+                              value: _splashService.progress * (_progressAnimation?.value ?? 1.0),
                               backgroundColor: AppTheme.elementColor1.withAlpha(30),
                               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor2),
                             );
@@ -568,7 +635,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               left: 0,
               right: 0,
               child: FadeTransition(
-                opacity: _fadeAnimation,
+                opacity: _fadeAnimation ?? const AlwaysStoppedAnimation(1.0),
                 child: Text(
                   'Versiune ${_updateService.currentVersion}',
                   textAlign: TextAlign.center,
@@ -581,6 +648,84 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             ),
         ],
       ),
+    );
+  }
+
+  /// OPTIMIZARE: Construiește indicatorii de loading pentru componente specifice
+  Widget _buildComponentLoadingIndicators() {
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.widgetBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.elementColor1.withAlpha(30),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Optimizare componente:',
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.elementColor2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildLoadingIndicator('Calendar', _calendarLoaded, Icons.calendar_today),
+          const SizedBox(height: 8),
+          _buildLoadingIndicator('Intalniri', _meetingsLoaded, Icons.meeting_room),
+          const SizedBox(height: 8),
+          _buildLoadingIndicator('Clienti', _clientsLoaded, Icons.people),
+          const SizedBox(height: 8),
+          _buildLoadingIndicator('Dashboard', _dashboardLoaded, Icons.dashboard),
+          const SizedBox(height: 8),
+          _buildLoadingIndicator('Google Drive', _googleDriveLoaded, Icons.cloud),
+        ],
+      ),
+    );
+  }
+
+  /// Construiește un indicator de loading pentru o componentă specifică
+  Widget _buildLoadingIndicator(String label, bool isLoaded, IconData icon) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: isLoaded ? AppTheme.elementColor2 : AppTheme.elementColor1.withAlpha(100),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: isLoaded ? AppTheme.elementColor2 : AppTheme.elementColor1,
+            ),
+          ),
+        ),
+        if (isLoaded)
+          Icon(
+            Icons.check_circle,
+            size: 16,
+            color: AppTheme.elementColor2,
+          )
+        else
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor2),
+            ),
+          ),
+      ],
     );
   }
 } 

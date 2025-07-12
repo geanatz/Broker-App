@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # Financial Consulting App Development Guide
 
 Înainte de a începe, te rog să citești și să analizezi toate fișierele din folderul `@lib` curent pentru a evalua stadiul actual al dezvoltării.

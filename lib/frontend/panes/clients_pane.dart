@@ -1,6 +1,7 @@
 import '../../app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../components/headers/widget_header2.dart';
 import '../components/headers/widget_header3.dart';
 import '../components/items/dark_item7.dart';
@@ -9,8 +10,10 @@ import '../../backend/services/clients_service.dart';
 import '../../backend/services/splash_service.dart';
 
 import '../popups/status_popup.dart';
+import '../../backend/services/firebase_service.dart';
 
 /// ClientsPane - Interfata pentru gestionarea apelurilor clientilor
+/// OPTIMIZAT: Implementare avansată cu cache inteligent și loading instant
 /// 
 /// Aceasta interfata este impartita in 3 sectiuni:
 /// 1. Apeluri - toate apelurile active (FILL - nu se poate collapse)
@@ -35,40 +38,192 @@ class ClientsPane extends StatefulWidget {
 
 class _ClientsPaneState extends State<ClientsPane> {
   late final ClientUIService _clientService;
+  late final SplashService _splashService;
   
   // Stari pentru collapse/expand sectiuni (doar pentru Reveniri si Recente)
   bool _isReveniriCollapsed = false;
   bool _isRecenteCollapsed = false;
+  
+  // OPTIMIZARE: Cache pentru clienți cu timestamp
+  List<ClientModel> _cachedClients = [];
+
+  // OPTIMIZARE: Debouncing pentru client switching pentru a preveni UI freezing
+  Timer? _clientSwitchDebounceTimer;
+  bool _isSwitchingClient = false;
+  
+  // FIX: Debouncing pentru refresh-uri pentru a preveni infinite loop
+  Timer? _refreshDebounceTimer;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
+    debugPrint('🚀 CLIENTS: initState called');
+    PerformanceMonitor.startTimer('clientsPaneInit');
+    
     // Foloseste serviciul pre-incarcat din splash
     _clientService = SplashService().clientUIService;
+    _splashService = SplashService();
+    
+    // FIX: Ascultă la schimbări în SplashService pentru refresh automat
+    _splashService.addListener(_onSplashServiceChanged);
     
     // Initializeaza datele demo daca nu exista clienti
     _initializeClients();
     _clientService.addListener(_onClientServiceChanged);
+    
+    // OPTIMIZARE: Încarcă imediat din cache pentru loading instant
+    _loadFromCacheInstantly();
+    
+    PerformanceMonitor.endTimer('clientsPaneInit');
+    debugPrint('✅ CLIENTS: initState completed');
+  }
+
+  /// OPTIMIZARE: Încarcă imediat din cache pentru loading instant
+  Future<void> _loadFromCacheInstantly() async {
+    try {
+      // Încarcă clienții din cache instant
+      final cachedClients = await _splashService.getCachedClients();
+      
+      // FIX: Cleanup focus state when loading from cache
+      _clientService.cleanupFocusStateFromCache(cachedClients);
+      
+      if (mounted) {
+        setState(() {
+          _cachedClients = cachedClients;
+        });
+      }
+      
+      debugPrint('✅ CLIENTS: Loaded ${_cachedClients.length} clients from cache');
+    } catch (e) {
+      debugPrint('❌ CLIENTS: Error loading from cache: $e');
+      // Fallback to normal loading
+      _initializeClients();
+    }
+  }
+
+  /// OPTIMIZAT: Force refresh pentru a sincroniza cu starea reală
+  Future<void> _forceRefreshClients() async {
+    if (_isRefreshing) return;
+    
+    try {
+      _isRefreshing = true;
+      
+      // FIX: Forțează reîncărcarea din Firebase pentru a sincroniza cu starea reală
+      await _clientService.loadClientsFromFirebase();
+      
+      // Încarcă din cache actualizat
+      final cachedClients = await _splashService.getCachedClients();
+      
+      if (mounted) {
+        setState(() {
+          _cachedClients = cachedClients;
+        });
+      }
+      
+      debugPrint('🔄 CLIENTS: Refreshed ${_cachedClients.length} clients');
+    } catch (e) {
+      debugPrint('❌ CLIENTS: Error refreshing clients: $e');
+    } finally {
+      _isRefreshing = false;
+    }
   }
 
   @override
   void dispose() {
+    _clientSwitchDebounceTimer?.cancel();
+    _refreshDebounceTimer?.cancel();
     _clientService.removeListener(_onClientServiceChanged);
+    _splashService.removeListener(_onSplashServiceChanged);
     super.dispose();
   }
 
+  /// OPTIMIZAT: Callback pentru refresh automat când se schimbă datele în SplashService
+  void _onSplashServiceChanged() {
+    if (mounted && !_isRefreshing) {
+      // FIX: Debouncing pentru refresh-uri
+      _refreshDebounceTimer?.cancel();
+      _refreshDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+        if (mounted && !_isRefreshing) {
+          _forceRefreshClients();
+        }
+      });
+    }
+  }
+
   void _onClientServiceChanged() {
-    // Defer setState until after the current frame to avoid calling setState during build
+    // FIX: Previne infinite loop cu debouncing
+    if (_isRefreshing) return;
+    
+    // OPTIMIZARE: Defer setState until after the current frame to avoid calling setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {});
+      if (mounted && !_isRefreshing) {
+        // FIX: Debouncing pentru refresh-uri
+        _refreshDebounceTimer?.cancel();
+        _refreshDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+          if (mounted && !_isRefreshing) {
+            _forceRefreshClients();
+          }
+        });
       }
     });
   }
 
-  /// Construieste lista de clienti pentru o anumita categorie
+  /// OPTIMIZAT: Schimbă clientul cu debouncing pentru a preveni UI freezing
+  void _switchClient(ClientModel client) {
+    if (_isSwitchingClient) return;
+    
+    // OPTIMIZARE: Debouncing pentru client switching
+    _clientSwitchDebounceTimer?.cancel();
+    _clientSwitchDebounceTimer = Timer(const Duration(milliseconds: 50), () {
+      _performClientSwitch(client);
+    });
+  }
+
+  /// OPTIMIZAT: Execută schimbarea efectivă a clientului
+  void _performClientSwitch(ClientModel client) {
+    debugPrint('🔄 CLIENTS: _performClientSwitch called for client: ${client.phoneNumber}');
+    debugPrint('🔄 CLIENTS: Current focused count: ${_clientService.apeluri.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
+    
+    if (_isSwitchingClient) {
+      debugPrint('⚠️ CLIENTS: Already switching client, skipping');
+      return;
+    }
+    
+    try {
+      _isSwitchingClient = true;
+      debugPrint('🔄 CLIENTS: Starting client switch for: ${client.phoneNumber}');
+      
+      // Prima data face focus pentru a afisa formularul
+      _clientService.focusClient(client.phoneNumber);
+      
+      // OPTIMIZARE: Force refresh pentru a sincroniza UI-ul
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          debugPrint('🔄 CLIENTS: Post-frame callback - refreshing UI');
+          setState(() {});
+          debugPrint('🔄 CLIENTS: Post-frame callback - UI refreshed');
+        }
+      });
+      
+    } catch (e) {
+      debugPrint('❌ CLIENTS: Error switching client: $e');
+    } finally {
+      _isSwitchingClient = false;
+      debugPrint('🔄 CLIENTS: _performClientSwitch completed');
+    }
+  }
+
+  /// OPTIMIZAT: Construieste lista de clienti pentru o anumita categorie cu cache
   Widget _buildClientsList(ClientCategory category) {
-    final clients = _clientService.getClientsByCategory(category);
+    debugPrint('📋 CLIENTS: _buildClientsList called for category: $category');
+    
+    // Foloseste intotdeauna lista live din service pentru a reflecta focusul corect
+    // FARA clientul temporar pentru clients-pane (temporarul apare doar in popup)
+    List<ClientModel> clients = _clientService.getClientsByCategoryWithoutTemporary(category);
+    
+    debugPrint('📋 CLIENTS: Found ${clients.length} clients for category: $category');
+    debugPrint('📋 CLIENTS: Focused clients in category: ${clients.where((c) => c.status == ClientStatus.focused).length}');
     
     if (clients.isEmpty) {
       return SizedBox(
@@ -122,6 +277,8 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isFocused = client.status == ClientStatus.focused;
     final bool hasDiscussionStatus = client.discussionStatus != null && client.discussionStatus!.isNotEmpty;
     
+    debugPrint('📋 CLIENTS: Building client item: ${client.name} (${client.phoneNumber}) - isFocused: $isFocused');
+    
     // Determina ce sa afiseze ca descriere
     String description;
     if (hasDiscussionStatus) {
@@ -136,6 +293,7 @@ class _ClientsPaneState extends State<ClientsPane> {
     }
     
     if (isFocused) {
+      debugPrint('📋 CLIENTS: Building FOCUSED item for: ${client.name} (${client.phoneNumber})');
       return DarkItem7(
         title: client.name,
         description: description,
@@ -144,13 +302,15 @@ class _ClientsPaneState extends State<ClientsPane> {
         onIconTap: () => _showClientSavePopup(client),
       );
     } else {
+      debugPrint('📋 CLIENTS: Building NORMAL item for: ${client.name} (${client.phoneNumber})');
       return LightItem7(
         title: client.name,
         description: description,
         svgAsset: 'assets/viewIcon.svg', // Întotdeauna viewIcon pentru client nefocusat
         onTap: () {
-          // Prima data face focus pentru a afisa formularul
-          _clientService.focusClient(client.phoneNumber);
+          // OPTIMIZARE: Folosește mecanismul debounced pentru switching
+          debugPrint('📋 CLIENTS: Tapped normal item for: ${client.name} (${client.phoneNumber})');
+          _switchClient(client);
         },
       );
     }
@@ -250,6 +410,10 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('📋 CLIENTS: build called - hashCode: $hashCode');
+    debugPrint('📋 CLIENTS: Total clients in service: ${_clientService.apeluri.length + _clientService.reveniri.length + _clientService.recente.length}');
+    debugPrint('📋 CLIENTS: Focused clients count: ${_clientService.apeluri.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
+    
     return SizedBox(
       width: double.infinity,
       height: double.infinity,

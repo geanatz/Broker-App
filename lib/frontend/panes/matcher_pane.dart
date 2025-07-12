@@ -94,14 +94,24 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
   /// Callback pentru schimbarile din MatcherService
   void _onMatcherServiceChanged() {
     if (mounted) {
-      setState(() {});
+      // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita setState în timpul build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
   /// Afiseaza popup-ul cu detaliile unei banci
   void _showBankDetailsPopup(BankCriteria bankCriteria) {
-    setState(() {
-      _focusedBankName = bankCriteria.bankName;
+    // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita setState în timpul build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _focusedBankName = bankCriteria.bankName;
+        });
+      }
     });
     
     showDialog(
@@ -112,9 +122,11 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
       ),
     ).then((_) {
       // Reseteaza focused state cand se inchide popup-ul
-      setState(() {
-        _focusedBankName = null;
-      });
+      if (mounted) {
+        setState(() {
+          _focusedBankName = null;
+        });
+      }
     });
   }
 

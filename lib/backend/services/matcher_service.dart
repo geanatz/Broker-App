@@ -190,12 +190,18 @@ class MatcherService extends ChangeNotifier {
       // OPTIMIZARE: Configurează curățarea automată a cache-ului de venituri
       _setupIncomeCacheCleanup();
       
-      notifyListeners();
+      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      Future.microtask(() {
+        notifyListeners();
+      });
     } catch (e) {
       debugPrint('Error initializing MatcherService: $e');
       // In cazul unei erori, folosim criteriile implicite
       _setDefaultCriteria();
-      notifyListeners();
+      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      Future.microtask(() {
+        notifyListeners();
+      });
     }
   }
 
@@ -228,14 +234,16 @@ class MatcherService extends ChangeNotifier {
     // OPTIMIZARE: Invalidează cache-ul de venituri când formularele se schimbă
     _incomeCache.clear();
     _incomeCacheTime.clear();
-    _loadClientData();
+    // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita notifyListeners în timpul build
+    Future.microtask(() => _loadClientData());
   }
 
   void _onClientServiceChanged() {
     // OPTIMIZARE: Invalidează cache-ul când clientul se schimbă
     _incomeCache.clear();
     _incomeCacheTime.clear();
-    _loadClientData();
+    // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita notifyListeners în timpul build
+    Future.microtask(() => _loadClientData());
   }
 
   /// OPTIMIZAT: Incarca datele de baza ale clientului cu caching
@@ -422,7 +430,11 @@ class MatcherService extends ChangeNotifier {
       recommendations: recommendations,
       isLoading: isLoading,
     );
-    notifyListeners();
+    
+    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    Future.microtask(() {
+      notifyListeners();
+    });
   }
 
   /// Calculeaza suma de credit pe care o poate oferi banca

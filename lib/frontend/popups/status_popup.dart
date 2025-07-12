@@ -13,6 +13,7 @@ import 'package:broker_app/backend/services/auth_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
 import 'package:broker_app/backend/services/form_service.dart';
+import 'package:broker_app/backend/services/firebase_service.dart';
 
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -388,28 +389,50 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
       // Daca statusul este "Acceptat", salveaza intalnirea in calendar
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
+        debugPrint('🔍 STATUS_POPUP: Creating meeting for accepted client');
+        
         // Obtine numele consultantului curent
         final authService = AuthService();
         final consultantData = await authService.getCurrentConsultantData();
+        debugPrint('🔍 STATUS_POPUP: consultantData = $consultantData');
         final consultantName = consultantData?['name'] ?? 'Consultant necunoscut';
+        debugPrint('🔍 STATUS_POPUP: consultantName = "$consultantName"');
         
+        // FIX: Obtine consultantToken-ul curent cu validare
+        final firebaseService = NewFirebaseService();
+        final consultantToken = await firebaseService.getCurrentConsultantToken();
+        debugPrint('🔍 STATUS_POPUP: consultantToken = "$consultantToken"');
+        
+        // FIX: Validare pentru consultantToken
+        if (consultantToken == null || consultantToken.isEmpty) {
+          debugPrint('❌ STATUS_POPUP: consultantToken is null or empty');
+          _showError("Eroare: Nu s-a putut obtine token-ul consultantului");
+          return;
+        }
+        
+        debugPrint('🔍 STATUS_POPUP: Creating MeetingData object');
         final meetingData = MeetingData(
           clientName: widget.client.name,
           phoneNumber: widget.client.phoneNumber,
           dateTime: finalDateTime,
           type: MeetingType.meeting,
-          consultantToken: '', // Va fi setat de service
+          consultantToken: consultantToken,
           consultantName: consultantName,
         );
+        debugPrint('🔍 STATUS_POPUP: MeetingData created successfully');
 
+        debugPrint('🔍 STATUS_POPUP: Calling meeting service');
         final result = await _meetingService.createMeeting(meetingData);
+        debugPrint('🔍 STATUS_POPUP: Meeting service result = $result');
         
         if (!result['success']) {
-          _showError(result['message'] ?? 'Eroare la salvarea intalnirii');
+                  final errorMessage = result['message'] ?? 'Eroare la salvarea intalnirii';
+        debugPrint('❌ STATUS_POPUP: Meeting creation failed: $errorMessage');
+        _showError(errorMessage);
           return;
         }
         
-        debugPrint('✅ Intalnire salvata in calendar: ${widget.client.name} - $finalDateTime');
+        debugPrint('✅ STATUS_POPUP: Intalnire salvata in calendar: ${widget.client.name} - $finalDateTime');
         
         // IMPORTANT: Invalidează cache-ul pentru a afișa imediat întâlnirea în calendar
         try {

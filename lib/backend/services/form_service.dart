@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
-import 'firebase_service.dart';
+import 'package:broker_app/backend/services/firebase_service.dart';
 
 /// Enum pentru diferitele tipuri de credite
 enum CreditType { 
@@ -226,6 +226,9 @@ class FormService extends ChangeNotifier {
   // UI state
   final Map<String, bool> _showingClientLoanForm = HashMap();
   final Map<String, bool> _showingClientIncomeForm = HashMap();
+
+  // OPTIMIZARE: Cache pentru form data
+  final Map<String, Map<String, dynamic>> _formDataCache = HashMap();
 
   // Constants
   static const List<String> incomeBanks = [
@@ -516,7 +519,28 @@ class FormService extends ChangeNotifier {
 
   /// incarca datele formularului pentru un client
   Future<void> loadFormDataForClient(String clientId, String phoneNumber) async {
+    PerformanceMonitor.startTimer('loadFormData');
+    
     try {
+      // OPTIMIZARE: Cache pentru form data
+      if (_formDataCache.containsKey(clientId)) {
+        final cachedData = _formDataCache[clientId]!;
+        _clientCreditForms[clientId] = List.from(cachedData['clientCreditForms']);
+        _coborrowerCreditForms[clientId] = List.from(cachedData['coborrowerCreditForms']);
+        _clientIncomeForms[clientId] = List.from(cachedData['clientIncomeForms']);
+        _coborrowerIncomeForms[clientId] = List.from(cachedData['coborrowerIncomeForms']);
+        _showingClientLoanForm[clientId] = cachedData['showingClientLoanForm'];
+        _showingClientIncomeForm[clientId] = cachedData['showingClientIncomeForm'];
+        
+        // OPTIMIZARE: Folosește microtask pentru notifyListeners
+        Future.microtask(() {
+          notifyListeners();
+        });
+        
+        PerformanceMonitor.endTimer('loadFormData');
+        return;
+      }
+
       final formData = await _firebaseFormService.loadAllFormData(phoneNumber);
       
       if (formData != null) {
@@ -576,10 +600,23 @@ class FormService extends ChangeNotifier {
         _showingClientLoanForm[clientId] = formData['showingClientLoanForm'] ?? true;
         _showingClientIncomeForm[clientId] = formData['showingClientIncomeForm'] ?? true;
         
+        // OPTIMIZARE: Cache form data pentru acces rapid cu timestamp
+        _formDataCache[clientId] = {
+          'clientCreditForms': List.from(_clientCreditForms[clientId] ?? []),
+          'coborrowerCreditForms': List.from(_coborrowerCreditForms[clientId] ?? []),
+          'clientIncomeForms': List.from(_clientIncomeForms[clientId] ?? []),
+          'coborrowerIncomeForms': List.from(_coborrowerIncomeForms[clientId] ?? []),
+          'showingClientLoanForm': _showingClientLoanForm[clientId] ?? true,
+          'showingClientIncomeForm': _showingClientIncomeForm[clientId] ?? true,
+          'cacheTime': DateTime.now(),
+        };
+        
         notifyListeners();
+        PerformanceMonitor.endTimer('loadFormData');
       }
     } catch (e) {
       debugPrint('Error loading form data for client $clientId: $e');
+      PerformanceMonitor.endTimer('loadFormData');
     }
   }
 
@@ -632,7 +669,17 @@ class FormService extends ChangeNotifier {
     _coborrowerIncomeForms[clientId] = [IncomeFormModel()];
     _showingClientLoanForm[clientId] = true;
     _showingClientIncomeForm[clientId] = true;
+    
+    // OPTIMIZARE: Clear cache pentru client
+    _formDataCache.remove(clientId);
+    
     notifyListeners();
+  }
+
+  /// OPTIMIZARE: Curata cache-ul de form data
+  void clearFormDataCache() {
+    _formDataCache.clear();
+    debugPrint('🗑️ FORM_SERVICE: Cleared form data cache');
   }
 
   /// Pregateste datele pentru export

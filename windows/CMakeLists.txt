@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.14)
 project(broker_app LANGUAGES CXX)
 
+# Suppress CMake deprecation warnings from Firebase SDK
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "" FORCE)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "broker_app")

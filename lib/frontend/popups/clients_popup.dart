@@ -14,6 +14,7 @@ import '../components/buttons/flex_buttons1.dart';
 import '../components/fields/input_field1.dart';
 import '../../backend/services/ocr_service.dart';
 import '../../backend/services/clients_service.dart';
+import '../../backend/services/splash_service.dart';
 import '../../backend/ocr/scanner_ocr.dart';
 import 'package:image/image.dart' as img;
 
@@ -120,6 +121,18 @@ class _ClientsPopupState extends State<ClientsPopup> {
   double _ocrProgress = 0.0;
   String? _ocrError;
   Client? _editingClient;
+
+  /// Incepe procesul de creare client cu client temporar
+  void _startClientCreation() {
+    debugPrint('🆕 POPUP: Starting client creation');
+    
+    // Creeaza clientul temporar in service
+    final clientService = SplashService().clientUIService;
+    clientService.createTemporaryClient();
+    
+    // Deschide formularul de editare pentru clientul temporar
+    _openEditClient(null); // null pentru client nou
+  }
 
   /// Deschide file picker pentru selectia imaginilor OCR
   Future<void> _openImagePicker() async {
@@ -1215,7 +1228,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         primaryButtonText: "Adauga client",
         primaryButtonIconPath: "assets/addIcon.svg",
         trailingIconPath: "assets/deleteIcon.svg",
-        onPrimaryButtonTap: () => _openEditClient(),
+        onPrimaryButtonTap: () => _startClientCreation(),
         onTrailingIconTap: () {
           // Sterge complet imaginea OCR selectata (inclusiv item-ul din galerie)
           _deleteOcrClientsFromSelectedImage();
@@ -1233,7 +1246,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         primaryButtonIconPath: "assets/addIcon.svg",
         trailingIcon1Path: "assets/imageIcon.svg",
         trailingIcon2Path: "assets/deleteIcon.svg",
-        onPrimaryButtonTap: () => _openEditClient(),
+        onPrimaryButtonTap: () => _startClientCreation(),
         onTrailingIcon1Tap: _openImagePicker,
         onTrailingIcon2Tap: widget.onDeleteAllClients,
         spacing: AppTheme.smallGap,
@@ -1280,6 +1293,12 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
     _phoneController1 = TextEditingController(text: widget.editingClient?.phoneNumber1 ?? '');
     _phoneController2 = TextEditingController(text: widget.editingClient?.phoneNumber2 ?? '');
     _coDebitorNameController = TextEditingController(text: widget.editingClient?.coDebitorName ?? '');
+    
+    // Add listeners for live updates to temporary client
+    _nameController.addListener(_onFormChanged);
+    _phoneController1.addListener(_onFormChanged);
+    _phoneController2.addListener(_onFormChanged);
+    _coDebitorNameController.addListener(_onFormChanged);
   }
 
   @override
@@ -1294,6 +1313,36 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
       _phoneController2.text = widget.editingClient?.phoneNumber2 ?? '';
       _coDebitorNameController.text = widget.editingClient?.coDebitorName ?? '';
     }
+  }
+
+  /// Update temporary client as user types
+  void _onFormChanged() {
+    // Only update if we're creating a new client (not editing existing)
+    if (widget.editingClient == null) {
+      final clientService = SplashService().clientUIService;
+      clientService.updateTemporaryClient(
+        name: _nameController.text.trim(),
+        phoneNumber: _phoneController1.text.trim(),
+        phoneNumber2: _phoneController2.text.trim().isEmpty 
+            ? null 
+            : _phoneController2.text.trim(),
+        coDebitorName: _coDebitorNameController.text.trim().isEmpty 
+            ? null 
+            : _coDebitorNameController.text.trim(),
+      );
+    }
+  }
+  
+  /// Cancel temporary client creation
+  void _cancelClientCreation() {
+    debugPrint('❌ POPUP: Canceling client creation');
+    
+    // Cancel the temporary client first
+    final clientService = SplashService().clientUIService;
+    clientService.cancelTemporaryClient();
+    
+    // Close the edit widget instead of trying to pop the dialog
+    widget.onDeleteClient?.call();
   }
 
   @override
@@ -1311,9 +1360,13 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
       return;
     }
 
-    final client = Client(
+    // Get the client service
+    final clientService = SplashService().clientUIService;
+    
+    // Update the temporary client with the form data
+    clientService.updateTemporaryClient(
       name: _nameController.text.trim(),
-      phoneNumber1: _phoneController1.text.trim(),
+      phoneNumber: _phoneController1.text.trim(),
       phoneNumber2: _phoneController2.text.trim().isEmpty 
           ? null 
           : _phoneController2.text.trim(),
@@ -1321,8 +1374,37 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
           ? null 
           : _coDebitorNameController.text.trim(),
     );
-
-    widget.onSaveClient?.call(client);
+    
+    // Finalize the temporary client
+    clientService.finalizeTemporaryClient().then((success) {
+      if (!mounted) return; // Check if widget is still mounted
+      
+      if (success) {
+        debugPrint('✅ POPUP: Client saved successfully');
+        // Create a Client object and call the parent callback
+        final savedClient = Client(
+          name: _nameController.text.trim(),
+          phoneNumber1: _phoneController1.text.trim(),
+          phoneNumber2: _phoneController2.text.trim().isEmpty 
+              ? null 
+              : _phoneController2.text.trim(),
+          coDebitorName: _coDebitorNameController.text.trim().isEmpty 
+              ? null 
+              : _coDebitorNameController.text.trim(),
+        );
+        widget.onSaveClient?.call(savedClient);
+      } else {
+        debugPrint('❌ POPUP: Failed to save client');
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eroare la salvarea clientului'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
   }
   
   Widget _buildFormBottomButtonsRow(bool isEditing) {
@@ -1339,14 +1421,17 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
       );
     } else {
-      // For new client creation, use FlexButtonSingle
-      return FlexButtonSingle(
-        text: "Salveaza client",
-        iconPath: "assets/saveIcon.svg",
-        onTap: _saveClient,
+      // For new client creation, use FlexButtonWithTrailingIcon with cancel
+      return FlexButtonWithTrailingIcon(
+        primaryButtonText: "Salveaza client",
+        primaryButtonIconPath: "assets/saveIcon.svg",
+        onPrimaryButtonTap: _saveClient,
+        trailingIconPath: "assets/closeIcon.svg",
+        onTrailingIconTap: _cancelClientCreation,
+        spacing: AppTheme.smallGap,
         borderRadius: AppTheme.borderRadiusMedium,
         buttonHeight: 48.0,
-        textStyle: AppTheme.navigationButtonTextStyle,
+        primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
       );
     }
   }

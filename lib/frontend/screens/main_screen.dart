@@ -20,6 +20,7 @@ import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/update_service.dart';
 import 'package:broker_app/frontend/components/update_notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:broker_app/backend/services/firebase_service.dart';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -76,6 +77,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   bool _isAreaSectionCollapsed = false;
   bool _isPaneSectionCollapsed = false;
   
+  // Performance monitoring
+  int _buildCount = 0;
+  
 
   
   // State pentru popup-uri
@@ -86,12 +90,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    debugPrint('🚀 MAIN: initState called');
+    PerformanceMonitor.startTimer('mainScreenInit');
+    
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
     
-
-    
-    // Folosește serviciile pre-încărcate din splash
+    // Foloseste serviciile pre-încărcate din splash
     // Verifică dacă serviciile sunt disponibile
     if (_splashService.areServicesReady) {
       _clientService = _splashService.clientUIService;
@@ -128,6 +133,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     // Asculta schimbarile de brightness pentru modul auto
     WidgetsBinding.instance.addObserver(this);
+    
+    PerformanceMonitor.endTimer('mainScreenInit');
+    debugPrint('✅ MAIN: initState completed');
   }
 
   /// FIX: Inițializează aplicația pentru consultantul curent
@@ -155,7 +163,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.didChangePlatformBrightness();
     // Actualizeaza UI-ul cand se schimba brightness-ul sistemului (pentru modul auto)
     if (_settingsService.currentThemeMode == AppThemeMode.auto) {
-      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
   
@@ -166,12 +178,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         setState(() {
           _syncPopupWithService();
         });
+        
+        // If popup is open, refresh it to show temporary client
+        if (_isShowingClientListPopup) {
+          _syncPopupWithService();
+        }
       }
     });
   }
   
   /// Sincronizeaza datele popup-ului cu cele din ClientService
   void _syncPopupWithService() {
+    // Include regular clients
     _popupClients = _clientService.clients.map((clientModel) {
       return Client(
         name: clientModel.name,
@@ -181,13 +199,28 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       );
     }).toList();
     
-    // Pastreaza selectia curenta daca exista
-    if (_selectedPopupClient != null) {
-      _selectedPopupClient = _popupClients.firstWhere(
-        (client) => client.name == _selectedPopupClient!.name && 
-                   client.phoneNumber1 == _selectedPopupClient!.phoneNumber1,
-        orElse: () => _popupClients.isNotEmpty ? _popupClients.first : _selectedPopupClient!,
+    // Include temporary client if it exists
+    if (_clientService.temporaryClient != null) {
+      final tempClient = _clientService.temporaryClient!;
+      final tempClientForPopup = Client(
+        name: tempClient.name,
+        phoneNumber1: tempClient.phoneNumber1,
+        phoneNumber2: tempClient.phoneNumber2,
+        coDebitorName: tempClient.coDebitorName,
       );
+      _popupClients.add(tempClientForPopup);
+      
+      // Focus the temporary client in the popup
+      _selectedPopupClient = tempClientForPopup;
+    } else {
+      // Pastreaza selectia curenta daca exista
+      if (_selectedPopupClient != null) {
+        _selectedPopupClient = _popupClients.firstWhere(
+          (client) => client.name == _selectedPopupClient!.name && 
+                     client.phoneNumber1 == _selectedPopupClient!.phoneNumber1,
+          orElse: () => _popupClients.isNotEmpty ? _popupClients.first : _selectedPopupClient!,
+        );
+      }
     }
   }
   
@@ -201,8 +234,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Callback pentru schimbarile din SettingsService
   void _onSettingsChanged() {
     if (mounted) {
-      setState(() {
-        // Actualizeaza intreaga interfata cand se schimba tema
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            // Actualizeaza intreaga interfata cand se schimba tema
+          });
+        }
       });
     }
   }
@@ -232,7 +269,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       
       // Update UI if needed
       if (mounted) {
-        setState(() {});
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
       }
     } catch (e) {
       debugPrint('Error restoring navigation state: $e');
@@ -309,6 +350,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         _forceSyncStates();
       }
     });
+    
+    // Print performance report every 10 builds for monitoring
+    _buildCount++;
+    if (_buildCount % 10 == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PerformanceMonitor.printComprehensiveReport();
+      });
+    }
     
     return UpdateNotificationWrapper(
       updateService: _updateService,
@@ -400,6 +449,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   void _handleAreaChanged(AreaType area) {
+    PerformanceMonitor.startTimer('areaChange');
     debugPrint('🔄 Area changed to: $area');
     setState(() {
       _currentArea = area;
@@ -410,10 +460,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Force state sync after a short delay to handle any race conditions
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _forceSyncStates();
+      PerformanceMonitor.endTimer('areaChange');
     });
   }
   
   void _handlePaneChanged(PaneType pane) {
+    PerformanceMonitor.startTimer('paneChange');
     debugPrint('🔄 Pane changed to: $pane');
     setState(() {
       _currentPane = pane;
@@ -439,6 +491,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Force state sync after a short delay to handle any race conditions
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _forceSyncStates();
+      PerformanceMonitor.endTimer('paneChange');
     });
   }
   
@@ -534,6 +587,28 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   /// Handles saving a client (create or edit)
   void _handleSaveClient(Client client) async {
+    // Check if this is a temporary client being finalized
+    final clientService = SplashService().clientUIService;
+    if (clientService.temporaryClient != null) {
+      // This is a temporary client being finalized - let the service handle it
+      final success = await clientService.finalizeTemporaryClient();
+      if (success) {
+        // Don't close the popup - let user continue working
+        // _closeAllPopups(); // Removed automatic popup closing
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Client salvat cu succes'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+      return;
+    }
+    
     // Try to find existing client by phone number
     final existingClientModel = _clientService.clients.where(
       (clientModel) => clientModel.phoneNumber1 == client.phoneNumber1,
@@ -563,10 +638,23 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       
       await _clientService.addClient(newClientModel);
     }
+    
+    // Don't close the popup automatically
+    // _closeAllPopups(); // Removed automatic popup closing
   }
   
   /// Handles deleting a client
   void _handleDeleteClient(Client client) async {
+    // Check if this is a temporary client being cancelled
+    final clientService = SplashService().clientUIService;
+    if (clientService.temporaryClient != null) {
+      // This is a temporary client being cancelled
+      clientService.cancelTemporaryClient();
+      // Close the popup after cancellation
+      _closeAllPopups();
+      return;
+    }
+    
     // Find the client in the list
     final clientModel = _clientService.clients.firstWhere(
       (clientModel) => clientModel.phoneNumber1 == client.phoneNumber1,
@@ -579,6 +667,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       _selectedPopupClient = null;
     });
+    
+    // Close the popup after deletion
+    _closeAllPopups();
   }
 
   // =================== SIDEBAR METHODS ===================

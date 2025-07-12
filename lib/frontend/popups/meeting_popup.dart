@@ -11,6 +11,7 @@ import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/auth_service.dart';
+import 'package:broker_app/backend/services/firebase_service.dart';
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
 class TimeInputFormatter extends TextInputFormatter {
@@ -247,14 +248,27 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   Future<void> _saveMeeting() async {
+    debugPrint('🔍 MEETING_POPUP: Starting _saveMeeting()');
+    
     // Validare
     if (_selectedDate == null) {
+      debugPrint('❌ MEETING_POPUP: _selectedDate is null');
       _showError("Selecteaza o data");
       return;
     }
 
     if (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty) {
+      debugPrint('❌ MEETING_POPUP: _selectedTimeSlot is null or empty');
       _showError("Selecteaza o ora");
+      return;
+    }
+
+    // FIX: Validare pentru numele clientului
+    final clientName = _clientNameController.text.trim();
+    debugPrint('🔍 MEETING_POPUP: clientName = "$clientName"');
+    if (clientName.isEmpty) {
+      debugPrint('❌ MEETING_POPUP: clientName is empty');
+      _showError("Introduceti numele clientului");
       return;
     }
 
@@ -263,8 +277,10 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
 
     try {
+      debugPrint('🔍 MEETING_POPUP: Building finalDateTime');
       // Construieste data si ora finale
       final timeParts = _selectedTimeSlot!.trim().split(':');
+      debugPrint('🔍 MEETING_POPUP: timeParts = $timeParts');
       final finalDateTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
@@ -272,31 +288,58 @@ class _MeetingPopupState extends State<MeetingPopup> {
         int.parse(timeParts[0]),
         int.parse(timeParts[1]),
       );
+      debugPrint('🔍 MEETING_POPUP: finalDateTime = $finalDateTime');
 
+      debugPrint('🔍 MEETING_POPUP: Getting consultant data');
       // Obtine datele consultantului curent
       final authService = AuthService();
       final consultantData = await authService.getCurrentConsultantData();
+      debugPrint('🔍 MEETING_POPUP: consultantData = $consultantData');
       final consultantName = consultantData?['name'] ?? 'Consultant necunoscut';
-      final consultantToken = consultantData?['token'] ?? '';
+      debugPrint('🔍 MEETING_POPUP: consultantName = "$consultantName"');
+      
+      debugPrint('🔍 MEETING_POPUP: Getting consultantToken');
+      // FIX: Obtine consultantToken-ul curent cu validare
+      final firebaseService = NewFirebaseService();
+      final consultantToken = await firebaseService.getCurrentConsultantToken();
+      debugPrint('🔍 MEETING_POPUP: consultantToken = "$consultantToken"');
+      
+      // FIX: Validare pentru consultantToken
+      if (consultantToken == null || consultantToken.isEmpty) {
+        debugPrint('❌ MEETING_POPUP: consultantToken is null or empty');
+        _showError("Eroare: Nu s-a putut obtine token-ul consultantului");
+        return;
+      }
 
+      // FIX: Validare pentru telefon (poate fi gol pentru intalniri generale)
+      final phoneNumber = _phoneController.text.trim();
+      debugPrint('🔍 MEETING_POPUP: phoneNumber = "$phoneNumber"');
+      
+      debugPrint('🔍 MEETING_POPUP: Creating MeetingData object');
       // Creeaza obiectul MeetingData
       final meetingData = MeetingData(
-        clientName: _clientNameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
+        clientName: clientName,
+        phoneNumber: phoneNumber.isEmpty ? 'no_client_meetings' : phoneNumber,
         dateTime: finalDateTime,
         type: _selectedType,
         consultantToken: consultantToken,
         consultantName: consultantName,
       );
+      debugPrint('🔍 MEETING_POPUP: MeetingData created successfully');
 
+      debugPrint('🔍 MEETING_POPUP: Calling meeting service');
       Map<String, dynamic> result;
       if (isEditMode) {
+        debugPrint('🔍 MEETING_POPUP: Edit mode - calling updateMeeting');
         result = await _meetingService.updateMeeting(widget.meetingId!, meetingData);
       } else {
+        debugPrint('🔍 MEETING_POPUP: Create mode - calling createMeeting');
         result = await _meetingService.createMeeting(meetingData);
       }
+      debugPrint('🔍 MEETING_POPUP: Meeting service result = $result');
 
       if (result['success']) {
+        debugPrint('✅ MEETING_POPUP: Meeting saved successfully');
         // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
         _splashService.invalidateAllMeetingCaches();
         
@@ -305,15 +348,19 @@ class _MeetingPopupState extends State<MeetingPopup> {
           if (widget.onSaved != null) {
             widget.onSaved!();
           }
-          _showSuccess(result['message']);
+          final successMessage = result['message'] ?? 'Intalnire salvata cu succes';
+          _showSuccess(successMessage);
         }
       } else {
+        final errorMessage = result['message'] ?? 'Eroare necunoscuta la salvarea intalnirii';
+        debugPrint('❌ MEETING_POPUP: Meeting save failed: $errorMessage');
         if (mounted) {
-          _showError(result['message']);
+          _showError(errorMessage);
         }
       }
     } catch (e) {
-      debugPrint("Eroare la salvarea intalnirii: $e");
+      debugPrint("❌ MEETING_POPUP: Exception in _saveMeeting: $e");
+      debugPrint("❌ MEETING_POPUP: Stack trace: ${StackTrace.current}");
       if (mounted) {
         _showError("Eroare la salvarea intalnirii");
       }
@@ -362,7 +409,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
     try {
       debugPrint("Attempting to delete meeting with ID: ${widget.meetingId}");
-      final result = await _meetingService.deleteMeeting(widget.meetingId!);
+      // Get phone number from the phone controller
+      final phoneNumber = _phoneController.text.trim();
+      final result = await _meetingService.deleteMeeting(widget.meetingId!, phoneNumber);
       
       debugPrint("Delete result: $result");
       
@@ -375,11 +424,13 @@ class _MeetingPopupState extends State<MeetingPopup> {
           if (widget.onSaved != null) {
             widget.onSaved!();
           }
-          _showSuccess(result['message']);
+          final successMessage = result['message'] ?? 'Intalnire stearsa cu succes';
+          _showSuccess(successMessage);
         }
       } else {
+        final errorMessage = result['message'] ?? 'Eroare la stergerea intalnirii';
         if (mounted) {
-          _showError(result['message']);
+          _showError(errorMessage);
         }
       }
     } catch (e) {

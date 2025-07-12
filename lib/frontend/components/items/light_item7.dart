@@ -107,8 +107,10 @@ class _LightItem7State extends State<LightItem7> {
       fontWeight: FontWeight.w500,
     );
 
-    // Determine if we should show an icon (either SVG or IconData) - show only on hover
-    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && _isHovered;
+    // Determine if we should show an icon (either SVG or IconData)
+    // userIcon should always be visible, other icons only on hover
+    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && 
+        (widget.svgAsset == 'assets/userIcon.svg' || _isHovered);
     
     // Determine which icon to show: userIcon when not hovered, logoutIcon when hovered
     String? effectiveSvgAsset;

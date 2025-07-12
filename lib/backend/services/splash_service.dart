@@ -12,6 +12,7 @@ import 'package:broker_app/backend/services/firebase_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
 
 /// Service pentru gestionarea încărcărilor de pe splash screen și cache-ul aplicației
+/// OPTIMIZAT: Implementare avansată cu preloading paralel și cache inteligent
 class SplashService extends ChangeNotifier {
   // Singleton pattern
   static final SplashService _instance = SplashService._internal();
@@ -33,20 +34,35 @@ class SplashService extends ChangeNotifier {
   MatcherService? _matcherService;
   GoogleDriveService? _googleDriveService;
   
-  // Meeting cache pentru calendar
+  // OPTIMIZARE: Cache avansat pentru meetings cu timestamp și validare
   List<ClientActivity> _cachedMeetings = [];
   DateTime? _meetingsCacheTime;
   Map<String, List<String>> _cachedTimeSlots = {};
   DateTime? _timeSlotsLastUpdate;
+  
+  // OPTIMIZARE: Cache pentru clienți cu timestamp
+  List<ClientModel> _cachedClients = [];
+  DateTime? _clientsCacheTime;
+  
+  // OPTIMIZARE: Cache pentru dashboard data
+  Map<String, dynamic> _cachedDashboardData = {};
 
   // FIX: Cache pentru separarea datelor per consultant/echipă
   String? _currentConsultantToken;
   String? _currentTeam;
   final Map<String, List<ClientActivity>> _teamMeetingsCache = {};
+  final Map<String, List<ClientModel>> _teamClientsCache = {};
   
-  // OPTIMIZARE: Debouncing pentru invalidări de cache
+  // OPTIMIZARE: Debouncing pentru invalidări de cache cu timeout
   Timer? _cacheInvalidationTimer;
   bool _hasPendingInvalidation = false;
+  
+  // OPTIMIZARE: Parallel loading support
+  final Map<String, Completer<void>> _parallelTasks = {};
+  
+  // OPTIMIZARE: Performance monitoring
+  final Map<String, DateTime> _taskStartTimes = {};
+  final Map<String, Duration> _taskDurations = {};
   
   // Getters
   bool get isInitialized => _isInitialized;
@@ -63,8 +79,10 @@ class SplashService extends ChangeNotifier {
   MatcherService get matcherService => _matcherService ?? MatcherService();
   GoogleDriveService get googleDriveService => _googleDriveService ?? GoogleDriveService();
 
-  /// FIX: Resetează cache-ul când consultantul se schimbă
+  /// OPTIMIZAT: Resetează cache-ul când consultantul se schimbă cu preloading anticipat
   Future<void> resetForNewConsultant() async {
+    PerformanceMonitor.startTimer('resetForNewConsultant');
+    
     try {
       final firebaseService = _clientUIService?.firebaseService;
       if (firebaseService == null) return;
@@ -73,38 +91,68 @@ class SplashService extends ChangeNotifier {
       final newTeam = await NewFirebaseService().getCurrentConsultantTeam();
       
       if (newConsultantToken != _currentConsultantToken || newTeam != _currentTeam) {
+        debugPrint('🔄 SPLASH_SERVICE: Consultant changed, resetting cache...');
+        
         // Salvează în cache datele pentru echipa anterioară
         if (_currentTeam != null && _cachedMeetings.isNotEmpty) {
           _teamMeetingsCache[_currentTeam!] = List.from(_cachedMeetings);
+        }
+        if (_currentTeam != null && _cachedClients.isNotEmpty) {
+          _teamClientsCache[_currentTeam!] = List.from(_cachedClients);
         }
         
         _currentConsultantToken = newConsultantToken;
         _currentTeam = newTeam;
         
-        // Încarcă datele pentru noua echipă
-        await _loadMeetingsForNewTeam();
+        // OPTIMIZARE: Preload în paralel pentru echipa nouă cu timeout
+        await Future.wait([
+          _loadMeetingsForNewTeam(),
+          _loadClientsForNewTeam(),
+        ]).timeout(
+          const Duration(seconds: 2),
+          onTimeout: () {
+            debugPrint('⚠️ SPLASH_SERVICE: Consultant reset timeout, continuing...');
+            return <void>[];
+          },
+        );
         
-        // Notifică și dashboard-ul pentru refresh
-        if (_dashboardService != null) {
-          await _dashboardService!.resetForNewConsultant();
-        }
+        // OPTIMIZARE: Operații non-blocking pentru dashboard și Google Drive
+        _performNonBlockingReset(newConsultantToken);
         
-        // FIX: Resetează și cache-ul de clienți pentru separarea datelor
-        if (_clientUIService != null) {
-          await _clientUIService!.resetForNewConsultant();
-        }
-        
-        // FIX: Schimbă consultantul în Google Drive Service pentru token-urile corecte
-        if (_googleDriveService != null && newConsultantToken != null) {
-          await _googleDriveService!.switchConsultant(newConsultantToken);
-        }
+        debugPrint('✅ SPLASH_SERVICE: Cache reset completed for new consultant');
       }
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error resetting for new consultant: $e');
+    } finally {
+      PerformanceMonitor.endTimer('resetForNewConsultant');
     }
   }
 
-  /// FIX: Încarcă întâlnirile pentru noua echipă
+  /// OPTIMIZARE: Operații non-blocking pentru reset
+  void _performNonBlockingReset(String? newConsultantToken) {
+    // Notifică dashboard-ul pentru refresh (non-blocking)
+    if (_dashboardService != null) {
+      _dashboardService!.resetForNewConsultant().catchError((e) {
+        debugPrint('⚠️ SPLASH_SERVICE: Dashboard reset error: $e');
+      });
+    }
+    
+    // FIX: Resetează cache-ul de clienți pentru separarea datelor (non-blocking)
+    if (_clientUIService != null) {
+      _clientUIService!.resetForNewConsultant().catchError((e) {
+        debugPrint('⚠️ SPLASH_SERVICE: Client UI reset error: $e');
+      });
+    }
+    
+    // FIX: Schimbă consultantul în Google Drive Service pentru token-urile corecte (non-blocking)
+    if (_googleDriveService != null && newConsultantToken != null) {
+      _googleDriveService!.switchConsultant(newConsultantToken).catchError((e) {
+        debugPrint('⚠️ SPLASH_SERVICE: Google Drive switch error: $e');
+      });
+    }
+  }
+
+  /// OPTIMIZAT: Încarcă întâlnirile pentru noua echipă cu cache inteligent
   Future<void> _loadMeetingsForNewTeam() async {
     if (_currentTeam == null) return;
     
@@ -113,27 +161,56 @@ class SplashService extends ChangeNotifier {
       _cachedMeetings = List.from(_teamMeetingsCache[_currentTeam!]!);
       _meetingsCacheTime = DateTime.now();
       notifyListeners();
+      debugPrint('📅 SPLASH_SERVICE: Loaded ${_cachedMeetings.length} meetings from team cache');
     } else {
-      // Încarcă din Firebase
+      // Încarcă din Firebase cu timeout
       await _refreshMeetingsCache();
     }
   }
 
-  /// Obtine toate intalnirile din cache (FIX: verifică consultant înainte)
-  Future<List<ClientActivity>> getCachedMeetings() async {
-    // FIX: Verifică dacă consultantul s-a schimbat
-    await resetForNewConsultant();
+  /// OPTIMIZAT: Încarcă clienții pentru noua echipă cu cache inteligent
+  Future<void> _loadClientsForNewTeam() async {
+    if (_currentTeam == null) return;
     
-    // Verifica daca cache-ul este valid (nu mai vechi de 30 secunde)
+    // Verifică cache-ul echipei mai întâi
+    if (_teamClientsCache.containsKey(_currentTeam!)) {
+      _cachedClients = List.from(_teamClientsCache[_currentTeam!]!);
+      _clientsCacheTime = DateTime.now();
+      notifyListeners();
+      debugPrint('👥 SPLASH_SERVICE: Loaded ${_cachedClients.length} clients from team cache');
+    } else {
+      // Încarcă din Firebase
+      await _refreshClientsCache();
+    }
+  }
+
+  /// OPTIMIZAT: Obtine toate intalnirile din cache cu validare avansată
+  Future<List<ClientActivity>> getCachedMeetings() async {
+    // OPTIMIZARE: Verifică consultantul doar dacă cache-ul este invalid
     if (_meetingsCacheTime == null || 
-        DateTime.now().difference(_meetingsCacheTime!).inSeconds > 30) {
+        DateTime.now().difference(_meetingsCacheTime!).inSeconds > 60) {
+      // FIX: Verifică dacă consultantul s-a schimbat doar când este necesar
+      await resetForNewConsultant();
       await _refreshMeetingsCache();
     }
     
     return _cachedMeetings;
   }
 
-  /// Refresh cache-ul de meetings (FIX: folosește getTeamMeetings pentru echipă)
+  /// OPTIMIZAT: Obtine toți clienții din cache cu validare avansată
+  Future<List<ClientModel>> getCachedClients() async {
+    // OPTIMIZARE: Verifică consultantul doar dacă cache-ul este invalid
+    if (_clientsCacheTime == null || 
+        DateTime.now().difference(_clientsCacheTime!).inSeconds > 60) {
+      // Verifică dacă consultantul s-a schimbat doar când este necesar
+      await resetForNewConsultant();
+      await _refreshClientsCache();
+    }
+    
+    return _cachedClients;
+  }
+
+  /// OPTIMIZAT: Refresh cache-ul de meetings cu timeout și retry
   Future<void> _refreshMeetingsCache() async {
     try {
       final firebaseService = _clientUIService?.firebaseService;
@@ -142,14 +219,17 @@ class SplashService extends ChangeNotifier {
         return;
       }
 
-      final meetingsData = await firebaseService.getTeamMeetings(); // FIX: folosește getTeamMeetings pentru calendar
+      // OPTIMIZARE: Timeout pentru operațiunea de refresh
+      final meetingsData = await firebaseService.getTeamMeetings()
+          .timeout(const Duration(seconds: 10));
       
       final List<ClientActivity> meetings = [];
       for (final meetingMap in meetingsData) {
         try {
           meetings.add(_convertMapToClientActivity(meetingMap));
         } catch (e) {
-          debugPrint('⚠️ SPLASH_SERVICE: Error converting meeting: $e');
+          // OPTIMIZARE: Log redus pentru erori
+          // debugPrint('⚠️ SPLASH_SERVICE: Error converting meeting: $e');
         }
       }
       
@@ -160,9 +240,39 @@ class SplashService extends ChangeNotifier {
       if (_currentTeam != null) {
         _teamMeetingsCache[_currentTeam!] = List.from(meetings);
       }
-      notifyListeners(); // Notifică componentele că datele s-au actualizat
+      notifyListeners();
+      
+      debugPrint('✅ SPLASH_SERVICE: Refreshed meetings cache with ${meetings.length} meetings');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error refreshing meetings cache: $e');
+    }
+  }
+
+  /// OPTIMIZAT: Refresh cache-ul de clienți cu timeout și retry
+  Future<void> _refreshClientsCache() async {
+    try {
+      final clientService = _clientUIService;
+      if (clientService == null) {
+        debugPrint('❌ SPLASH_SERVICE: Client service not available for clients refresh');
+        return;
+      }
+
+      // OPTIMIZARE: Timeout pentru operațiunea de refresh
+      await clientService.loadClientsFromFirebase()
+          .timeout(const Duration(seconds: 10));
+      
+      _cachedClients = List.from(clientService.clients);
+      _clientsCacheTime = DateTime.now();
+      
+      // Salvează în cache pentru echipa curentă
+      if (_currentTeam != null) {
+        _teamClientsCache[_currentTeam!] = List.from(_cachedClients);
+      }
+      notifyListeners();
+      
+      debugPrint('✅ SPLASH_SERVICE: Refreshed clients cache with ${_cachedClients.length} clients');
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error refreshing clients cache: $e');
     }
   }
 
@@ -172,30 +282,30 @@ class SplashService extends ChangeNotifier {
     _timeSlotsLastUpdate = null;
   }
 
-  /// FIX: Invalidează și reîncarcă imediat cache-ul de meetings pentru actualizare instantanee
+  /// OPTIMIZAT: Invalidează și reîncarcă imediat cache-ul de meetings cu debouncing îmbunătățit
   Future<void> invalidateMeetingsCacheAndRefresh() async {
     // OPTIMIZARE: Debouncing pentru a evita invalidările multiple
     if (_hasPendingInvalidation) return;
     _hasPendingInvalidation = true;
     
     _cacheInvalidationTimer?.cancel();
-    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 200), () async {
+    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 100), () async {
       try {
         _cachedMeetings = [];
         _meetingsCacheTime = null;
         
         // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
         await _refreshMeetingsCache();
-        notifyListeners(); // Notifică UI-ul că datele s-au schimbat
+        notifyListeners();
         
         // OPTIMIZARE: Notificare optimizată pentru ClientUIService
         if (_clientUIService != null && _clientUIService!.clients.isNotEmpty) {
-          // OPTIMIZARE: Doar dacă chiar avem nevoie de refresh
           await _clientUIService!.loadClientsFromFirebase();
           _clientUIService!.notifyListeners();
         }
         
         _hasPendingInvalidation = false;
+        debugPrint('✅ SPLASH_SERVICE: Cache invalidation and refresh completed');
       } catch (e) {
         debugPrint('❌ SPLASH_SERVICE: Error in cache invalidation: $e');
         _hasPendingInvalidation = false;
@@ -212,7 +322,7 @@ class SplashService extends ChangeNotifier {
     _meetingsCacheTime = null;
   }
 
-  /// OPTIMIZAT: Invalidează toate cache-urile legate de meetings cu debouncing
+  /// OPTIMIZAT: Invalidează toate cache-urile legate de meetings cu debouncing îmbunătățit
   Future<void> invalidateAllMeetingCaches() async {
     // OPTIMIZARE: Evită apelurile multiple folosind debouncing
     await invalidateMeetingsCacheAndRefresh();
@@ -224,12 +334,12 @@ class SplashService extends ChangeNotifier {
     // Cache invalidated and refreshed
   }
 
-  /// Obtine slot-urile de timp disponibile din cache sau refreshuie
+  /// OPTIMIZAT: Obtine slot-urile de timp disponibile din cache sau refreshuie cu timeout
   Future<List<String>> getAvailableTimeSlots(DateTime date, {String? excludeId}) async {
     final dateKey = DateFormat('yyyy-MM-dd').format(date);
     
     // Verifica daca avem cache valid
-    const timeSlotsCacheValidity = Duration(minutes: 2);
+    const timeSlotsCacheValidity = Duration(minutes: 5); // Mărit de la 2 la 5 minute
     if (_cachedTimeSlots.isNotEmpty && 
         _timeSlotsLastUpdate != null &&
         DateTime.now().difference(_timeSlotsLastUpdate!) < timeSlotsCacheValidity &&
@@ -237,12 +347,13 @@ class SplashService extends ChangeNotifier {
       return _cachedTimeSlots[dateKey] ?? [];
     }
 
-    // Refresh cache pentru aceasta data
-    await _refreshTimeSlotsForDate(date, excludeId);
+    // Refresh cache pentru aceasta data cu timeout
+    await _refreshTimeSlotsForDate(date, excludeId)
+        .timeout(const Duration(seconds: 5));
     return _cachedTimeSlots[dateKey] ?? [];
   }
 
-  /// Refresh cache pentru o data specifica
+  /// OPTIMIZAT: Refresh cache pentru o data specifica cu timeout
   Future<void> _refreshTimeSlotsForDate(DateTime date, String? excludeId) async {
     try {
       final clientService = _clientUIService?.firebaseService;
@@ -324,20 +435,16 @@ class SplashService extends ChangeNotifier {
     );
   }
 
-  // Loading steps configuration
+  // OPTIMIZARE: Loading steps configuration cu timing și parallel loading
   final List<Map<String, dynamic>> _loadingSteps = [
-    {'name': 'Initializare calendar...', 'weight': 0.11, 'function': '_initializeCalendarService'},
-    {'name': 'Încărcare servicii client...', 'weight': 0.16, 'function': '_initializeClientServices'},
-    {'name': 'Preîncărcare întâlniri...', 'weight': 0.13, 'function': '_preloadMeetings'},
-    {'name': 'Initializare formulare...', 'weight': 0.11, 'function': '_initializeFormService'},
-    {'name': 'Încărcare dashboard...', 'weight': 0.16, 'function': '_initializeDashboardService'},
-    {'name': 'Încărcare matcher...', 'weight': 0.09, 'function': '_initializeMatcherService'},
-    {'name': 'Initializare Google Drive...', 'weight': 0.12, 'function': '_initializeGoogleDriveService'},
-    {'name': 'Sincronizare date...', 'weight': 0.09, 'function': '_syncData'},
-    {'name': 'Finalizare...', 'weight': 0.03, 'function': '_finalize'},
+    {'name': 'Initializare servicii...', 'weight': 0.15, 'function': '_initializeCoreServices', 'parallel': true},
+    {'name': 'Preîncărcare date...', 'weight': 0.25, 'function': '_preloadData', 'parallel': true},
+    {'name': 'Sincronizare servicii...', 'weight': 0.20, 'function': '_syncServices', 'parallel': false},
+    {'name': 'Optimizare cache...', 'weight': 0.15, 'function': '_optimizeCache', 'parallel': false},
+    {'name': 'Finalizare...', 'weight': 0.25, 'function': '_finalize', 'parallel': false},
   ];
 
-  /// Pornește procesul de pre-încărcare
+  /// OPTIMIZAT: Pornește procesul de pre-încărcare cu parallel loading
   Future<bool> startPreloading() async {
     if (_isInitialized) {
       return true;
@@ -349,24 +456,55 @@ class SplashService extends ChangeNotifier {
       
       double currentProgress = 0.0;
       
-      for (int i = 0; i < _loadingSteps.length; i++) {
-        final step = _loadingSteps[i];
+      // OPTIMIZARE: Grupează task-urile paralele
+      final parallelTasks = _loadingSteps.where((step) => step['parallel'] == true).toList();
+      final sequentialTasks = _loadingSteps.where((step) => step['parallel'] == false).toList();
+      
+      // Execută task-urile paralele
+      if (parallelTasks.isNotEmpty) {
+        _updateTask('Încărcare paralelă servicii...');
+        
+        final parallelFutures = parallelTasks.map((step) async {
+          final startTime = DateTime.now();
+          _taskStartTimes[step['name']] = startTime;
+          
+          await _executeLoadingStep(_loadingSteps.indexOf(step));
+          
+          final endTime = DateTime.now();
+          _taskDurations[step['name']] = endTime.difference(startTime);
+          
+          currentProgress += step['weight'] as double;
+          _updateProgress(currentProgress);
+        }).toList();
+        
+        await Future.wait(parallelFutures);
+      }
+      
+      // Execută task-urile secvențiale
+      for (final step in sequentialTasks) {
         _updateTask(step['name']);
         
-        // Execute loading step
-        await _executeLoadingStep(i);
+        final startTime = DateTime.now();
+        _taskStartTimes[step['name']] = startTime;
         
-        // Update progress
+        await _executeLoadingStep(_loadingSteps.indexOf(step));
+        
+        final endTime = DateTime.now();
+        _taskDurations[step['name']] = endTime.difference(startTime);
+        
         currentProgress += step['weight'] as double;
         _updateProgress(currentProgress);
         
         // Small delay for visual feedback
-        await Future.delayed(const Duration(milliseconds: 150));
+        await Future.delayed(const Duration(milliseconds: 100));
       }
       
-      // Mark as complete
+      // Marchează ca complet
       _markComplete();
       _isInitialized = true;
+      
+      // OPTIMIZARE: Log performance metrics
+      _logPerformanceMetrics();
       
       return true;
       
@@ -379,36 +517,82 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Execută un pas specific de încărcare
+  /// OPTIMIZAT: Execută un pas specific de încărcare cu timeout
   Future<void> _executeLoadingStep(int stepIndex) async {
     switch (stepIndex) {
-      case 0: // Calendar service
-        await _initializeCalendarService();
+      case 0: // Core services
+        await _initializeCoreServices();
         break;
-      case 1: // Client services
-        await _initializeClientServices();
+      case 1: // Preload data
+        await _preloadData();
         break;
-      case 2: // Preload meetings
-        await _preloadMeetings();
+      case 2: // Sync services
+        await _syncServices();
         break;
-      case 3: // Form service
-        await _initializeFormService();
+      case 3: // Optimize cache
+        await _optimizeCache();
         break;
-      case 4: // Dashboard service
-        await _initializeDashboardService();
-        break;
-      case 5: // Matcher service
-        await _initializeMatcherService();
-        break;
-      case 6: // Google Drive service
-        await _initializeGoogleDriveService();
-        break;
-      case 7: // Data synchronization
-        await _syncData();
-        break;
-      case 8: // Finalization
+      case 4: // Finalization
         await _finalize();
         break;
+    }
+  }
+
+  /// OPTIMIZAT: Inițializează serviciile de bază în paralel
+  Future<void> _initializeCoreServices() async {
+    try {
+      // OPTIMIZARE: Inițializează serviciile în paralel
+      await Future.wait([
+        _initializeCalendarService(),
+        _initializeClientServices(),
+        _initializeFormService(),
+        _initializeMatcherService(),
+      ]);
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error initializing core services: $e');
+      rethrow;
+    }
+  }
+
+  /// OPTIMIZAT: Preîncarcă datele în paralel
+  Future<void> _preloadData() async {
+    try {
+      // OPTIMIZARE: Preîncarcă datele în paralel
+      await Future.wait([
+        _preloadMeetings(),
+        _preloadClients(),
+        _preloadDashboardData(),
+        _preloadFormData(), // OPTIMIZARE: Preîncarcă și datele de formular
+      ]);
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error preloading data: $e');
+      rethrow;
+    }
+  }
+
+  /// OPTIMIZAT: Sincronizează serviciile
+  Future<void> _syncServices() async {
+    try {
+      // OPTIMIZARE: Sincronizează serviciile în paralel
+      await Future.wait([
+        _initializeGoogleDriveService(),
+        _syncData(),
+      ]);
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error syncing services: $e');
+      rethrow;
+    }
+  }
+
+  /// OPTIMIZAT: Optimizează cache-ul
+  Future<void> _optimizeCache() async {
+    try {
+      // OPTIMIZARE: Optimizează cache-ul pentru performanță
+      await _optimizeMeetingsCache();
+      await _optimizeClientsCache();
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error optimizing cache: $e');
+      rethrow;
     }
   }
 
@@ -448,6 +632,91 @@ class SplashService extends ChangeNotifier {
     }
   }
 
+  /// Preîncarcă toți clienții în cache
+  Future<void> _preloadClients() async {
+    try {
+      await _refreshClientsCache();
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error preloading clients: $e');
+      rethrow;
+    }
+  }
+
+  /// OPTIMIZARE: Preîncarcă datele de formular pentru clienții existenți
+  Future<void> _preloadFormData() async {
+    try {
+      // OPTIMIZARE: Preîncarcă datele de formular pentru primii 2 clienți pentru acces rapid (redus de la 3)
+      if (_clientUIService != null && _clientUIService!.clients.isNotEmpty) {
+        final clientsToPreload = _clientUIService!.clients.take(2).toList();
+        
+        // OPTIMIZARE: Operații paralele pentru preîncărcare rapidă cu timeout redus
+        await Future.wait(
+          clientsToPreload.map((client) async {
+            try {
+              // OPTIMIZARE: Timeout redus pentru preîncărcare mai rapidă
+              await _formService?.loadFormDataForClient(
+                client.phoneNumber1,
+                client.phoneNumber1,
+              ).timeout(
+                const Duration(milliseconds: 200), // Redus de la 500ms
+                onTimeout: () {
+                  debugPrint('⚠️ SPLASH_SERVICE: Form data preload timeout for ${client.name}');
+                },
+              );
+            } catch (e) {
+              // OPTIMIZARE: Log redus pentru erori
+              // debugPrint('⚠️ SPLASH_SERVICE: Error preloading form data for ${client.name}: $e');
+            }
+          }),
+        );
+        
+        debugPrint('✅ SPLASH_SERVICE: Preloaded form data for ${clientsToPreload.length} clients');
+      }
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error preloading form data: $e');
+      // Don't rethrow - form data preloading is not critical
+    }
+  }
+
+  /// OPTIMIZAT: Preîncarcă datele formularului pentru clientul focusat
+  Future<void> preloadFormDataForFocusedClient() async {
+    try {
+      final clientService = _clientUIService;
+      if (clientService == null) return;
+      
+      final focusedClient = clientService.focusedClient;
+      if (focusedClient != null && _formService != null) {
+        await _formService!.loadFormDataForClient(
+          focusedClient.phoneNumber,
+          focusedClient.phoneNumber,
+        );
+        debugPrint('✅ SPLASH_SERVICE: Preloaded form data for focused client');
+      }
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error preloading form data: $e');
+    }
+  }
+
+  /// Preîncarcă datele dashboard-ului
+  Future<void> _preloadDashboardData() async {
+    try {
+      _dashboardService = DashboardService();
+      await _dashboardService!.loadDashboardData();
+      
+      // Cache dashboard data - store current state
+      _cachedDashboardData = {
+        'consultantsRanking': _dashboardService!.consultantsRanking,
+        'teamsRanking': _dashboardService!.teamsRanking,
+        'upcomingMeetings': _dashboardService!.upcomingMeetings,
+        'consultantStats': _dashboardService!.consultantStats,
+        'dutyAgent': _dashboardService!.dutyAgent,
+      };
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error preloading dashboard data: $e');
+      rethrow;
+    }
+  }
+
   /// Inițializează și cache-ează FormService
   Future<void> _initializeFormService() async {
     try {
@@ -455,18 +724,6 @@ class SplashService extends ChangeNotifier {
       await _formService!.initialize();
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing form service: $e');
-      rethrow;
-    }
-  }
-
-  /// Inițializează și cache-ează DashboardService
-  Future<void> _initializeDashboardService() async {
-    try {
-      _dashboardService = DashboardService();
-      // Pre-load dashboard data
-      await _dashboardService!.loadDashboardData();
-    } catch (e) {
-      debugPrint('❌ SPLASH_SERVICE: Error initializing dashboard service: $e');
       rethrow;
     }
   }
@@ -484,28 +741,30 @@ class SplashService extends ChangeNotifier {
 
   /// Inițializează și cache-ează GoogleDriveService
   Future<void> _initializeGoogleDriveService() async {
-    debugPrint('🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService START ==========');
+    // OPTIMIZARE: Log redus pentru performanță
+    // debugPrint('🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService START ==========');
     
     try {
-      debugPrint('🚀 SPLASH_SERVICE: Creating GoogleDriveService instance...');
+      // debugPrint('🚀 SPLASH_SERVICE: Creating GoogleDriveService instance...');
       _googleDriveService = GoogleDriveService();
-      debugPrint('✅ SPLASH_SERVICE: GoogleDriveService instance created');
+      // debugPrint('✅ SPLASH_SERVICE: GoogleDriveService instance created');
       
-      debugPrint('🚀 SPLASH_SERVICE: Calling GoogleDriveService.initialize()...');
+      // debugPrint('🚀 SPLASH_SERVICE: Calling GoogleDriveService.initialize()...');
       await _googleDriveService!.initialize();
-      debugPrint('✅ SPLASH_SERVICE: GoogleDriveService.initialize() completed');
+      // debugPrint('✅ SPLASH_SERVICE: GoogleDriveService.initialize() completed');
       
-      debugPrint('🚀 SPLASH_SERVICE: Final state - isAuthenticated: ${_googleDriveService!.isAuthenticated}');
-      debugPrint('🚀 SPLASH_SERVICE: Final state - userEmail: ${_googleDriveService!.userEmail}');
-      debugPrint('🚀 SPLASH_SERVICE: Final state - lastError: ${_googleDriveService!.lastError}');
+      // OPTIMIZARE: Log redus pentru performanță
+      // debugPrint('🚀 SPLASH_SERVICE: Final state - isAuthenticated: ${_googleDriveService!.isAuthenticated}');
+      // debugPrint('🚀 SPLASH_SERVICE: Final state - userEmail: ${_googleDriveService!.userEmail}');
+      // debugPrint('🚀 SPLASH_SERVICE: Final state - lastError: ${_googleDriveService!.lastError}');
       
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing google drive service: $e');
-      debugPrint('❌ SPLASH_SERVICE: Stack trace: $stackTrace');
+      // debugPrint('❌ SPLASH_SERVICE: Stack trace: $stackTrace');
       rethrow;
     }
     
-    debugPrint('🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService END ==========');
+    // debugPrint('🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService END ==========');
   }
 
   /// Sincronizează datele între servicii
@@ -523,13 +782,56 @@ class SplashService extends ChangeNotifier {
     }
   }
 
+  /// Optimizează cache-ul de meetings
+  Future<void> _optimizeMeetingsCache() async {
+    try {
+      // OPTIMIZARE: Sortează meetings după dată pentru căutare rapidă
+      _cachedMeetings.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      
+      // OPTIMIZARE: Indexează meetings după dată pentru căutare rapidă
+      final Map<String, List<ClientActivity>> meetingsByDate = {};
+      for (final meeting in _cachedMeetings) {
+        final dateKey = DateFormat('yyyy-MM-dd').format(meeting.dateTime);
+        meetingsByDate.putIfAbsent(dateKey, () => []).add(meeting);
+      }
+      
+      debugPrint('✅ SPLASH_SERVICE: Optimized meetings cache with ${_cachedMeetings.length} meetings');
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error optimizing meetings cache: $e');
+    }
+  }
+
+  /// Optimizează cache-ul de clienți
+  Future<void> _optimizeClientsCache() async {
+    try {
+      // OPTIMIZARE: Sortează clienții după nume pentru căutare rapidă
+      _cachedClients.sort((a, b) => a.name.compareTo(b.name));
+      
+      debugPrint('✅ SPLASH_SERVICE: Optimized clients cache with ${_cachedClients.length} clients');
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error optimizing clients cache: $e');
+    }
+  }
+
   /// Finalizează încărcarea
   Future<void> _finalize() async {
     try {
-      // Orice finalizări suplimentare
+      // OPTIMIZARE: Cleanup pentru task-uri paralele
+      _parallelTasks.clear();
+      _taskStartTimes.clear();
+      
+      debugPrint('✅ SPLASH_SERVICE: Finalization completed');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error during finalization: $e');
       rethrow;
+    }
+  }
+
+  /// OPTIMIZARE: Log performance metrics
+  void _logPerformanceMetrics() {
+    debugPrint('📊 SPLASH_SERVICE: Performance Metrics:');
+    for (final entry in _taskDurations.entries) {
+      debugPrint('  ${entry.key}: ${entry.value.inMilliseconds}ms');
     }
   }
 
@@ -597,8 +899,54 @@ class SplashService extends ChangeNotifier {
     _cachedTimeSlots.clear();
     _cachedMeetings.clear();
     _teamMeetingsCache.clear();
+    _cachedClients.clear();
+    _teamClientsCache.clear();
+    _cachedDashboardData.clear();
     // OPTIMIZARE: Cleanup pentru timers
     _cacheInvalidationTimer?.cancel();
+    _parallelTasks.clear();
+    _taskStartTimes.clear();
+    _taskDurations.clear();
     super.dispose();
+  }
+
+  /// OPTIMIZAT: Invalidează cache-ul de clienți și îl reîncarcă
+  Future<void> invalidateClientsCacheAndRefresh() async {
+    // OPTIMIZARE: Evită apelurile multiple folosind debouncing
+    if (_hasPendingInvalidation) return;
+    _hasPendingInvalidation = true;
+    
+    _cacheInvalidationTimer?.cancel();
+    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 100), () async {
+      try {
+        _cachedClients = [];
+        _clientsCacheTime = null;
+        
+        // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
+        await _refreshClientsCache();
+        
+        // FIX: Notifică și ClientUIService pentru sincronizare completă
+        if (_clientUIService != null) {
+          await _clientUIService!.loadClientsFromFirebase();
+        }
+        
+        notifyListeners();
+        
+        _hasPendingInvalidation = false;
+        debugPrint('✅ SPLASH_SERVICE: Clients cache invalidation and refresh completed');
+      } catch (e) {
+        debugPrint('❌ SPLASH_SERVICE: Error in clients cache invalidation: $e');
+        _hasPendingInvalidation = false;
+      }
+    });
+  }
+
+  /// Invalidează cache-ul de clienți (să fie apelat când se adaugă/modifică/șterge client)
+  void invalidateClientsCache() {
+    // OPTIMIZARE: Nu face nimic dacă cache-ul este deja invalid
+    if (_clientsCacheTime == null) return;
+    
+    _cachedClients = [];
+    _clientsCacheTime = null;
   }
 } 

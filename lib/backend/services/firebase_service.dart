@@ -92,6 +92,72 @@ class DefaultFirebaseOptions {
   );
 }
 
+/// Performance monitoring utility
+class PerformanceMonitor {
+  static final Map<String, Stopwatch> _timers = {};
+  static final Map<String, List<int>> _metrics = {};
+  
+  static void startTimer(String operation) {
+    _timers[operation] = Stopwatch()..start();
+    debugPrint('⏱️ PERFORMANCE: Started timer for $operation');
+  }
+  
+  static void endTimer(String operation) {
+    final timer = _timers[operation];
+    if (timer != null) {
+      timer.stop();
+      final duration = timer.elapsedMilliseconds;
+      _metrics.putIfAbsent(operation, () => []).add(duration);
+      debugPrint('⏱️ PERFORMANCE: $operation completed in ${duration}ms');
+      _timers.remove(operation);
+    }
+  }
+  
+  static void logMetric(String operation, int duration) {
+    _metrics.putIfAbsent(operation, () => []).add(duration);
+    debugPrint('📊 PERFORMANCE: $operation took ${duration}ms');
+  }
+  
+  static Map<String, double> getAverageMetrics() {
+    final averages = <String, double>{};
+    _metrics.forEach((operation, durations) {
+      if (durations.isNotEmpty) {
+        averages[operation] = durations.reduce((a, b) => a + b) / durations.length;
+      }
+    });
+    return averages;
+  }
+  
+  static void printPerformanceReport() {
+    final averages = getAverageMetrics();
+    debugPrint('📊 PERFORMANCE REPORT:');
+    averages.forEach((operation, avgTime) {
+      debugPrint('  $operation: ${avgTime.toStringAsFixed(2)}ms avg');
+    });
+  }
+  
+  /// Prints a comprehensive performance summary
+  static void printComprehensiveReport() {
+    final averages = getAverageMetrics();
+    debugPrint('📊 COMPREHENSIVE PERFORMANCE REPORT:');
+    debugPrint('=====================================');
+    
+    // Sort by average time (slowest first)
+    final sortedMetrics = averages.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    for (final entry in sortedMetrics) {
+      final operation = entry.key;
+      final avgTime = entry.value;
+      final emoji = avgTime > 1000 ? '🐌' : avgTime > 500 ? '⚠️' : '⚡';
+      debugPrint('$emoji $operation: ${avgTime.toStringAsFixed(2)}ms avg');
+    }
+    
+    debugPrint('=====================================');
+    debugPrint('Total operations tracked: ${_metrics.length}');
+    debugPrint('Active timers: ${_timers.length}');
+  }
+}
 
 class FirebaseThreadHandler {
 
@@ -199,7 +265,7 @@ class FirebaseFormService {
   final ClientsFirebaseService _clientService = ClientsFirebaseService();
   final FirebaseThreadHandler _threadHandler = FirebaseThreadHandler.instance;
 
-  /// Salvează datele formularului pentru un client în noua structură
+  /// Salvează datele formularului pentru un client
   Future<bool> saveClientFormData({
     required String phoneNumber,
     required String clientName,
@@ -210,10 +276,9 @@ class FirebaseFormService {
         // Verifică dacă clientul există, dacă nu îl creează
         final existingClient = await _clientService.getClient(phoneNumber);
         if (existingClient == null) {
-          await _clientService.createClient(
-            phoneNumber: phoneNumber,
-            name: clientName,
-          );
+          // FIX: Nu crea automat clientul dacă nu există - lasă aplicația să gestioneze crearea
+          debugPrint('⚠️ FIREBASE_SERVICE: Skipping automatic client creation for: $phoneNumber');
+          return;
         }
 
         // Salvează datele formularului direct în noua structură
@@ -351,8 +416,23 @@ class FirebaseFormService {
 
   /// Încarcă toate datele formularului pentru un client
   Future<Map<String, dynamic>?> loadAllFormData(String phoneNumber) async {
-    final data = await loadClientFormData(phoneNumber);
-    return data?['formData'];
+    try {
+      final data = await loadClientFormData(phoneNumber);
+      if (data == null) return null;
+      
+      final formData = data['formData'];
+      if (formData == null) return null;
+      
+      // Ensure type safety by converting dynamic to Map<String, dynamic>
+      if (formData is Map) {
+        return Map<String, dynamic>.from(formData);
+      }
+      
+      return null;
+    } catch (e) {
+      debugPrint('❌ FirebaseFormService: Error in loadAllFormData: $e');
+      return null;
+    }
   }
 
   /// Obține toate documentele din colecția forms (pentru debug/admin)
@@ -414,27 +494,83 @@ class NewFirebaseService {
 
   User? get currentUser => _auth.currentUser;
 
-  /// Obtine token-ul consultantului curent din baza de data
+  // Cache pentru token-ul consultantului
+  String? _cachedConsultantToken;
+  DateTime? _tokenCacheTime;
+  static const Duration _tokenCacheDuration = Duration(minutes: 5);
+
+  /// Obtine token-ul consultantului curent din baza de data (cu cache)
   Future<String?> getCurrentConsultantToken() async {
+    PerformanceMonitor.startTimer('getCurrentConsultantToken');
+    
+    // Verifica cache-ul
+    if (_cachedConsultantToken != null && _tokenCacheTime != null) {
+      final cacheAge = DateTime.now().difference(_tokenCacheTime!);
+      if (cacheAge < _tokenCacheDuration) {
+        debugPrint('🚀 FIREBASE_SERVICE: Using cached consultant token (age: ${cacheAge.inMilliseconds}ms)');
+        PerformanceMonitor.endTimer('getCurrentConsultantToken');
+        return _cachedConsultantToken;
+      }
+    }
+    
+    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken called');
+    
     final user = currentUser;
-    if (user == null) return null;
+    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken currentUser = ${user?.uid}');
+    if (user == null) {
+      debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken currentUser is null');
+      PerformanceMonitor.endTimer('getCurrentConsultantToken');
+      return null;
+    }
 
     try {
+      debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken fetching consultant document');
       final doc = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(user.uid).get()
       );
       
+      debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken document exists = ${doc.exists}');
+      
       if (doc.exists) {
-        final token = doc.data()?['token'] as String?;
-        return token;
+        final data = doc.data();
+        debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken document data = $data');
+        
+        final token = data?['token'] as String?;
+        debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken token = "$token"');
+        
+        if (token == null || token.isEmpty) {
+          debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken token is null or empty');
+          PerformanceMonitor.endTimer('getCurrentConsultantToken');
+          return null;
+        } else {
+          debugPrint('✅ FIREBASE_SERVICE: getCurrentConsultantToken returning token');
+          
+          // Salveaza in cache
+          _cachedConsultantToken = token;
+          _tokenCacheTime = DateTime.now();
+          debugPrint('💾 FIREBASE_SERVICE: Cached consultant token');
+          
+          PerformanceMonitor.endTimer('getCurrentConsultantToken');
+          return token;
+        }
       } else {
         debugPrint('❌ FIREBASE_SERVICE: Consultant document does not exist for UID: ${user.uid}');
+        PerformanceMonitor.endTimer('getCurrentConsultantToken');
         return null;
       }
     } catch (e) {
       debugPrint('❌ FIREBASE_SERVICE: Error getting consultant token: $e');
+      debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken stack trace: ${StackTrace.current}');
+      PerformanceMonitor.endTimer('getCurrentConsultantToken');
       return null;
     }
+  }
+
+  /// Invalideaza cache-ul pentru token-ul consultantului
+  void invalidateConsultantTokenCache() {
+    _cachedConsultantToken = null;
+    _tokenCacheTime = null;
+    debugPrint('🗑️ FIREBASE_SERVICE: Invalidated consultant token cache');
   }
 
   /// Obtine datele consultantului pe baza token-ului
@@ -505,21 +641,38 @@ class NewFirebaseService {
 
   /// Obtine un client dupa numarul de telefon (doar pentru consultantul curent)
   Future<Map<String, dynamic>?> getClient(String phoneNumber) async {
+    debugPrint('🔍 FIREBASE_SERVICE: getClient called with phoneNumber = "$phoneNumber"');
+    
     final consultantToken = await getCurrentConsultantToken();
-    if (consultantToken == null) return null;
+    debugPrint('🔍 FIREBASE_SERVICE: getClient consultantToken = "$consultantToken"');
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: getClient consultantToken is null');
+      return null;
+    }
 
     try {
+      debugPrint('🔍 FIREBASE_SERVICE: getClient fetching document from Firestore');
       final doc = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection).doc(phoneNumber).get()
       );
 
       final data = doc.data();
+      debugPrint('🔍 FIREBASE_SERVICE: getClient document data = $data');
+      
       if (data != null && data['consultantToken'] == consultantToken) {
+        debugPrint('✅ FIREBASE_SERVICE: getClient found matching client');
         return data;
+      } else {
+        debugPrint('❌ FIREBASE_SERVICE: getClient no matching client found');
+        if (data != null) {
+          debugPrint('🔍 FIREBASE_SERVICE: getClient data consultantToken = "${data['consultantToken']}"');
+          debugPrint('🔍 FIREBASE_SERVICE: getClient expected consultantToken = "$consultantToken"');
+        }
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Error getting client: $e');
+      debugPrint('❌ FIREBASE_SERVICE: getClient error: $e');
+      debugPrint('❌ FIREBASE_SERVICE: getClient stack trace: ${StackTrace.current}');
       return null;
     }
   }
@@ -708,14 +861,52 @@ class NewFirebaseService {
     String? description,
     Map<String, dynamic>? additionalData,
   }) async {
+    debugPrint('🔍 FIREBASE_SERVICE: Starting createMeeting');
+    debugPrint('🔍 FIREBASE_SERVICE: phoneNumber = "$phoneNumber"');
+    debugPrint('🔍 FIREBASE_SERVICE: dateTime = $dateTime');
+    debugPrint('🔍 FIREBASE_SERVICE: type = "$type"');
+    debugPrint('🔍 FIREBASE_SERVICE: description = "$description"');
+    debugPrint('🔍 FIREBASE_SERVICE: additionalData = $additionalData');
+    
     final consultantToken = await getCurrentConsultantToken();
-    if (consultantToken == null) return false;
+    debugPrint('🔍 FIREBASE_SERVICE: consultantToken = "$consultantToken"');
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: consultantToken is null');
+      return false;
+    }
 
     try {
+      debugPrint('🔍 FIREBASE_SERVICE: Checking if client exists');
       // Verifica daca clientul apartine consultantului curent
       final existingClient = await getClient(phoneNumber);
-      if (existingClient == null) return false;
+      debugPrint('🔍 FIREBASE_SERVICE: existingClient = $existingClient');
+      
+      // Daca clientul nu exista, il creeaza
+      if (existingClient == null) {
+        debugPrint('🔍 FIREBASE_SERVICE: Client not found, creating new client');
+        final clientName = additionalData?['clientName'] ?? 'Client necunoscut';
+        final consultantName = additionalData?['consultantName'] ?? 'Consultant necunoscut';
+        
+        final clientData = {
+          'name': clientName,
+          'phoneNumber': phoneNumber,
+          'consultantToken': consultantToken,
+          'consultantName': consultantName,
+          'status': 'Nou',
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+        
+        debugPrint('🔍 FIREBASE_SERVICE: Creating client with data: $clientData');
+        await _threadHandler.executeOnPlatformThread(() =>
+          _firestore.collection(_clientsCollection)
+              .doc(phoneNumber)
+              .set(clientData)
+        );
+        debugPrint('✅ FIREBASE_SERVICE: Client created successfully');
+      }
 
+      debugPrint('🔍 FIREBASE_SERVICE: Creating meeting document');
       final meetingDoc = {
         'dateTime': Timestamp.fromDate(dateTime),
         'type': type,
@@ -727,19 +918,27 @@ class NewFirebaseService {
         'updatedAt': FieldValue.serverTimestamp(),
         ...?additionalData,
       };
+      debugPrint('🔍 FIREBASE_SERVICE: meetingDoc = $meetingDoc');
 
+      debugPrint('🔍 FIREBASE_SERVICE: Adding meeting to Firestore');
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection)
             .doc(phoneNumber)
             .collection(_meetingsSubcollection)
             .add(meetingDoc)
       );
+      debugPrint('✅ FIREBASE_SERVICE: Meeting added to Firestore successfully');
 
+      debugPrint('🔍 FIREBASE_SERVICE: Updating client timestamp');
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
+      debugPrint('✅ FIREBASE_SERVICE: Client timestamp updated');
+      
+      debugPrint('✅ FIREBASE_SERVICE: createMeeting completed successfully');
       return true;
     } catch (e) {
-      debugPrint('❌ Error creating meeting: $e');
+      debugPrint('❌ FIREBASE_SERVICE: Error creating meeting: $e');
+      debugPrint('❌ FIREBASE_SERVICE: Stack trace: ${StackTrace.current}');
       return false;
     }
   }
