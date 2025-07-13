@@ -20,6 +20,8 @@ import 'package:broker_app/backend/services/update_service.dart';
 import 'package:broker_app/frontend/components/update_notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:broker_app/backend/services/firebase_service.dart';
+import 'package:broker_app/frontend/screens/mobile_clients_screen.dart';
+import 'dart:io';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -307,6 +309,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Detect platform and show mobile screen for Android/iOS
+    if (Platform.isAndroid || Platform.isIOS) {
+      return const MobileClientsScreen();
+    }
+    
     // Periodically verify state consistency during builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

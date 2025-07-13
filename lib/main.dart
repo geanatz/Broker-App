@@ -9,6 +9,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/screens/auth_screen.dart';
 import 'package:broker_app/frontend/screens/splash_screen.dart';
+import 'package:broker_app/frontend/screens/mobile_auth_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
@@ -255,7 +256,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return const MainAppWrapper();
         }
         
-        return const AuthScreen(); // Navigheaza la noul AuthScreen
+        // Detect platform and show appropriate auth screen
+        if (Platform.isAndroid || Platform.isIOS) {
+          return const MobileAuthScreen();
+        } else {
+          return const AuthScreen(); // Desktop auth screen
+        }
       },
     );
   }

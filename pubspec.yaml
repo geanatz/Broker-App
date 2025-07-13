@@ -118,4 +118,5 @@ flutter:
     - assets/cecIcon.svg 
     - assets/logoutIcon.svg
     - assets/homeIcon.svg
+    - assets/historyIcon.svg
     - lib/backend/ocr/names.json
