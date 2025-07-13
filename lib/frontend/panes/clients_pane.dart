@@ -410,7 +410,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                 // Header pentru Reveniri si Recente
                 WidgetHeader3(
                   title: title,
-                  trailingIcon: isCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  trailingIcon: isCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
                   onTrailingIconTap: toggleCallback,
                   padding: headerPadding,
                   titleContainerHeight: headerHeight,
