@@ -284,24 +284,32 @@ class SplashService extends ChangeNotifier {
 
   /// OPTIMIZAT: Invalidează și reîncarcă imediat cache-ul de meetings cu debouncing îmbunătățit
   Future<void> invalidateMeetingsCacheAndRefresh() async {
-    // OPTIMIZARE: Debouncing pentru a evita invalidările multiple
+    // OPTIMIZARE: Debouncing redus pentru răspuns mai rapid
     if (_hasPendingInvalidation) return;
     _hasPendingInvalidation = true;
     
     _cacheInvalidationTimer?.cancel();
-    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 100), () async {
+    // OPTIMIZARE: Delay redus de la 100ms la 50ms pentru răspuns mai rapid
+    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 50), () async {
       try {
         _cachedMeetings = [];
         _meetingsCacheTime = null;
         
-        // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
+        // OPTIMIZARE: Reîncarcă imediat cache-ul nou pentru actualizare instantanee
         await _refreshMeetingsCache();
         notifyListeners();
         
-        // OPTIMIZARE: Notificare optimizată pentru ClientUIService
+        // OPTIMIZARE: Notificare optimizată pentru ClientUIService cu delay redus
         if (_clientUIService != null && _clientUIService!.clients.isNotEmpty) {
-          await _clientUIService!.loadClientsFromFirebase();
-          _clientUIService!.notifyListeners();
+          // OPTIMIZARE: Execută în background pentru a nu bloca UI-ul
+          Future.microtask(() async {
+            try {
+              await _clientUIService!.loadClientsFromFirebase();
+              _clientUIService!.notifyListeners();
+            } catch (e) {
+              debugPrint('❌ SPLASH_SERVICE: Error loading clients in background: $e');
+            }
+          });
         }
         
         _hasPendingInvalidation = false;

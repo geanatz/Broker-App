@@ -616,7 +616,7 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// OPTIMIZAT: Afiseaza dialogul pentru crearea unei intalniri noi cu delay redus
+  /// OPTIMIZAT: Afiseaza dialogul pentru crearea unei intalniri noi cu feedback instant
   void _showCreateMeetingDialog(int dayIndex, int hourIndex) {
     if (!mounted) return;
     
@@ -634,11 +634,17 @@ class CalendarAreaState extends State<CalendarArea> {
         builder: (context) => MeetingPopup(
           initialDateTime: selectedDateTime,
           onSaved: () {
-            // OPTIMIZARE: Invalidare optimizată cu debouncing
+            // OPTIMIZARE: Feedback instant - închide popup-ul și notifică UI-ul
+            debugPrint('✅ CALENDAR_AREA: Meeting created, providing instant feedback');
+            
+            // OPTIMIZARE: Invalidare cache optimizată cu delay redus
             SplashService().invalidateAllMeetingCaches();
-            // OPTIMIZARE: Nu mai apelăm load-ul separat, e inclus în invalidateAllMeetingCaches
-            // Notifică main_screen să refresheze meetings_pane
+            
+            // OPTIMIZARE: Notifică main_screen să refresheze meetings_pane
             widget.onMeetingSaved?.call();
+            
+            // OPTIMIZARE: Refresh calendar cu delay redus pentru actualizare rapidă
+            _refreshCalendarWithDelay();
           },
         ),
       );
@@ -647,7 +653,17 @@ class CalendarAreaState extends State<CalendarArea> {
     }
   }
 
-  /// OPTIMIZAT: Afiseaza dialogul pentru editarea unei intalniri existente cu delay redus
+  /// OPTIMIZARE: Refresh calendar cu delay redus pentru actualizare rapidă
+  void _refreshCalendarWithDelay() {
+    // OPTIMIZARE: Delay redus pentru actualizare rapidă
+    Timer(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _loadMeetingsForCurrentWeek();
+      }
+    });
+  }
+
+  /// OPTIMIZAT: Afiseaza dialogul pentru editarea unei intalniri existente cu feedback instant
   void _showEditMeetingDialog(Map<String, dynamic> meetingData, String docId) {
     if (!mounted) return;
     
@@ -659,11 +675,17 @@ class CalendarAreaState extends State<CalendarArea> {
         builder: (context) => MeetingPopup(
           meetingId: docId,
           onSaved: () {
-            // OPTIMIZARE: Invalidare optimizată cu debouncing
+            // OPTIMIZARE: Feedback instant - închide popup-ul și notifică UI-ul
+            debugPrint('✅ CALENDAR_AREA: Meeting updated, providing instant feedback');
+            
+            // OPTIMIZARE: Invalidare cache optimizată cu delay redus
             SplashService().invalidateAllMeetingCaches();
-            // OPTIMIZARE: Nu mai apelăm load-ul separat, e inclus în invalidateAllMeetingCaches
-            // Notifică main_screen să refresheze meetings_pane
+            
+            // OPTIMIZARE: Notifică main_screen să refresheze meetings_pane
             widget.onMeetingSaved?.call();
+            
+            // OPTIMIZARE: Refresh calendar cu delay redus pentru actualizare rapidă
+            _refreshCalendarWithDelay();
           },
         ),
       );

@@ -15,7 +15,6 @@ import 'package:broker_app/frontend/panes/clients_pane.dart';
 import 'package:broker_app/frontend/panes/matcher_pane.dart';
 import 'package:broker_app/frontend/popups/clients_popup.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/update_service.dart';
 import 'package:broker_app/frontend/components/update_notification.dart';
@@ -64,8 +63,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Client service pentru gestionarea popup-urilor (folosește cache-ul din splash)
   late final ClientUIService _clientService;
   
-  // Settings service pentru actualizari in timp real ale temei
-  final SettingsService _settingsService = SettingsService();
+
   
   // Update service pentru notificari de update-uri
   final UpdateService _updateService = UpdateService();
@@ -125,11 +123,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Asculta schimbarile din ClientService
     _clientService.addListener(_onClientServiceChanged);
     
-    // Asculta schimbarile din SettingsService pentru actualizari in timp real ale temei
-    _settingsService.addListener(_onSettingsChanged);
-    
-    // Initializeaza SettingsService
-    _initializeSettings();
+
     
     // Asculta schimbarile de brightness pentru modul auto
     WidgetsBinding.instance.addObserver(this);
@@ -153,23 +147,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     _clientService.removeListener(_onClientServiceChanged);
-    _settingsService.removeListener(_onSettingsChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
   
-  @override
-  void didChangePlatformBrightness() {
-    super.didChangePlatformBrightness();
-    // Actualizeaza UI-ul cand se schimba brightness-ul sistemului (pentru modul auto)
-    if (_settingsService.currentThemeMode == AppThemeMode.auto) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
-  }
   
   void _onClientServiceChanged() {
     // Defer setState until after the current frame to avoid calling setState during build
@@ -224,25 +205,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
   
-  /// Initializeaza SettingsService
-  Future<void> _initializeSettings() async {
-    if (!_settingsService.isInitialized) {
-      await _settingsService.initialize();
-    }
-  }
-  
-  /// Callback pentru schimbarile din SettingsService
-  void _onSettingsChanged() {
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            // Actualizeaza intreaga interfata cand se schimba tema
-          });
-        }
-      });
-    }
-  }
+
   
   /// Restores navigation state from SharedPreferences
   Future<void> _restoreNavigationState() async {

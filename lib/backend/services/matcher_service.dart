@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'form_service.dart';
 import 'clients_service.dart';
-import 'settings_service.dart';
 
 /// Enum pentru tipul de gen al clientului
 enum ClientGender { male, female }
@@ -126,7 +125,7 @@ class MatcherService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FormService _formService = FormService();
   final ClientUIService _clientService = ClientUIService();
-  final SettingsService _settingsService = SettingsService();
+
   
   // Prefixe pentru chei per consultant
   static const String _bankCriteriaPrefix = 'bank_criteria_';
@@ -180,7 +179,6 @@ class MatcherService extends ChangeNotifier {
   Future<void> initialize() async {
     try {
       await _loadBankCriteria();
-      await _settingsService.initialize();
       
       _formService.addListener(_onFormServiceChanged);
       _clientService.addListener(_onClientServiceChanged);

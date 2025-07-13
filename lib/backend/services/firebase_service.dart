@@ -853,7 +853,7 @@ class NewFirebaseService {
 
   // =================== MEETING OPERATIONS ===================
 
-  /// Creeaza o intalnire pentru un client
+  /// OPTIMIZAT: Creeaza o intalnire pentru un client cu performanță îmbunătățită
   Future<bool> createMeeting({
     required String phoneNumber,
     required DateTime dateTime,
@@ -876,8 +876,39 @@ class NewFirebaseService {
     }
 
     try {
+      // OPTIMIZARE: Operații paralele pentru crearea clientului și întâlnirii
+      debugPrint('🔍 FIREBASE_SERVICE: Starting parallel operations');
+      
+      final results = await Future.wait([
+        // Operația 1: Verifică/crează clientul
+        _ensureClientExists(phoneNumber, additionalData, consultantToken),
+        // Operația 2: Creează întâlnirea
+        _createMeetingDocument(phoneNumber, dateTime, type, description, additionalData, consultantToken),
+      ]);
+      
+      final clientCreated = results[0];
+      final meetingCreated = results[1];
+      
+      debugPrint('🔍 FIREBASE_SERVICE: Client created = $clientCreated, Meeting created = $meetingCreated');
+      
+      if (meetingCreated) {
+        debugPrint('✅ FIREBASE_SERVICE: createMeeting completed successfully');
+        return true;
+      } else {
+        debugPrint('❌ FIREBASE_SERVICE: Failed to create meeting');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ FIREBASE_SERVICE: Error creating meeting: $e');
+      debugPrint('❌ FIREBASE_SERVICE: Stack trace: ${StackTrace.current}');
+      return false;
+    }
+  }
+
+  /// OPTIMIZARE: Asigură că clientul există
+  Future<bool> _ensureClientExists(String phoneNumber, Map<String, dynamic>? additionalData, String consultantToken) async {
+    try {
       debugPrint('🔍 FIREBASE_SERVICE: Checking if client exists');
-      // Verifica daca clientul apartine consultantului curent
       final existingClient = await getClient(phoneNumber);
       debugPrint('🔍 FIREBASE_SERVICE: existingClient = $existingClient');
       
@@ -904,8 +935,18 @@ class NewFirebaseService {
               .set(clientData)
         );
         debugPrint('✅ FIREBASE_SERVICE: Client created successfully');
+        return true;
       }
+      return true;
+    } catch (e) {
+      debugPrint('❌ FIREBASE_SERVICE: Error ensuring client exists: $e');
+      return false;
+    }
+  }
 
+  /// OPTIMIZARE: Creează documentul întâlnirii
+  Future<bool> _createMeetingDocument(String phoneNumber, DateTime dateTime, String type, String? description, Map<String, dynamic>? additionalData, String consultantToken) async {
+    try {
       debugPrint('🔍 FIREBASE_SERVICE: Creating meeting document');
       final meetingDoc = {
         'dateTime': Timestamp.fromDate(dateTime),
@@ -929,18 +970,27 @@ class NewFirebaseService {
       );
       debugPrint('✅ FIREBASE_SERVICE: Meeting added to Firestore successfully');
 
-      debugPrint('🔍 FIREBASE_SERVICE: Updating client timestamp');
-      // Actualizeaza timestamp-ul clientului
-      await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
-      debugPrint('✅ FIREBASE_SERVICE: Client timestamp updated');
+      // OPTIMIZARE: Actualizează timestamp-ul clientului în background
+      _updateClientTimestampInBackground(phoneNumber);
       
-      debugPrint('✅ FIREBASE_SERVICE: createMeeting completed successfully');
       return true;
     } catch (e) {
-      debugPrint('❌ FIREBASE_SERVICE: Error creating meeting: $e');
-      debugPrint('❌ FIREBASE_SERVICE: Stack trace: ${StackTrace.current}');
+      debugPrint('❌ FIREBASE_SERVICE: Error creating meeting document: $e');
       return false;
     }
+  }
+
+  /// OPTIMIZARE: Actualizează timestamp-ul clientului în background
+  void _updateClientTimestampInBackground(String phoneNumber) {
+    Future.microtask(() async {
+      try {
+        debugPrint('🔍 FIREBASE_SERVICE: Updating client timestamp in background');
+        await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
+        debugPrint('✅ FIREBASE_SERVICE: Client timestamp updated in background');
+      } catch (e) {
+        debugPrint('❌ FIREBASE_SERVICE: Error updating client timestamp in background: $e');
+      }
+    });
   }
 
   /// Obtine toate intalnirile pentru consultantul curent (FIX: mai robust filtering)

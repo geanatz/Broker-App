@@ -12,7 +12,6 @@ import 'package:broker_app/frontend/screens/splash_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
-import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 // For DevTools inspection
@@ -120,10 +119,6 @@ void main() async {
       return true;
     };
     
-    // Initialize SettingsService early
-    final settingsService = SettingsService();
-    await settingsService.initialize();
-    
     runApp(const MyApp());
   }, (error, stackTrace) {
     debugPrint('Caught error in runZonedGuarded: $error');
@@ -138,57 +133,15 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  final SettingsService _settingsService = SettingsService();
-
+class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Listen to theme changes
-    _settingsService.addListener(_onThemeChanged);
-    
-    // Listen to AppTheme changes
-    AppTheme().addListener(_onAppThemeChanged);
-    
-    // Listen to system brightness changes at app level
-    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    _settingsService.removeListener(_onThemeChanged);
-    AppTheme().removeListener(_onAppThemeChanged);
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  @override
-  void didChangePlatformBrightness() {
-    super.didChangePlatformBrightness();
-    // Update AppTheme when system brightness changes
-    final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
-    debugPrint('🎨 MYAPP: System brightness changed to: $brightness');
-    debugPrint('🎨 MYAPP: Current theme mode: ${AppTheme.currentThemeMode}');
-    debugPrint('🎨 MYAPP: Settings service theme mode: ${_settingsService.currentThemeMode}');
-    debugPrint('🎨 MYAPP: AppTheme.isDarkMode: ${AppTheme.isDarkMode}');
-    debugPrint('🎨 MYAPP: AppTheme.popupBackground: ${AppTheme.popupBackground}');
-    debugPrint('🎨 MYAPP: AppTheme.containerColor1: ${AppTheme.containerColor1}');
-    
-    AppTheme.refreshSystemBrightness();
-    // Note: setState will be triggered by AppTheme listener
-  }
-
-  void _onThemeChanged() {
-    setState(() {
-      // Rebuild the app when theme changes
-    });
-  }
-
-  void _onAppThemeChanged() {
-    debugPrint('🎨 MYAPP: AppTheme changed, rebuilding entire app');
-    setState(() {
-      // Rebuild the entire app when AppTheme changes
-    });
   }
 
   @override
@@ -213,7 +166,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: AppTheme.elementColor2,
-            brightness: AppTheme.isDarkMode ? Brightness.dark : Brightness.light,
+            brightness: Brightness.light,
           ),
           useMaterial3: true,
           textTheme: GoogleFonts.outfitTextTheme(),
@@ -252,15 +205,12 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  final SettingsService _settingsService = SettingsService();
   late StreamSubscription<User?> _authSubscription;
   User? _lastKnownUser;
 
   @override
   void initState() {
     super.initState();
-    // Listen to theme changes from SettingsService
-    _settingsService.addListener(_onSettingsChanged);
     
     // Listener manual optimizat - doar când se schimbă efectiv starea
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -278,17 +228,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   void dispose() {
-    _settingsService.removeListener(_onSettingsChanged);
     _authSubscription.cancel();
     super.dispose();
-  }
-
-  void _onSettingsChanged() {
-    if (mounted) {
-      setState(() {
-        // Rebuild when settings change
-      });
-    }
   }
 
   @override
@@ -314,21 +255,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return const MainAppWrapper();
         }
         
-        // When user is logged out, reset to default theme
-        _resetToDefaultTheme();
-        
         return const AuthScreen(); // Navigheaza la noul AuthScreen
       },
     );
-  }
-
-  /// Reset theme to default when user logs out
-  void _resetToDefaultTheme() async {
-    // Use addPostFrameCallback to ensure this runs after the current build
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _settingsService.onConsultantChanged(); // This will load default theme
-      // The listener will automatically trigger setState to rebuild the UI
-    });
   }
 }
 
@@ -342,7 +271,6 @@ class MainAppWrapper extends StatefulWidget {
 class _MainAppWrapperState extends State<MainAppWrapper> {
   Map<String, dynamic>? _consultantData;
   bool _isLoading = true;
-  final SettingsService _settingsService = SettingsService();
 
   @override
   void initState() {
@@ -372,9 +300,6 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
       if (!mounted) return;
 
       if (consultantData != null) {
-        // Reload theme settings for the current consultant
-        await _settingsService.onConsultantChanged();
-        
         setState(() {
           _consultantData = consultantData;
           _isLoading = false;

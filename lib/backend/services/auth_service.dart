@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'firebase_service.dart';
-import 'settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Enum pentru a defini starile/pasii posibili ai ecranului de autentificare.
@@ -627,16 +626,9 @@ class AuthService {
       
       mostRecentDoc ??= consultantsSnapshot.docs.first;
       final consultantDoc = mostRecentDoc;
-      final consultantId = consultantDoc.id;
       
-      // Pasul 2: Sterge setarile temei pentru consultantul respectiv
-      try {
-        final settingsService = SettingsService();
-        await settingsService.clearConsultantSettings(consultantId);
-      } catch (e) {
-        debugPrint('Error clearing consultant theme settings: $e');
-        // Continue with deletion even if settings clearing fails
-      }
+      // Pasul 2: Sterge setarile pentru consultantul respectiv (daca exista in viitor)
+      // No longer needed - theme settings removed
       
       // Pasul 3: Sterge documentul din Firestore
       await _threadHandler.executeOnPlatformThread(() =>

@@ -118,7 +118,7 @@ class _UpdateNotificationState extends State<UpdateNotification>
               children: [
                 Icon(
                   Icons.system_update,
-                  color: AppTheme.isDarkMode ? Colors.black : Colors.white,
+                  color: Colors.white,
                   size: 24,
                 ),
                 const SizedBox(width: 16),
@@ -132,7 +132,7 @@ class _UpdateNotificationState extends State<UpdateNotification>
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.isDarkMode ? Colors.black : Colors.white,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -141,7 +141,7 @@ class _UpdateNotificationState extends State<UpdateNotification>
                         style: GoogleFonts.outfit(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
-                          color: (AppTheme.isDarkMode ? Colors.black : Colors.white).withAlpha(70),
+                          color: Colors.white.withAlpha(70),
                         ),
                       ),
                     ],
@@ -158,7 +158,7 @@ class _UpdateNotificationState extends State<UpdateNotification>
                     style: GoogleFonts.outfit(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: (AppTheme.isDarkMode ? Colors.black : Colors.white).withAlpha(70),
+                      color: Colors.white.withAlpha(70),
                     ),
                   ),
                 ),
@@ -169,8 +169,8 @@ class _UpdateNotificationState extends State<UpdateNotification>
                     widget.onInstallTap?.call();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: (AppTheme.isDarkMode ? Colors.black : Colors.white).withAlpha(20),
-                    foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
+                    backgroundColor: Colors.white.withAlpha(20),
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),

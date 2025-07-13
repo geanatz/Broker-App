@@ -23,7 +23,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String? _selectedTeam;
-  final List<String> _teamOptions = ['Echipa 1', 'Echipa 2', 'Echipa 3'];
+  final List<String> _teamOptions = ['Echipa Andreea', 'Echipa Cristina', 'Echipa Scarlat'];
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _registerError;

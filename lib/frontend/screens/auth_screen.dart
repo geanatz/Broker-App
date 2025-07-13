@@ -6,7 +6,6 @@ import 'package:broker_app/frontend/modules/register_module.dart';
 import 'package:broker_app/frontend/modules/verify_module.dart';
 import 'package:broker_app/frontend/modules/recovery__module.dart';
 import 'package:broker_app/frontend/modules/token_module.dart';
-import 'package:broker_app/backend/services/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -24,21 +23,15 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _tempConsultantIdForPasswordReset; // Stocheaza ID-ul consultantului dupa verificarea tokenului
   String? _registrationToken; // Stocheaza token-ul generat la inregistrare
   
-  // Settings service pentru detectarea schimbarilor de tema
-  final SettingsService _settingsService = SettingsService();
+
 
   @override
   void initState() {
     super.initState();
     debugPrint('🟦 AUTH_SCREEN: initState called - hashCode: $hashCode');
-    // Initializeaza SettingsService
-    _initializeSettings();
     
     // Verificam daca avem un token pending de afisat
     _checkForPendingToken();
-    
-    // Asculta schimbarile din SettingsService pentru actualizari in timp real ale temei
-    _settingsService.addListener(_onSettingsChanged);
     
     // Asculta schimbarile din AppTheme pentru actualizari automate ale UI-ului
     AppTheme().addListener(_onAppThemeChanged);
@@ -47,16 +40,8 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void dispose() {
     debugPrint('🔴 AUTH_SCREEN: dispose called - hashCode: $hashCode');
-    _settingsService.removeListener(_onSettingsChanged);
     AppTheme().removeListener(_onAppThemeChanged);
     super.dispose();
-  }
-
-  /// Initializeaza SettingsService
-  Future<void> _initializeSettings() async {
-    if (!_settingsService.isInitialized) {
-      await _settingsService.initialize();
-    }
   }
 
   /// Verifica daca avem un token pending de afisat din localStorage
@@ -86,15 +71,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Callback pentru schimbarile din SettingsService
-  void _onSettingsChanged() {
-    if (mounted) {
-      debugPrint('🎨 AUTH_SCREEN: Settings changed, updating UI');
-      setState(() {
-        // Actualizeaza intreaga interfata cand se schimba tema
-      });
-    }
-  }
+
 
   /// Callback pentru schimbarile din AppTheme
   void _onAppThemeChanged() {

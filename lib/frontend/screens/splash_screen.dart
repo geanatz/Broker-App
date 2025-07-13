@@ -265,7 +265,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.elementColor2,
-              foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
+              foregroundColor: Colors.white,
             ),
             child: Text(
               'Descarca acum',
@@ -401,7 +401,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.elementColor2,
-                foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
+                foregroundColor: Colors.white,
               ),
               child: Text(
                 'Instaleaza acum',
@@ -461,7 +461,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.elementColor2,
-              foregroundColor: AppTheme.isDarkMode ? Colors.black : Colors.white,
+              foregroundColor: Colors.white,
             ),
             child: Text(
               'Reporneste acum',

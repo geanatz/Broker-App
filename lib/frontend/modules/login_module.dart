@@ -331,10 +331,15 @@ class _LoginPopupState extends State<LoginPopup> {
             },
             hint: _isLoadingConsultants 
                 ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color:AppTheme.elementColor3)) 
-                : Text(
-                    "Selecteaza consultant", 
-                    style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
-                  ),
+                : _consultantNames.isEmpty
+                    ? Text(
+                        "Nu exista consultanti", 
+                        style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
+                      )
+                    : Text(
+                        "Selecteaza consultant", 
+                        style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w500)
+                      ),
             isExpanded: true,
             icon: SvgPicture.asset(
               'assets/expandIcon.svg',
@@ -382,7 +387,7 @@ class _LoginPopupState extends State<LoginPopup> {
                   onTap: widget.onForgotPassword,
                   child: Text(
                     "Reseteaza parola",
-                    style: AppTheme.primaryTitleStyle.copyWith(
+                    style: AppTheme.safeOutfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: AppTheme.elementColor1,

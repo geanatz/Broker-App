@@ -272,6 +272,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
       return;
     }
 
+    // OPTIMIZARE: Set loading state imediat pentru feedback instant
     if (mounted) {
       setState(() => _isLoading = true);
     }
@@ -290,18 +291,23 @@ class _MeetingPopupState extends State<MeetingPopup> {
       );
       debugPrint('🔍 MEETING_POPUP: finalDateTime = $finalDateTime');
 
+      // OPTIMIZARE: Obține datele consultantului în paralel cu alte operații
       debugPrint('🔍 MEETING_POPUP: Getting consultant data');
-      // Obtine datele consultantului curent
       final authService = AuthService();
-      final consultantData = await authService.getCurrentConsultantData();
+      final firebaseService = NewFirebaseService();
+      
+      // OPTIMIZARE: Operații paralele pentru obținerea datelor consultantului
+      final consultantResults = await Future.wait([
+        authService.getCurrentConsultantData(),
+        firebaseService.getCurrentConsultantToken(),
+      ]);
+      
+      final consultantData = consultantResults[0] as Map<String, dynamic>?;
+      final consultantToken = consultantResults[1] as String?;
+      
       debugPrint('🔍 MEETING_POPUP: consultantData = $consultantData');
       final consultantName = consultantData?['name'] ?? 'Consultant necunoscut';
       debugPrint('🔍 MEETING_POPUP: consultantName = "$consultantName"');
-      
-      debugPrint('🔍 MEETING_POPUP: Getting consultantToken');
-      // FIX: Obtine consultantToken-ul curent cu validare
-      final firebaseService = NewFirebaseService();
-      final consultantToken = await firebaseService.getCurrentConsultantToken();
       debugPrint('🔍 MEETING_POPUP: consultantToken = "$consultantToken"');
       
       // FIX: Validare pentru consultantToken
@@ -340,9 +346,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
       if (result['success']) {
         debugPrint('✅ MEETING_POPUP: Meeting saved successfully');
-        // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
-        _splashService.invalidateAllMeetingCaches();
         
+        // OPTIMIZARE: Închide popup-ul imediat pentru feedback instant
         if (mounted) {
           Navigator.of(context).pop();
           if (widget.onSaved != null) {
@@ -351,6 +356,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
           final successMessage = result['message'] ?? 'Intalnire salvata cu succes';
           _showSuccess(successMessage);
         }
+        
+        // OPTIMIZARE: Invalidare cache în background pentru actualizare rapidă
+        _invalidateCacheInBackground();
       } else {
         final errorMessage = result['message'] ?? 'Eroare necunoscuta la salvarea intalnirii';
         debugPrint('❌ MEETING_POPUP: Meeting save failed: $errorMessage');
@@ -369,6 +377,18 @@ class _MeetingPopupState extends State<MeetingPopup> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// OPTIMIZARE: Invalidare cache în background pentru performanță
+  void _invalidateCacheInBackground() {
+    // OPTIMIZARE: Execută în background pentru a nu bloca UI-ul
+    Future.microtask(() async {
+      try {
+        await _splashService.invalidateAllMeetingCaches();
+      } catch (e) {
+        debugPrint('❌ MEETING_POPUP: Error invalidating cache in background: $e');
+      }
+    });
   }
 
   Future<void> _deleteMeeting() async {
