@@ -78,7 +78,6 @@ flutter:
     - assets/callIcon.svg
     - assets/talkIcon.svg
     - assets/groupIcon.svg
-    - assets/groupIcon.svg
     - assets/returnIcon.svg
     - assets/retryIcon.svg
     - assets/viewIcon.svg
@@ -91,7 +90,7 @@ flutter:
     - assets/hideIcon.svg
     - assets/showIcon.svg
     - assets/editIcon.svg
-    - assets/infoIcon.svg
+    - assets/InfoIcon.svg
     - assets/meetingIcon.svg
     - assets/clientsIcon.svg
     - assets/settingsIcon.svg
@@ -118,4 +117,5 @@ flutter:
     - assets/cecIcon.svg 
     - assets/logoutIcon.svg
     - assets/homeIcon.svg
+    - assets/historyIcon.svg
     - lib/backend/ocr/names.json

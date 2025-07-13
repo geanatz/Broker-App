@@ -11,6 +11,8 @@ import 'package:broker_app/frontend/screens/auth_screen.dart';
 import 'package:broker_app/frontend/screens/splash_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
+import 'dart:io';
+import 'package:broker_app/frontend/screens/mobile_screen.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -135,7 +137,9 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         ),
-        home: const AuthWrapper(),
+        home: (Platform.isAndroid || Platform.isIOS)
+            ? const MobileClientsScreen()
+            : const AuthWrapper(),
         // routes: { // Eliminat vechile rute
         //   '/register': (context) => const RegisterScreen(),
         //   '/login': (context) => const LoginScreen(),
