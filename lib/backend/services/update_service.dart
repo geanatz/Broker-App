@@ -312,7 +312,8 @@ class UpdateService {
         }).asFuture();
         
         await sink.close();
-        debugPrint('📥 Download completed: ${(_downloadedBytes / 1024 / 1024).toStringAsFixed(2)} MB');
+        final sizeMB = (_downloadedBytes / 1024 / 1024).toStringAsFixed(2);
+        debugPrint('✅ Download completed: ${sizeMB}MB | File: $_updateFilePath');
         
         // Valideaza fisierul descarcat
         return await _validateDownload(_updateFilePath!);
@@ -349,7 +350,7 @@ class UpdateService {
           debugPrint('❌ Downloaded ZIP file is empty');
           return false;
         }
-        debugPrint('✅ Download validation successful: ${archive.length} files in archive');
+        debugPrint('✅ Download validation successful | Size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB | Files: ${archive.length}');
         return true;
       } catch (e) {
         debugPrint('❌ Downloaded file is not a valid ZIP: $e');
@@ -395,7 +396,7 @@ class UpdateService {
         }
       }
       
-      debugPrint('✅ Windows update installed successfully ($filesInstalled files)');
+      debugPrint('✅ Windows update installed successfully | Files: $filesInstalled | Archive: ${archive.length}');
       
       // Cleanup download file
       await _cleanupDownload(zipPath);
@@ -429,7 +430,7 @@ class UpdateService {
       // Creaza backup nou
       await _copyDirectory(appDir, backupDir);
       
-      debugPrint('✅ Backup created: ${backupDir.path}');
+      debugPrint('✅ Backup created successfully | Path: ${backupDir.path}');
       return true;
     } catch (e) {
       debugPrint('❌ Error creating backup: $e');

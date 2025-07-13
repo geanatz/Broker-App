@@ -486,13 +486,6 @@ class _FormAreaState extends State<FormArea> {
   Widget build(BuildContext context) {
     final focusedClient = _clientService.focusedClient;
     
-    debugPrint('📋 FORM_AREA: Building form content - focusedClient: ${focusedClient?.name} (${focusedClient?.phoneNumber})');
-    debugPrint('📋 FORM_AREA: Total clients in service: ${_clientService.apeluri.length + _clientService.reveniri.length + _clientService.recente.length}');
-    debugPrint('📋 FORM_AREA: Focused clients count: ${_clientService.apeluri.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
-    
-    // OPTIMIZARE: Nu mai loga build-ul pentru a reduce noise-ul
-    // debugPrint('🏗️ FORM_AREA: Build method called');
-    
     // Verifica daca clientul focusat este temporar
     if (focusedClient != null && focusedClient.id.startsWith('temp_')) {
       return _buildTemporaryClientPlaceholder(focusedClient);
@@ -511,18 +504,13 @@ class _FormAreaState extends State<FormArea> {
   Widget _buildFormContent(ClientModel client) {
     final focusedClient = _clientService.focusedClient;
     
-    // OPTIMIZARE: Debug pentru focus detection
-    debugPrint('📋 FORM_AREA: Building form content - focusedClient: ${focusedClient?.name} (${focusedClient?.phoneNumber})');
-    
     // Daca nu exista client focusat, afiseaza un placeholder
     if (focusedClient == null) {
-      debugPrint('⚠️ FORM_AREA: No focused client, showing placeholder');
       return _buildNoClientSelectedPlaceholder();
     }
     
     // Daca este un client temporar, afiseaza un placeholder special
     if (focusedClient.id.startsWith('temp_')) {
-      debugPrint('📋 FORM_AREA: Temporary client focused, showing temporary placeholder');
       return _buildTemporaryClientPlaceholder(focusedClient);
     }
     

@@ -274,7 +274,7 @@ class MainAppWrapper extends StatefulWidget {
   State<MainAppWrapper> createState() => _MainAppWrapperState();
 }
 
-class _MainAppWrapperState extends State<MainAppWrapper> {
+class _MainAppWrapperState extends State<MainAppWrapper> { 
   Map<String, dynamic>? _consultantData;
   bool _isLoading = true;
 
