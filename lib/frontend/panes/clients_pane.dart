@@ -55,6 +55,10 @@ class _ClientsPaneState extends State<ClientsPane> {
   Timer? _refreshDebounceTimer;
   bool _isRefreshing = false;
 
+  // Add these fields to the _ClientsPaneState class:
+  bool _reveniriCollapseInitialized = false;
+  bool _recenteCollapseInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -335,14 +339,24 @@ class _ClientsPaneState extends State<ClientsPane> {
     // Determina starea de collapse pentru aceasta sectiune
     bool isCollapsed = false;
     VoidCallback? toggleCallback;
-    
+    // Verifica daca categoria are clienti
+    List<ClientModel> categoryClients = _clientService.getClientsByCategoryWithoutTemporary(category);
+    bool hasClients = categoryClients.isNotEmpty;
     if (canCollapse) {
       switch (category) {
         case ClientCategory.reveniri:
+          if (!_reveniriCollapseInitialized) {
+            if (!hasClients) _isReveniriCollapsed = true;
+            _reveniriCollapseInitialized = true;
+          }
           isCollapsed = _isReveniriCollapsed;
           toggleCallback = () => setState(() => _isReveniriCollapsed = !_isReveniriCollapsed);
           break;
         case ClientCategory.recente:
+          if (!_recenteCollapseInitialized) {
+            if (!hasClients) _isRecenteCollapsed = true;
+            _recenteCollapseInitialized = true;
+          }
           isCollapsed = _isRecenteCollapsed;
           toggleCallback = () => setState(() => _isRecenteCollapsed = !_isRecenteCollapsed);
           break;
@@ -351,13 +365,18 @@ class _ClientsPaneState extends State<ClientsPane> {
           break;
       }
     }
-    
-    // Pentru sectiunea Apeluri (care e Expanded), folosim o structura special adaptata
     final bool isApeluri = category == ClientCategory.apeluri;
-    
+    // Padding logic: collapsed = 8 vertical/horizontal, expanded = all 8
+    final EdgeInsets sectionPadding = isCollapsed && !isApeluri
+        ? const EdgeInsets.symmetric(vertical: 8, horizontal: 8)
+        : const EdgeInsets.all(8);
+    final EdgeInsets headerPadding = isCollapsed && !isApeluri
+        ? const EdgeInsets.symmetric(vertical: 8, horizontal: 16)
+        : const EdgeInsets.symmetric(horizontal: 16);
+    final double headerHeight = isCollapsed && !isApeluri ? 32.0 : 24.0;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(8),
+      padding: sectionPadding,
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         color: AppTheme.widgetBackground,
@@ -378,9 +397,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                     altText: 'Editeaza',
                     onAltTextTap: widget.onClientsPopupRequested,
                   ),
-                  
                   SizedBox(height: AppTheme.smallGap),
-                  
                   // Lista de clienti expandabila pentru Apeluri
                   Expanded(child: _buildClientsList(category)),
                 ],
@@ -395,11 +412,11 @@ class _ClientsPaneState extends State<ClientsPane> {
                   title: title,
                   trailingIcon: isCollapsed ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                   onTrailingIconTap: toggleCallback,
+                  padding: headerPadding,
+                  titleContainerHeight: headerHeight,
                 ),
-                
                 if (!isCollapsed) ...[
                   SizedBox(height: AppTheme.smallGap),
-                  
                   // Lista de clienti pentru Reveniri si Recente
                   _buildClientsList(category),
                 ],

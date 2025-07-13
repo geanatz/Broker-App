@@ -101,7 +101,7 @@ class WidgetHeader3 extends StatelessWidget {
     }
 
 
-    return Container(
+    Widget content = Container(
       width: double.infinity,
       padding: effectivePadding,
       child: Row(
@@ -130,6 +130,16 @@ class WidgetHeader3 extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTrailingIconTap != null) {
+      return InkWell(
+        onTap: onTrailingIconTap,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+        child: content,
+      );
+    } else {
+      return content;
+    }
   }
 }
 
