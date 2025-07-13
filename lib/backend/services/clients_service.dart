@@ -1066,8 +1066,6 @@ class ClientUIService extends ChangeNotifier {
 
   /// FIX: Cleanup focus state on startup to ensure only one client is focused
   void _cleanupFocusStateOnStartup() {
-    debugPrint('🧹 CLIENT_UI_SERVICE: _cleanupFocusStateOnStartup called');
-    
     int focusedCount = 0;
     ClientModel? firstFocusedClient;
     
@@ -1079,21 +1077,15 @@ class ClientUIService extends ChangeNotifier {
       }
     }
     
-    debugPrint('🧹 CLIENT_UI_SERVICE: Found $focusedCount focused clients on startup');
-    
     // If multiple clients are focused, keep only the first one
     if (focusedCount > 1) {
-      debugPrint('🧹 CLIENT_UI_SERVICE: Multiple clients focused, cleaning up...');
-      
       for (int i = 0; i < _clients.length; i++) {
         if (_clients[i].status == ClientStatus.focused) {
           if (_clients[i].phoneNumber == firstFocusedClient?.phoneNumber) {
             // Keep this one focused
-            debugPrint('🧹 CLIENT_UI_SERVICE: Keeping focused: ${_clients[i].phoneNumber}');
           } else {
             // Defocus this one
             _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-            debugPrint('🧹 CLIENT_UI_SERVICE: Defocused on startup: ${_clients[i].phoneNumber}');
           }
         }
       }
@@ -1101,8 +1093,7 @@ class ClientUIService extends ChangeNotifier {
       // Update focused client reference
       _focusedClient = firstFocusedClient;
       
-      debugPrint('🧹 CLIENT_UI_SERVICE: Startup cleanup completed');
-      debugPrint('🧹 CLIENT_UI_SERVICE: Final focused count: ${_clients.where((c) => c.status == ClientStatus.focused).length}');
+      debugPrint('🧹 CLIENT_UI_SERVICE: Cleanup completed | Found: $focusedCount focused | Kept: ${firstFocusedClient?.phoneNumber}');
     } else if (focusedCount == 1) {
       // Only one client is focused, update reference
       _focusedClient = firstFocusedClient;
@@ -1211,137 +1202,69 @@ class ClientUIService extends ChangeNotifier {
 
   bool _isFocusingClient = false;
 
-  /// Focuseaza un client (schimba starea la focused si afiseaza formularul sau)
-  /// OPTIMIZAT: Focus imediat pentru UI responsive
-  void focusClient(String clientPhoneNumber) {
-    debugPrint('🎯 CLIENT_UI_SERVICE: focusClient called with phoneNumber: $clientPhoneNumber');
-    debugPrint('🎯 CLIENT_UI_SERVICE: Current focused client: ${_focusedClient?.phoneNumber}');
-    debugPrint('🎯 CLIENT_UI_SERVICE: Total clients: ${_clients.length}');
-    debugPrint('🎯 CLIENT_UI_SERVICE: Focused clients count: ${_clients.where((c) => c.status == ClientStatus.focused).length}');
+  /// Focusa un client specific
+  void focusClient(String phoneNumber) {
+    if (_isFocusingClient) return;
     
-    // OPTIMIZARE: Focus imediat pentru UI responsive
-    _performFocusClient(clientPhoneNumber);
-  }
-
-  /// FIX: Asigură că doar un client este focusat la un moment dat
-  void _ensureSingleFocus() {
-    debugPrint('🔧 CLIENT_UI_SERVICE: _ensureSingleFocus called');
-    
-    ClientModel? focusedClient;
-    int focusedCount = 0;
-    
-    // Găsește primul client focusat
-    for (int i = 0; i < _clients.length; i++) {
-      if (_clients[i].status == ClientStatus.focused) {
-        focusedCount++;
-        if (focusedClient == null) {
-          focusedClient = _clients[i];
-          debugPrint('🔧 CLIENT_UI_SERVICE: Found first focused client: ${_clients[i].phoneNumber}');
-        } else {
-          // Dacă găsește un al doilea client focusat, îl defocusează
-          _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-          debugPrint('🔚 CLIENT_UI_SERVICE: Defocused duplicate client: ${_clients[i].phoneNumber}');
-        }
-      }
-    }
-    
-    debugPrint('🔧 CLIENT_UI_SERVICE: Found $focusedCount focused clients before cleanup');
-    
-    // Actualizează referința focusedClient
-    _focusedClient = focusedClient ?? _temporaryClient;
-    
-    debugPrint('🔧 CLIENT_UI_SERVICE: Final focused client: ${_focusedClient?.phoneNumber}');
-    debugPrint('🔧 CLIENT_UI_SERVICE: Final focused count: ${_clients.where((c) => c.status == ClientStatus.focused).length}');
-  }
-
-  /// OPTIMIZAT: Execută focus-ul efectiv cu verificări de siguranță
-  void _performFocusClient(String clientPhoneNumber) {
-    debugPrint('🎯 CLIENT_UI_SERVICE: _performFocusClient called with phoneNumber: $clientPhoneNumber');
-    debugPrint('🎯 CLIENT_UI_SERVICE: _isFocusingClient: $_isFocusingClient');
-    
-    if (_isFocusingClient) {
-      debugPrint('⚠️ CLIENT_UI_SERVICE: Already focusing client, skipping');
-      return;
-    }
+    _isFocusingClient = true;
     
     try {
-      _isFocusingClient = true;
-      
-      debugPrint('🎯 CLIENT_UI_SERVICE: Starting focus process for: $clientPhoneNumber');
-      debugPrint('🎯 CLIENT_UI_SERVICE: Current clients count: ${_clients.length}');
-      debugPrint('🎯 CLIENT_UI_SERVICE: Current focused count: ${_clients.where((c) => c.status == ClientStatus.focused).length}');
-      
-      // Verifică dacă clientul există
-      final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
-      if (clientIndex == -1) {
-        debugPrint('⚠️ CLIENT_UI_SERVICE: Client not found for focus: $clientPhoneNumber');
-        return;
-      }
-
-      debugPrint('🎯 CLIENT_UI_SERVICE: Found client at index: $clientIndex');
-
-      // OPTIMIZARE: Nu face nimic dacă clientul este deja focusat
-      if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-        debugPrint('🔄 CLIENT_UI_SERVICE: Client already focused: $clientPhoneNumber');
-        return;
-      }
-
-      debugPrint('🎯 CLIENT_UI_SERVICE: Defocusing all clients before focusing new one');
-      
-      // FIX: Defocuseaza TOȚI clienții înainte de a focusa noul client
-      int defocusedCount = 0;
-      for (int i = 0; i < _clients.length; i++) {
-        if (_clients[i].status == ClientStatus.focused) {
-          _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-          defocusedCount++;
-          debugPrint('🔚 CLIENT_UI_SERVICE: Defocused client: ${_clients[i].phoneNumber}');
+      // Verifica daca clientul exista
+      final clientIndex = _clients.indexWhere((c) => c.phoneNumber == phoneNumber);
+      if (clientIndex != -1) {
+        // Defocuseaza toti clientii
+        for (int i = 0; i < _clients.length; i++) {
+          if (_clients[i].status == ClientStatus.focused) {
+            _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
+          }
         }
-      }
-      
-      debugPrint('🎯 CLIENT_UI_SERVICE: Defocused $defocusedCount clients');
-      
-      // Focuseaza noul client
-      _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.focused);
-      _focusedClient = _clients[clientIndex];
-      
-      debugPrint('✅ CLIENT_UI_SERVICE: Focused client: ${_focusedClient!.name} (${_focusedClient!.phoneNumber})');
-      debugPrint('✅ CLIENT_UI_SERVICE: Final focused count: ${_clients.where((c) => c.status == ClientStatus.focused).length}');
-      
-      // OPTIMIZARE: Preîncarcă datele formularului pentru clientul nou focusat
-      _preloadFormDataForClient(clientPhoneNumber);
-      
-      // OPTIMIZARE: Notificare imediată pentru UI responsive
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        debugPrint('🎯 CLIENT_UI_SERVICE: Post-frame callback - ensuring single focus');
-        _ensureSingleFocus(); // FIX: Asigură consistența focus-ului
-        debugPrint('🎯 CLIENT_UI_SERVICE: Post-frame callback - notifying listeners');
+        
+        // Focusa clientul specificat
+        _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.focused);
+        _focusedClient = _clients[clientIndex];
+        
+        // Notifica listenerii
         notifyListeners();
-        debugPrint('🎯 CLIENT_UI_SERVICE: Post-frame callback - completed');
-      });
-      
-    } catch (e) {
-      debugPrint('❌ CLIENT_UI_SERVICE: Error focusing client: $e');
+      }
     } finally {
       _isFocusingClient = false;
-      debugPrint('🎯 CLIENT_UI_SERVICE: _performFocusClient completed, _isFocusingClient set to false');
     }
   }
 
-  /// OPTIMIZAT: Preîncarcă datele formularului pentru un client specific
-  void _preloadFormDataForClient(String clientPhoneNumber) {
-    // OPTIMIZARE: Preîncarcă datele formularului în background
-    Future.microtask(() async {
-      try {
-        final formService = SplashService().formService;
-        await formService.loadFormDataForClient(
-          clientPhoneNumber,
-          clientPhoneNumber,
-        );
-      } catch (e) {
-        debugPrint('⚠️ CLIENT_UI_SERVICE: Error preloading form data: $e');
+  /// Defocuseaza un client specific
+  void defocusClient(String phoneNumber) {
+    final clientIndex = _clients.indexWhere((c) => c.phoneNumber == phoneNumber);
+    if (clientIndex != -1) {
+      _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.normal);
+      if (_focusedClient?.phoneNumber == phoneNumber) {
+        _focusedClient = null;
       }
-    });
+      notifyListeners();
+    }
   }
+
+  /// Asigura ca doar un client este focusat
+  void _ensureSingleFocus() {
+    final focusedClients = _clients.where((c) => c.status == ClientStatus.focused).toList();
+    
+    if (focusedClients.length > 1) {
+      // Daca sunt mai multi clienti focusati, pastreaza doar primul
+      for (int i = 1; i < focusedClients.length; i++) {
+        final clientIndex = _clients.indexWhere((c) => c.phoneNumber == focusedClients[i].phoneNumber);
+        if (clientIndex != -1) {
+          _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.normal);
+        }
+      }
+      _focusedClient = focusedClients.first;
+      notifyListeners();
+    } else if (focusedClients.length == 1) {
+      _focusedClient = focusedClients.first;
+    } else {
+      _focusedClient = null;
+    }
+  }
+
+
   
   /// Creeaza un client temporar pentru crearea in timp real
   void createTemporaryClient() {
@@ -1494,23 +1417,6 @@ class ClientUIService extends ChangeNotifier {
       _ensureSingleFocus();
       notifyListeners();
     });
-  }
-  
-  /// Defocuseaza clientul curent
-  /// OPTIMIZAT: Cu verificări de siguranță
-  void defocusCurrentClient() {
-    if (_focusedClient != null) {
-      final clientIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
-      if (clientIndex != -1) {
-        _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.normal);
-      }
-      _focusedClient = null;
-      
-      // OPTIMIZARE: Notificare cu delay pentru a evita UI blocking
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
-      });
-    }
   }
   
   /// Actualizeaza datele formularului pentru clientul focusat

@@ -220,14 +220,18 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   /// OPTIMIZAT: Construieste lista de clienti pentru o anumita categorie cu cache
   Widget _buildClientsList(ClientCategory category) {
-    debugPrint('📋 CLIENTS: _buildClientsList called for category: $category');
-    
     // Foloseste intotdeauna lista live din service pentru a reflecta focusul corect
     // FARA clientul temporar pentru clients-pane (temporarul apare doar in popup)
     List<ClientModel> clients = _clientService.getClientsByCategoryWithoutTemporary(category);
     
-    debugPrint('📋 CLIENTS: Found ${clients.length} clients for category: $category');
-    debugPrint('📋 CLIENTS: Focused clients in category: ${clients.where((c) => c.status == ClientStatus.focused).length}');
+    // Log client counts for all categories in a single compact message
+    if (category == ClientCategory.recente) {
+      final apeluriCount = _clientService.getClientsByCategoryWithoutTemporary(ClientCategory.apeluri).length;
+      final reveniriCount = _clientService.getClientsByCategoryWithoutTemporary(ClientCategory.reveniri).length;
+      final recenteCount = clients.length;
+      final focusedCount = clients.where((c) => c.status == ClientStatus.focused).length;
+      debugPrint('📋 CLIENTS: Category counts | Apeluri: $apeluriCount | Reveniri: $reveniriCount | Recente: $recenteCount | Focused: $focusedCount');
+    }
     
     if (clients.isEmpty) {
       return SizedBox(
@@ -281,8 +285,6 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isFocused = client.status == ClientStatus.focused;
     final bool hasDiscussionStatus = client.discussionStatus != null && client.discussionStatus!.isNotEmpty;
     
-    debugPrint('📋 CLIENTS: Building client item: ${client.name} (${client.phoneNumber}) - isFocused: $isFocused');
-    
     // Determina ce sa afiseze ca descriere
     String description;
     if (hasDiscussionStatus) {
@@ -297,7 +299,6 @@ class _ClientsPaneState extends State<ClientsPane> {
     }
     
     if (isFocused) {
-      debugPrint('📋 CLIENTS: Building FOCUSED item for: ${client.name} (${client.phoneNumber})');
       return DarkItem7(
         title: client.name,
         description: description,
@@ -306,14 +307,12 @@ class _ClientsPaneState extends State<ClientsPane> {
         onIconTap: () => _showClientSavePopup(client),
       );
     } else {
-      debugPrint('📋 CLIENTS: Building NORMAL item for: ${client.name} (${client.phoneNumber})');
       return LightItem7(
         title: client.name,
         description: description,
         svgAsset: 'assets/viewIcon.svg', // Întotdeauna viewIcon pentru client nefocusat
         onTap: () {
           // OPTIMIZARE: Folosește mecanismul debounced pentru switching
-          debugPrint('📋 CLIENTS: Tapped normal item for: ${client.name} (${client.phoneNumber})');
           _switchClient(client);
         },
       );
@@ -427,10 +426,6 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('📋 CLIENTS: build called - hashCode: $hashCode');
-    debugPrint('📋 CLIENTS: Total clients in service: ${_clientService.apeluri.length + _clientService.reveniri.length + _clientService.recente.length}');
-    debugPrint('📋 CLIENTS: Focused clients count: ${_clientService.apeluri.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
-    
     return SizedBox(
       width: double.infinity,
       height: double.infinity,

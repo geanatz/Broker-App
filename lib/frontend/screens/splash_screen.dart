@@ -183,7 +183,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       final hasUpdate = await _updateService.checkForUpdates();
       
       if (hasUpdate && mounted) {
-        debugPrint('✅ Update found, showing dialog...');
+        debugPrint('✅ Update found | Current: ${_updateService.currentVersion} | Latest: ${_updateService.latestVersion}');
         
         // Show update dialog
         final shouldDownload = await _showUpdateDialog();
@@ -193,7 +193,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           await _showUpdateDownloadDialog();
         }
       } else {
-        debugPrint('✅ No updates available');
+        debugPrint('✅ No updates available | Current: ${_updateService.currentVersion}');
       }
       
     } catch (e) {

@@ -265,7 +265,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
     // FIX: Validare pentru numele clientului
     final clientName = _clientNameController.text.trim();
-    debugPrint('🔍 MEETING_POPUP: clientName = "$clientName"');
     if (clientName.isEmpty) {
       debugPrint('❌ MEETING_POPUP: clientName is empty');
       _showError("Introduceti numele clientului");
@@ -278,10 +277,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
 
     try {
-      debugPrint('🔍 MEETING_POPUP: Building finalDateTime');
       // Construieste data si ora finale
       final timeParts = _selectedTimeSlot!.trim().split(':');
-      debugPrint('🔍 MEETING_POPUP: timeParts = $timeParts');
       final finalDateTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
@@ -289,10 +286,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
         int.parse(timeParts[0]),
         int.parse(timeParts[1]),
       );
-      debugPrint('🔍 MEETING_POPUP: finalDateTime = $finalDateTime');
 
       // OPTIMIZARE: Obține datele consultantului în paralel cu alte operații
-      debugPrint('🔍 MEETING_POPUP: Getting consultant data');
       final authService = AuthService();
       final firebaseService = NewFirebaseService();
       
@@ -305,10 +300,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
       final consultantData = consultantResults[0] as Map<String, dynamic>?;
       final consultantToken = consultantResults[1] as String?;
       
-      debugPrint('🔍 MEETING_POPUP: consultantData = $consultantData');
       final consultantName = consultantData?['name'] ?? 'Consultant necunoscut';
-      debugPrint('🔍 MEETING_POPUP: consultantName = "$consultantName"');
-      debugPrint('🔍 MEETING_POPUP: consultantToken = "$consultantToken"');
       
       // FIX: Validare pentru consultantToken
       if (consultantToken == null || consultantToken.isEmpty) {
@@ -319,9 +311,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
       // FIX: Validare pentru telefon (poate fi gol pentru intalniri generale)
       final phoneNumber = _phoneController.text.trim();
-      debugPrint('🔍 MEETING_POPUP: phoneNumber = "$phoneNumber"');
       
-      debugPrint('🔍 MEETING_POPUP: Creating MeetingData object');
       // Creeaza obiectul MeetingData
       final meetingData = MeetingData(
         clientName: clientName,
@@ -331,21 +321,18 @@ class _MeetingPopupState extends State<MeetingPopup> {
         consultantToken: consultantToken,
         consultantName: consultantName,
       );
-      debugPrint('🔍 MEETING_POPUP: MeetingData created successfully');
 
-      debugPrint('🔍 MEETING_POPUP: Calling meeting service');
+      debugPrint('🔍 MEETING_POPUP: Creating meeting | Client: $clientName | Date: $finalDateTime | Type: $_selectedType');
+      
       Map<String, dynamic> result;
       if (isEditMode) {
-        debugPrint('🔍 MEETING_POPUP: Edit mode - calling updateMeeting');
         result = await _meetingService.updateMeeting(widget.meetingId!, meetingData);
       } else {
-        debugPrint('🔍 MEETING_POPUP: Create mode - calling createMeeting');
         result = await _meetingService.createMeeting(meetingData);
       }
-      debugPrint('🔍 MEETING_POPUP: Meeting service result = $result');
 
       if (result['success']) {
-        debugPrint('✅ MEETING_POPUP: Meeting saved successfully');
+        debugPrint('✅ MEETING_POPUP: Meeting saved successfully | ${isEditMode ? 'Edit' : 'Create'} mode');
         
         // OPTIMIZARE: Închide popup-ul imediat pentru feedback instant
         if (mounted) {

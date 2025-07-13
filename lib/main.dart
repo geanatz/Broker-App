@@ -9,10 +9,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'package:broker_app/frontend/screens/auth_screen.dart';
 import 'package:broker_app/frontend/screens/splash_screen.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
-import 'package:window_manager/window_manager.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -33,95 +31,47 @@ class DebugOptions {
   }
 }
 
-void main() async { 
-  // Set an error handler for all Flutter errors
-  FlutterError.onError = (FlutterErrorDetails details) {
-    debugPrint('Flutter error caught: ${details.exception}');
-    debugPrint('${details.stack}');
-  };
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  // Run app in a guarded zone to catch all errors
-  await runZonedGuarded(() async {
-    // Initialize Flutter binding as early as possible
-    WidgetsFlutterBinding.ensureInitialized();
-    
-    // Configure window manager for desktop platforms
-    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-      await windowManager.ensureInitialized();
-      
-      WindowOptions windowOptions = const WindowOptions(
-        size: Size(1496, 904),
-        minimumSize: Size(1496, 904),
-        center: true,
-        backgroundColor: Colors.transparent,
-        skipTaskbar: false,
-        titleBarStyle: TitleBarStyle.normal,
-      );
-      
-      windowManager.waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.show();
-        await windowManager.focus();
-      });
-    } 
-    
-    // Initialize Firebase based on platform
-    if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-      // Mobile-specific initialization
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      
-      // Configure Firestore settings for mobile platforms
-      FirebaseFirestore.instance.settings = Settings(
+  // Enable offline persistence using the new Settings API
+  if (kIsWeb) {
+    try {
+      FirebaseFirestore.instance.settings = const Settings(
         persistenceEnabled: true,
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
       );
-      
-      // Add platform-specific error handling for Firebase on mobile platforms
-      if (Platform.isAndroid) {
-        // Use correct approach for enabling Firebase logging
-        FirebaseFirestore.setLoggingEnabled(true);
-      }
-    } else {
-      // Web and desktop platforms
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      
-      // Web-specific settings
-      if (kIsWeb) {
-        try {
-          FirebaseFirestore.instance.settings = Settings(
-            persistenceEnabled: true,
-            cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-          );
-        } catch (e) {
-          debugPrint('Error enabling persistence: $e');
-          // Fall back to memory-only mode if persistence fails
-          FirebaseFirestore.instance.settings = Settings(
-            persistenceEnabled: false,
-            cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-          );
-        }
-      } else {
-        // Desktop platforms
-        FirebaseFirestore.instance.settings = Settings(
-          persistenceEnabled: true,
-          cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-        );
-      }
+    } catch (e) {
+      debugPrint('[ERROR] Error enabling persistence: $e');
     }
-    
-    // Set up global error handling for platform errors
-    PlatformDispatcher.instance.onError = (error, stack) {
-      debugPrint('PlatformDispatcher error: $error');
-      debugPrint('$stack');
-      return true;
-    };
-    
-    runApp(const MyApp());
+  }
+
+  // Set up error handling
+  FlutterError.onError = (FlutterErrorDetails details) {
+    debugPrint('[ERROR][FLUTTER] ${details.exception}');
+    debugPrint('${details.stack}');
+  };
+
+  // Handle platform errors
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('[ERROR][PLATFORM] $error');
+    debugPrint('$stack');
+    return true;
+  };
+
+  // Run the app in the same zone as ensureInitialized
+  runApp(const MyApp());
+  
+  // Set up uncaught error handling after runApp
+  runZonedGuarded(() {
+    // This zone is only for catching uncaught errors, not for running the app
   }, (error, stackTrace) {
-    debugPrint('Caught error in runZonedGuarded: $error');
+    debugPrint('[ERROR][UNCAUGHT] $error');
     debugPrint('$stackTrace');
   });
 }

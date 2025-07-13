@@ -52,7 +52,7 @@ class AuthService {
     return '${consultantName.trim().replaceAll(' ', '_').toLowerCase()}@brokerapp.dev';
   }
 
-  // Register consultant - ACTUALIZAT pentru noua structura
+  // Inregistrare consultant - ACTUALIZAT pentru noua structura
   Future<Map<String, dynamic>> registerConsultant({
     required String consultantName,
     required String password,
@@ -60,7 +60,7 @@ class AuthService {
     required String team,
   }) async {
     try {
-      debugPrint('🟨 AUTH_SERVICE: Starting registration for: $consultantName');
+      debugPrint('🟨 AUTH_SERVICE: Starting registration | Name: $consultantName | Team: $team');
       
       // Verifica daca parolele se potrivesc
       if (password != confirmPassword) {
@@ -73,7 +73,6 @@ class AuthService {
 
       // Genereaza token unic pentru consultant
       final consultantToken = _uuid.v4();
-      debugPrint('🟨 AUTH_SERVICE: Generated consultant token: ${consultantToken.substring(0, 8)}...');
 
       // Verifica daca numele consultantului este unic in noua structura
       final existingConsultant = await _newFirebaseService.getConsultantByToken(consultantToken);
@@ -101,35 +100,26 @@ class AuthService {
       
       // Creeaza email-ul pentru Firebase Auth
       final email = _createEmailFromConsultantName(consultantName);
-      debugPrint('🟨 AUTH_SERVICE: Created email: $email');
       
-      debugPrint('🟨 AUTH_SERVICE: Creating Firebase user...');
       // Creeaza utilizator in Firebase Auth
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      debugPrint('🟨 AUTH_SERVICE: Firebase user created: ${userCredential.user?.uid}');
-      debugPrint('🟨 AUTH_SERVICE: User email: ${userCredential.user?.email}');
-
       // IMPORTANT: Salvam token-ul in localStorage INAINTE de signOut
       // pentru a fi disponibil pentru noul AuthScreen care va fi creat
-      debugPrint('🟨 AUTH_SERVICE: Saving token to localStorage before signOut');
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('pending_registration_token', consultantToken);
-        debugPrint('🟨 AUTH_SERVICE: Token saved successfully: ${consultantToken.substring(0, 8)}...');
       } catch (e) {
         debugPrint('🔴 AUTH_SERVICE: Error saving token to localStorage: $e');
       }
 
       // IMPORTANT: Facem signOut imediat pentru a preveni autentificarea automata
-      debugPrint('🟨 AUTH_SERVICE: Doing immediate signOut to prevent auto-login');
       await _auth.signOut();
       // Adaugam un delay mic pentru a permite AuthWrapper sa proceseze complete signOut-ul
       await Future.delayed(const Duration(milliseconds: 500));
-      debugPrint('🟨 AUTH_SERVICE: Immediate signOut completed with delay');
 
       // Salveaza datele consultantului in noua structura Firebase
       // IMPORTANT: documentul va fi cu UID-ul din Firebase Auth, dar va contine token-ul unic
@@ -149,9 +139,7 @@ class AuthService {
         })
       );
 
-      debugPrint('🟢 AUTH_SERVICE: Registration completed successfully with token structure');
-      debugPrint('🟢 AUTH_SERVICE: Returning token: ${consultantToken.substring(0, 8)}...');
-      debugPrint('🟢 AUTH_SERVICE: Token length: ${consultantToken.length}');
+      debugPrint('🟢 AUTH_SERVICE: Registration completed successfully | Token: ${consultantToken.substring(0, 8)}... | Email: $email');
       return {
         'success': true,
         'token': consultantToken,
@@ -190,7 +178,7 @@ class AuthService {
     required String consultantName,
     required String password,
   }) async {
-    debugPrint('🔵 AUTH_SERVICE: Starting loginConsultant for: $consultantName');
+    debugPrint('🔵 AUTH_SERVICE: Starting loginConsultant | Name: $consultantName');
     try {
       // In primul rand, verificam daca exista un consultant cu acest nume in noua structura
       final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(() =>
@@ -240,16 +228,7 @@ class AuthService {
         };
       }
 
-      debugPrint('🔵 AUTH_SERVICE: Found consultant with email: $email');
-      debugPrint('🔵 AUTH_SERVICE: Consultant token: ${consultantToken.substring(0, 8)}...');
-
       // Incearca autentificarea cu Firebase Auth
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      debugPrint('🟢 AUTH_SERVICE: Firebase Auth successful for: ${userCredential.user?.uid}');
 
       // Actualizeaza lastActive timestamp pentru consultant
       await _threadHandler.executeOnPlatformThread(() =>
@@ -258,20 +237,14 @@ class AuthService {
         })
       );
 
-      // Returneaza datele consultantului, inclusiv token-ul pentru identificare
+      debugPrint('🟢 AUTH_SERVICE: Login successful | Name: $consultantName | Token: ${consultantToken.substring(0, 8)}... | Email: $email');
       return {
         'success': true,
-        'consultant': {
-          'id': mostRecentDoc.id,
-          'name': consultantData['name'],
-          'email': consultantData['email'],
-          'team': consultantData['team'],
-          'token': consultantToken,
-        },
+        'token': consultantToken,
         'message': 'Autentificare reusita',
       };
     } on FirebaseAuthException catch (e) {
-      debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException during login: ${e.code} - ${e.message}');
+      debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException: ${e.code} - ${e.message}');
       String message;
 
       switch (e.code) {
@@ -281,8 +254,11 @@ class AuthService {
         case 'wrong-password':
           message = 'Parola incorecta';
           break;
-        case 'too-many-requests':
-          message = 'Prea multe incercari. Incearca din nou mai tarziu.';
+        case 'invalid-email':
+          message = 'Email invalid';
+          break;
+        case 'user-disabled':
+          message = 'Contul a fost dezactivat';
           break;
         default:
           message = 'Eroare la autentificare: ${e.message}';
@@ -293,7 +269,7 @@ class AuthService {
         'message': message,
       };
     } catch (e) {
-      debugPrint('🔴 AUTH_SERVICE: General exception during login: $e');
+      debugPrint('🔴 AUTH_SERVICE: General exception: $e');
       return {
         'success': false,
         'message': 'Eroare la autentificare: $e',

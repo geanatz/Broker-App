@@ -276,19 +276,11 @@ class MeetingService {
 
   /// OPTIMIZAT: Creeaza o noua intalnire cu performanță îmbunătățită și feedback instant
   Future<Map<String, dynamic>> createMeeting(MeetingData meetingData) async {
-    debugPrint('🔍 MEETING_SERVICE: Starting createMeeting');
-    debugPrint('🔍 MEETING_SERVICE: meetingData.clientName = "${meetingData.clientName}"');
-    debugPrint('🔍 MEETING_SERVICE: meetingData.phoneNumber = "${meetingData.phoneNumber}"');
-    debugPrint('🔍 MEETING_SERVICE: meetingData.consultantToken = "${meetingData.consultantToken}"');
-    debugPrint('🔍 MEETING_SERVICE: meetingData.consultantName = "${meetingData.consultantName}"');
-    debugPrint('🔍 MEETING_SERVICE: meetingData.dateTime = ${meetingData.dateTime}');
-    debugPrint('🔍 MEETING_SERVICE: meetingData.type = ${meetingData.type}');
+    debugPrint('🔍 MEETING_SERVICE: Starting createMeeting | Client: ${meetingData.clientName} | Date: ${meetingData.dateTime} | Type: ${meetingData.type}');
     
     try {
       // OPTIMIZARE: Verificare rapidă de disponibilitate din cache
-      debugPrint('🔍 MEETING_SERVICE: Checking time slot availability');
       final isAvailable = await _isTimeSlotAvailable(meetingData.dateTime);
-      debugPrint('🔍 MEETING_SERVICE: Time slot available = $isAvailable');
       if (!isAvailable) {
         debugPrint('❌ MEETING_SERVICE: Time slot not available');
         return {
@@ -319,10 +311,9 @@ class MeetingService {
       ]);
 
       final meetingCreated = results[0] as bool;
-      debugPrint('🔍 MEETING_SERVICE: Firebase createMeeting result = $meetingCreated');
       
       if (meetingCreated) {
-        debugPrint('✅ MEETING_SERVICE: Meeting created successfully');
+        debugPrint('✅ MEETING_SERVICE: Meeting created successfully | Client: ${meetingData.clientName} | Date: ${meetingData.dateTime}');
         
         // OPTIMIZARE: Notificare optimizată pentru client cu delay redus
         _notifyClientMeetingCreated(meetingData.phoneNumber, meetingData.dateTime);

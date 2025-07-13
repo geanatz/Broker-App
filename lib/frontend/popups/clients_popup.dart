@@ -242,12 +242,12 @@ class _ClientsPopupState extends State<ClientsPopup> {
                   width: image.width,
                   height: image.height,
                 ));
-                debugPrint('✅ Imaginea ${file.name} pregatita pentru OCR (${image.width}x${image.height})');
+                debugPrint('✅ Image prepared for OCR | ${file.name} | ${image.width}x${image.height}');
               } else {
-                debugPrint('❌ Nu se poate decoda imaginea ${file.name}');
+                debugPrint('❌ Cannot decode image ${file.name}');
               }
             } catch (e) {
-              debugPrint('❌ Eroare la decodarea imaginii ${file.name}: $e');
+              debugPrint('❌ Error decoding image ${file.name}: $e');
             }
           }
         }
@@ -305,7 +305,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         _ocrMessage = 'Extragere finalizata!';
       });
       
-      debugPrint('✅ OCR complet - procesate ${batchResult.individualResults.length} imagini');
+      debugPrint('✅ OCR complet - procesate ${batchResult.individualResults.length} imagini | Platform: ${kIsWeb ? 'Web' : 'Desktop'}');
 
     } catch (e) {
       debugPrint('❌ CLIENTS_POPUP: Eroare la procesul OCR: $e');
@@ -369,7 +369,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     final result = _ocrResults?[imagePath];
     final clientCount = result?.extractedClients?.length ?? 0;
     
-    debugPrint('✅ CLIENTS_POPUP: Imaginea $fileName selectata - $clientCount clienti');
+    debugPrint('✅ CLIENTS_POPUP: Image selected | File: $fileName | Clients: $clientCount');
     
     setState(() {
       _selectedOcrImagePath = imagePath;
@@ -1354,19 +1354,11 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
     super.dispose();
   }
 
-  void _saveClient() {
-    if (_nameController.text.trim().isEmpty || _phoneController1.text.trim().isEmpty) {
-      // Show error or handle validation
-      return;
-    }
-
-    // Get the client service
-    final clientService = SplashService().clientUIService;
-    
-    // Update the temporary client with the form data
-    clientService.updateTemporaryClient(
+  /// Helper to build a Client object from the form fields
+  Client _buildClientFromForm() {
+    return Client(
       name: _nameController.text.trim(),
-      phoneNumber: _phoneController1.text.trim(),
+      phoneNumber1: _phoneController1.text.trim(),
       phoneNumber2: _phoneController2.text.trim().isEmpty 
           ? null 
           : _phoneController2.text.trim(),
@@ -1374,37 +1366,59 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
           ? null 
           : _coDebitorNameController.text.trim(),
     );
+  }
+
+  /// Salveaza clientul curent
+  Future<void> _saveClient() async {
+    debugPrint('🆕 POPUP: Starting client creation');
     
-    // Finalize the temporary client
-    clientService.finalizeTemporaryClient().then((success) {
-      if (!mounted) return; // Check if widget is still mounted
+    try {
+      final client = _buildClientFromForm();
+      
+      // Update the temporary client with the form data
+      final clientService = SplashService().clientUIService;
+      clientService.updateTemporaryClient(
+        name: client.name,
+        phoneNumber: client.phoneNumber1,
+        phoneNumber2: client.phoneNumber2,
+        coDebitorName: client.coDebitorName,
+      );
+      
+      // Finalize the temporary client
+      final success = await clientService.finalizeTemporaryClient();
       
       if (success) {
-        debugPrint('✅ POPUP: Client saved successfully');
-        // Create a Client object and call the parent callback
-        final savedClient = Client(
-          name: _nameController.text.trim(),
-          phoneNumber1: _phoneController1.text.trim(),
-          phoneNumber2: _phoneController2.text.trim().isEmpty 
-              ? null 
-              : _phoneController2.text.trim(),
-          coDebitorName: _coDebitorNameController.text.trim().isEmpty 
-              ? null 
-              : _coDebitorNameController.text.trim(),
-        );
-        widget.onSaveClient?.call(savedClient);
+        debugPrint('✅ POPUP: Client saved successfully | Name: ${client.name} | Phone: ${client.phoneNumber1}');
+        
+        if (widget.onSaveClient != null) {
+          widget.onSaveClient!(client);
+        }
+        
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       } else {
         debugPrint('❌ POPUP: Failed to save client');
-        // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Eroare la salvarea clientului'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+        } catch (e) {
+      debugPrint('❌ POPUP: Exception in _saveClient: $e');
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare la salvarea clientului'),
+            content: Text('Eroare la salvarea clientului: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
-    });
+    }
   }
   
   Widget _buildFormBottomButtonsRow(bool isEditing) {

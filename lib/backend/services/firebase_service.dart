@@ -99,7 +99,6 @@ class PerformanceMonitor {
   
   static void startTimer(String operation) {
     _timers[operation] = Stopwatch()..start();
-    debugPrint('⏱️ PERFORMANCE: Started timer for $operation');
   }
   
   static void endTimer(String operation) {
@@ -108,14 +107,12 @@ class PerformanceMonitor {
       timer.stop();
       final duration = timer.elapsedMilliseconds;
       _metrics.putIfAbsent(operation, () => []).add(duration);
-      debugPrint('⏱️ PERFORMANCE: $operation completed in ${duration}ms');
       _timers.remove(operation);
     }
   }
   
   static void logMetric(String operation, int duration) {
     _metrics.putIfAbsent(operation, () => []).add(duration);
-    debugPrint('📊 PERFORMANCE: $operation took ${duration}ms');
   }
   
   static Map<String, double> getAverageMetrics() {
@@ -130,7 +127,7 @@ class PerformanceMonitor {
   
   static void printPerformanceReport() {
     final averages = getAverageMetrics();
-    debugPrint('📊 PERFORMANCE REPORT:');
+    debugPrint('[PERF] PERFORMANCE REPORT:');
     averages.forEach((operation, avgTime) {
       debugPrint('  $operation: ${avgTime.toStringAsFixed(2)}ms avg');
     });
@@ -139,7 +136,7 @@ class PerformanceMonitor {
   /// Prints a comprehensive performance summary
   static void printComprehensiveReport() {
     final averages = getAverageMetrics();
-    debugPrint('📊 COMPREHENSIVE PERFORMANCE REPORT:');
+    debugPrint('[PERF] COMPREHENSIVE PERFORMANCE REPORT:');
     debugPrint('=====================================');
     
     // Sort by average time (slowest first)
@@ -507,7 +504,10 @@ class NewFirebaseService {
     if (_cachedConsultantToken != null && _tokenCacheTime != null) {
       final cacheAge = DateTime.now().difference(_tokenCacheTime!);
       if (cacheAge < _tokenCacheDuration) {
-        debugPrint('🚀 FIREBASE_SERVICE: Using cached consultant token (age: ${cacheAge.inMilliseconds}ms)');
+        // Log cache usage with reduced frequency
+        if (cacheAge.inMilliseconds % 1000 < 100) { // Log only every ~1 second
+          debugPrint('🚀 FIREBASE_SERVICE: Using cached consultant token (age: ${cacheAge.inMilliseconds}ms)');
+        }
         PerformanceMonitor.endTimer('getCurrentConsultantToken');
         return _cachedConsultantToken;
       }
