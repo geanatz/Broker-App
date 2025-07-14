@@ -677,6 +677,166 @@ class NewFirebaseService {
     }
   }
 
+  // =================== REAL-TIME LISTENERS ===================
+
+  /// Creeaza un stream real-time pentru clientii consultantului curent
+  Stream<List<Map<String, dynamic>>> getClientsRealTimeStream() async* {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: No consultant token for real-time stream');
+      return;
+    }
+
+    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for consultant: $consultantToken');
+    
+    // Creeaza query-ul pentru clientii consultantului curent
+    final query = _firestore
+        .collection(_clientsCollection)
+        .where('consultantToken', isEqualTo: consultantToken)
+        .orderBy('createdAt', descending: true);
+
+    // Returneaza stream-ul de snapshots
+    yield* query.snapshots().map((snapshot) {
+      final clients = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // Adauga ID-ul documentului
+        return data;
+      }).toList();
+      
+      debugPrint('🔄 FIREBASE_SERVICE: Real-time update - ${clients.length} clients');
+      return clients;
+    });
+  }
+
+  /// Creeaza un stream real-time pentru un client specific
+  Stream<Map<String, dynamic>?> getClientRealTimeStream(String phoneNumber) async* {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: No consultant token for client stream');
+      return;
+    }
+
+    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for client: $phoneNumber');
+    
+    // Creeaza query-ul pentru clientul specific
+    final query = _firestore
+        .collection(_clientsCollection)
+        .doc(phoneNumber)
+        .snapshots();
+
+    // Returneaza stream-ul de snapshots
+    yield* query.map((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        // Verifica daca clientul apartine consultantului curent
+        if (data['consultantToken'] == consultantToken) {
+          data['id'] = snapshot.id;
+          debugPrint('🔄 FIREBASE_SERVICE: Real-time client update - ${data['name']}');
+          return data;
+        }
+      }
+      debugPrint('🔄 FIREBASE_SERVICE: Client not found or not accessible');
+      return null;
+    });
+  }
+
+  /// Creeaza un stream real-time pentru clientii dintr-o categorie specifica
+  Stream<List<Map<String, dynamic>>> getClientsByCategoryRealTimeStream(String category) async* {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: No consultant token for category stream');
+      return;
+    }
+
+    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for category: $category');
+    
+    // Creeaza query-ul pentru categoria specifica
+    final query = _firestore
+        .collection(_clientsCollection)
+        .where('consultantToken', isEqualTo: consultantToken)
+        .where('category', isEqualTo: category)
+        .orderBy('createdAt', descending: true);
+
+    // Returneaza stream-ul de snapshots
+    yield* query.snapshots().map((snapshot) {
+      final clients = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+      
+      debugPrint('🔄 FIREBASE_SERVICE: Real-time category update - ${clients.length} clients in $category');
+      return clients;
+    });
+  }
+
+  /// Creeaza un stream real-time pentru clientii cu un status specific
+  Stream<List<Map<String, dynamic>>> getClientsByStatusRealTimeStream(String status) async* {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: No consultant token for status stream');
+      return;
+    }
+
+    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for status: $status');
+    
+    // Creeaza query-ul pentru status-ul specific
+    final query = _firestore
+        .collection(_clientsCollection)
+        .where('consultantToken', isEqualTo: consultantToken)
+        .where('status', isEqualTo: status)
+        .orderBy('createdAt', descending: true);
+
+    // Returneaza stream-ul de snapshots
+    yield* query.snapshots().map((snapshot) {
+      final clients = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+      
+      debugPrint('🔄 FIREBASE_SERVICE: Real-time status update - ${clients.length} clients with status $status');
+      return clients;
+    });
+  }
+
+  /// Creeaza un stream real-time pentru toate operatiunile pe clienti (create, update, delete)
+  Stream<Map<String, dynamic>> getClientsOperationsRealTimeStream() async* {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) {
+      debugPrint('❌ FIREBASE_SERVICE: No consultant token for operations stream');
+      return;
+    }
+
+    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time operations stream');
+    
+    // Creeaza query-ul pentru toate operatiunile
+    final query = _firestore
+        .collection(_clientsCollection)
+        .where('consultantToken', isEqualTo: consultantToken)
+        .orderBy('updatedAt', descending: true);
+
+    // Returneaza stream-ul de snapshots cu informatii despre operatiuni
+    yield* query.snapshots().map((snapshot) {
+      final operations = <String, dynamic>{
+        'timestamp': DateTime.now().toIso8601String(),
+        'totalClients': snapshot.docs.length,
+        'changes': snapshot.docChanges.map((change) {
+          return {
+            'type': change.type.name, // 'added', 'modified', 'removed'
+            'clientId': change.doc.id,
+            'clientData': change.doc.data(),
+            'oldIndex': change.oldIndex,
+            'newIndex': change.newIndex,
+          };
+        }).toList(),
+      };
+      
+      debugPrint('🔄 FIREBASE_SERVICE: Real-time operations update - ${operations['changes'].length} changes');
+      return operations;
+    });
+  }
+
   /// Obtine toti clientii pentru consultantul curent (FIX: mai robust filtering)
   Future<List<Map<String, dynamic>>> getAllClients() async {
     final consultantToken = await getCurrentConsultantToken();

@@ -1298,6 +1298,138 @@ class ClientUIService extends ChangeNotifier {
       notifyListeners();
     });
   }
+
+  // =================== REAL-TIME LISTENERS ===================
+
+  /// Stream subscription pentru real-time updates
+  StreamSubscription<List<Map<String, dynamic>>>? _realTimeSubscription;
+  StreamSubscription<Map<String, dynamic>>? _operationsSubscription;
+
+  /// Pornește real-time listeners pentru sincronizare automată
+  Future<void> startRealTimeListeners() async {
+    try {
+      debugPrint('🔄 CLIENT_UI_SERVICE: Starting real-time listeners');
+      
+      final firebaseService = NewFirebaseService();
+      
+      // 1. Stream pentru toți clienții
+      _realTimeSubscription = firebaseService.getClientsRealTimeStream().listen(
+        (List<Map<String, dynamic>> clientsData) {
+          debugPrint('🔄 CLIENT_UI_SERVICE: Real-time update received with ${clientsData.length} clients');
+          _handleRealTimeUpdate(clientsData);
+        },
+        onError: (error) {
+          debugPrint('❌ CLIENT_UI_SERVICE: Real-time stream error: $error');
+        },
+      );
+
+      // 2. Stream pentru operațiuni
+      _operationsSubscription = firebaseService.getClientsOperationsRealTimeStream().listen(
+        (Map<String, dynamic> operations) {
+          debugPrint('🔄 CLIENT_UI_SERVICE: Operations update received');
+          _handleOperationsUpdate(operations);
+        },
+        onError: (error) {
+          debugPrint('❌ CLIENT_UI_SERVICE: Operations stream error: $error');
+        },
+      );
+
+      debugPrint('✅ CLIENT_UI_SERVICE: Real-time listeners started');
+    } catch (e) {
+      debugPrint('❌ CLIENT_UI_SERVICE: Error starting real-time listeners: $e');
+    }
+  }
+
+  /// Oprește real-time listeners
+  void stopRealTimeListeners() {
+    debugPrint('🛑 CLIENT_UI_SERVICE: Stopping real-time listeners');
+    _realTimeSubscription?.cancel();
+    _operationsSubscription?.cancel();
+    _realTimeSubscription = null;
+    _operationsSubscription = null;
+  }
+
+  /// Gestionează actualizările în timp real pentru clienți
+  void _handleRealTimeUpdate(List<Map<String, dynamic>> clientsData) {
+    try {
+      final List<ClientModel> updatedClients = [];
+      
+      for (final clientData in clientsData) {
+        try {
+          final client = ClientModel.fromMap(clientData);
+          updatedClients.add(client);
+        } catch (e) {
+          debugPrint('⚠️ CLIENT_UI_SERVICE: Error parsing client data: $e');
+        }
+      }
+
+      // Actualizează lista de clienți
+      _clients = updatedClients;
+      
+      // Păstrează focus-ul pe clientul curent dacă există
+      if (_focusedClient != null) {
+        final focusedIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
+        if (focusedIndex != -1) {
+          _focusedClient = _clients[focusedIndex];
+        } else {
+          // Dacă clientul focusat nu mai există, focusează primul client
+          _focusedClient = _clients.isNotEmpty ? _clients.first : null;
+        }
+      }
+      
+      debugPrint('✅ CLIENT_UI_SERVICE: Updated ${_clients.length} clients from real-time sync');
+      
+      // Notifică listeners
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+    } catch (e) {
+      debugPrint('❌ CLIENT_UI_SERVICE: Error handling real-time update: $e');
+    }
+  }
+
+  /// Gestionează actualizările în timp real pentru operațiuni
+  void _handleOperationsUpdate(Map<String, dynamic> operations) {
+    try {
+      final List<Map<String, dynamic>> changes = operations['changes'] ?? [];
+      
+      for (final change in changes) {
+        final String type = change['type'] ?? '';
+        final String clientId = change['clientId'] ?? '';
+        final Map<String, dynamic> clientData = change['clientData'] ?? {};
+        
+        debugPrint('🔄 CLIENT_UI_SERVICE: Operation detected - Type: $type, Client: $clientId');
+        
+        switch (type) {
+          case 'added':
+            debugPrint('➕ CLIENT_UI_SERVICE: Client added - ${clientData['name']}');
+            break;
+          case 'modified':
+            debugPrint('✏️ CLIENT_UI_SERVICE: Client modified - ${clientData['name']}');
+            break;
+          case 'removed':
+            debugPrint('🗑️ CLIENT_UI_SERVICE: Client removed - $clientId');
+            break;
+        }
+      }
+      
+      // Refresh clients after operations
+      _refreshClientsFromFirebase();
+      
+    } catch (e) {
+      debugPrint('❌ CLIENT_UI_SERVICE: Error handling operations update: $e');
+    }
+  }
+
+  /// Reîncarcă clienții din Firebase
+  Future<void> _refreshClientsFromFirebase() async {
+    try {
+      await loadClientsFromFirebase();
+      debugPrint('🔄 CLIENT_UI_SERVICE: Refreshed clients from Firebase');
+    } catch (e) {
+      debugPrint('❌ CLIENT_UI_SERVICE: Error refreshing clients: $e');
+    }
+  }
   
   /// Actualizeaza clientul temporar cu datele introduse
   void updateTemporaryClient({

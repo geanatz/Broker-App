@@ -1394,9 +1394,8 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
           widget.onSaveClient!(client);
         }
         
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
+        // Don't call Navigator.pop() since this is not a dialog
+        // The parent will handle closing the popup
       } else {
         debugPrint('❌ POPUP: Failed to save client');
         if (mounted) {

@@ -624,6 +624,11 @@ class SplashService extends ChangeNotifier {
       
       // Pre-load clients data
       await _clientUIService!.loadClientsFromFirebase();
+      
+      // OPTIMIZARE: Pornește real-time listeners pentru sincronizare automată
+      await _clientUIService!.startRealTimeListeners();
+      
+      debugPrint('✅ SPLASH_SERVICE: Client services initialized with real-time listeners');
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing client services: $e');
       rethrow;
@@ -903,6 +908,9 @@ class SplashService extends ChangeNotifier {
   /// Cleanup pentru disposal
   @override
   void dispose() {
+    // OPTIMIZARE: Oprește real-time listeners
+    _clientUIService?.stopRealTimeListeners();
+    
     _timeSlotsLastUpdate = null;
     _cachedTimeSlots.clear();
     _cachedMeetings.clear();
