@@ -12,13 +12,13 @@ import '../../backend/services/splash_service.dart';
 import '../popups/status_popup.dart';
 import '../../backend/services/firebase_service.dart';
 
-/// ClientsPane - Interfata pentru gestionarea apelurilor clientilor
+/// ClientsPane - Interfata pentru gestionarea clientilor
 /// OPTIMIZAT: Implementare avansată cu cache inteligent și loading instant
 /// 
 /// Aceasta interfata este impartita in 3 sectiuni:
-/// 1. Apeluri - toate apelurile active (FILL - nu se poate collapse)
-/// 2. Reveniri - apelurile care suna ocupat sau sunt amanate (HUG - se poate collapse)
-/// 3. Recente - apelurile respinse sau finalizate cu succes (HUG - se poate collapse)
+/// 1. Clienti - toti clientii activi (FILL - nu se poate collapse)
+/// 2. Reveniri - clientii care suna ocupat sau sunt amanati (HUG - se poate collapse)
+/// 3. Recente - clientii respinsi sau finalizati cu succes (HUG - se poate collapse)
 /// 
 /// Logica de focus:
 /// - LightItem7: starea normala (viewIcon)
@@ -26,10 +26,13 @@ import '../../backend/services/firebase_service.dart';
 class ClientsPane extends StatefulWidget {
   /// Callback pentru deschiderea popup-ului de clienti
   final VoidCallback? onClientsPopupRequested;
+  /// Callback pentru schimbarea zonei la formular
+  final VoidCallback? onSwitchToFormArea;
 
   const ClientsPane({
     super.key,
     this.onClientsPopupRequested,
+    this.onSwitchToFormArea,
   });
 
   @override
@@ -145,13 +148,8 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// OPTIMIZAT: Callback pentru refresh automat când se schimbă datele în SplashService
   void _onSplashServiceChanged() {
     if (mounted && !_isRefreshing) {
-      // FIX: Debouncing pentru refresh-uri
-      _refreshDebounceTimer?.cancel();
-      _refreshDebounceTimer = Timer(const Duration(milliseconds: 100), () {
-        if (mounted && !_isRefreshing) {
-          _forceRefreshClients();
-        }
-      });
+      // FIX: Force refresh to ensure we get the latest data
+      _forceRefreshClients();
     }
   }
 
@@ -162,13 +160,23 @@ class _ClientsPaneState extends State<ClientsPane> {
     // OPTIMIZARE: Defer setState until after the current frame to avoid calling setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isRefreshing) {
-        // FIX: Debouncing pentru refresh-uri
-        _refreshDebounceTimer?.cancel();
-        _refreshDebounceTimer = Timer(const Duration(milliseconds: 100), () {
-          if (mounted && !_isRefreshing) {
-            _forceRefreshClients();
-          }
-        });
+        // FIX: Check if data actually changed before updating UI
+        final newClients = _clientService.clients;
+        final hasChanged = _cachedClients.length != newClients.length ||
+            !_cachedClients.every((client) => newClients.any((newClient) => 
+                newClient.phoneNumber == client.phoneNumber &&
+                newClient.category == client.category &&
+                newClient.status == client.status &&
+                newClient.name == client.name));
+
+        if (hasChanged || _cachedClients.isEmpty) {
+          setState(() {
+            _cachedClients = newClients;
+          });
+          debugPrint('🔄 CLIENTS: Updated ${_cachedClients.length} clients from ClientUIService');
+        } else {
+          debugPrint('🔄 CLIENTS: No changes detected in ClientUIService');
+        }
       }
     });
   }
@@ -177,9 +185,9 @@ class _ClientsPaneState extends State<ClientsPane> {
   void _switchClient(ClientModel client) {
     if (_isSwitchingClient) return;
     
-    // OPTIMIZARE: Debouncing pentru client switching
+    // CRITICAL FIX: Near-instant debouncing for immediate sync
     _clientSwitchDebounceTimer?.cancel();
-    _clientSwitchDebounceTimer = Timer(const Duration(milliseconds: 50), () {
+    _clientSwitchDebounceTimer = Timer(const Duration(milliseconds: 10), () {
       _performClientSwitch(client);
     });
   }
@@ -187,16 +195,25 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// OPTIMIZAT: Execută schimbarea efectivă a clientului
   void _performClientSwitch(ClientModel client) {
     debugPrint('🔄 CLIENTS: _performClientSwitch called for client: ${client.phoneNumber}');
-    debugPrint('🔄 CLIENTS: Current focused count: ${_clientService.apeluri.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
+    debugPrint('🔄 CLIENTS: Current focused count: ${_clientService.clienti.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
     
     if (_isSwitchingClient) {
       debugPrint('⚠️ CLIENTS: Already switching client, skipping');
       return;
     }
     
+    // FIX: Check if client is already focused to prevent unnecessary switches
+    if (client.status == ClientStatus.focused) {
+      debugPrint('ℹ️ CLIENTS: Client already focused, skipping switch');
+      return;
+    }
+    
     try {
       _isSwitchingClient = true;
       debugPrint('🔄 CLIENTS: Starting client switch for: ${client.phoneNumber}');
+      
+      // Switch to form area when client is selected
+      widget.onSwitchToFormArea?.call();
       
       // Prima data face focus pentru a afisa formularul
       _clientService.focusClient(client.phoneNumber);
@@ -226,11 +243,11 @@ class _ClientsPaneState extends State<ClientsPane> {
     
     // Log client counts for all categories in a single compact message
     if (category == ClientCategory.recente) {
-      final apeluriCount = _clientService.getClientsByCategoryWithoutTemporary(ClientCategory.apeluri).length;
+      final clientiCount = _clientService.getClientsByCategoryWithoutTemporary(ClientCategory.apeluri).length;
       final reveniriCount = _clientService.getClientsByCategoryWithoutTemporary(ClientCategory.reveniri).length;
       final recenteCount = clients.length;
       final focusedCount = clients.where((c) => c.status == ClientStatus.focused).length;
-      debugPrint('📋 CLIENTS: Category counts | Apeluri: $apeluriCount | Reveniri: $reveniriCount | Recente: $recenteCount | Focused: $focusedCount');
+              debugPrint('📋 CLIENTS: Category counts | Clienti: $clientiCount | Reveniri: $reveniriCount | Recente: $recenteCount | Focused: $focusedCount');
     }
     
     if (clients.isEmpty) {
@@ -251,7 +268,7 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isApeluri = category == ClientCategory.apeluri;
     
     if (isApeluri) {
-      // Pentru sectiunea Apeluri (care e Expanded), folosim ListView normal
+              // Pentru sectiunea Clienti (care e Expanded), folosim ListView normal
       return ListView.separated(
         itemCount: clients.length,
         separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
@@ -333,7 +350,7 @@ class _ClientsPaneState extends State<ClientsPane> {
     );
   }
 
-  /// Construieste o sectiune (Apeluri, Reveniri, Recente)
+  /// Construieste o sectiune (Clienti, Reveniri, Recente)
   Widget _buildSection(String title, ClientCategory category, {bool canCollapse = true}) {
     // Determina starea de collapse pentru aceasta sectiune
     bool isCollapsed = false;
@@ -360,7 +377,7 @@ class _ClientsPaneState extends State<ClientsPane> {
           toggleCallback = () => setState(() => _isRecenteCollapsed = !_isRecenteCollapsed);
           break;
         case ClientCategory.apeluri:
-          // Apeluri nu se poate collapse
+          // Clienti nu se poate collapse
           break;
       }
     }
@@ -390,14 +407,14 @@ class _ClientsPaneState extends State<ClientsPane> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Header pentru Apeluri
+                  // Header pentru Clienti
                   WidgetHeader2(
                     title: title,
                     altText: 'Editeaza',
                     onAltTextTap: widget.onClientsPopupRequested,
                   ),
                   SizedBox(height: AppTheme.smallGap),
-                  // Lista de clienti expandabila pentru Apeluri
+                  // Lista de clienti expandabila pentru Clienti
                   Expanded(child: _buildClientsList(category)),
                 ],
               )
@@ -434,9 +451,9 @@ class _ClientsPaneState extends State<ClientsPane> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sectiunea Apeluri - FILL (expandeaza sa ocupe tot spatiul disponibil)
+          // Sectiunea Clienti - FILL (expandeaza sa ocupe tot spatiul disponibil)
           Expanded(
-            child: _buildSection('Apeluri', ClientCategory.apeluri, canCollapse: false),
+            child: _buildSection('Clienti', ClientCategory.apeluri, canCollapse: false),
           ),
           
           SizedBox(height: AppTheme.mediumGap),

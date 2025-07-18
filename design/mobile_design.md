@@ -61,7 +61,7 @@ Container(
                                                                 spacing: 10,
                                                                 children: [
                                                                     Text(
-                                                                        'Apeluri',
+                                                                        'Clienti',
                                                                         style: TextStyle(
                                                                             color: const Color(0xFFC17099),
                                                                             fontSize: 24,

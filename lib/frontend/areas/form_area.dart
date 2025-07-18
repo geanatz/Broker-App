@@ -106,30 +106,45 @@ class _FormAreaState extends State<FormArea> {
 
   /// Callback pentru schimbarile din FormService
   void _onFormServiceChanged() {
+    debugPrint('🔄 FORM: _onFormServiceChanged called');
     if (mounted) {
+      debugPrint('🔄 FORM: Widget is mounted, scheduling setState');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          debugPrint('🔄 FORM: Executing setState in post frame callback');
           setState(() {});
+          debugPrint('🔄 FORM: setState completed');
+        } else {
+          debugPrint('🔄 FORM: Widget no longer mounted in post frame callback');
         }
       });
+    } else {
+      debugPrint('🔄 FORM: Widget not mounted, skipping setState');
     }
   }
 
   /// Callback pentru schimbarile din ClientService
   void _onClientServiceChanged() {
+    debugPrint('🔄 FORM: _onClientServiceChanged called');
     // OPTIMIZARE: Folosește microtask pentru a evita blocking
     Future.microtask(() {
+      debugPrint('🔄 FORM: Executing _handleClientChange in microtask');
       _handleClientChange();
+      debugPrint('🔄 FORM: _handleClientChange completed');
     });
   }
 
   /// Gestioneaza schimbarea clientului
   /// OPTIMIZAT: Cu loading instant și debouncing
   Future<void> _handleClientChange() async {
+    debugPrint('🔄 FORM: _handleClientChange started');
     final currentClient = _clientService.focusedClient;
+    debugPrint('🔄 FORM: Current client: ${currentClient?.phoneNumber}');
+    debugPrint('🔄 FORM: Previous client: ${_previousClient?.phoneNumber}');
     
     // OPTIMIZARE: Nu face nimic dacă clientul nu s-a schimbat
     if (currentClient?.phoneNumber == _previousClient?.phoneNumber) {
+      debugPrint('🔄 FORM: Client unchanged, returning early');
       return;
     }
     
@@ -484,19 +499,24 @@ class _FormAreaState extends State<FormArea> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔄 FORM: build() called');
     final focusedClient = _clientService.focusedClient;
+    debugPrint('🔄 FORM: Focused client: ${focusedClient?.phoneNumber}');
     
     // Verifica daca clientul focusat este temporar
     if (focusedClient != null && focusedClient.id.startsWith('temp_')) {
+      debugPrint('🔄 FORM: Building temporary client placeholder');
       return _buildTemporaryClientPlaceholder(focusedClient);
     }
     
     // Verifica daca nu exista client focusat
     if (focusedClient == null) {
+      debugPrint('🔄 FORM: Building no client selected placeholder');
       return _buildNoClientSelectedPlaceholder();
     }
     
     // Construieste formularul pentru clientul real
+    debugPrint('🔄 FORM: Building form content for client: ${focusedClient.phoneNumber}');
     return _buildFormContent(focusedClient);
   }
 
@@ -652,6 +672,7 @@ class _FormAreaState extends State<FormArea> {
   /// Construieste sectiunea pentru credite conform design-ului exact din formArea.md
   Widget _buildCreditSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientLoanForm(client.phoneNumber);
+    debugPrint('🔄 FORM: _buildCreditSection - isShowingClient: $isShowingClient for client: ${client.phoneNumber}');
     final forms = isShowingClient 
         ? _formService.getClientCreditForms(client.phoneNumber)
         : _formService.getCoborrowerCreditForms(client.phoneNumber);
@@ -684,11 +705,18 @@ class _FormAreaState extends State<FormArea> {
             title: 'Credit',
             altText: isShowingClient ? 'Vezi codebitor' : 'Vezi client',
             onAltTextTap: () {
+              debugPrint('🔄 FORM: Credit toggle button pressed');
+              debugPrint('🔄 FORM: Current isShowingClient: $isShowingClient');
+              debugPrint('🔄 FORM: Client phone: ${client.phoneNumber}');
+              
               // Clear controllers for the current view before switching
               final newClientType = isShowingClient ? 'coborrower' : 'client';
+              debugPrint('🔄 FORM: Clearing controllers for clientType: $newClientType');
               _clearControllersForClientType(client.phoneNumber, newClientType, 'credit');
               
+              debugPrint('🔄 FORM: Calling toggleLoanFormType for: ${client.phoneNumber}');
               _formService.toggleLoanFormType(client.phoneNumber);
+              debugPrint('🔄 FORM: toggleLoanFormType completed');
             },
           ),
           
@@ -706,6 +734,7 @@ class _FormAreaState extends State<FormArea> {
   /// Construieste sectiunea pentru venituri conform design-ului exact din formArea.md
   Widget _buildIncomeSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientIncomeForm(client.phoneNumber);
+    debugPrint('🔄 FORM: _buildIncomeSection - isShowingClient: $isShowingClient for client: ${client.phoneNumber}');
     final forms = isShowingClient 
         ? _formService.getClientIncomeForms(client.phoneNumber)
         : _formService.getCoborrowerIncomeForms(client.phoneNumber);
@@ -738,11 +767,18 @@ class _FormAreaState extends State<FormArea> {
             title: 'Venit',
             altText: isShowingClient ? 'Vezi codebitor' : 'Vezi client',
             onAltTextTap: () {
+              debugPrint('🔄 FORM: Income toggle button pressed');
+              debugPrint('🔄 FORM: Current isShowingClient: $isShowingClient');
+              debugPrint('🔄 FORM: Client phone: ${client.phoneNumber}');
+              
               // Clear controllers for the current view before switching
               final newClientType = isShowingClient ? 'coborrower' : 'client';
+              debugPrint('🔄 FORM: Clearing controllers for clientType: $newClientType');
               _clearControllersForClientType(client.phoneNumber, newClientType, 'income');
               
+              debugPrint('🔄 FORM: Calling toggleIncomeFormType for: ${client.phoneNumber}');
               _formService.toggleIncomeFormType(client.phoneNumber);
+              debugPrint('🔄 FORM: toggleIncomeFormType completed');
             },
           ),
           

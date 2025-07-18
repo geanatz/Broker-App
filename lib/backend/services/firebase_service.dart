@@ -9,6 +9,168 @@ import 'package:flutter/foundation.dart'
 import 'clients_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Custom logging utility for Firebase operations
+class FirebaseLogger {
+  static bool _verboseMode = false;
+  static final Set<String> _loggedOperations = <String>{};
+  static final Map<String, DateTime> _lastLogTime = <String, DateTime>{};
+  
+  /// Enable/disable verbose logging
+  static void setVerboseMode(bool enabled) {
+    _verboseMode = enabled;
+  }
+  
+  /// Log important Firebase operations with deduplication
+  static void log(String message, {String? tag}) {
+    if (_shouldLog(message)) {
+      final prefix = tag != null ? '[$tag]' : '[FIREBASE]';
+      debugPrint('$prefix $message');
+    }
+  }
+  
+  /// Log operations with deduplication to prevent spam
+  static void logOperation(String operation, {String? clientId, String? category}) {
+    final key = '$operation${clientId != null ? '_$clientId' : ''}${category != null ? '_$category' : ''}';
+    final now = DateTime.now();
+    
+    // Check if we should log this operation (avoid spam)
+    if (_shouldLogOperation(key, now)) {
+      final emoji = _getEmojiForOperation(operation);
+      final message = _formatOperationMessage(operation, clientId, category);
+      debugPrint('$emoji $message');
+      _loggedOperations.add(key);
+      _lastLogTime[key] = now;
+    }
+  }
+  
+  /// Check if operation should be logged (prevent spam)
+  static bool _shouldLogOperation(String key, DateTime now) {
+    final lastTime = _lastLogTime[key];
+    if (lastTime == null) return true;
+    
+    // Don't log the same operation more than once per 2 seconds
+    return now.difference(lastTime).inMilliseconds > 2000;
+  }
+  
+  /// Get emoji for operation type
+  static String _getEmojiForOperation(String operation) {
+    switch (operation.toLowerCase()) {
+      case 'added': return '➕';
+      case 'removed': return '🗑️';
+      case 'modified': return '✏️';
+      case 'category_change': return '🔄';
+      case 'sync': return '🔄';
+      case 'error': return '❌';
+      case 'success': return '✅';
+      default: return '📝';
+    }
+  }
+  
+  /// Format operation message
+  static String _formatOperationMessage(String operation, String? clientId, String? category) {
+    if (clientId != null && category != null) {
+      return 'CLIENT: $operation - $clientId → $category';
+    } else if (clientId != null) {
+      return 'CLIENT: $operation - $clientId';
+    } else {
+      return 'FIREBASE: $operation';
+    }
+  }
+  
+  /// Log errors
+  static void error(String message, [dynamic error, StackTrace? stackTrace]) {
+    debugPrint('❌ [FIREBASE_ERROR] $message');
+    if (error != null && _verboseMode) {
+      debugPrint('Error details: $error');
+    }
+    if (stackTrace != null && _verboseMode) {
+      debugPrint('Stack trace: $stackTrace');
+    }
+  }
+  
+  /// Log warnings
+  static void warning(String message) {
+    debugPrint('⚠️ [FIREBASE_WARNING] $message');
+  }
+  
+  /// Log success operations
+  static void success(String message) {
+    debugPrint('✅ [FIREBASE_SUCCESS] $message');
+  }
+  
+  /// Check if message should be logged based on content
+  static bool _shouldLog(String message) {
+    // Always log important patterns
+    final importantPatterns = [
+      'ERROR',
+      'Exception',
+      'Error',
+      'Success',
+      'Warning',
+      'CRITICAL',
+      'FAILED',
+    ];
+    
+    for (final pattern in importantPatterns) {
+      if (message.contains(pattern)) {
+        return true;
+      }
+    }
+    
+    // Filter out verbose Firestore internal logs
+    final verbosePatterns = [
+      'I/Firestore',
+      'target_change',
+      'read_time',
+      'resume_token',
+      'Persistence',
+      'WatchStream',
+      'document_change',
+      'fields {',
+      'value {',
+      'string_value:',
+      'integer_value:',
+      'boolean_value:',
+      'timestamp_value:',
+      'null_value:',
+      'map_value {',
+      'array_value {',
+      'name: "projects/',
+      'update_time {',
+      'create_time {',
+      'nanos:',
+      'seconds:',
+      'target_ids:',
+      'removed_target_ids:',
+      'IndexBackfiller',
+      'LruGarbageCollector',
+      'Collect garbage',
+      'Backfill Indexes',
+      'Documents written:',
+      'Cache size',
+      'threshold',
+      'No changes detected',
+      'Duplicate update detected',
+      'Using cached clients',
+      'Refreshed clients from Firebase',
+      'Real-time update received',
+      'Operations update received',
+      'Operation detected',
+      'Client modified',
+      'Category changes detected',
+    ];
+    
+    for (final pattern in verbosePatterns) {
+      if (message.contains(pattern)) {
+        return false;
+      }
+    }
+    
+    // Default: don't log Firebase internal messages
+    return !message.contains('I/Firestore') && !message.contains('Firestore(');
+  }
+}
+
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
 /// Example:
@@ -172,7 +334,7 @@ class FirebaseThreadHandler {
           completer.complete(result);
         }
       } catch (e) {
-        debugPrint('Error in Firebase operation: $e');
+        FirebaseLogger.error('Error in Firebase operation: $e');
         if (!completer.isCompleted) {
           completer.completeError(e);
         }
@@ -213,7 +375,7 @@ class FirebaseThreadHandler {
             }
           },
           onError: (error) {
-            debugPrint("Error in Firestore query: $error");
+            FirebaseLogger.error("Error in Firestore query: $error");
             if (!controller.isClosed) {
               controller.addError(error);
             }
@@ -225,7 +387,7 @@ class FirebaseThreadHandler {
           },
         );
       } catch (e) {
-        debugPrint("Error setting up Firestore query: $e");
+        FirebaseLogger.error("Error setting up Firestore query: $e");
         if (!controller.isClosed) {
           controller.addError(e);
           controller.close();
@@ -274,7 +436,7 @@ class FirebaseFormService {
         final existingClient = await _clientService.getClient(phoneNumber);
         if (existingClient == null) {
           // FIX: Nu crea automat clientul dacă nu există - lasă aplicația să gestioneze crearea
-          debugPrint('⚠️ FIREBASE_SERVICE: Skipping automatic client creation for: $phoneNumber');
+          FirebaseLogger.warning('Skipping automatic client creation for: $phoneNumber');
           return;
         }
 
@@ -287,7 +449,7 @@ class FirebaseFormService {
       });
       return true;
     } catch (e) {
-      debugPrint('❌ FirebaseFormService: Error saving form data: $e');
+      FirebaseLogger.error('FirebaseFormService: Error saving form data: $e');
       return false;
     }
   }
@@ -313,7 +475,7 @@ class FirebaseFormService {
         return null;
       });
     } catch (e) {
-      debugPrint('❌ FirebaseFormService: Error loading form data: $e');
+      FirebaseLogger.error('FirebaseFormService: Error loading form data: $e');
       return null;
     }
   }
@@ -333,7 +495,7 @@ class FirebaseFormService {
       });
       return true;
     } catch (e) {
-      debugPrint('Error deleting form data from unified structure: $e');
+      FirebaseLogger.error('Error deleting form data from unified structure: $e');
       return false;
     }
   }
@@ -427,7 +589,7 @@ class FirebaseFormService {
       
       return null;
     } catch (e) {
-      debugPrint('❌ FirebaseFormService: Error in loadAllFormData: $e');
+      FirebaseLogger.error('FirebaseFormService: Error in loadAllFormData: $e');
       return null;
     }
   }
@@ -455,7 +617,7 @@ class FirebaseFormService {
         return allForms;
       });
     } catch (e) {
-      debugPrint('Error getting all forms from unified structure: $e');
+      FirebaseLogger.error('Error getting all forms from unified structure: $e');
       return [];
     }
   }
@@ -504,63 +666,52 @@ class NewFirebaseService {
     if (_cachedConsultantToken != null && _tokenCacheTime != null) {
       final cacheAge = DateTime.now().difference(_tokenCacheTime!);
       if (cacheAge < _tokenCacheDuration) {
-        // Log cache usage with reduced frequency
-        if (cacheAge.inMilliseconds % 1000 < 100) { // Log only every ~1 second
-          debugPrint('🚀 FIREBASE_SERVICE: Using cached consultant token (age: ${cacheAge.inMilliseconds}ms)');
+        // Only log cache usage occasionally to reduce spam
+        if (cacheAge.inMilliseconds % 10000 < 100) { // Log only every ~10 seconds
+          FirebaseLogger.log('Using cached consultant token (age: ${cacheAge.inMilliseconds}ms)', tag: 'FIREBASE_SERVICE');
         }
         PerformanceMonitor.endTimer('getCurrentConsultantToken');
         return _cachedConsultantToken;
       }
     }
     
-    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken called');
-    
     final user = currentUser;
-    debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken currentUser = ${user?.uid}');
     if (user == null) {
-      debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken currentUser is null');
+      FirebaseLogger.error('getCurrentConsultantToken currentUser is null');
       PerformanceMonitor.endTimer('getCurrentConsultantToken');
       return null;
     }
 
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken fetching consultant document');
       final doc = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_consultantsCollection).doc(user.uid).get()
       );
       
-      debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken document exists = ${doc.exists}');
-      
       if (doc.exists) {
         final data = doc.data();
-        debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken document data = $data');
-        
         final token = data?['token'] as String?;
-        debugPrint('🔍 FIREBASE_SERVICE: getCurrentConsultantToken token = "$token"');
         
         if (token == null || token.isEmpty) {
-          debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken token is null or empty');
+          FirebaseLogger.error('getCurrentConsultantToken token is null or empty');
           PerformanceMonitor.endTimer('getCurrentConsultantToken');
           return null;
         } else {
-          debugPrint('✅ FIREBASE_SERVICE: getCurrentConsultantToken returning token');
+          FirebaseLogger.success('getCurrentConsultantToken returning token');
           
           // Salveaza in cache
           _cachedConsultantToken = token;
           _tokenCacheTime = DateTime.now();
-          debugPrint('💾 FIREBASE_SERVICE: Cached consultant token');
           
           PerformanceMonitor.endTimer('getCurrentConsultantToken');
           return token;
         }
       } else {
-        debugPrint('❌ FIREBASE_SERVICE: Consultant document does not exist for UID: ${user.uid}');
+        FirebaseLogger.error('Consultant document does not exist for UID: ${user.uid}');
         PerformanceMonitor.endTimer('getCurrentConsultantToken');
         return null;
       }
     } catch (e) {
-      debugPrint('❌ FIREBASE_SERVICE: Error getting consultant token: $e');
-      debugPrint('❌ FIREBASE_SERVICE: getCurrentConsultantToken stack trace: ${StackTrace.current}');
+      FirebaseLogger.error('FirebaseService: Error getting consultant token: $e');
       PerformanceMonitor.endTimer('getCurrentConsultantToken');
       return null;
     }
@@ -570,7 +721,7 @@ class NewFirebaseService {
   void invalidateConsultantTokenCache() {
     _cachedConsultantToken = null;
     _tokenCacheTime = null;
-    debugPrint('🗑️ FIREBASE_SERVICE: Invalidated consultant token cache');
+    FirebaseLogger.log('Invalidated consultant token cache', tag: 'FIREBASE_SERVICE');
   }
 
   /// Obtine datele consultantului pe baza token-ului
@@ -588,7 +739,7 @@ class NewFirebaseService {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Error getting consultant by token: $e');
+      FirebaseLogger.error('Error getting consultant by token: $e');
       return null;
     }
   }
@@ -623,7 +774,7 @@ class NewFirebaseService {
         'phoneNumber': phoneNumber,
         'coDebitorName': coDebitorName,
         'status': status ?? 'normal',
-        'category': category ?? 'apeluri',
+        'category': category ?? 'clienti',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         ...?additionalData,
@@ -634,45 +785,35 @@ class NewFirebaseService {
       );
       return true;
     } catch (e) {
-      debugPrint('❌ Error creating client: $e');
+      FirebaseLogger.error('Error creating client: $e');
       return false;
     }
   }
 
   /// Obtine un client dupa numarul de telefon (doar pentru consultantul curent)
   Future<Map<String, dynamic>?> getClient(String phoneNumber) async {
-    debugPrint('🔍 FIREBASE_SERVICE: getClient called with phoneNumber = "$phoneNumber"');
-    
     final consultantToken = await getCurrentConsultantToken();
-    debugPrint('🔍 FIREBASE_SERVICE: getClient consultantToken = "$consultantToken"');
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: getClient consultantToken is null');
+      FirebaseLogger.error('getClient consultantToken is null');
       return null;
     }
 
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: getClient fetching document from Firestore');
       final doc = await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection).doc(phoneNumber).get()
       );
 
       final data = doc.data();
-      debugPrint('🔍 FIREBASE_SERVICE: getClient document data = $data');
       
       if (data != null && data['consultantToken'] == consultantToken) {
-        debugPrint('✅ FIREBASE_SERVICE: getClient found matching client');
+        FirebaseLogger.success('getClient found matching client');
         return data;
       } else {
-        debugPrint('❌ FIREBASE_SERVICE: getClient no matching client found');
-        if (data != null) {
-          debugPrint('🔍 FIREBASE_SERVICE: getClient data consultantToken = "${data['consultantToken']}"');
-          debugPrint('🔍 FIREBASE_SERVICE: getClient expected consultantToken = "$consultantToken"');
-        }
+        FirebaseLogger.error('getClient no matching client found');
+        return null;
       }
-      return null;
     } catch (e) {
-      debugPrint('❌ FIREBASE_SERVICE: getClient error: $e');
-      debugPrint('❌ FIREBASE_SERVICE: getClient stack trace: ${StackTrace.current}');
+      FirebaseLogger.error('FirebaseService: getClient error: $e');
       return null;
     }
   }
@@ -683,29 +824,53 @@ class NewFirebaseService {
   Stream<List<Map<String, dynamic>>> getClientsRealTimeStream() async* {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: No consultant token for real-time stream');
+      FirebaseLogger.error('No consultant token for real-time stream');
       return;
     }
 
-    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for consultant: $consultantToken');
+    FirebaseLogger.log('Starting real-time stream for consultant: $consultantToken', tag: 'FIREBASE_SERVICE');
     
-    // Creeaza query-ul pentru clientii consultantului curent
-    final query = _firestore
-        .collection(_clientsCollection)
-        .where('consultantToken', isEqualTo: consultantToken)
-        .orderBy('createdAt', descending: true);
+    try {
+      // FIX: Use a simpler query that doesn't require composite indexes
+      final query = _firestore
+          .collection(_clientsCollection)
+          .where('consultantToken', isEqualTo: consultantToken);
 
-    // Returneaza stream-ul de snapshots
-    yield* query.snapshots().map((snapshot) {
-      final clients = snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id; // Adauga ID-ul documentului
-        return data;
-      }).toList();
-      
-      debugPrint('🔄 FIREBASE_SERVICE: Real-time update - ${clients.length} clients');
-      return clients;
-    });
+      // Returneaza stream-ul de snapshots
+      yield* query.snapshots().map((snapshot) {
+        final clients = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id; // Adauga ID-ul documentului
+          return data;
+        }).toList();
+        
+        // FIX: Sort locally to avoid index requirements
+        clients.sort((a, b) {
+          final aTime = a['updatedAt'] as Timestamp?;
+          final bTime = b['updatedAt'] as Timestamp?;
+          
+          if (aTime == null && bTime == null) return 0;
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          
+          return bTime.compareTo(aTime); // descending
+        });
+        
+        // Only log significant changes
+        if (clients.isNotEmpty) {
+          FirebaseLogger.log('Real-time update - ${clients.length} clients', tag: 'FIREBASE_SERVICE');
+        }
+        return clients;
+      }).handleError((error) {
+        FirebaseLogger.error('Real-time stream error: $error');
+        // FIX: Return empty list on error to prevent crashes
+        return <Map<String, dynamic>>[];
+      });
+    } catch (e) {
+      FirebaseLogger.error('Error creating real-time stream: $e');
+      // FIX: Return empty stream on error
+      yield* Stream.value(<Map<String, dynamic>>[]);
+    }
   }
 
   /// Creeaza un stream real-time pentru un client specific
@@ -755,7 +920,7 @@ class NewFirebaseService {
         .collection(_clientsCollection)
         .where('consultantToken', isEqualTo: consultantToken)
         .where('category', isEqualTo: category)
-        .orderBy('createdAt', descending: true);
+        .orderBy('updatedAt', descending: true);
 
     // Returneaza stream-ul de snapshots
     yield* query.snapshots().map((snapshot) {
@@ -780,12 +945,12 @@ class NewFirebaseService {
 
     debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for status: $status');
     
-    // Creeaza query-ul pentru status-ul specific
+    // Creeaza query-ul pentru statusul specific
     final query = _firestore
         .collection(_clientsCollection)
         .where('consultantToken', isEqualTo: consultantToken)
         .where('status', isEqualTo: status)
-        .orderBy('createdAt', descending: true);
+        .orderBy('updatedAt', descending: true);
 
     // Returneaza stream-ul de snapshots
     yield* query.snapshots().map((snapshot) {
@@ -800,41 +965,85 @@ class NewFirebaseService {
     });
   }
 
-  /// Creeaza un stream real-time pentru toate operatiunile pe clienti (create, update, delete)
+  /// Creeaza un stream real-time pentru operatiunile clientilor cu detectare avansata de schimbari
   Stream<Map<String, dynamic>> getClientsOperationsRealTimeStream() async* {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: No consultant token for operations stream');
+      FirebaseLogger.error('No consultant token for operations stream');
       return;
     }
 
-    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time operations stream');
+    FirebaseLogger.log('Starting real-time operations stream', tag: 'FIREBASE_SERVICE');
     
-    // Creeaza query-ul pentru toate operatiunile
-    final query = _firestore
-        .collection(_clientsCollection)
-        .where('consultantToken', isEqualTo: consultantToken)
-        .orderBy('updatedAt', descending: true);
+    try {
+      // FIX: Use a simpler query that doesn't require composite indexes
+      final query = _firestore
+          .collection(_clientsCollection)
+          .where('consultantToken', isEqualTo: consultantToken);
 
-    // Returneaza stream-ul de snapshots cu informatii despre operatiuni
-    yield* query.snapshots().map((snapshot) {
-      final operations = <String, dynamic>{
+      // Returneaza stream-ul de snapshots cu informatii despre operatiuni
+      yield* query.snapshots().map((snapshot) {
+        final operations = <String, dynamic>{
+          'timestamp': DateTime.now().toIso8601String(),
+          'totalClients': snapshot.docs.length,
+          'changes': snapshot.docChanges.map((change) {
+            final data = change.doc.data();
+            final isCategoryChange = change.type.name == 'modified' && 
+                data != null && 
+                data.containsKey('category') && 
+                data['category'] != null;
+            
+            return {
+              'type': change.type.name, // 'added', 'modified', 'removed'
+              'clientId': change.doc.id,
+              'clientData': data,
+              'oldIndex': change.oldIndex,
+              'newIndex': change.newIndex,
+              // FIX: Detect category changes specifically for mobile sync
+              'isCategoryChange': isCategoryChange,
+              'category': data?['category'],
+              'name': data?['name'] ?? '',
+              'phoneNumber': data?['phoneNumber'] ?? '',
+            };
+          }).toList(),
+        };
+        
+        // FIX: Log only significant operations, not every update
+        final significantChanges = operations['changes'].where((change) => 
+            change['type'] == 'added' || change['type'] == 'removed' || 
+            (change['isCategoryChange'] == true)).toList();
+        
+        if (significantChanges.isNotEmpty) {
+          for (final change in significantChanges) {
+            if (change['type'] == 'added') {
+              FirebaseLogger.logOperation('added', clientId: change['phoneNumber'], category: change['name']);
+            } else if (change['type'] == 'removed') {
+              FirebaseLogger.logOperation('removed', clientId: change['phoneNumber'], category: change['name']);
+            } else if (change['isCategoryChange'] == true) {
+              FirebaseLogger.logOperation('category_change', clientId: change['phoneNumber'], category: change['category']);
+            }
+          }
+        }
+        
+        return operations;
+      }).handleError((error) {
+        FirebaseLogger.error('Operations stream error: $error');
+        // FIX: Return empty operations on error
+        return <String, dynamic>{
+          'timestamp': DateTime.now().toIso8601String(),
+          'totalClients': 0,
+          'changes': <Map<String, dynamic>>[],
+        };
+      });
+    } catch (e) {
+      FirebaseLogger.error('Error creating operations stream: $e');
+      // FIX: Return empty operations stream on error
+      yield* Stream.value(<String, dynamic>{
         'timestamp': DateTime.now().toIso8601String(),
-        'totalClients': snapshot.docs.length,
-        'changes': snapshot.docChanges.map((change) {
-          return {
-            'type': change.type.name, // 'added', 'modified', 'removed'
-            'clientId': change.doc.id,
-            'clientData': change.doc.data(),
-            'oldIndex': change.oldIndex,
-            'newIndex': change.newIndex,
-          };
-        }).toList(),
-      };
-      
-      debugPrint('🔄 FIREBASE_SERVICE: Real-time operations update - ${operations['changes'].length} changes');
-      return operations;
-    });
+        'totalClients': 0,
+        'changes': <Map<String, dynamic>>[],
+      });
+    }
   }
 
   /// Obtine toti clientii pentru consultantul curent (FIX: mai robust filtering)
@@ -880,7 +1089,7 @@ class NewFirebaseService {
       
       return clientsList;
     } catch (e) {
-      debugPrint('❌ Error getting all clients: $e');
+      FirebaseLogger.error('Error getting all clients: $e');
       return [];
     }
   }
@@ -902,7 +1111,7 @@ class NewFirebaseService {
       );
       return true;
     } catch (e) {
-      debugPrint('❌ Error updating client: $e');
+      FirebaseLogger.error('Error updating client: $e');
       return false;
     }
   }
@@ -938,7 +1147,7 @@ class NewFirebaseService {
       await _threadHandler.executeOnPlatformThread(() => batch.commit());
       return true;
     } catch (e) {
-      debugPrint('❌ Error deleting client: $e');
+      FirebaseLogger.error('Error deleting client: $e');
       return false;
     }
   }
@@ -978,7 +1187,7 @@ class NewFirebaseService {
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
       return true;
     } catch (e) {
-      debugPrint('❌ Error saving form: $e');
+      FirebaseLogger.error('Error saving form: $e');
       return false;
     }
   }
@@ -1006,7 +1215,7 @@ class NewFirebaseService {
         ...doc.data(),
       }).toList();
     } catch (e) {
-      debugPrint('❌ Error getting client forms: $e');
+      FirebaseLogger.error('Error getting client forms: $e');
       return [];
     }
   }
@@ -1059,7 +1268,7 @@ class NewFirebaseService {
         return false;
       }
     } catch (e) {
-      debugPrint('❌ FIREBASE_SERVICE: Error creating meeting: $e');
+      FirebaseLogger.error('Error creating meeting: $e');
       debugPrint('❌ FIREBASE_SERVICE: Stack trace: ${StackTrace.current}');
       return false;
     }
@@ -1099,7 +1308,7 @@ class NewFirebaseService {
       }
       return true;
     } catch (e) {
-      debugPrint('❌ FIREBASE_SERVICE: Error ensuring client exists: $e');
+      FirebaseLogger.error('Error ensuring client exists: $e');
       return false;
     }
   }
@@ -1135,7 +1344,7 @@ class NewFirebaseService {
       
       return true;
     } catch (e) {
-      debugPrint('❌ FIREBASE_SERVICE: Error creating meeting document: $e');
+      FirebaseLogger.error('Error creating meeting document: $e');
       return false;
     }
   }
@@ -1148,7 +1357,7 @@ class NewFirebaseService {
         await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
         debugPrint('✅ FIREBASE_SERVICE: Client timestamp updated in background');
       } catch (e) {
-        debugPrint('❌ FIREBASE_SERVICE: Error updating client timestamp in background: $e');
+        FirebaseLogger.error('Error updating client timestamp in background: $e');
       }
     });
   }
@@ -1201,7 +1410,7 @@ class NewFirebaseService {
 
       return allMeetings;
     } catch (e) {
-      debugPrint('❌ Error getting all meetings: $e');
+      FirebaseLogger.error('Error getting all meetings: $e');
       return [];
     }
   }
@@ -1275,7 +1484,7 @@ class NewFirebaseService {
 
       return teamMeetings;
     } catch (e) {
-      debugPrint('❌ Error getting team meetings: $e');
+      FirebaseLogger.error('Error getting team meetings: $e');
       return [];
     }
   }
@@ -1318,7 +1527,7 @@ class NewFirebaseService {
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
       return true;
     } catch (e) {
-      debugPrint('❌ Error updating meeting: $e');
+      FirebaseLogger.error('Error updating meeting: $e');
       return false;
     }
   }
@@ -1348,7 +1557,7 @@ class NewFirebaseService {
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
       return true;
     } catch (e) {
-      debugPrint('❌ Error deleting meeting: $e');
+      FirebaseLogger.error('Error deleting meeting: $e');
       return false;
     }
   }
@@ -1378,7 +1587,7 @@ class NewFirebaseService {
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
       return true;
     } catch (e) {
-      debugPrint('❌ Error deleting form: $e');
+      FirebaseLogger.error('Error deleting form: $e');
       return false;
     }
   }
@@ -1393,7 +1602,7 @@ class NewFirebaseService {
       );
       return true;
     } catch (e) {
-      debugPrint('❌ Error updating global stats: $e');
+      FirebaseLogger.error('Error updating global stats: $e');
       return false;
     }
   }
@@ -1406,7 +1615,7 @@ class NewFirebaseService {
       );
       return doc.data();
     } catch (e) {
-      debugPrint('❌ Error getting global stats: $e');
+      FirebaseLogger.error('Error getting global stats: $e');
       return null;
     }
   }
@@ -1419,7 +1628,7 @@ class NewFirebaseService {
       );
       return true;
     } catch (e) {
-      debugPrint('❌ Error updating team stats: $e');
+      FirebaseLogger.error('Error updating team stats: $e');
       return false;
     }
   }
@@ -1434,7 +1643,7 @@ class NewFirebaseService {
       
       return true;
     } catch (e) {
-      debugPrint('❌ Error during migration: $e');
+      FirebaseLogger.error('Error during migration: $e');
       return false;
     }
   }
@@ -1447,7 +1656,7 @@ class NewFirebaseService {
       
       return true;
     } catch (e) {
-      debugPrint('❌ Error during cleanup: $e');
+      FirebaseLogger.error('Error during cleanup: $e');
       return false;
     }
   }
@@ -1486,7 +1695,7 @@ class MigrationService {
         'clientsMigrated': clientsResult['count'],
       };
     } catch (e) {
-      debugPrint('❌ MIGRATION: Error during migration: $e');
+      FirebaseLogger.error('Error during migration: $e');
       return {
         'success': false,
         'message': 'Eroare în timpul migrării: $e',
@@ -1515,7 +1724,7 @@ class MigrationService {
         'count': migratedCount,
       };
     } catch (e) {
-      debugPrint('❌ MIGRATION: Error migrating consultants: $e');
+      FirebaseLogger.error('Error migrating consultants: $e');
       return {
         'success': false,
         'message': 'Eroare la migrarea consultantilor: $e',
@@ -1534,7 +1743,7 @@ class MigrationService {
         'count': 0, // Clientii vor fi creati fresh cu noua structura
       };
     } catch (e) {
-      debugPrint('❌ MIGRATION: Error preparing client migration: $e');
+      FirebaseLogger.error('Error preparing client migration: $e');
       return {
         'success': false,
         'message': 'Eroare la migrarea clientilor: $e',
@@ -1555,7 +1764,7 @@ class MigrationService {
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      debugPrint('❌ MIGRATION: Error creating stats structure: $e');
+      FirebaseLogger.error('Error creating stats structure: $e');
     }
   }
 
@@ -1566,7 +1775,7 @@ class MigrationService {
       final globalStatsDoc = await _firestore.collection('stats').doc('global').get();
       return !globalStatsDoc.exists;
     } catch (e) {
-      debugPrint('❌ MIGRATION: Error checking migration status: $e');
+      FirebaseLogger.error('Error checking migration status: $e');
       return true; // Pe siguranta, presupunem ca migrarea este necesara
     }
   }

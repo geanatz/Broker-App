@@ -476,7 +476,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                           children: [
                             // Monthly Payment
                             LightItem3(
-                              title: 'Rata aviatocco',
+                              title: 'Rata lunara',
                               description: _monthlyPayment > 0 ? _monthlyPayment.toStringAsFixed(1) : '0.0',
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,

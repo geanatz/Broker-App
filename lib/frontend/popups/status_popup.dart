@@ -443,7 +443,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           await _clientService.moveClientToRecente(
             widget.client.phoneNumber,
             additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
-            scheduledDateTime: finalDateTime, // IMPORTANT: Transmite data și ora întâlnirii
+            scheduledDateTime: finalDateTime ?? DateTime.now(), // FIX: Provide default value if null
           );
           break;
           

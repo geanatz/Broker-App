@@ -9,7 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum MobileClientCategory {
-  apeluri,
+  clienti,
   reveniri,
   recente,
 }
@@ -26,13 +26,19 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
   late final SplashService _splashService;
   late final NewFirebaseService _firebaseService;
   List<ClientModel> _clients = [];
-  MobileClientCategory _currentCategory = MobileClientCategory.apeluri;
+  MobileClientCategory _currentCategory = MobileClientCategory.clienti;
   
-  // Real-time synchronization
-  StreamSubscription<List<Map<String, dynamic>>>? _clientsStreamSubscription;
-  StreamSubscription<Map<String, dynamic>>? _operationsStreamSubscription;
-  Timer? _syncTimer;
-  String? _selectedClientId; // Track which client is the "Next Client"
+  // FIX: Simplified sync system - only one source of truth
+  StreamSubscription<List<Map<String, dynamic>>>? _firebaseSubscription;
+  StreamSubscription<Map<String, dynamic>>? _operationsSubscription;
+  
+  // FIX: Single refresh flag to prevent conflicts
+  bool _isRefreshing = false;
+  
+  // FIX: Debounce timer for data updates
+  Timer? _dataUpdateDebounceTimer;
+  
+  // FIX: Track last update to prevent duplicate processing
 
   @override
   void initState() {
@@ -47,104 +53,116 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     _splashService = SplashService();
     _firebaseService = NewFirebaseService();
     
-    // FIX: Asculta la schimbarile din SplashService pentru refresh automat
-    _splashService.addListener(_onSplashServiceChanged);
-    
     // Initializeaza datele demo daca nu exista clienti
     _initializeClients();
-    _clientService.addListener(_onClientServiceChanged);
     
-    // OPTIMIZARE: Incarca imediat din cache pentru loading instant
+    // FIX: Load from cache first for instant display
     _loadFromCacheInstantly();
     
-    // OPTIMIZARE: Pornește sincronizarea în timp real
-    _startRealTimeSync();
+    // FIX: Start simplified Firebase listeners
+    _startFirebaseListeners();
+    
+    debugPrint('✅ MOBILE: Simplified sync system initialized');
   }
 
   @override
   void dispose() {
     // Restoreaza status bar-ul la iesire
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _clientService.removeListener(_onClientServiceChanged);
-    _splashService.removeListener(_onSplashServiceChanged);
     
-    // Cleanup real-time sync
-    _clientsStreamSubscription?.cancel();
-    _operationsStreamSubscription?.cancel();
-    _syncTimer?.cancel();
+    // FIX: Stop Firebase listeners
+    _stopFirebaseListeners();
+    
+    _dataUpdateDebounceTimer?.cancel();
     
     super.dispose();
   }
 
-  /// OPTIMIZARE: Pornește sincronizarea în timp real cu Firebase
-  Future<void> _startRealTimeSync() async {
+  /// FIX: Start simplified Firebase listeners
+  Future<void> _startFirebaseListeners() async {
     try {
-      debugPrint('🔄 MOBILE: Starting comprehensive real-time sync');
+      debugPrint('🔄 MOBILE: Starting Firebase listeners');
       
-      // 1. Stream pentru toți clienții
-      _clientsStreamSubscription = _firebaseService.getClientsRealTimeStream().listen(
+      // Stop existing listeners first
+      _stopFirebaseListeners();
+      
+      // 1. Main clients stream
+      _firebaseSubscription = _firebaseService.getClientsRealTimeStream().listen(
         (List<Map<String, dynamic>> clientsData) {
-          debugPrint('🔄 MOBILE: Real-time clients update received with ${clientsData.length} clients');
-          _handleClientsRealTimeUpdate(clientsData);
+          debugPrint('🔄 MOBILE: Firebase update received with ${clientsData.length} clients');
+          _handleFirebaseUpdate(clientsData);
         },
         onError: (error) {
-          debugPrint('❌ MOBILE: Real-time clients stream error: $error');
+          debugPrint('❌ MOBILE: Firebase stream error: $error');
         },
+        cancelOnError: false,
       );
 
-      // 2. Stream pentru operațiuni (create, update, delete)
-      _operationsStreamSubscription = _firebaseService.getClientsOperationsRealTimeStream().listen(
+      // 2. Operations stream
+      _operationsSubscription = _firebaseService.getClientsOperationsRealTimeStream().listen(
         (Map<String, dynamic> operations) {
-          debugPrint('🔄 MOBILE: Real-time operations update received');
-          _handleOperationsRealTimeUpdate(operations);
+          debugPrint('🔄 MOBILE: Operations update received');
+          _handleOperationsUpdate(operations);
         },
         onError: (error) {
-          debugPrint('❌ MOBILE: Real-time operations stream error: $error');
+          debugPrint('❌ MOBILE: Operations stream error: $error');
         },
+        cancelOnError: false,
       );
 
-      // 3. Timer pentru refresh periodic ca backup
-      _syncTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
-        _forceRefreshClients();
-      });
-
-      debugPrint('✅ MOBILE: Comprehensive real-time sync started');
+      debugPrint('✅ MOBILE: Firebase listeners started successfully');
     } catch (e) {
-      debugPrint('❌ MOBILE: Error starting real-time sync: $e');
+      debugPrint('❌ MOBILE: Error starting Firebase listeners: $e');
     }
   }
 
-  /// OPTIMIZARE: Gestionează actualizările în timp real pentru clienți
-  Future<void> _handleClientsRealTimeUpdate(List<Map<String, dynamic>> clientsData) async {
+  /// FIX: Stop Firebase listeners
+  void _stopFirebaseListeners() {
+    debugPrint('🛑 MOBILE: Stopping Firebase listeners');
+    _firebaseSubscription?.cancel();
+    _operationsSubscription?.cancel();
+    _firebaseSubscription = null;
+    _operationsSubscription = null;
+  }
+
+  /// FIX: Handle Firebase updates with conflict prevention
+  void _handleFirebaseUpdate(List<Map<String, dynamic>> clientsData) {
     try {
-      final List<ClientModel> updatedClients = [];
+      final List<ClientModel> newClients = [];
       
       for (final clientData in clientsData) {
         try {
           final client = ClientModel.fromMap(clientData);
-          updatedClients.add(client);
+          newClients.add(client);
         } catch (e) {
-          debugPrint('⚠️ MOBILE: Error parsing client data: $e');
+          FirebaseLogger.error('Error parsing client data: $e');
         }
       }
 
-      if (mounted) {
-        setState(() {
-          _clients = updatedClients;
-        });
+      // FIX: Check if data actually changed before updating
+      final hasChanged = _clients.length != newClients.length ||
+          !_clients.every((client) => newClients.any((newClient) => 
+              newClient.phoneNumber == client.phoneNumber &&
+              newClient.category == client.category &&
+              newClient.status == client.status &&
+              newClient.name == client.name));
+
+      if (hasChanged || _clients.isEmpty) {
+        // Update local clients list
+        _clients = newClients;
         
-        // OPTIMIZARE: Actualizează și cache-ul din SplashService
-        await _splashService.invalidateClientsCacheAndRefresh();
+        // Update UI
+        setState(() {});
         
-        debugPrint('✅ MOBILE: Updated ${_clients.length} clients from real-time sync');
+        FirebaseLogger.success('Data updated successfully from firebase - ${_clients.length} clients');
       }
     } catch (e) {
-      debugPrint('❌ MOBILE: Error handling clients real-time update: $e');
+      FirebaseLogger.error('Error handling Firebase update: $e');
     }
   }
 
-  /// OPTIMIZARE: Gestionează actualizările în timp real pentru operațiuni
-  Future<void> _handleOperationsRealTimeUpdate(Map<String, dynamic> operations) async {
+  /// FIX: Handle operations updates
+  void _handleOperationsUpdate(Map<String, dynamic> operations) {
     try {
       final List<Map<String, dynamic>> changes = operations['changes'] ?? [];
       
@@ -153,162 +171,157 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
         final String clientId = change['clientId'] ?? '';
         final Map<String, dynamic> clientData = change['clientData'] ?? {};
         
-        debugPrint('🔄 MOBILE: Operation detected - Type: $type, Client: $clientId');
-        
         switch (type) {
           case 'added':
-            debugPrint('➕ MOBILE: Client added - ${clientData['name']}');
+            FirebaseLogger.logOperation('added', clientId: clientId, category: clientData['name']);
             break;
           case 'modified':
-            debugPrint('✏️ MOBILE: Client modified - ${clientData['name']}');
+            if (change['isCategoryChange'] == true) {
+              FirebaseLogger.logOperation('category_change', clientId: clientId, category: clientData['category']);
+            }
             break;
           case 'removed':
-            debugPrint('🗑️ MOBILE: Client removed - $clientId');
+            FirebaseLogger.logOperation('removed', clientId: clientId, category: clientData['name']);
+            // Remove from local list immediately
+            _clients.removeWhere((client) => client.phoneNumber == clientId);
+            setState(() {});
             break;
         }
       }
-      
-      // Refresh clients after operations
-      await _forceRefreshClients();
-      
     } catch (e) {
-      debugPrint('❌ MOBILE: Error handling operations real-time update: $e');
+      FirebaseLogger.error('Error handling operations update: $e');
     }
   }
 
-  /// OPTIMIZARE: Incarca imediat din cache pentru loading instant
-  Future<void> _loadFromCacheInstantly() async {
+
+  /// FIX: Centralized data update with conflict prevention
+  void _updateClientsData(List<ClientModel> newClients, {String source = 'unknown'}) {
+    // FIX: Debounce rapid updates
+    _dataUpdateDebounceTimer?.cancel();
+    _dataUpdateDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+      _performDataUpdate(newClients, source);
+    });
+  }
+  
+  /// FIX: Perform the actual data update
+  void _performDataUpdate(List<ClientModel> newClients, String source) {
+    if (_isRefreshing) {
+      debugPrint('🔄 MOBILE: Update skipped - refresh in progress');
+      return;
+    }
+    
     try {
-      // Incarca clientii din cache instant
-      final cachedClients = await _splashService.getCachedClients();
+      final currentCount = _clients.length;
+      final newCount = newClients.length;
       
-      // FIX: Cleanup focus state when loading from cache
-      _clientService.cleanupFocusStateFromCache(cachedClients);
+      debugPrint('🔄 MOBILE: Data update from $source - Current: $currentCount, New: $newCount');
       
-      if (mounted) {
-        setState(() {
-          _clients = cachedClients;
-        });
+      // FIX: Check for significant changes
+      bool hasSignificantChanges = false;
+      
+      if (currentCount != newCount) {
+        hasSignificantChanges = true;
+        debugPrint('🔄 MOBILE: Client count change detected: $currentCount -> $newCount');
+      } else {
+        // Check for individual client changes
+        for (final newClient in newClients) {
+          final existingClient = _clients.firstWhere(
+            (client) => client.phoneNumber == newClient.phoneNumber,
+            orElse: () => ClientModel(
+              id: '',
+              name: '',
+              phoneNumber1: '',
+              category: ClientCategory.apeluri,
+              status: ClientStatus.normal,
+            ),
+          );
+          
+          if (existingClient.phoneNumber.isNotEmpty) {
+            if (existingClient.category != newClient.category ||
+                existingClient.status != newClient.status ||
+                existingClient.name != newClient.name) {
+              hasSignificantChanges = true;
+              debugPrint('🔄 MOBILE: Client change detected: ${existingClient.name}');
+            }
+          } else {
+            hasSignificantChanges = true;
+            debugPrint('🔄 MOBILE: New client detected: ${newClient.name}');
+          }
+        }
       }
       
-      debugPrint('✅ MOBILE: Loaded ${_clients.length} clients from cache');
+      if (hasSignificantChanges || _clients.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _clients = List<ClientModel>.from(newClients);
+          });
+        }
+        
+        debugPrint('✅ MOBILE: Data updated successfully from $source - ${_clients.length} clients');
+        
+        // FIX: Show bulk deletion feedback only when appropriate
+        if (_clients.isEmpty && newClients.isEmpty && source == 'firebase') {
+          _showBulkDeletionFeedback();
+        }
+      } else {
+        debugPrint('🔄 MOBILE: No significant changes detected, skipping update');
+      }
+    } catch (e) {
+      debugPrint('❌ MOBILE: Error in data update from $source: $e');
+    }
+  }
+
+
+  /// FIX: Show feedback for bulk deletions
+  void _showBulkDeletionFeedback() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Toți clienții au fost șterși'),
+          backgroundColor: Color(0xFFC17099),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+
+  /// FIX: Load from cache instantly
+  Future<void> _loadFromCacheInstantly() async {
+    try {
+      final cachedClients = await _splashService.getCachedClients();
+      _updateClientsData(cachedClients, source: 'cache_load');
+      debugPrint('✅ MOBILE: Loaded ${cachedClients.length} clients from cache');
     } catch (e) {
       debugPrint('❌ MOBILE: Error loading from cache: $e');
-      // Fallback to normal loading
       _initializeClients();
     }
   }
 
-  /// OPTIMIZAT: Force refresh pentru a sincroniza cu starea reala
-  Future<void> _forceRefreshClients() async {
+  /// FIX: Force refresh only when needed
+  Future<void> _forceRefresh() async {
+    if (_isRefreshing) return;
+    
     try {
-      // FIX: Forteaza reincarcarea din Firebase pentru a sincroniza cu starea reala
+      _isRefreshing = true;
+      debugPrint('🔄 MOBILE: Starting force refresh');
+      
       await _clientService.loadClientsFromFirebase();
-      
-      // Incarca din cache actualizat
       final cachedClients = await _splashService.getCachedClients();
+      _updateClientsData(cachedClients, source: 'force_refresh');
       
-      if (mounted) {
-        setState(() {
-          _clients = cachedClients;
-        });
-      }
-      
-      debugPrint('🔄 MOBILE: Refreshed ${_clients.length} clients');
+      debugPrint('🔄 MOBILE: Force refresh completed');
     } catch (e) {
-      debugPrint('❌ MOBILE: Error refreshing clients: $e');
+      debugPrint('❌ MOBILE: Error force refreshing clients: $e');
+    } finally {
+      _isRefreshing = false;
     }
   }
 
-  void _onSplashServiceChanged() {
-    if (mounted) {
-      setState(() {
-        _clients = _clientService.clients;
-      });
-    }
-  }
-
-  void _onClientServiceChanged() {
-    if (mounted) {
-      setState(() {
-        _clients = _clientService.clients;
-      });
-    }
-  }
-
-  // Helper to trigger a phone call
-  Future<void> _callClient(String phoneNumber) async {
-    if (phoneNumber.isEmpty) return;
-    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
-    }
-  }
-
-  // Helper to get clients by category
-  List<ClientModel> _getClientsByCategory(MobileClientCategory category) {
-    switch (category) {
-      case MobileClientCategory.apeluri:
-        return _clients.where((client) => client.category == ClientCategory.apeluri).toList();
-      case MobileClientCategory.reveniri:
-        return _clients.where((client) => client.category == ClientCategory.reveniri).toList();
-      case MobileClientCategory.recente:
-        return _clients.where((client) => client.category == ClientCategory.recente).toList();
-    }
-  }
-
-  List<ClientModel> _getClientsForCategory() {
-    final clients = _getClientsByCategory(_currentCategory);
-    
-    // If no client is selected as "Next Client", use the first client
-    if (_selectedClientId == null && clients.isNotEmpty) {
-      _selectedClientId = clients.first.id;
-    }
-    
-    return clients;
-  }
-
-  // Helper to get clients for the main list (excluding the selected "Next Client")
-  List<ClientModel> _getMainClients() {
-    final allClients = _getClientsForCategory();
-    if (_selectedClientId == null || allClients.isEmpty) {
-      return allClients;
-    }
-    
-    // Return all clients except the selected one
-    return allClients.where((client) => client.id != _selectedClientId).toList();
-  }
-
-  // Helper to get the current "Next Client"
-  ClientModel? _getNextClient() {
-    final allClients = _getClientsForCategory();
-    if (_selectedClientId == null || allClients.isEmpty) {
-      return allClients.isNotEmpty ? allClients.first : null;
-    }
-    
-    try {
-      return allClients.firstWhere((client) => client.id == _selectedClientId);
-    } catch (e) {
-      // If selected client is not found, return the first client or null
-      return allClients.isNotEmpty ? allClients.first : null;
-    }
-  }
-
-  // Handle client selection - make tapped client the "Next Client"
-  void _selectClientAsNext(ClientModel client) {
-    setState(() {
-      _selectedClientId = client.id;
-    });
-  }
-
-  String _getCategoryTitle() {
-    switch (_currentCategory) {
-      case MobileClientCategory.apeluri:
-        return 'Apeluri';
-      case MobileClientCategory.reveniri:
-        return 'Reveniri';
-      case MobileClientCategory.recente:
-        return 'Recente';
+  /// Initializeaza clientii async
+  Future<void> _initializeClients() async {
+    if (_clientService.clients.isEmpty) {
+      await _clientService.initializeDemoData();
     }
   }
 
@@ -325,190 +338,193 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     return initials;
   }
 
-  // Refactored: Next Client and regular client have different layouts, both as single rows
-  Widget _buildClientCard(ClientModel client, {bool isNext = false}) {
-    final initials = _getInitials(client.name);
-    if (isNext) {
-      // NEXT CLIENT: single row: avatar (left), name+phone (column), call icon (right)
-      return GestureDetector(
-        onTap: () => _selectClientAsNext(client),
-        child: Container(
-          width: 312,
-          alignment: Alignment.center,
-          height: 72,
-          // Remove margin at the bottom to avoid overflow
-          margin: EdgeInsets.zero,
-          padding: EdgeInsets.only(left: 8, right: 24),
-          decoration: ShapeDecoration(
-            gradient: LinearGradient(
-              begin: Alignment(0.00, 0.00),
-              end: Alignment(1.00, 1.03),
-              colors: [Color(0xFFE0D0D9), Color(0xFFE2CED9), Color(0xFFE0D1D9)],
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(40),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Avatar (56x56, centered)
-              Container(
-                width: 56,
-                height: 56,
-                decoration: ShapeDecoration(
-                  color: Color(0xFFC17099),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    initials,
-                    style: GoogleFonts.urbanist(
-                      color: Color(0xFFF5D6D6),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 16),
-              // Name and phone (column, exactly 56px high, no extra padding)
-              Expanded(
-                child: SizedBox(
-                  height: 56,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        client.name,
-                        style: GoogleFonts.urbanist(
-                          color: Color(0xFFC17099),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        client.phoneNumber1,
-                        style: GoogleFonts.urbanist(
-                          color: Color(0xFFA88999),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Call button (56x56, centered, no extra margin)
-              SizedBox(
-                width: 56,
-                height: 56,
-                child: GestureDetector(
-                  onTap: () => _callClient(client.phoneNumber1),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/callIcon.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                        Color(0xFFC17099),
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else {
-      // REGULAR CLIENT: single row: avatar (left), name (left column), phone (right column)
-      return GestureDetector(
-        onTap: () => _selectClientAsNext(client), // Make this client the "Next Client"
-        child: Container(
-          width: double.infinity,
-          height: 64,
-          margin: EdgeInsets.only(bottom: 8),
-          padding: EdgeInsets.only(left: 8, right: 24),
-          decoration: ShapeDecoration(
-            color: Color(0xFFE5DCE0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(32),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Avatar
-              Container(
-                width: 48,
-                height: 48,
-                decoration: ShapeDecoration(
-                  color: Color(0xFFC17099),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    initials,
-                    style: GoogleFonts.urbanist(
-                      color: Color(0xFFF5D6D6),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 16),
-              // Name and phone (in two columns)
-              Expanded(
-                child: Container(
-                  height: 48,
-                  padding: EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        client.name,
-                        style: GoogleFonts.urbanist(
-                          color: Color(0xFFC17099),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        client.phoneNumber1,
-                        style: GoogleFonts.urbanist(
-                          color: Color(0xFFA88999),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+  // Helper to get clients by category
+  List<ClientModel> _getClientsByCategory(MobileClientCategory category) {
+    switch (category) {
+      case MobileClientCategory.clienti:
+        return _clients.where((client) => client.category == ClientCategory.apeluri).toList();
+      case MobileClientCategory.reveniri:
+        return _clients.where((client) => client.category == ClientCategory.reveniri).toList();
+      case MobileClientCategory.recente:
+        return _clients.where((client) => client.category == ClientCategory.recente).toList();
     }
   }
 
-
-  /// Initializeaza clientii async
-  Future<void> _initializeClients() async {
-    if (_clientService.clients.isEmpty) {
-      await _clientService.initializeDemoData();
+  String _getCategoryTitle() {
+    switch (_currentCategory) {
+      case MobileClientCategory.clienti:
+        return 'Clienti';
+      case MobileClientCategory.reveniri:
+        return 'Reveniri';
+      case MobileClientCategory.recente:
+        return 'Recente';
     }
+  }
+
+  // Helper to trigger a phone call
+  Future<void> _callClient(String phoneNumber) async {
+    if (phoneNumber.isEmpty) return;
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    }
+  }
+
+  // Helper to send a message
+  Future<void> _sendMessage(String phoneNumber) async {
+    if (phoneNumber.isEmpty) return;
+    final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
+    if (await canLaunchUrl(smsUri)) {
+      await launchUrl(smsUri);
+    }
+  }
+
+  // Build client card with swipe actions
+  Widget _buildClientCard(ClientModel client) {
+    final initials = _getInitials(client.name);
+    
+    return Dismissible(
+      key: Key(client.id),
+      direction: DismissDirection.horizontal,
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Swipe right - call
+          await _callClient(client.phoneNumber1);
+          return false; // Don't dismiss the item
+        } else if (direction == DismissDirection.endToStart) {
+          // Swipe left - message
+          await _sendMessage(client.phoneNumber1);
+          return false; // Don't dismiss the item
+        }
+        return false;
+      },
+      background: Container(
+        height: 64, // Match the client item height
+        margin: EdgeInsets.only(bottom: 8), // Match the client item margin
+        decoration: BoxDecoration(
+          color: Color(0xFF4CAF50), // Green for call
+          borderRadius: BorderRadius.circular(32),
+        ),
+        alignment: Alignment.centerLeft,
+        padding: EdgeInsets.only(left: 20),
+        child: Row(
+          children: [
+            Icon(
+              Icons.call,
+              color: Colors.white,
+              size: 24,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Call',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        height: 64, // Match the client item height
+        margin: EdgeInsets.only(bottom: 8), // Match the client item margin
+        decoration: BoxDecoration(
+          color: Color(0xFF2196F3), // Blue for message
+          borderRadius: BorderRadius.circular(32),
+        ),
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'Message',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(width: 8),
+            Icon(
+              Icons.message,
+              color: Colors.white,
+              size: 24,
+            ),
+          ],
+        ),
+      ),
+      child: Container(
+        width: double.infinity,
+        height: 64,
+        margin: EdgeInsets.only(bottom: 8),
+        padding: EdgeInsets.only(left: 8, right: 24),
+        decoration: ShapeDecoration(
+          color: Color(0xFFE5DCE0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Avatar
+            Container(
+              width: 48,
+              height: 48,
+              decoration: ShapeDecoration(
+                color: Color(0xFFC17099),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  initials,
+                  style: GoogleFonts.urbanist(
+                    color: Color(0xFFF5D6D6),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 16),
+            // Name and phone (in two columns)
+            Expanded(
+              child: Container(
+                height: 48,
+                padding: EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      client.name,
+                      style: GoogleFonts.urbanist(
+                        color: Color(0xFFC17099),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      client.phoneNumber1,
+                      style: GoogleFonts.urbanist(
+                        color: Color(0xFFA88999),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildNavBar(BuildContext context) {
@@ -524,10 +540,10 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
       },
       {
         'icon': 'assets/callIcon.svg',
-        'active': _currentCategory == MobileClientCategory.apeluri,
+        'active': _currentCategory == MobileClientCategory.clienti,
         'onTap': () {
           setState(() {
-            _currentCategory = MobileClientCategory.apeluri;
+            _currentCategory = MobileClientCategory.clienti;
           });
         },
       },
@@ -542,82 +558,53 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
       },
     ];
 
-    // Background container (restored and overflow fixed)
     return Center(
       child: Container(
         width: 200,
-        height: 72,
-        padding: EdgeInsets.all(8),
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          color: Color(0xFFE0D1D8),
-          borderRadius: BorderRadius.circular(48),
+        padding: const EdgeInsets.all(8),
+        decoration: ShapeDecoration(
+          color: const Color(0xFFE0D1D8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(48),
+          ),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final totalWidth = constraints.maxWidth; // should be 184
-            final itemWidth = totalWidth / navItems.length;
-            final indicatorWidth = 56.0;
-            final selectedIndex = navItems.indexWhere((item) => item['active'] as bool);
-            // Clamp indicatorLeft so it never exceeds bounds
-            double indicatorLeft = itemWidth * selectedIndex + (itemWidth - indicatorWidth) / 2;
-            if (indicatorLeft < 0) indicatorLeft = 0;
-            if (indicatorLeft + indicatorWidth > totalWidth) indicatorLeft = totalWidth - indicatorWidth;
-            // Debug log
-            debugPrint('🔧 [NAVBAR] Target X: ${indicatorLeft.toStringAsFixed(1)}px | itemWidth: ${itemWidth.toStringAsFixed(1)}px | totalWidth: ${totalWidth.toStringAsFixed(1)}px | selectedIndex: $selectedIndex');
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: totalWidth,
-                  height: 56,
-                ),
-                AnimatedPositioned(
-                  duration: Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  left: indicatorLeft,
-                  top: 0,
-                  child: Container(
-                    width: indicatorWidth,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFC17099),
-                      borderRadius: BorderRadius.circular(40),
-                    ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: List.generate(navItems.length, (index) {
+            final item = navItems[index];
+            return GestureDetector(
+              onTap: item['onTap'] as void Function(),
+              child: Container(
+                width: 56,
+                height: 56,
+                padding: const EdgeInsets.all(8),
+                decoration: ShapeDecoration(
+                  color: item['active'] as bool ? const Color(0xFFC17099) : Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(40),
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(navItems.length, (index) {
-                    final item = navItems[index];
-                    return GestureDetector(
-                      onTap: item['onTap'] as void Function(),
-                      child: Container(
-                        width: 56,
-                        height: 56,
-                        // Add 2px margin for first and last icons
-                        margin: EdgeInsets.only(
-                          left: index == 0 ? 2 : 0,
-                          right: index == navItems.length - 1 ? 2 : 0,
-                        ),
-                        child: Center(
-                          child: SvgPicture.asset(
-                            item['icon'] as String,
-                            width: 24,
-                            height: 24,
-                            colorFilter: ColorFilter.mode(
-                              item['active'] as bool ? Colors.white : Color(0xFFC17099),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      item['icon'] as String,
+                      width: 24,
+                      height: 24,
+                      colorFilter: ColorFilter.mode(
+                        item['active'] as bool ? Color(0xFFF5D6D6) : Color(0xFFC17099),
+                        BlendMode.srcIn,
                       ),
-                    );
-                  }),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
-          },
+          }),
         ),
       ),
     );
@@ -625,8 +612,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mainClients = _getMainClients();
-    final nextClient = _getNextClient();
+    final clients = _getClientsByCategory(_currentCategory);
     
     return Scaffold(
       backgroundColor: Color(0xFFE8E3E6),
@@ -637,7 +623,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
           padding: EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 24),
           child: Column(
             children: [
-              // Header
+              // Header with sync indicator
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -655,6 +641,17 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
+                          if (_isRefreshing) ...[
+                            SizedBox(width: 8),
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC17099)),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -662,28 +659,22 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
                 ),
               ),
               SizedBox(height: 24),
-              // Client list (bottom-up stacking)
+              // Client list with pull-to-refresh
               Expanded(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Main clients list (bottom-up)
-                      SizedBox(
-                        width: double.infinity,
-                        child: Column(
-                          children: mainClients.reversed.map((client) => 
-                            _buildClientCard(client, isNext: false)
-                          ).toList(),
-                        ),
-                      ),
-                      // Next client (always at bottom)
-                      if (nextClient != null) ...[
-                        SizedBox(height: 8),
-                        _buildClientCard(nextClient, isNext: true),
-                      ],
-                    ],
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    debugPrint('🔄 MOBILE: Pull-to-refresh triggered');
+                    await _forceRefresh();
+                  },
+                  color: Color(0xFFC17099),
+                  backgroundColor: Color(0xFFE8E3E6),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Column(
+                      children: clients.reversed.map((client) => 
+                        _buildClientCard(client)
+                      ).toList(),
+                    ),
                   ),
                 ),
               ),

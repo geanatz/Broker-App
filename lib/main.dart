@@ -13,6 +13,7 @@ import 'package:broker_app/frontend/screens/mobile_auth_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
+import 'package:broker_app/backend/services/connection_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 // For DevTools inspection
@@ -31,6 +32,99 @@ class DebugOptions {
 
   static void toggleWidgetInspector() {
     showWidgetInspector = !showWidgetInspector;
+  }
+}
+
+/// Custom logging filter to reduce Firebase verbosity
+class FirebaseLogFilter {
+  static bool shouldLog(String message) {
+    // Filter out verbose Firestore internal logs
+    final verbosePatterns = [
+      'I/Firestore',
+      'target_change',
+      'read_time',
+      'resume_token',
+      'Persistence',
+      'WatchStream',
+      'document_change',
+      'fields {',
+      'value {',
+      'string_value:',
+      'integer_value:',
+      'boolean_value:',
+      'timestamp_value:',
+      'null_value:',
+      'map_value {',
+      'array_value {',
+      'name: "projects/',
+      'update_time {',
+      'create_time {',
+      'nanos:',
+      'seconds:',
+      'target_ids:',
+      'removed_target_ids:',
+      'IndexBackfiller',
+      'LruGarbageCollector',
+      'Collect garbage',
+      'Backfill Indexes',
+      'Documents written:',
+      'Cache size',
+      'threshold',
+      'No changes detected',
+      'Duplicate update detected',
+      'Using cached clients',
+      'Refreshed clients from Firebase',
+      'Real-time update received',
+      'Operations update received',
+      'Operation detected',
+      'Client modified',
+      'Category changes detected',
+      'getClient called',
+      'getClient consultantToken',
+      'getClient fetching',
+      'getClient document data',
+      'Using cached consultant token',
+      'Cached consultant token',
+      'getCurrentConsultantToken called',
+      'getCurrentConsultantToken currentUser',
+      'getCurrentConsultantToken fetching',
+      'getCurrentConsultantToken document exists',
+      'getCurrentConsultantToken document data',
+      'getCurrentConsultantToken token',
+    ];
+    
+    // Check if message contains any verbose patterns
+    for (final pattern in verbosePatterns) {
+      if (message.contains(pattern)) {
+        return false; // Don't log verbose messages
+      }
+    }
+    
+    // Allow only critical patterns
+    final criticalPatterns = [
+      'ERROR',
+      'Exception',
+      'Error',
+      'CRITICAL',
+      'FAILED',
+      'Success',
+      'Warning',
+      'CLIENT: added',
+      'CLIENT: removed',
+      'CLIENT: category_change',
+      'FIREBASE: added',
+      'FIREBASE: removed',
+      'FIREBASE: category_change',
+    ];
+    
+    for (final pattern in criticalPatterns) {
+      if (message.contains(pattern)) {
+        return true; // Log critical messages
+      }
+    }
+    
+    // Default: don't log Firebase internal messages
+    return !message.contains('I/Firestore') && !message.contains('Firestore(');
   }
 }
 
@@ -78,11 +172,8 @@ void main() async {
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
       );
       
-      // Add platform-specific error handling for Firebase on mobile platforms
-      if (Platform.isAndroid) {
-        // Use correct approach for enabling Firebase logging
-        FirebaseFirestore.setLoggingEnabled(true);
-      }
+      // FIX: Disable verbose Firebase logging on mobile
+      FirebaseFirestore.setLoggingEnabled(false);
     } else {
       // Web and desktop platforms
       await Firebase.initializeApp(
@@ -111,7 +202,14 @@ void main() async {
           cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
         );
       }
+      
+      // FIX: Disable verbose Firebase logging on desktop
+      FirebaseFirestore.setLoggingEnabled(false);
     }
+    
+    // Initialize connection monitoring
+    final connectionService = ConnectionService();
+    await connectionService.initialize();
     
     // Set up global error handling for platform errors
     PlatformDispatcher.instance.onError = (error, stack) {

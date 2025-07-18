@@ -478,7 +478,7 @@ class ParserOCR {
         ),
         activities: [],
         currentStatus: const UnifiedClientStatus(
-          category: UnifiedClientCategory.apeluri,
+          category: UnifiedClientCategory.clienti,
           isFocused: false,
           additionalInfo: 'Extras din OCR',
         ),
@@ -539,7 +539,7 @@ class ParserOCR {
         ),
         activities: [],
         currentStatus: const UnifiedClientStatus(
-          category: UnifiedClientCategory.apeluri,
+          category: UnifiedClientCategory.clienti,
           isFocused: false,
           additionalInfo: 'Extras din OCR',
         ),

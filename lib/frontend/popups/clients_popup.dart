@@ -404,7 +404,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       ),
       activities: [],
       currentStatus: const UnifiedClientStatus(
-        category: UnifiedClientCategory.apeluri,
+        category: UnifiedClientCategory.clienti,
         isFocused: false,
         additionalInfo: 'Adaugat manual in lista extrasa',
       ),
@@ -461,7 +461,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       ),
       activities: [],
       currentStatus: const UnifiedClientStatus(
-        category: UnifiedClientCategory.apeluri,
+        category: UnifiedClientCategory.clienti,
         isFocused: false,
         additionalInfo: 'Modificat manual in lista extrasa',
       ),

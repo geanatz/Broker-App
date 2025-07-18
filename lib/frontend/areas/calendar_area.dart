@@ -161,8 +161,8 @@ class CalendarAreaState extends State<CalendarArea> {
     // Dacă deja se încarcă, nu mai face alt request
     if (_isLoadingMeetings) return;
     
-    // OPTIMIZARE: Debouncing redus la 50ms pentru răspuns mai rapid (redus de la 100ms)
-    _loadDebounceTimer = Timer(const Duration(milliseconds: 50), () async {
+    // CRITICAL FIX: Near-instant debouncing for immediate sync
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
       await _performLoadMeetingsForCurrentWeek();
     });
   }

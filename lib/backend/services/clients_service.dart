@@ -147,7 +147,7 @@ class ClientModel {
     switch (category.toLowerCase()) {
       case 'reveniri': return 1;
       case 'recente': return 2;
-      case 'apeluri':
+      case 'clienti':
       default: return 0;
     }
   }
@@ -161,7 +161,7 @@ enum ClientStatus {
 
 /// Categoria unui client (in ce sectiune se afla)
 enum ClientCategory {
-  apeluri,   // Sectiunea "Apeluri"
+  apeluri,   // Sectiunea "Clienti"
   reveniri,  // Sectiunea "Reveniri" 
   recente,   // Sectiunea "Recente"
 }
@@ -420,7 +420,7 @@ class ClientsService {
       case ClientCategory.recente:
         return 'recente';
       case ClientCategory.apeluri:
-        return 'apeluri';
+        return 'clienti';
     }
   }
 
@@ -853,7 +853,7 @@ class UnifiedClientStatus {
     return UnifiedClientStatus(
       category: UnifiedClientCategory.values.firstWhere(
         (cat) => cat.name == map['category'],
-        orElse: () => UnifiedClientCategory.apeluri,
+        orElse: () => UnifiedClientCategory.clienti,
       ),
       discussionStatus: map['discussionStatus'] != null
           ? ClientDiscussionStatus.values.firstWhere(
@@ -873,7 +873,7 @@ class UnifiedClientStatus {
 
 /// Categorii client unificate
 enum UnifiedClientCategory {
-  apeluri,
+  clienti,
   reveniri,
   recente,
 }
@@ -959,6 +959,10 @@ class ClientUIService extends ChangeNotifier {
   // Firebase service pentru persistenta datelor
   final ClientsService _firebaseService = ClientsService();
   
+  // FIX: Retry tracking for stream recovery
+  int _retryCount = 0;
+  static const int _maxRetries = 5;
+  
   // Getters
   List<ClientModel> get clients => List.unmodifiable(_clients);
   ClientModel? get focusedClient => _focusedClient;
@@ -972,8 +976,8 @@ class ClientUIService extends ChangeNotifier {
     return _clients.where((client) => client.category == category).toList();
   }
   
-  /// Obtine clientii din categoria "Apeluri"
-  List<ClientModel> get apeluri => getClientsByCategory(ClientCategory.apeluri);
+  /// Obtine clientii din categoria "Clienti"
+  List<ClientModel> get clienti => getClientsByCategory(ClientCategory.apeluri);
   
   /// Obtine clientii din categoria "Reveniri"
   List<ClientModel> get reveniri => getClientsByCategory(ClientCategory.reveniri);
@@ -1117,7 +1121,6 @@ class ClientUIService extends ChangeNotifier {
     if (_lastLoadTime != null && 
         DateTime.now().difference(_lastLoadTime!).inMinutes < _cacheValidityMinutes &&
         _clients.isNotEmpty) {
-      debugPrint('🚀 CLIENT_UI_SERVICE: Using cached clients (${_clients.length} clients)');
       return;
     }
     
@@ -1127,8 +1130,8 @@ class ClientUIService extends ChangeNotifier {
     // Dacă deja se încarcă, nu mai face alt request
     if (_isLoading) return;
     
-    // OPTIMIZARE: Debouncing redus de la 300ms la 150ms
-    _loadDebounceTimer = Timer(const Duration(milliseconds: 150), () async {
+    // CRITICAL FIX: Near-instant debouncing for immediate sync
+    _loadDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
       await _performLoadClients();
     });
   }
@@ -1137,43 +1140,31 @@ class ClientUIService extends ChangeNotifier {
   Future<void> _performLoadClients() async {
     if (_isLoading) return;
     
+    _isLoading = true;
+    
     try {
-      _isLoading = true;
+      final List<ClientModel> newClients = await _firebaseService.getAllClients();
       
-      // Pastreaza clientul focusat curent pentru a nu pierde focus-ul din cauza auto-refresh-ului
-      final currentFocusedPhoneNumber = _focusedClient?.phoneNumber;
-      
-      // OPTIMIZARE: Foloseste cache-ul din NewFirebaseService
-      final newClients = await _firebaseService.getAllClients();
-      
-      // OPTIMIZARE: Verifică dacă datele s-au schimbat cu adevărat
+      // FIX: Check if data actually changed before updating
       final hasChanged = _clients.length != newClients.length ||
           !_clients.every((client) => newClients.any((newClient) => 
               newClient.phoneNumber == client.phoneNumber &&
+              newClient.category == client.category &&
+              newClient.status == client.status &&
               newClient.name == client.name));
-      
+
       if (hasChanged || _clients.isEmpty) {
-        // Actualizeaza lista de clienti doar dacă s-au schimbat
+        // Actualizează lista de clienți
         _clients = newClients;
-        _lastLoadTime = DateTime.now();
         
-        // FIX: Cleanup focus state on startup
-        _cleanupFocusStateOnStartup();
-        
-        // Incearca sa pastreze clientul focusat daca inca exista
-        if (currentFocusedPhoneNumber != null) {
-          final stillExists = _clients.any((client) => client.phoneNumber == currentFocusedPhoneNumber);
-          if (stillExists) {
-            // Clientul focusat inca exista, pastreza focus-ul
-            focusClient(currentFocusedPhoneNumber);
+        // Păstrează focus-ul pe clientul curent dacă există
+        if (_focusedClient != null) {
+          final focusedIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
+          if (focusedIndex != -1) {
+            _focusedClient = _clients[focusedIndex];
           } else {
-            // Clientul focusat nu mai exista, focuseaza primul disponibil
-            if (_clients.isNotEmpty) {
-              _focusedClient = _clients.first;
-              focusClient(_clients.first.phoneNumber);
-            } else {
-              _focusedClient = null;
-            }
+            // Dacă clientul focusat nu mai există, focusează primul client
+            _focusedClient = _clients.isNotEmpty ? _clients.first : null;
           }
         } else {
           // Nu avea client focusat, focuseaza primul daca exista
@@ -1188,11 +1179,9 @@ class ClientUIService extends ChangeNotifier {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
         });
-      } else {
-        debugPrint('🚀 CLIENT_UI_SERVICE: No changes detected, skipping UI update');
       }
     } catch (e) {
-      debugPrint('❌ CLIENT_UI_SERVICE: Error loading clients from Firebase: $e');
+      FirebaseLogger.error('Error loading clients from Firebase: $e');
     } finally {
       _isLoading = false;
     }
@@ -1205,6 +1194,12 @@ class ClientUIService extends ChangeNotifier {
   /// Focusa un client specific
   void focusClient(String phoneNumber) {
     if (_isFocusingClient) return;
+    
+    // FIX: Check if client is already focused to prevent unnecessary operations
+    if (_focusedClient?.phoneNumber == phoneNumber) {
+      FirebaseLogger.log('Client already focused: $phoneNumber');
+      return;
+    }
     
     _isFocusingClient = true;
     
@@ -1223,8 +1218,12 @@ class ClientUIService extends ChangeNotifier {
         _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.focused);
         _focusedClient = _clients[clientIndex];
         
+        FirebaseLogger.log('Focused client: $phoneNumber');
+        
         // Notifica listenerii
         notifyListeners();
+      } else {
+        FirebaseLogger.error('Client not found for focus: $phoneNumber');
       }
     } finally {
       _isFocusingClient = false;
@@ -1310,6 +1309,9 @@ class ClientUIService extends ChangeNotifier {
     try {
       debugPrint('🔄 CLIENT_UI_SERVICE: Starting real-time listeners');
       
+      // FIX: Stop any existing listeners first
+      stopRealTimeListeners();
+      
       final firebaseService = NewFirebaseService();
       
       // 1. Stream pentru toți clienții
@@ -1320,6 +1322,8 @@ class ClientUIService extends ChangeNotifier {
         },
         onError: (error) {
           debugPrint('❌ CLIENT_UI_SERVICE: Real-time stream error: $error');
+          // FIX: Restart listeners on error with exponential backoff
+          _restartListenersWithBackoff();
         },
       );
 
@@ -1331,12 +1335,40 @@ class ClientUIService extends ChangeNotifier {
         },
         onError: (error) {
           debugPrint('❌ CLIENT_UI_SERVICE: Operations stream error: $error');
+          // FIX: Restart listeners on error with exponential backoff
+          _restartListenersWithBackoff();
         },
       );
 
-      debugPrint('✅ CLIENT_UI_SERVICE: Real-time listeners started');
+      debugPrint('✅ CLIENT_UI_SERVICE: Real-time listeners started successfully');
     } catch (e) {
       debugPrint('❌ CLIENT_UI_SERVICE: Error starting real-time listeners: $e');
+      // FIX: Retry after delay
+      Future.delayed(const Duration(seconds: 5), () {
+        if (_realTimeSubscription != null) {
+          startRealTimeListeners();
+        }
+      });
+    }
+  }
+
+  /// FIX: Restart listeners with exponential backoff
+  void _restartListenersWithBackoff() {
+    if (_retryCount < _maxRetries) {
+      _retryCount++;
+      final delay = Duration(seconds: _retryCount * 2); // Exponential backoff: 2s, 4s, 6s, 8s, 10s
+      
+      debugPrint('🔄 CLIENT_UI_SERVICE: Restarting listeners in ${delay.inSeconds}s (attempt $_retryCount/$_maxRetries)');
+      
+      Future.delayed(delay, () {
+        if (_realTimeSubscription != null) {
+          startRealTimeListeners();
+        }
+      });
+    } else {
+      debugPrint('❌ CLIENT_UI_SERVICE: Max retries reached, stopping listeners');
+      _retryCount = 0;
+      stopRealTimeListeners();
     }
   }
 
@@ -1359,77 +1391,129 @@ class ClientUIService extends ChangeNotifier {
           final client = ClientModel.fromMap(clientData);
           updatedClients.add(client);
         } catch (e) {
-          debugPrint('⚠️ CLIENT_UI_SERVICE: Error parsing client data: $e');
+          FirebaseLogger.error('Error parsing client data: $e');
         }
       }
 
-      // Actualizează lista de clienți
-      _clients = updatedClients;
-      
-      // Păstrează focus-ul pe clientul curent dacă există
-      if (_focusedClient != null) {
-        final focusedIndex = _clients.indexWhere((client) => client.phoneNumber == _focusedClient!.phoneNumber);
-        if (focusedIndex != -1) {
-          _focusedClient = _clients[focusedIndex];
+      // FIX: Check if data actually changed before updating
+      final hasChanged = _clients.length != updatedClients.length ||
+          !_clients.every((client) => updatedClients.any((newClient) => 
+              newClient.phoneNumber == client.phoneNumber &&
+              newClient.category == client.category &&
+              newClient.status == client.status &&
+              newClient.name == client.name));
+
+      if (hasChanged || _clients.isEmpty) {
+        // CRITICAL FIX: Preserve focused client during real-time updates
+        final currentlyFocusedPhone = _focusedClient?.phoneNumber;
+        
+        // Actualizează lista de clienți
+        _clients = updatedClients;
+        
+        // FIX: Preserve focus on the same client if it still exists
+        if (currentlyFocusedPhone != null) {
+          final focusedIndex = _clients.indexWhere((client) => client.phoneNumber == currentlyFocusedPhone);
+          if (focusedIndex != -1) {
+            // Client still exists, preserve its focus
+            _clients[focusedIndex] = _clients[focusedIndex].copyWith(status: ClientStatus.focused);
+            _focusedClient = _clients[focusedIndex];
+            FirebaseLogger.log('Preserved focus on client: $currentlyFocusedPhone');
+          } else {
+            // Focused client was deleted, focus first available client
+            if (_clients.isNotEmpty) {
+              _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
+              _focusedClient = _clients[0];
+              FirebaseLogger.log('Focused client deleted, focusing first available: ${_focusedClient?.phoneNumber}');
+            } else {
+              _focusedClient = null;
+              FirebaseLogger.log('No clients available after update');
+            }
+          }
         } else {
-          // Dacă clientul focusat nu mai există, focusează primul client
-          _focusedClient = _clients.isNotEmpty ? _clients.first : null;
+          // No client was focused before, focus first available
+          if (_clients.isNotEmpty) {
+            _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
+            _focusedClient = _clients[0];
+            FirebaseLogger.log('No previous focus, focusing first client: ${_focusedClient?.phoneNumber}');
+          } else {
+            _focusedClient = null;
+          }
         }
+        
+        FirebaseLogger.success('Updated ${_clients.length} clients from real-time sync');
+        
+        // FIX: Ensure proper notification to all listeners
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
       }
-      
-      debugPrint('✅ CLIENT_UI_SERVICE: Updated ${_clients.length} clients from real-time sync');
-      
-      // Notifică listeners
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifyListeners();
-      });
     } catch (e) {
-      debugPrint('❌ CLIENT_UI_SERVICE: Error handling real-time update: $e');
+      FirebaseLogger.error('Error handling real-time update: $e');
     }
   }
 
   /// Gestionează actualizările în timp real pentru operațiuni
   void _handleOperationsUpdate(Map<String, dynamic> operations) {
     try {
+      FirebaseLogger.log('Operations update received');
+      
+      // CRITICAL FIX: Preserve focused client during operations updates
+      final currentlyFocusedPhone = _focusedClient?.phoneNumber;
+      
       final List<Map<String, dynamic>> changes = operations['changes'] ?? [];
       
       for (final change in changes) {
-        final String type = change['type'] ?? '';
-        final String clientId = change['clientId'] ?? '';
-        final Map<String, dynamic> clientData = change['clientData'] ?? {};
-        
-        debugPrint('🔄 CLIENT_UI_SERVICE: Operation detected - Type: $type, Client: $clientId');
-        
-        switch (type) {
-          case 'added':
-            debugPrint('➕ CLIENT_UI_SERVICE: Client added - ${clientData['name']}');
-            break;
-          case 'modified':
-            debugPrint('✏️ CLIENT_UI_SERVICE: Client modified - ${clientData['name']}');
-            break;
-          case 'removed':
-            debugPrint('🗑️ CLIENT_UI_SERVICE: Client removed - $clientId');
-            break;
+        try {
+          final String type = change['type'] ?? '';
+          final String clientId = change['clientId'] ?? '';
+          final Map<String, dynamic> clientData = change['clientData'] ?? {};
+          final String clientName = clientData['name'] ?? '';
+          
+          if (type.isNotEmpty && clientId.isNotEmpty) {
+            FirebaseLogger.logOperation(type, clientId: clientId, category: clientName);
+            
+            // Handle different operation types
+            switch (type) {
+              case 'added':
+                FirebaseLogger.log('➕ CLIENT: added - $clientId → $clientName');
+                break;
+              case 'modified':
+                FirebaseLogger.log(' CLIENT: modified - $clientName');
+                break;
+              case 'removed':
+                FirebaseLogger.log('🗑️ CLIENT: removed - $clientId → $clientName');
+                break;
+              case 'category_change':
+                FirebaseLogger.log('🔄 CLIENT: category_change - $clientId → $clientName');
+                break;
+            }
+          }
+        } catch (e) {
+          FirebaseLogger.error('Error parsing operation data: $e');
         }
       }
       
-      // Refresh clients after operations
-      _refreshClientsFromFirebase();
+      // FIX: Preserve focus after operations update
+      if (currentlyFocusedPhone != null) {
+        final focusedIndex = _clients.indexWhere((client) => client.phoneNumber == currentlyFocusedPhone);
+        if (focusedIndex != -1) {
+          // Client still exists, preserve its focus
+          _clients[focusedIndex] = _clients[focusedIndex].copyWith(status: ClientStatus.focused);
+          _focusedClient = _clients[focusedIndex];
+          FirebaseLogger.log('Preserved focus after operations update: $currentlyFocusedPhone');
+        }
+      }
+      
+      // FIX: Ensure proper notification to all listeners
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
       
     } catch (e) {
-      debugPrint('❌ CLIENT_UI_SERVICE: Error handling operations update: $e');
+      FirebaseLogger.error('Error handling operations update: $e');
     }
   }
 
-  /// Reîncarcă clienții din Firebase
-  Future<void> _refreshClientsFromFirebase() async {
-    try {
-      await loadClientsFromFirebase();
-      debugPrint('🔄 CLIENT_UI_SERVICE: Refreshed clients from Firebase');
-    } catch (e) {
-      debugPrint('❌ CLIENT_UI_SERVICE: Error refreshing clients: $e');
-    }
-  }
   
   /// Actualizeaza clientul temporar cu datele introduse
   void updateTemporaryClient({
@@ -1586,14 +1670,31 @@ class ClientUIService extends ChangeNotifier {
     return _focusedClient?.getFormValue<T>(key);
   }
   
-  /// Adauga un client nou si il salveaza in Firebase
-  /// Foloseste numarul de telefon ca ID unic
+  /// CRITICAL FIX: Adauga un client nou cu optimistic updates pentru sincronizare instantanee
   Future<void> addClient(ClientModel client) async {
     try {
       // Creeaza un client cu phoneNumber ca ID
       final clientWithPhoneId = client.copyWith(id: client.phoneNumber);
       
-      // Salveaza in Firebase folosind noua structura
+      // OPTIMISTIC UPDATE: Adauga imediat in lista locala pentru UI instant
+      _clients.add(clientWithPhoneId);
+      
+      // Focuseaza primul client daca este primul client adaugat
+      if (_clients.length == 1) {
+        _focusedClient = _clients.first;
+        focusClient(_clients.first.phoneNumber);
+      }
+      
+      // Notifica UI-ul imediat pentru feedback instant
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+      
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
+      final splashService = SplashService();
+      await splashService.invalidateClientsCacheAndRefresh();
+      
+      // Salveaza in Firebase în background (optimistic update)
       final success = await _firebaseService.createClient(
         phoneNumber: clientWithPhoneId.phoneNumber,
         name: clientWithPhoneId.name,
@@ -1603,65 +1704,72 @@ class ClientUIService extends ChangeNotifier {
         formData: clientWithPhoneId.formData,
       );
       
-      if (success) {
-        // Adauga in lista locala
-        _clients.add(clientWithPhoneId);
-        
-        // Focuseaza primul client daca este primul client adaugat
-        if (_clients.length == 1) {
-          _focusedClient = _clients.first;
-          focusClient(_clients.first.phoneNumber);
-        }
-        
-        // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
-        final splashService = SplashService();
-        await splashService.invalidateClientsCacheAndRefresh();
-        
+      if (!success) {
+        // Rollback dacă salvarea a eșuat
+        _clients.removeWhere((c) => c.phoneNumber == clientWithPhoneId.phoneNumber);
+        debugPrint('❌ CLIENT_UI_SERVICE: Failed to save client, rolling back optimistic update');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
         });
+      } else {
+        debugPrint('✅ CLIENT_UI_SERVICE: Client added with optimistic update');
       }
     } catch (e) {
-      debugPrint('Error adding client: $e');
-      // Poti adauga aici o notificare de eroare pentru utilizator
+      // Rollback în caz de eroare
+      _clients.removeWhere((c) => c.phoneNumber == client.phoneNumber);
+      debugPrint('❌ CLIENT_UI_SERVICE: Error adding client: $e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
   
-  /// Sterge un client si il elimina din Firebase
-  /// Foloseste phoneNumber pentru identificare
+  /// CRITICAL FIX: Sterge un client cu optimistic updates pentru sincronizare instantanee
   Future<void> removeClient(String clientPhoneNumber) async {
     try {
-      // 1. Remove from backend first
+      // Salveaza starea clientului pentru rollback
+      final clientToRemove = _clients.firstWhere(
+        (client) => client.phoneNumber == clientPhoneNumber,
+        orElse: () => throw Exception('Client not found'),
+      );
+      
+      // OPTIMISTIC UPDATE: Elimina imediat din lista locala pentru UI instant
+      _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
+
+      // Update focus if needed
+      if (_focusedClient?.phoneNumber == clientPhoneNumber) {
+        _focusedClient = _clients.isNotEmpty ? _clients.first : null;
+        if (_focusedClient != null) {
+          _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
+        }
+      }
+
+      // Notifica UI-ul imediat pentru feedback instant
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _ensureSingleFocus();
+        notifyListeners();
+      });
+
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
+      final splashService = SplashService();
+      await splashService.invalidateClientsCacheAndRefresh();
+
+      // Sterge din Firebase în background (optimistic update)
       final success = await _firebaseService.deleteClient(clientPhoneNumber);
 
-      if (success) {
-        // 2. Remove from local list
-        _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
-
-        // 3. Update focus if needed
-        if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-          _focusedClient = _clients.isNotEmpty ? _clients.first : null;
-          if (_focusedClient != null) {
-            _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
-          }
-        }
-
-        // 4. Invalidate and refresh cache
-        final splashService = SplashService();
-        await splashService.invalidateClientsCacheAndRefresh();
-
-        // 5. Notify listeners
+      if (!success) {
+        // Rollback dacă ștergerea a eșuat
+        _clients.add(clientToRemove);
+        debugPrint('❌ CLIENT_UI_SERVICE: Failed to delete client, rolling back optimistic update');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _ensureSingleFocus();
           notifyListeners();
         });
       } else {
-        debugPrint('❌ Failed to delete client from Firebase: $clientPhoneNumber');
-        // Optionally: show error to user
+        debugPrint('✅ CLIENT_UI_SERVICE: Client removed with optimistic update');
       }
     } catch (e) {
-      debugPrint('Error removing client: $e');
-      // Optionally: show error to user
+      debugPrint('❌ CLIENT_UI_SERVICE: Error removing client: $e');
     }
   }
 
@@ -1705,13 +1813,39 @@ class ClientUIService extends ChangeNotifier {
     }
   }
   
-  /// Actualizeaza un client existent si il salveaza in Firebase
+  /// CRITICAL FIX: Actualizeaza un client cu optimistic updates pentru sincronizare instantanee
   Future<void> updateClient(ClientModel updatedClient) async {
     try {
       // Asigura-te ca ID-ul este phoneNumber
       final clientWithPhoneId = updatedClient.copyWith(id: updatedClient.phoneNumber);
       
-      // Actualizeaza in Firebase folosind noua structura
+      // Salveaza starea anterioară pentru rollback
+      final clientIndex = _clients.indexWhere((client) => client.phoneNumber == updatedClient.phoneNumber);
+      if (clientIndex == -1) {
+        debugPrint('❌ CLIENT_UI_SERVICE: Client not found for update');
+        return;
+      }
+      
+      final previousClient = _clients[clientIndex];
+      
+      // OPTIMISTIC UPDATE: Actualizeaza imediat in lista locala pentru UI instant
+      _clients[clientIndex] = clientWithPhoneId;
+      
+      // Daca clientul actualizat este cel focusat, actualizeaza si referinta
+      if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
+        _focusedClient = clientWithPhoneId;
+      }
+      
+      // Notifica UI-ul imediat pentru feedback instant
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+      
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
+      final splashService = SplashService();
+      await splashService.invalidateClientsCacheAndRefresh();
+      
+      // Actualizeaza in Firebase în background (optimistic update)
       final success = await _firebaseService.updateClient(
         clientWithPhoneId.phoneNumber,
         name: clientWithPhoneId.name,
@@ -1725,35 +1859,28 @@ class ClientUIService extends ChangeNotifier {
         isCompleted: clientWithPhoneId.isCompleted,
       );
       
-      if (success) {
-        // Actualizeaza in lista locala
-        final clientIndex = _clients.indexWhere((client) => client.phoneNumber == updatedClient.phoneNumber);
-        if (clientIndex != -1) {
-          _clients[clientIndex] = clientWithPhoneId;
-          
-          // Daca clientul actualizat este cel focusat, actualizeaza si referinta
-          if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
-            _focusedClient = clientWithPhoneId;
-          }
-          
-          // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
-          final splashService = SplashService();
-          await splashService.invalidateClientsCacheAndRefresh();
-          
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            notifyListeners();
-          });
+      if (!success) {
+        // Rollback dacă actualizarea a eșuat
+        _clients[clientIndex] = previousClient;
+        if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
+          _focusedClient = previousClient;
         }
+        debugPrint('❌ CLIENT_UI_SERVICE: Failed to update client, rolling back optimistic update');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
+      } else {
+        debugPrint('✅ CLIENT_UI_SERVICE: Client updated with optimistic update');
       }
     } catch (e) {
-      debugPrint('Error updating client: $e');
+      debugPrint('❌ CLIENT_UI_SERVICE: Error updating client: $e');
     }
   }
   
   /// Muta un client in categoria "Recente" cu statusul "Acceptat"
   Future<void> moveClientToRecente(String clientPhoneNumber, {
+    required DateTime scheduledDateTime,
     String? additionalInfo,
-    DateTime? scheduledDateTime,
   }) async {
     final clientIndex = _clients.indexWhere((client) => client.phoneNumber == clientPhoneNumber);
     if (clientIndex != -1) {
@@ -1781,11 +1908,11 @@ class ClientUIService extends ChangeNotifier {
       
       await updateClient(updatedClient);
       
-      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Apeluri"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Clienti"
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-        final apeluri = getClientsByCategory(ClientCategory.apeluri);
-        if (apeluri.isNotEmpty) {
-          focusClient(apeluri.first.phoneNumber);
+        final clienti = getClientsByCategory(ClientCategory.apeluri);
+        if (clienti.isNotEmpty) {
+          focusClient(clienti.first.phoneNumber);
         } else {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1794,9 +1921,9 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (imediat pentru schimbari de categorie)
       final splashService = SplashService();
-      await splashService.invalidateClientsCacheAndRefresh();
+      await splashService.invalidateClientsCacheForCategoryChange();
       
       debugPrint('✅ Client mutat in Recente (Acceptat): ${updatedClient.name}');
     }
@@ -1833,11 +1960,11 @@ class ClientUIService extends ChangeNotifier {
       
       await updateClient(updatedClient);
       
-      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Apeluri"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Clienti"
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-        final apeluri = getClientsByCategory(ClientCategory.apeluri);
-        if (apeluri.isNotEmpty) {
-          focusClient(apeluri.first.phoneNumber);
+        final clienti = getClientsByCategory(ClientCategory.apeluri);
+        if (clienti.isNotEmpty) {
+          focusClient(clienti.first.phoneNumber);
         } else {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1846,9 +1973,9 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (imediat pentru schimbari de categorie)
       final splashService = SplashService();
-      await splashService.invalidateClientsCacheAndRefresh();
+      await splashService.invalidateClientsCacheForCategoryChange();
       
       debugPrint('✅ Client mutat in Reveniri (Amanat): ${updatedClient.name}');
     }
@@ -1883,11 +2010,11 @@ class ClientUIService extends ChangeNotifier {
       
       await updateClient(updatedClient);
       
-      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Apeluri"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Clienti"
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-        final apeluri = getClientsByCategory(ClientCategory.apeluri);
-        if (apeluri.isNotEmpty) {
-          focusClient(apeluri.first.phoneNumber);
+        final clienti = getClientsByCategory(ClientCategory.apeluri);
+        if (clienti.isNotEmpty) {
+          focusClient(clienti.first.phoneNumber);
         } else {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1896,9 +2023,9 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (imediat pentru schimbari de categorie)
       final splashService = SplashService();
-      await splashService.invalidateClientsCacheAndRefresh();
+      await splashService.invalidateClientsCacheForCategoryChange();
       
       debugPrint('✅ Client mutat in Recente (Refuzat): ${updatedClient.name}');
     }

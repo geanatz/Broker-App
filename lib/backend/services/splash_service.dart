@@ -10,6 +10,7 @@ import 'package:broker_app/backend/services/dashboard_service.dart';
 import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/firebase_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
+import 'package:broker_app/backend/services/connection_service.dart';
 
 /// Service pentru gestionarea încărcărilor de pe splash screen și cache-ul aplicației
 /// OPTIMIZAT: Implementare avansată cu preloading paralel și cache inteligent
@@ -33,6 +34,7 @@ class SplashService extends ChangeNotifier {
   DashboardService? _dashboardService;
   MatcherService? _matcherService;
   GoogleDriveService? _googleDriveService;
+  ConnectionService? _connectionService;
   
   // OPTIMIZARE: Cache avansat pentru meetings cu timestamp și validare
   List<ClientActivity> _cachedMeetings = [];
@@ -78,6 +80,7 @@ class SplashService extends ChangeNotifier {
   DashboardService get dashboardService => _dashboardService ?? DashboardService();
   MatcherService get matcherService => _matcherService ?? MatcherService();
   GoogleDriveService get googleDriveService => _googleDriveService ?? GoogleDriveService();
+  ConnectionService get connectionService => _connectionService ?? ConnectionService();
 
   /// OPTIMIZAT: Resetează cache-ul când consultantul se schimbă cu preloading anticipat
   Future<void> resetForNewConsultant() async {
@@ -289,8 +292,8 @@ class SplashService extends ChangeNotifier {
     _hasPendingInvalidation = true;
     
     _cacheInvalidationTimer?.cancel();
-    // OPTIMIZARE: Delay redus de la 100ms la 50ms pentru răspuns mai rapid
-    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 50), () async {
+    // CRITICAL FIX: Near-instant cache invalidation for immediate sync
+    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 10), () async {
       try {
         _cachedMeetings = [];
         _meetingsCacheTime = null;
@@ -555,6 +558,7 @@ class SplashService extends ChangeNotifier {
         _initializeClientServices(),
         _initializeFormService(),
         _initializeMatcherService(),
+        _initializeConnectionService(),
       ]);
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing core services: $e');
@@ -752,6 +756,18 @@ class SplashService extends ChangeNotifier {
     }
   }
 
+  /// Inițializează și cache-ează ConnectionService
+  Future<void> _initializeConnectionService() async {
+    try {
+      _connectionService = ConnectionService();
+      await _connectionService!.initialize();
+      debugPrint('✅ SPLASH_SERVICE: Connection service initialized');
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error initializing connection service: $e');
+      rethrow;
+    }
+  }
+
   /// Inițializează și cache-ează GoogleDriveService
   Future<void> _initializeGoogleDriveService() async {
     // OPTIMIZARE: Log redus pentru performanță
@@ -933,7 +949,8 @@ class SplashService extends ChangeNotifier {
     _hasPendingInvalidation = true;
     
     _cacheInvalidationTimer?.cancel();
-    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 100), () async {
+    // CRITICAL FIX: Near-instant cache invalidation for immediate sync
+    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 5), () async {
       try {
         _cachedClients = [];
         _clientsCacheTime = null;
@@ -955,6 +972,32 @@ class SplashService extends ChangeNotifier {
         _hasPendingInvalidation = false;
       }
     });
+  }
+
+  /// OPTIMIZAT: Invalidează cache-ul de clienți pentru schimbări de categorie (imediat)
+  Future<void> invalidateClientsCacheForCategoryChange() async {
+    try {
+      debugPrint('🔄 SPLASH_SERVICE: Immediate cache invalidation for category change');
+      
+      _cachedClients = [];
+      _clientsCacheTime = null;
+      
+      // FIX: Notifică imediat pentru UI instant
+      notifyListeners();
+      
+      // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
+      await _refreshClientsCache();
+      
+      // FIX: Notifică și ClientUIService pentru sincronizare completă
+      if (_clientUIService != null) {
+        await _clientUIService!.loadClientsFromFirebase();
+        _clientUIService!.notifyListeners();
+      }
+      
+      debugPrint('✅ SPLASH_SERVICE: Immediate clients cache invalidation completed');
+    } catch (e) {
+      debugPrint('❌ SPLASH_SERVICE: Error in immediate clients cache invalidation: $e');
+    }
   }
 
   /// Invalidează cache-ul de clienți (să fie apelat când se adaugă/modifică/șterge client)

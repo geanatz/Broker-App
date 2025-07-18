@@ -344,7 +344,10 @@ class FormService extends ChangeNotifier {
 
   /// Gestioneaza schimbarea clientului
   void _onClientChanged() {
+    debugPrint('🔄 FORM_SERVICE: _onClientChanged called - client changed');
+    debugPrint('🔄 FORM_SERVICE: Calling notifyListeners() from _onClientChanged');
     notifyListeners();
+    debugPrint('🔄 FORM_SERVICE: notifyListeners() completed in _onClientChanged');
   }
 
   /// Obtine formularele de credit pentru client
@@ -393,20 +396,38 @@ class FormService extends ChangeNotifier {
 
   /// Comuta intre client si codebitor pentru credite
   void toggleLoanFormType(String clientId) {
+    debugPrint('🔄 FORM_SERVICE: toggleLoanFormType called for clientId: $clientId');
+    debugPrint('🔄 FORM_SERVICE: Current showingClientLoanForm: ${_showingClientLoanForm[clientId]}');
+    
     _showingClientLoanForm[clientId] = !isShowingClientLoanForm(clientId);
+    debugPrint('🔄 FORM_SERVICE: New showingClientLoanForm: ${_showingClientLoanForm[clientId]}');
+    
+    debugPrint('🔄 FORM_SERVICE: Calling notifyListeners()');
     notifyListeners();
+    debugPrint('🔄 FORM_SERVICE: notifyListeners() completed');
     
     // Automatically save UI state to Firebase
+    debugPrint('🔄 FORM_SERVICE: Starting _autoSaveToFirebaseForClient');
     _autoSaveToFirebaseForClient(clientId);
+    debugPrint('🔄 FORM_SERVICE: _autoSaveToFirebaseForClient called (async)');
   }
 
   /// Comuta intre client si codebitor pentru venituri
   void toggleIncomeFormType(String clientId) {
+    debugPrint('🔄 FORM_SERVICE: toggleIncomeFormType called for clientId: $clientId');
+    debugPrint('🔄 FORM_SERVICE: Current showingClientIncomeForm: ${_showingClientIncomeForm[clientId]}');
+    
     _showingClientIncomeForm[clientId] = !isShowingClientIncomeForm(clientId);
+    debugPrint('🔄 FORM_SERVICE: New showingClientIncomeForm: ${_showingClientIncomeForm[clientId]}');
+    
+    debugPrint('🔄 FORM_SERVICE: Calling notifyListeners()');
     notifyListeners();
+    debugPrint('🔄 FORM_SERVICE: notifyListeners() completed');
     
     // Automatically save UI state to Firebase
+    debugPrint('🔄 FORM_SERVICE: Starting _autoSaveToFirebaseForClient');
     _autoSaveToFirebaseForClient(clientId);
+    debugPrint('🔄 FORM_SERVICE: _autoSaveToFirebaseForClient called (async)');
   }
 
   /// Actualizeaza un formular de credit

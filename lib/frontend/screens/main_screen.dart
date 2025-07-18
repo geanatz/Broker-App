@@ -276,6 +276,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Map<PaneType, Widget> get _paneWidgets => {
     PaneType.clients: ClientsPane(
       onClientsPopupRequested: _handleClientsPopupRequested,
+      onSwitchToFormArea: _handleSwitchToFormArea,
     ),
     PaneType.meetings: MeetingsPane(
       key: _meetingsPaneKey,
@@ -475,6 +476,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  /// Handles switching to form area when a client is selected
+  void _handleSwitchToFormArea() {
+    debugPrint('🔄 MAIN: Switching to form area from clients pane');
+    // Use the SidebarService to change area to keep states in sync
+    _sidebarService.changeArea(AreaType.form);
+  }
+
 
   
   /// Closes all popups
@@ -603,7 +611,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         phoneNumber2: client.phoneNumber2,
         coDebitorName: client.coDebitorName,
         status: ClientStatus.normal,
-        category: ClientCategory.apeluri, // New clients go to "Apeluri"
+        category: ClientCategory.apeluri, // New clients go to "Clienti"
       );
       
       await _clientService.addClient(newClientModel);
