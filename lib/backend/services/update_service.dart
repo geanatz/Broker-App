@@ -61,7 +61,7 @@ class UpdateService {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       _currentVersion = packageInfo.version;
-      debugPrint('🔄 UpdateService initialized - Current version: $_currentVersion');
+  
     } catch (e) {
       debugPrint('❌ Error initializing UpdateService: $e');
     }

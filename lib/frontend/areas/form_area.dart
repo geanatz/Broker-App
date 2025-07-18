@@ -11,7 +11,7 @@ import 'package:broker_app/frontend/components/forms/form3.dart';
 import 'package:broker_app/frontend/components/forms/form_new.dart';
 import 'package:broker_app/frontend/components/headers/widget_header2.dart';
 import 'package:intl/intl.dart';
-import 'package:broker_app/backend/services/firebase_service.dart';
+import '../../backend/services/app_logger.dart' as app_log;
 
 /// Area pentru formulare care va fi afisata in cadrul ecranului principal.
 /// Aceasta componenta inlocuieste vechiul FormScreen pastrand functionalitatea
@@ -49,11 +49,9 @@ class _FormAreaState extends State<FormArea> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🚀 FORM: initState called');
-    PerformanceMonitor.startTimer('formAreaInit');
+    app_log.PerformanceMonitor.startTimer('formAreaInit');
     _initializeServices();
-    PerformanceMonitor.endTimer('formAreaInit');
-    debugPrint('✅ FORM: initState completed');
+    app_log.PerformanceMonitor.endTimer('formAreaInit');
   }
 
   @override
@@ -106,45 +104,30 @@ class _FormAreaState extends State<FormArea> {
 
   /// Callback pentru schimbarile din FormService
   void _onFormServiceChanged() {
-    debugPrint('🔄 FORM: _onFormServiceChanged called');
     if (mounted) {
-      debugPrint('🔄 FORM: Widget is mounted, scheduling setState');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          debugPrint('🔄 FORM: Executing setState in post frame callback');
           setState(() {});
-          debugPrint('🔄 FORM: setState completed');
-        } else {
-          debugPrint('🔄 FORM: Widget no longer mounted in post frame callback');
         }
       });
-    } else {
-      debugPrint('🔄 FORM: Widget not mounted, skipping setState');
     }
   }
 
   /// Callback pentru schimbarile din ClientService
   void _onClientServiceChanged() {
-    debugPrint('🔄 FORM: _onClientServiceChanged called');
     // OPTIMIZARE: Folosește microtask pentru a evita blocking
     Future.microtask(() {
-      debugPrint('🔄 FORM: Executing _handleClientChange in microtask');
       _handleClientChange();
-      debugPrint('🔄 FORM: _handleClientChange completed');
     });
   }
 
   /// Gestioneaza schimbarea clientului
   /// OPTIMIZAT: Cu loading instant și debouncing
   Future<void> _handleClientChange() async {
-    debugPrint('🔄 FORM: _handleClientChange started');
     final currentClient = _clientService.focusedClient;
-    debugPrint('🔄 FORM: Current client: ${currentClient?.phoneNumber}');
-    debugPrint('🔄 FORM: Previous client: ${_previousClient?.phoneNumber}');
     
     // OPTIMIZARE: Nu face nimic dacă clientul nu s-a schimbat
     if (currentClient?.phoneNumber == _previousClient?.phoneNumber) {
-      debugPrint('🔄 FORM: Client unchanged, returning early');
       return;
     }
     
@@ -158,7 +141,7 @@ class _FormAreaState extends State<FormArea> {
       if (clientStillExists) {
         await _saveFormDataForClient(_previousClient!);
       } else {
-        debugPrint('⚠️ FORM: Skipping form save for deleted client: ${_previousClient!.phoneNumber}');
+        app_log.AppLogger.error('FORM', 'Skipping form save for deleted client: ${_previousClient!.phoneNumber}');
       }
     }
     
@@ -186,7 +169,7 @@ class _FormAreaState extends State<FormArea> {
   /// Incarca datele formularului pentru clientul curent
   /// OPTIMIZAT: Cu loading instant și cache
   Future<void> _loadFormDataForCurrentClient() async {
-    PerformanceMonitor.startTimer('loadFormData');
+    app_log.PerformanceMonitor.startTimer('loadFormData');
     final currentClient = _clientService.focusedClient;
     if (currentClient != null) {
       try {
@@ -213,9 +196,9 @@ class _FormAreaState extends State<FormArea> {
           }
         });
       } catch (e) {
-        debugPrint('❌ FORM: Error loading form data: $e');
+        app_log.AppLogger.error('FORM', 'Error loading form data', e);
       } finally {
-        PerformanceMonitor.endTimer('loadFormData');
+        app_log.PerformanceMonitor.endTimer('loadFormData');
       }
     }
   }
@@ -316,7 +299,7 @@ class _FormAreaState extends State<FormArea> {
             return formatter.format(numericValue);
           }
         } catch (e) {
-          debugPrint('Error formatting value for display: $e');
+          app_log.AppLogger.error('FORM', 'Error formatting value for display', e);
         }
       }
     }
@@ -437,13 +420,12 @@ class _FormAreaState extends State<FormArea> {
               }
               
               if (shouldSave) {
-                debugPrint('Saving field $field with value: "$cleanValue" (original: "$value")');
                 _updateFormField(client, index, field, cleanValue, isCreditForm, isClient);
                 
                 // Automatically save to Firebase after updating the form field
                 _autoSaveToFirebase(client);
               } else {
-                debugPrint('Skipping save for field $field - value unchanged: "$cleanValue"');
+                // debugPrint('Skipping save for field $field - value unchanged: "$cleanValue"');
               }
             }
           }
@@ -481,8 +463,6 @@ class _FormAreaState extends State<FormArea> {
   /// Automatically saves form data to Firebase for the given client
   Future<void> _autoSaveToFirebase(ClientModel client) async {
     try {
-      debugPrint('Auto-saving form data to Firebase for client: ${client.name} (${client.phoneNumber})');
-      
       final success = await _formService.saveFormDataForClient(
         client.phoneNumber,
         client.phoneNumber,
@@ -490,33 +470,28 @@ class _FormAreaState extends State<FormArea> {
       );
       
       if (!success) {
-        debugPrint('❌ Failed to auto-save form data to Firebase for client: ${client.name}');
+        app_log.AppLogger.error('FORM', 'Failed to auto-save form data', null);
       }
     } catch (e) {
-      debugPrint('❌ Error auto-saving form data to Firebase: $e');
+      app_log.AppLogger.error('FORM', 'Error auto-saving form data', e);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔄 FORM: build() called');
     final focusedClient = _clientService.focusedClient;
-    debugPrint('🔄 FORM: Focused client: ${focusedClient?.phoneNumber}');
     
     // Verifica daca clientul focusat este temporar
     if (focusedClient != null && focusedClient.id.startsWith('temp_')) {
-      debugPrint('🔄 FORM: Building temporary client placeholder');
       return _buildTemporaryClientPlaceholder(focusedClient);
     }
     
     // Verifica daca nu exista client focusat
     if (focusedClient == null) {
-      debugPrint('🔄 FORM: Building no client selected placeholder');
       return _buildNoClientSelectedPlaceholder();
     }
     
     // Construieste formularul pentru clientul real
-    debugPrint('🔄 FORM: Building form content for client: ${focusedClient.phoneNumber}');
     return _buildFormContent(focusedClient);
   }
 
@@ -672,7 +647,6 @@ class _FormAreaState extends State<FormArea> {
   /// Construieste sectiunea pentru credite conform design-ului exact din formArea.md
   Widget _buildCreditSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientLoanForm(client.phoneNumber);
-    debugPrint('🔄 FORM: _buildCreditSection - isShowingClient: $isShowingClient for client: ${client.phoneNumber}');
     final forms = isShowingClient 
         ? _formService.getClientCreditForms(client.phoneNumber)
         : _formService.getCoborrowerCreditForms(client.phoneNumber);
@@ -734,7 +708,6 @@ class _FormAreaState extends State<FormArea> {
   /// Construieste sectiunea pentru venituri conform design-ului exact din formArea.md
   Widget _buildIncomeSection(ClientModel client) {
     final isShowingClient = _formService.isShowingClientIncomeForm(client.phoneNumber);
-    debugPrint('🔄 FORM: _buildIncomeSection - isShowingClient: $isShowingClient for client: ${client.phoneNumber}');
     final forms = isShowingClient 
         ? _formService.getClientIncomeForms(client.phoneNumber)
         : _formService.getCoborrowerIncomeForms(client.phoneNumber);
@@ -1183,8 +1156,6 @@ class _FormAreaState extends State<FormArea> {
 
   /// Actualizeaza un camp din formular
   void _updateFormField(ClientModel client, int index, String field, String value, bool isCreditForm, bool isClient) {
-    debugPrint('_updateFormField called: client=${client.phoneNumber}, index=$index, field=$field, value="$value", isCreditForm=$isCreditForm, isClient=$isClient');
-    
     if (isCreditForm) {
       final forms = isClient 
           ? _formService.getClientCreditForms(client.phoneNumber)

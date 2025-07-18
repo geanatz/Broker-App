@@ -124,7 +124,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Incepe procesul de creare client cu client temporar
   void _startClientCreation() {
-    debugPrint('🆕 POPUP: Starting client creation');
     
     // Creeaza clientul temporar in service
     final clientService = SplashService().clientUIService;
@@ -137,7 +136,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
   /// Deschide file picker pentru selectia imaginilor OCR
   Future<void> _openImagePicker() async {
     try {
-      debugPrint('🔍 Deschide file picker pentru selectia imaginilor OCR...');
+  
       
 
       
@@ -161,7 +160,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       }
       
       if (result != null && result.files.isNotEmpty) {
-        debugPrint('📁 Selectate ${result.files.length} imagini pentru OCR');
+    
         
         if (mounted) {
           setState(() {
@@ -180,7 +179,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
           _startOcrProcess();
         }
       } else {
-        debugPrint('❌ Selectia imaginilor a fost anulata');
+    
       }
     } catch (e) {
       debugPrint('❌ Eroare la selectia imaginilor: $e');
@@ -199,7 +198,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Incepe procesul OCR
   Future<void> _startOcrProcess() async {
-    debugPrint('🚀 CLIENTS_POPUP: Incepe procesul OCR...');
+
     
     setState(() {
       _isOcrProcessing = true;
@@ -242,7 +241,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
                   width: image.width,
                   height: image.height,
                 ));
-                debugPrint('✅ Image prepared for OCR | ${file.name} | ${image.width}x${image.height}');
+            
               } else {
                 debugPrint('❌ Cannot decode image ${file.name}');
               }
@@ -257,11 +256,11 @@ class _ClientsPopupState extends State<ClientsPopup> {
           _ocrProgress = 0.3;
         });
         
-        debugPrint('✅ Pregatite ${imagesToProcess.length} imagini pentru OCR pe web');
+    
         
         // Pe web limitez numărul de imagini pentru a evita blocarea
         if (imagesToProcess.length > 5) {
-          debugPrint('⚠️ Pe web se vor procesa doar primele 5 imagini din ${imagesToProcess.length}');
+      
           imagesToProcess = imagesToProcess.take(5).toList();
           
           if (mounted) {
@@ -277,7 +276,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       } else {
         // Pe desktop folosim fișierele direct
         imagesToProcess = _selectedImages;
-        debugPrint('✅ Folosim ${imagesToProcess.length} imagini pentru OCR pe desktop');
+    
       }
       
       final batchResult = await ocrService.processMultipleImages(
@@ -305,7 +304,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         _ocrMessage = 'Extragere finalizata!';
       });
       
-      debugPrint('✅ OCR complet - procesate ${batchResult.individualResults.length} imagini | Platform: ${kIsWeb ? 'Web' : 'Desktop'}');
+  
 
     } catch (e) {
       debugPrint('❌ CLIENTS_POPUP: Eroare la procesul OCR: $e');
@@ -1370,7 +1369,6 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
 
   /// Salveaza clientul curent
   Future<void> _saveClient() async {
-    debugPrint('🆕 POPUP: Starting client creation');
     
     try {
       final client = _buildClientFromForm();
@@ -1388,7 +1386,6 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
       final success = await clientService.finalizeTemporaryClient();
       
       if (success) {
-        debugPrint('✅ POPUP: Client saved successfully | Name: ${client.name} | Phone: ${client.phoneNumber1}');
         
         if (widget.onSaveClient != null) {
           widget.onSaveClient!(client);

@@ -47,7 +47,7 @@ class CalendarService {
       await initializeDateFormatting('ro_RO', null);
       _dateFormatter = DateFormat('d MMM', 'ro_RO');
       _isInitialized = true;
-      debugPrint('CalendarService initialized successfully');
+  
     } catch (e) {
       debugPrint('Error initializing calendar date formatting: $e');
       // Fallback to default formatting

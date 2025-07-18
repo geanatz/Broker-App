@@ -94,7 +94,7 @@ class SplashService extends ChangeNotifier {
       final newTeam = await NewFirebaseService().getCurrentConsultantTeam();
       
       if (newConsultantToken != _currentConsultantToken || newTeam != _currentTeam) {
-        debugPrint('🔄 SPLASH_SERVICE: Consultant changed, resetting cache...');
+    
         
         // Salvează în cache datele pentru echipa anterioară
         if (_currentTeam != null && _cachedMeetings.isNotEmpty) {
@@ -122,7 +122,7 @@ class SplashService extends ChangeNotifier {
         // OPTIMIZARE: Operații non-blocking pentru dashboard și Google Drive
         _performNonBlockingReset(newConsultantToken);
         
-        debugPrint('✅ SPLASH_SERVICE: Cache reset completed for new consultant');
+
       }
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error resetting for new consultant: $e');
@@ -164,7 +164,7 @@ class SplashService extends ChangeNotifier {
       _cachedMeetings = List.from(_teamMeetingsCache[_currentTeam!]!);
       _meetingsCacheTime = DateTime.now();
       notifyListeners();
-      debugPrint('📅 SPLASH_SERVICE: Loaded ${_cachedMeetings.length} meetings from team cache');
+  
     } else {
       // Încarcă din Firebase cu timeout
       await _refreshMeetingsCache();
@@ -180,7 +180,7 @@ class SplashService extends ChangeNotifier {
       _cachedClients = List.from(_teamClientsCache[_currentTeam!]!);
       _clientsCacheTime = DateTime.now();
       notifyListeners();
-      debugPrint('👥 SPLASH_SERVICE: Loaded ${_cachedClients.length} clients from team cache');
+  
     } else {
       // Încarcă din Firebase
       await _refreshClientsCache();
@@ -245,7 +245,7 @@ class SplashService extends ChangeNotifier {
       }
       notifyListeners();
       
-      debugPrint('✅ SPLASH_SERVICE: Refreshed meetings cache with ${meetings.length} meetings');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error refreshing meetings cache: $e');
     }
@@ -273,7 +273,7 @@ class SplashService extends ChangeNotifier {
       }
       notifyListeners();
       
-      debugPrint('✅ SPLASH_SERVICE: Refreshed clients cache with ${_cachedClients.length} clients');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error refreshing clients cache: $e');
     }
@@ -316,7 +316,7 @@ class SplashService extends ChangeNotifier {
         }
         
         _hasPendingInvalidation = false;
-        debugPrint('✅ SPLASH_SERVICE: Cache invalidation and refresh completed');
+    
       } catch (e) {
         debugPrint('❌ SPLASH_SERVICE: Error in cache invalidation: $e');
         _hasPendingInvalidation = false;
@@ -632,7 +632,7 @@ class SplashService extends ChangeNotifier {
       // OPTIMIZARE: Pornește real-time listeners pentru sincronizare automată
       await _clientUIService!.startRealTimeListeners();
       
-      debugPrint('✅ SPLASH_SERVICE: Client services initialized with real-time listeners');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing client services: $e');
       rethrow;
@@ -687,7 +687,7 @@ class SplashService extends ChangeNotifier {
           }),
         );
         
-        debugPrint('✅ SPLASH_SERVICE: Preloaded form data for ${clientsToPreload.length} clients');
+    
       }
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error preloading form data: $e');
@@ -707,7 +707,7 @@ class SplashService extends ChangeNotifier {
           focusedClient.phoneNumber,
           focusedClient.phoneNumber,
         );
-        debugPrint('✅ SPLASH_SERVICE: Preloaded form data for focused client');
+    
       }
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error preloading form data: $e');
@@ -761,7 +761,7 @@ class SplashService extends ChangeNotifier {
     try {
       _connectionService = ConnectionService();
       await _connectionService!.initialize();
-      debugPrint('✅ SPLASH_SERVICE: Connection service initialized');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error initializing connection service: $e');
       rethrow;
@@ -824,7 +824,7 @@ class SplashService extends ChangeNotifier {
         meetingsByDate.putIfAbsent(dateKey, () => []).add(meeting);
       }
       
-      debugPrint('✅ SPLASH_SERVICE: Optimized meetings cache with ${_cachedMeetings.length} meetings');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error optimizing meetings cache: $e');
     }
@@ -836,7 +836,7 @@ class SplashService extends ChangeNotifier {
       // OPTIMIZARE: Sortează clienții după nume pentru căutare rapidă
       _cachedClients.sort((a, b) => a.name.compareTo(b.name));
       
-      debugPrint('✅ SPLASH_SERVICE: Optimized clients cache with ${_cachedClients.length} clients');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error optimizing clients cache: $e');
     }
@@ -849,7 +849,7 @@ class SplashService extends ChangeNotifier {
       _parallelTasks.clear();
       _taskStartTimes.clear();
       
-      debugPrint('✅ SPLASH_SERVICE: Finalization completed');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error during finalization: $e');
       rethrow;
@@ -966,7 +966,7 @@ class SplashService extends ChangeNotifier {
         notifyListeners();
         
         _hasPendingInvalidation = false;
-        debugPrint('✅ SPLASH_SERVICE: Clients cache invalidation and refresh completed');
+    
       } catch (e) {
         debugPrint('❌ SPLASH_SERVICE: Error in clients cache invalidation: $e');
         _hasPendingInvalidation = false;
@@ -977,7 +977,7 @@ class SplashService extends ChangeNotifier {
   /// OPTIMIZAT: Invalidează cache-ul de clienți pentru schimbări de categorie (imediat)
   Future<void> invalidateClientsCacheForCategoryChange() async {
     try {
-      debugPrint('🔄 SPLASH_SERVICE: Immediate cache invalidation for category change');
+  
       
       _cachedClients = [];
       _clientsCacheTime = null;
@@ -994,7 +994,7 @@ class SplashService extends ChangeNotifier {
         _clientUIService!.notifyListeners();
       }
       
-      debugPrint('✅ SPLASH_SERVICE: Immediate clients cache invalidation completed');
+  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error in immediate clients cache invalidation: $e');
     }

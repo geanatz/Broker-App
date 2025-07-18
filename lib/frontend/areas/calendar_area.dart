@@ -67,7 +67,7 @@ class CalendarAreaState extends State<CalendarArea> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🚀 CALENDAR_AREA: initState called');
+
     PerformanceMonitor.startTimer('calendarAreaInit');
     
     // Foloseste serviciile pre-incarcate din splash
@@ -84,7 +84,7 @@ class CalendarAreaState extends State<CalendarArea> {
     _loadFromCacheInstantly();
     
     PerformanceMonitor.endTimer('calendarAreaInit');
-    debugPrint('✅ CALENDAR_AREA: initState completed');
+
   }
 
   /// OPTIMIZARE: Încarcă imediat din cache pentru loading instant și sincronizare completă
@@ -107,7 +107,7 @@ class CalendarAreaState extends State<CalendarArea> {
         });
       }
       
-      debugPrint('✅ CALENDAR_AREA: Loaded ${_cachedMeetings.length} meetings instantly from cache');
+  
     } catch (e) {
       debugPrint('❌ CALENDAR_AREA: Error loading from cache: $e');
       // Fallback to normal loading
@@ -203,7 +203,7 @@ class CalendarAreaState extends State<CalendarArea> {
         });
       }
       
-      debugPrint('✅ CALENDAR_AREA: Loaded ${_cachedMeetings.length} meetings for current week');
+  
     } catch (e) {
       debugPrint('❌ CALENDAR_AREA: Error loading team meetings from cache: $e');
       if (mounted) {
@@ -635,7 +635,7 @@ class CalendarAreaState extends State<CalendarArea> {
           initialDateTime: selectedDateTime,
           onSaved: () {
             // OPTIMIZARE: Feedback instant - închide popup-ul și notifică UI-ul
-            debugPrint('✅ CALENDAR_AREA: Meeting created, providing instant feedback');
+        
             
             // OPTIMIZARE: Invalidare cache optimizată cu delay redus
             SplashService().invalidateAllMeetingCaches();
@@ -676,7 +676,7 @@ class CalendarAreaState extends State<CalendarArea> {
           meetingId: docId,
           onSaved: () {
             // OPTIMIZARE: Feedback instant - închide popup-ul și notifică UI-ul
-            debugPrint('✅ CALENDAR_AREA: Meeting updated, providing instant feedback');
+        
             
             // OPTIMIZARE: Invalidare cache optimizată cu delay redus
             SplashService().invalidateAllMeetingCaches();
@@ -818,7 +818,7 @@ class CalendarAreaState extends State<CalendarArea> {
 
   /// Public method to refresh calendar data
   void refreshCalendar() {
-    debugPrint('🔄 Refreshing calendar data...');
+
     // OPTIMIZARE: Folosește invalidarea optimizată
     SplashService().invalidateAllMeetingCaches();
   }

@@ -90,7 +90,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    debugPrint('🚀 MAIN: initState called');
+
     PerformanceMonitor.startTimer('mainScreenInit');
     
     _consultantName = widget.consultantName ?? 'Consultant';
@@ -131,7 +131,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     
     PerformanceMonitor.endTimer('mainScreenInit');
-    debugPrint('✅ MAIN: initState completed');
+
   }
 
   /// FIX: Inițializează aplicația pentru consultantul curent
@@ -218,18 +218,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       // Not reading areaIndex anymore; area always defaults to dashboard
       _currentArea = AreaType.dashboard;
       _sidebarService.syncArea(_currentArea);
-      debugPrint('🔧 MAIN_SCREEN: Area set by default to Acasa (dashboard)');
+  
       
       if (paneIndex != null && paneIndex < PaneType.values.length) {
         _currentPane = PaneType.values[paneIndex];
         // Update SidebarService state to keep it in sync
         _sidebarService.syncPane(_currentPane);
-        debugPrint('🔧 MAIN_SCREEN: Restored pane from preferences: $_currentPane');
+    
       } else {
         // Nu există preferințe salvate - folosim default-ul (clients)  
         _currentPane = PaneType.clients;
         _sidebarService.syncPane(_currentPane);
-        debugPrint('🔧 MAIN_SCREEN: No saved pane preferences, using default: clients');
+    
       }
       
       // Update UI if needed
@@ -247,7 +247,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _currentPane = PaneType.clients;
       _sidebarService.syncArea(_currentArea);
       _sidebarService.syncPane(_currentPane);
-      debugPrint('🔧 MAIN_SCREEN: Error fallback - using defaults: dashboard, clients');
+  
     }
   }
   
@@ -420,8 +420,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   void _handleAreaChanged(AreaType area) {
-    PerformanceMonitor.startTimer('areaChange');
-    debugPrint('🔄 Area changed to: $area');
+
     setState(() {
       _currentArea = area;
     });
@@ -431,13 +430,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Force state sync after a short delay to handle any race conditions
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _forceSyncStates();
-      PerformanceMonitor.endTimer('areaChange');
     });
   }
   
   void _handlePaneChanged(PaneType pane) {
-    PerformanceMonitor.startTimer('paneChange');
-    debugPrint('🔄 Pane changed to: $pane');
+
     setState(() {
       _currentPane = pane;
     });
@@ -462,7 +459,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Force state sync after a short delay to handle any race conditions
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _forceSyncStates();
-      PerformanceMonitor.endTimer('paneChange');
     });
   }
   
@@ -478,7 +474,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   /// Handles switching to form area when a client is selected
   void _handleSwitchToFormArea() {
-    debugPrint('🔄 MAIN: Switching to form area from clients pane');
+
     // Use the SidebarService to change area to keep states in sync
     _sidebarService.changeArea(AreaType.form);
   }

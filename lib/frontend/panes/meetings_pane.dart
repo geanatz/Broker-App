@@ -133,7 +133,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
   /// FIX: Callback pentru refresh automat când se schimbă datele în SplashService
   void _onSplashServiceChanged() {
     if (mounted) {
-      debugPrint('📋 MEETINGS_PANE: SplashService changed, refreshing meetings automatically');
+  
       _loadUpcomingMeetings();
     }
   }
@@ -254,7 +254,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
       }
       
       // OPTIMIZARE: Single log message
-      debugPrint('✅ MEETINGS_PANE: Loaded ${_allAppointments.length} upcoming meetings');
+  
     } catch (e) {
       debugPrint('❌ MEETINGS_PANE: Error loading team meetings from cache: $e');
       if (mounted) {

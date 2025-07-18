@@ -43,7 +43,6 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🚀 MOBILE: initState called');
     
     // Ascunde status bar-ul
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -61,8 +60,6 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     
     // FIX: Start simplified Firebase listeners
     _startFirebaseListeners();
-    
-    debugPrint('✅ MOBILE: Simplified sync system initialized');
   }
 
   @override
@@ -81,7 +78,6 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
   /// FIX: Start simplified Firebase listeners
   Future<void> _startFirebaseListeners() async {
     try {
-      debugPrint('🔄 MOBILE: Starting Firebase listeners');
       
       // Stop existing listeners first
       _stopFirebaseListeners();
@@ -89,11 +85,10 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
       // 1. Main clients stream
       _firebaseSubscription = _firebaseService.getClientsRealTimeStream().listen(
         (List<Map<String, dynamic>> clientsData) {
-          debugPrint('🔄 MOBILE: Firebase update received with ${clientsData.length} clients');
           _handleFirebaseUpdate(clientsData);
         },
         onError: (error) {
-          debugPrint('❌ MOBILE: Firebase stream error: $error');
+          FirebaseLogger.error('❌ MOBILE: Firebase stream error: $error');
         },
         cancelOnError: false,
       );
@@ -101,24 +96,21 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
       // 2. Operations stream
       _operationsSubscription = _firebaseService.getClientsOperationsRealTimeStream().listen(
         (Map<String, dynamic> operations) {
-          debugPrint('🔄 MOBILE: Operations update received');
           _handleOperationsUpdate(operations);
         },
         onError: (error) {
-          debugPrint('❌ MOBILE: Operations stream error: $error');
+          FirebaseLogger.error('❌ MOBILE: Operations stream error: $error');
         },
         cancelOnError: false,
       );
 
-      debugPrint('✅ MOBILE: Firebase listeners started successfully');
     } catch (e) {
-      debugPrint('❌ MOBILE: Error starting Firebase listeners: $e');
+      FirebaseLogger.error('❌ MOBILE: Error starting Firebase listeners: $e');
     }
   }
 
   /// FIX: Stop Firebase listeners
   void _stopFirebaseListeners() {
-    debugPrint('🛑 MOBILE: Stopping Firebase listeners');
     _firebaseSubscription?.cancel();
     _operationsSubscription?.cancel();
     _firebaseSubscription = null;
@@ -206,7 +198,6 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
   /// FIX: Perform the actual data update
   void _performDataUpdate(List<ClientModel> newClients, String source) {
     if (_isRefreshing) {
-      debugPrint('🔄 MOBILE: Update skipped - refresh in progress');
       return;
     }
     
@@ -214,14 +205,11 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
       final currentCount = _clients.length;
       final newCount = newClients.length;
       
-      debugPrint('🔄 MOBILE: Data update from $source - Current: $currentCount, New: $newCount');
-      
       // FIX: Check for significant changes
       bool hasSignificantChanges = false;
       
       if (currentCount != newCount) {
         hasSignificantChanges = true;
-        debugPrint('🔄 MOBILE: Client count change detected: $currentCount -> $newCount');
       } else {
         // Check for individual client changes
         for (final newClient in newClients) {
@@ -241,11 +229,9 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
                 existingClient.status != newClient.status ||
                 existingClient.name != newClient.name) {
               hasSignificantChanges = true;
-              debugPrint('🔄 MOBILE: Client change detected: ${existingClient.name}');
             }
           } else {
             hasSignificantChanges = true;
-            debugPrint('🔄 MOBILE: New client detected: ${newClient.name}');
           }
         }
       }
@@ -257,17 +243,13 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
           });
         }
         
-        debugPrint('✅ MOBILE: Data updated successfully from $source - ${_clients.length} clients');
-        
         // FIX: Show bulk deletion feedback only when appropriate
         if (_clients.isEmpty && newClients.isEmpty && source == 'firebase') {
           _showBulkDeletionFeedback();
         }
-      } else {
-        debugPrint('🔄 MOBILE: No significant changes detected, skipping update');
       }
     } catch (e) {
-      debugPrint('❌ MOBILE: Error in data update from $source: $e');
+      FirebaseLogger.error('Error in data update from $source: $e');
     }
   }
 
@@ -291,9 +273,8 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     try {
       final cachedClients = await _splashService.getCachedClients();
       _updateClientsData(cachedClients, source: 'cache_load');
-      debugPrint('✅ MOBILE: Loaded ${cachedClients.length} clients from cache');
     } catch (e) {
-      debugPrint('❌ MOBILE: Error loading from cache: $e');
+      FirebaseLogger.error('Error loading from cache: $e');
       _initializeClients();
     }
   }
@@ -304,15 +285,13 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     
     try {
       _isRefreshing = true;
-      debugPrint('🔄 MOBILE: Starting force refresh');
       
       await _clientService.loadClientsFromFirebase();
       final cachedClients = await _splashService.getCachedClients();
       _updateClientsData(cachedClients, source: 'force_refresh');
       
-      debugPrint('🔄 MOBILE: Force refresh completed');
     } catch (e) {
-      debugPrint('❌ MOBILE: Error force refreshing clients: $e');
+      FirebaseLogger.error('Error force refreshing clients: $e');
     } finally {
       _isRefreshing = false;
     }
@@ -663,7 +642,6 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    debugPrint('🔄 MOBILE: Pull-to-refresh triggered');
                     await _forceRefresh();
                   },
                   color: Color(0xFFC17099),

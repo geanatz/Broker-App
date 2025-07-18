@@ -65,7 +65,6 @@ class _ClientsPaneState extends State<ClientsPane> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🚀 CLIENTS: initState called');
     PerformanceMonitor.startTimer('clientsPaneInit');
     
     // Foloseste serviciul pre-incarcat din splash
@@ -83,7 +82,6 @@ class _ClientsPaneState extends State<ClientsPane> {
     _loadFromCacheInstantly();
     
     PerformanceMonitor.endTimer('clientsPaneInit');
-    debugPrint('✅ CLIENTS: initState completed');
   }
 
   /// OPTIMIZARE: Încarcă imediat din cache pentru loading instant
@@ -101,7 +99,6 @@ class _ClientsPaneState extends State<ClientsPane> {
         });
       }
       
-      debugPrint('✅ CLIENTS: Loaded ${_cachedClients.length} clients from cache');
     } catch (e) {
       debugPrint('❌ CLIENTS: Error loading from cache: $e');
       // Fallback to normal loading
@@ -128,7 +125,6 @@ class _ClientsPaneState extends State<ClientsPane> {
         });
       }
       
-      debugPrint('🔄 CLIENTS: Refreshed ${_cachedClients.length} clients');
     } catch (e) {
       debugPrint('❌ CLIENTS: Error refreshing clients: $e');
     } finally {
@@ -173,9 +169,6 @@ class _ClientsPaneState extends State<ClientsPane> {
           setState(() {
             _cachedClients = newClients;
           });
-          debugPrint('🔄 CLIENTS: Updated ${_cachedClients.length} clients from ClientUIService');
-        } else {
-          debugPrint('🔄 CLIENTS: No changes detected in ClientUIService');
         }
       }
     });
@@ -194,23 +187,21 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   /// OPTIMIZAT: Execută schimbarea efectivă a clientului
   void _performClientSwitch(ClientModel client) {
-    debugPrint('🔄 CLIENTS: _performClientSwitch called for client: ${client.phoneNumber}');
-    debugPrint('🔄 CLIENTS: Current focused count: ${_clientService.clienti.where((c) => c.status == ClientStatus.focused).length + _clientService.reveniri.where((c) => c.status == ClientStatus.focused).length + _clientService.recente.where((c) => c.status == ClientStatus.focused).length}');
     
     if (_isSwitchingClient) {
-      debugPrint('⚠️ CLIENTS: Already switching client, skipping');
+  
       return;
     }
     
     // FIX: Check if client is already focused to prevent unnecessary switches
     if (client.status == ClientStatus.focused) {
-      debugPrint('ℹ️ CLIENTS: Client already focused, skipping switch');
+  
       return;
     }
     
     try {
       _isSwitchingClient = true;
-      debugPrint('🔄 CLIENTS: Starting client switch for: ${client.phoneNumber}');
+  
       
       // Switch to form area when client is selected
       widget.onSwitchToFormArea?.call();
@@ -221,9 +212,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       // OPTIMIZARE: Force refresh pentru a sincroniza UI-ul
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          debugPrint('🔄 CLIENTS: Post-frame callback - refreshing UI');
           setState(() {});
-          debugPrint('🔄 CLIENTS: Post-frame callback - UI refreshed');
         }
       });
       
@@ -231,7 +220,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       debugPrint('❌ CLIENTS: Error switching client: $e');
     } finally {
       _isSwitchingClient = false;
-      debugPrint('🔄 CLIENTS: _performClientSwitch completed');
+  
     }
   }
 
@@ -240,15 +229,6 @@ class _ClientsPaneState extends State<ClientsPane> {
     // Foloseste intotdeauna lista live din service pentru a reflecta focusul corect
     // FARA clientul temporar pentru clients-pane (temporarul apare doar in popup)
     List<ClientModel> clients = _clientService.getClientsByCategoryWithoutTemporary(category);
-    
-    // Log client counts for all categories in a single compact message
-    if (category == ClientCategory.recente) {
-      final clientiCount = _clientService.getClientsByCategoryWithoutTemporary(ClientCategory.apeluri).length;
-      final reveniriCount = _clientService.getClientsByCategoryWithoutTemporary(ClientCategory.reveniri).length;
-      final recenteCount = clients.length;
-      final focusedCount = clients.where((c) => c.status == ClientStatus.focused).length;
-              debugPrint('📋 CLIENTS: Category counts | Clienti: $clientiCount | Reveniri: $reveniriCount | Recente: $recenteCount | Focused: $focusedCount');
-    }
     
     if (clients.isEmpty) {
       return SizedBox(

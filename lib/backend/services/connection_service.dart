@@ -44,8 +44,6 @@ class ConnectionService extends ChangeNotifier {
   /// Inițializează monitorizarea conexiunii
   Future<void> initialize() async {
     try {
-      debugPrint('🔌 CONNECTION_SERVICE: Initializing connection monitoring');
-      
       // Monitorizează conectivitatea la internet
       _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
         (List<ConnectivityResult> results) {
@@ -63,8 +61,6 @@ class ConnectionService extends ChangeNotifier {
       
       // Pornește procesarea cozii de sincronizare
       _startSyncQueueProcessing();
-      
-      debugPrint('✅ CONNECTION_SERVICE: Connection monitoring initialized');
     } catch (e) {
       debugPrint('❌ CONNECTION_SERVICE: Error initializing connection monitoring: $e');
     }
@@ -74,8 +70,6 @@ class ConnectionService extends ChangeNotifier {
   void _handleConnectivityChange(ConnectivityResult result) {
     final wasConnected = _isConnected;
     _isConnected = result != ConnectivityResult.none;
-    
-    debugPrint('🔌 CONNECTION_SERVICE: Connectivity changed - Connected: $_isConnected');
     
     if (wasConnected && !_isConnected) {
       // Conectivitatea s-a pierdut
@@ -101,7 +95,7 @@ class ConnectionService extends ChangeNotifier {
           final wasConnected = _isFirebaseConnected;
           _isFirebaseConnected = snapshot.exists;
           
-          debugPrint('🔌 CONNECTION_SERVICE: Firebase connection changed - Connected: $_isFirebaseConnected');
+
           
           if (wasConnected && !_isFirebaseConnected) {
             _handleFirebaseConnectionLoss();
@@ -130,7 +124,7 @@ class ConnectionService extends ChangeNotifier {
     _lastConnectionLoss = DateTime.now();
     _isReconnecting = true;
     
-    debugPrint('🔌 CONNECTION_SERVICE: Firebase connection lost, attempting reconnection...');
+
     
     // FIX: Attempt reconnection with exponential backoff
     _attemptFirebaseReconnection();
@@ -141,7 +135,7 @@ class ConnectionService extends ChangeNotifier {
     _isReconnecting = false;
     _lastSuccessfulSync = DateTime.now();
     
-    debugPrint('🔌 CONNECTION_SERVICE: Firebase connection restored');
+
     
     // FIX: Process any pending sync operations
     if (_syncQueue.isNotEmpty) {
@@ -155,7 +149,7 @@ class ConnectionService extends ChangeNotifier {
       _reconnectAttempts++;
       final delay = Duration(seconds: _reconnectAttempts * 3); // 3s, 6s, 9s, 12s, 15s
       
-      debugPrint('🔌 CONNECTION_SERVICE: Reconnection attempt $_reconnectAttempts/$_maxReconnectAttempts in ${delay.inSeconds}s');
+
       
       Future.delayed(delay, () {
         if (_isReconnecting) {
@@ -172,7 +166,7 @@ class ConnectionService extends ChangeNotifier {
   /// Gestionează pierderea conexiunii
   void _handleConnectionLoss() {
     _lastConnectionLoss = DateTime.now();
-    debugPrint('🔌 CONNECTION_SERVICE: Connection lost at $_lastConnectionLoss');
+
     
     // Oprește sincronizarea activă
     _isSyncing = false;
@@ -183,7 +177,7 @@ class ConnectionService extends ChangeNotifier {
   
   /// Gestionează restabilirea conexiunii
   void _handleConnectionRestored() {
-    debugPrint('🔌 CONNECTION_SERVICE: Connection restored');
+
     
     // Pornește reconnection process
     _startReconnection();
@@ -199,7 +193,7 @@ class ConnectionService extends ChangeNotifier {
     notifyListeners();
     
     try {
-      debugPrint('🔄 CONNECTION_SERVICE: Starting reconnection process');
+
       
       // Așteaptă puțin înainte de a încerca reconectarea
       await Future.delayed(const Duration(seconds: 2));
@@ -222,7 +216,7 @@ class ConnectionService extends ChangeNotifier {
       _isFirebaseConnected = true;
       _lastSuccessfulSync = DateTime.now();
       
-      debugPrint('✅ CONNECTION_SERVICE: Reconnection successful');
+
       
       // Procesează coada de sincronizare
       _processSyncQueue();
@@ -238,7 +232,6 @@ class ConnectionService extends ChangeNotifier {
   /// Salvează starea pentru recovery offline
   void _saveOfflineState() {
     // Implementare pentru salvarea stării curente
-    debugPrint('💾 CONNECTION_SERVICE: Saving offline state');
   }
   
   /// Adaugă o operație în coada de sincronizare
@@ -254,7 +247,7 @@ class ConnectionService extends ChangeNotifier {
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
       
-      debugPrint('📋 CONNECTION_SERVICE: Added to sync queue: $operation');
+
       notifyListeners();
     }
   }
@@ -277,7 +270,7 @@ class ConnectionService extends ChangeNotifier {
     notifyListeners();
     
     try {
-      debugPrint('🔄 CONNECTION_SERVICE: Processing sync queue (${_syncQueue.length}) items');
+
       
       final itemsToProcess = List<Map<String, dynamic>>.from(_syncQueue);
       _syncQueue.clear();
@@ -289,7 +282,7 @@ class ConnectionService extends ChangeNotifier {
             item['data'] as Map<String, dynamic>,
           );
           
-          debugPrint('✅ CONNECTION_SERVICE: Synced operation: ${item['operation']}');
+
         } catch (e) {
           debugPrint('❌ CONNECTION_SERVICE: Failed to sync operation: ${item['operation']} - $e');
           
@@ -299,7 +292,7 @@ class ConnectionService extends ChangeNotifier {
       }
       
       _lastSuccessfulSync = DateTime.now();
-      debugPrint('✅ CONNECTION_SERVICE: Sync queue processing completed');
+
       
     } catch (e) {
       debugPrint('❌ CONNECTION_SERVICE: Error processing sync queue: $e');
@@ -326,7 +319,7 @@ class ConnectionService extends ChangeNotifier {
         // Implementare pentru crearea întâlnirii
         break;
       default:
-        debugPrint('⚠️ CONNECTION_SERVICE: Unknown sync operation: $operation');
+
     }
   }
   

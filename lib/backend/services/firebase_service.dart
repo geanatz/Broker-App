@@ -288,33 +288,12 @@ class PerformanceMonitor {
   }
   
   static void printPerformanceReport() {
-    final averages = getAverageMetrics();
-    debugPrint('[PERF] PERFORMANCE REPORT:');
-    averages.forEach((operation, avgTime) {
-      debugPrint('  $operation: ${avgTime.toStringAsFixed(2)}ms avg');
-    });
+    // Performance reports disabled to reduce log spam
   }
   
   /// Prints a comprehensive performance summary
   static void printComprehensiveReport() {
-    final averages = getAverageMetrics();
-    debugPrint('[PERF] COMPREHENSIVE PERFORMANCE REPORT:');
-    debugPrint('=====================================');
-    
-    // Sort by average time (slowest first)
-    final sortedMetrics = averages.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    
-    for (final entry in sortedMetrics) {
-      final operation = entry.key;
-      final avgTime = entry.value;
-      final emoji = avgTime > 1000 ? '🐌' : avgTime > 500 ? '⚠️' : '⚡';
-      debugPrint('$emoji $operation: ${avgTime.toStringAsFixed(2)}ms avg');
-    }
-    
-    debugPrint('=====================================');
-    debugPrint('Total operations tracked: ${_metrics.length}');
-    debugPrint('Active timers: ${_timers.length}');
+    // Performance reports disabled to reduce log spam
   }
 }
 
@@ -341,14 +320,8 @@ class FirebaseThreadHandler {
       }
     }
     
-    // Detect if we're already on the platform thread
-    if (WidgetsBinding.instance.rootElement == null) {
-      // Not on platform thread, schedule the operation for the next frame
-      WidgetsBinding.instance.addPostFrameCallback((_) => runOperation());
-    } else {
-      // Already on platform thread, execute immediately
-      runOperation();
-    }
+    // Always schedule on the main thread to prevent threading issues
+    WidgetsBinding.instance.addPostFrameCallback((_) => runOperation());
     
     return completer.future;
   }
@@ -668,60 +641,60 @@ class NewFirebaseService {
       if (cacheAge < _tokenCacheDuration) {
         // Only log cache usage occasionally to reduce spam
         if (cacheAge.inMilliseconds % 10000 < 100) { // Log only every ~10 seconds
-          FirebaseLogger.log('Using cached consultant token (age: ${cacheAge.inMilliseconds}ms)', tag: 'FIREBASE_SERVICE');
+      
         }
         PerformanceMonitor.endTimer('getCurrentConsultantToken');
         return _cachedConsultantToken;
       }
     }
     
-    final user = currentUser;
-    if (user == null) {
-      FirebaseLogger.error('getCurrentConsultantToken currentUser is null');
-      PerformanceMonitor.endTimer('getCurrentConsultantToken');
-      return null;
-    }
-
-    try {
-      final doc = await _threadHandler.executeOnPlatformThread(() =>
-        _firestore.collection(_consultantsCollection).doc(user.uid).get()
-      );
-      
-      if (doc.exists) {
-        final data = doc.data();
-        final token = data?['token'] as String?;
-        
-        if (token == null || token.isEmpty) {
-          FirebaseLogger.error('getCurrentConsultantToken token is null or empty');
-          PerformanceMonitor.endTimer('getCurrentConsultantToken');
-          return null;
-        } else {
-          FirebaseLogger.success('getCurrentConsultantToken returning token');
-          
-          // Salveaza in cache
-          _cachedConsultantToken = token;
-          _tokenCacheTime = DateTime.now();
-          
-          PerformanceMonitor.endTimer('getCurrentConsultantToken');
-          return token;
-        }
-      } else {
-        FirebaseLogger.error('Consultant document does not exist for UID: ${user.uid}');
+    return await _threadHandler.executeOnPlatformThread(() async {
+      final user = currentUser;
+      if (user == null) {
+        FirebaseLogger.error('getCurrentConsultantToken currentUser is null');
         PerformanceMonitor.endTimer('getCurrentConsultantToken');
         return null;
       }
-    } catch (e) {
-      FirebaseLogger.error('FirebaseService: Error getting consultant token: $e');
-      PerformanceMonitor.endTimer('getCurrentConsultantToken');
-      return null;
-    }
+
+      try {
+        final doc = await _firestore.collection(_consultantsCollection).doc(user.uid).get();
+      
+        if (doc.exists) {
+          final data = doc.data();
+          final token = data?['token'] as String?;
+          
+          if (token == null || token.isEmpty) {
+            FirebaseLogger.error('getCurrentConsultantToken token is null or empty');
+            PerformanceMonitor.endTimer('getCurrentConsultantToken');
+            return null;
+          } else {
+        
+            
+            // Salveaza in cache
+            _cachedConsultantToken = token;
+            _tokenCacheTime = DateTime.now();
+            
+            PerformanceMonitor.endTimer('getCurrentConsultantToken');
+            return token;
+          }
+        } else {
+          FirebaseLogger.error('Consultant document does not exist for UID: ${user.uid}');
+          PerformanceMonitor.endTimer('getCurrentConsultantToken');
+          return null;
+        }
+      } catch (e) {
+        FirebaseLogger.error('FirebaseService: Error getting consultant token: $e');
+        PerformanceMonitor.endTimer('getCurrentConsultantToken');
+        return null;
+      }
+    });
   }
 
   /// Invalideaza cache-ul pentru token-ul consultantului
   void invalidateConsultantTokenCache() {
     _cachedConsultantToken = null;
     _tokenCacheTime = null;
-    FirebaseLogger.log('Invalidated consultant token cache', tag: 'FIREBASE_SERVICE');
+
   }
 
   /// Obtine datele consultantului pe baza token-ului
@@ -828,7 +801,7 @@ class NewFirebaseService {
       return;
     }
 
-    FirebaseLogger.log('Starting real-time stream for consultant: $consultantToken', tag: 'FIREBASE_SERVICE');
+
     
     try {
       // FIX: Use a simpler query that doesn't require composite indexes
@@ -858,7 +831,7 @@ class NewFirebaseService {
         
         // Only log significant changes
         if (clients.isNotEmpty) {
-          FirebaseLogger.log('Real-time update - ${clients.length} clients', tag: 'FIREBASE_SERVICE');
+      
         }
         return clients;
       }).handleError((error) {
@@ -881,7 +854,7 @@ class NewFirebaseService {
       return;
     }
 
-    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for client: $phoneNumber');
+
     
     // Creeaza query-ul pentru clientul specific
     final query = _firestore
@@ -896,7 +869,7 @@ class NewFirebaseService {
         // Verifica daca clientul apartine consultantului curent
         if (data['consultantToken'] == consultantToken) {
           data['id'] = snapshot.id;
-          debugPrint('🔄 FIREBASE_SERVICE: Real-time client update - ${data['name']}');
+      
           return data;
         }
       }
@@ -913,7 +886,7 @@ class NewFirebaseService {
       return;
     }
 
-    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for category: $category');
+
     
     // Creeaza query-ul pentru categoria specifica
     final query = _firestore
@@ -930,7 +903,7 @@ class NewFirebaseService {
         return data;
       }).toList();
       
-      debugPrint('🔄 FIREBASE_SERVICE: Real-time category update - ${clients.length} clients in $category');
+  
       return clients;
     });
   }
@@ -943,7 +916,7 @@ class NewFirebaseService {
       return;
     }
 
-    debugPrint('🔄 FIREBASE_SERVICE: Starting real-time stream for status: $status');
+
     
     // Creeaza query-ul pentru statusul specific
     final query = _firestore
@@ -960,7 +933,7 @@ class NewFirebaseService {
         return data;
       }).toList();
       
-      debugPrint('🔄 FIREBASE_SERVICE: Real-time status update - ${clients.length} clients with status $status');
+  
       return clients;
     });
   }
@@ -973,7 +946,7 @@ class NewFirebaseService {
       return;
     }
 
-    FirebaseLogger.log('Starting real-time operations stream', tag: 'FIREBASE_SERVICE');
+
     
     try {
       // FIX: Use a simpler query that doesn't require composite indexes
@@ -1230,15 +1203,10 @@ class NewFirebaseService {
     String? description,
     Map<String, dynamic>? additionalData,
   }) async {
-    debugPrint('🔍 FIREBASE_SERVICE: Starting createMeeting');
-    debugPrint('🔍 FIREBASE_SERVICE: phoneNumber = "$phoneNumber"');
-    debugPrint('🔍 FIREBASE_SERVICE: dateTime = $dateTime');
-    debugPrint('🔍 FIREBASE_SERVICE: type = "$type"');
-    debugPrint('🔍 FIREBASE_SERVICE: description = "$description"');
-    debugPrint('🔍 FIREBASE_SERVICE: additionalData = $additionalData');
+
     
     final consultantToken = await getCurrentConsultantToken();
-    debugPrint('🔍 FIREBASE_SERVICE: consultantToken = "$consultantToken"');
+
     if (consultantToken == null) {
       debugPrint('❌ FIREBASE_SERVICE: consultantToken is null');
       return false;
@@ -1246,7 +1214,7 @@ class NewFirebaseService {
 
     try {
       // OPTIMIZARE: Operații paralele pentru crearea clientului și întâlnirii
-      debugPrint('🔍 FIREBASE_SERVICE: Starting parallel operations');
+  
       
       final results = await Future.wait([
         // Operația 1: Verifică/crează clientul
@@ -1255,21 +1223,20 @@ class NewFirebaseService {
         _createMeetingDocument(phoneNumber, dateTime, type, description, additionalData, consultantToken),
       ]);
       
-      final clientCreated = results[0];
       final meetingCreated = results[1];
       
-      debugPrint('🔍 FIREBASE_SERVICE: Client created = $clientCreated, Meeting created = $meetingCreated');
+  
       
       if (meetingCreated) {
-        debugPrint('✅ FIREBASE_SERVICE: createMeeting completed successfully');
+    
         return true;
       } else {
-        debugPrint('❌ FIREBASE_SERVICE: Failed to create meeting');
+    
         return false;
       }
     } catch (e) {
       FirebaseLogger.error('Error creating meeting: $e');
-      debugPrint('❌ FIREBASE_SERVICE: Stack trace: ${StackTrace.current}');
+  
       return false;
     }
   }
@@ -1277,13 +1244,13 @@ class NewFirebaseService {
   /// OPTIMIZARE: Asigură că clientul există
   Future<bool> _ensureClientExists(String phoneNumber, Map<String, dynamic>? additionalData, String consultantToken) async {
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: Checking if client exists');
+  
       final existingClient = await getClient(phoneNumber);
-      debugPrint('🔍 FIREBASE_SERVICE: existingClient = $existingClient');
+  
       
       // Daca clientul nu exista, il creeaza
       if (existingClient == null) {
-        debugPrint('🔍 FIREBASE_SERVICE: Client not found, creating new client');
+    
         final clientName = additionalData?['clientName'] ?? 'Client necunoscut';
         final consultantName = additionalData?['consultantName'] ?? 'Consultant necunoscut';
         
@@ -1297,13 +1264,13 @@ class NewFirebaseService {
           'updatedAt': FieldValue.serverTimestamp(),
         };
         
-        debugPrint('🔍 FIREBASE_SERVICE: Creating client with data: $clientData');
+    
         await _threadHandler.executeOnPlatformThread(() =>
           _firestore.collection(_clientsCollection)
               .doc(phoneNumber)
               .set(clientData)
         );
-        debugPrint('✅ FIREBASE_SERVICE: Client created successfully');
+    
         return true;
       }
       return true;
@@ -1316,7 +1283,7 @@ class NewFirebaseService {
   /// OPTIMIZARE: Creează documentul întâlnirii
   Future<bool> _createMeetingDocument(String phoneNumber, DateTime dateTime, String type, String? description, Map<String, dynamic>? additionalData, String consultantToken) async {
     try {
-      debugPrint('🔍 FIREBASE_SERVICE: Creating meeting document');
+  
       final meetingDoc = {
         'dateTime': Timestamp.fromDate(dateTime),
         'type': type,
@@ -1328,16 +1295,16 @@ class NewFirebaseService {
         'updatedAt': FieldValue.serverTimestamp(),
         ...?additionalData,
       };
-      debugPrint('🔍 FIREBASE_SERVICE: meetingDoc = $meetingDoc');
+  
 
-      debugPrint('🔍 FIREBASE_SERVICE: Adding meeting to Firestore');
+  
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection)
             .doc(phoneNumber)
             .collection(_meetingsSubcollection)
             .add(meetingDoc)
       );
-      debugPrint('✅ FIREBASE_SERVICE: Meeting added to Firestore successfully');
+  
 
       // OPTIMIZARE: Actualizează timestamp-ul clientului în background
       _updateClientTimestampInBackground(phoneNumber);
@@ -1353,9 +1320,9 @@ class NewFirebaseService {
   void _updateClientTimestampInBackground(String phoneNumber) {
     Future.microtask(() async {
       try {
-        debugPrint('🔍 FIREBASE_SERVICE: Updating client timestamp in background');
+    
         await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
-        debugPrint('✅ FIREBASE_SERVICE: Client timestamp updated in background');
+    
       } catch (e) {
         FirebaseLogger.error('Error updating client timestamp in background: $e');
       }

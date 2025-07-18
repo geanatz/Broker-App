@@ -222,7 +222,7 @@ class MatcherService extends ChangeNotifier {
       }
       
       if (keysToRemove.isNotEmpty) {
-        debugPrint('🧹 MATCHER_SERVICE: Cleaned ${keysToRemove.length} cached income calculations');
+    
       }
     });
   }
@@ -268,7 +268,7 @@ class MatcherService extends ChangeNotifier {
           DateTime.now().difference(cacheTime).inMinutes < 2) {
         // Log cache usage with reduced frequency
         if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) { // Log only every ~5 seconds
-          debugPrint('🚀 MATCHER_SERVICE: Using cached income: $cachedIncome lei for $cacheKey');
+      
         }
         
         _updateUIData(
@@ -530,12 +530,12 @@ class MatcherService extends ChangeNotifier {
           }
           
           if (hasOldCriteria) {
-            debugPrint('⚠️ MATCHER_SERVICE: Detected old criteria with small maxLoanAmount values, updating to new defaults');
+        
             _setDefaultCriteria();
             await _saveBankCriteria(); // Salvează noile criterii
           } else {
             _bankCriteriaList = loadedCriteria;
-            debugPrint('✅ MATCHER_SERVICE: Loaded ${_bankCriteriaList.length} up-to-date bank criteria');
+        
           }
         } catch (e) {
           debugPrint('❌ MATCHER_SERVICE: Error parsing bank criteria: $e');
@@ -543,7 +543,7 @@ class MatcherService extends ChangeNotifier {
         }
       } else {
         // Nu exista criterii salvate, folosim criteriile implicite
-        debugPrint('ℹ️ MATCHER_SERVICE: No saved criteria found, using defaults');
+    
         _setDefaultCriteria();
       }
     } else {
@@ -603,12 +603,7 @@ class MatcherService extends ChangeNotifier {
         maxLoanAmount: 200000,
       ),
     ];
-    debugPrint('🏦 MATCHER_SERVICE: Set default bank criteria (${_bankCriteriaList.length} banks)');
-    
-    // FIX: Debug pentru a verifica valorile setate
-    for (final criteria in _bankCriteriaList) {
-      debugPrint('  - ${criteria.bankName}: maxLoanAmount = ${criteria.maxLoanAmount} lei');
-    }
+
   }
 
   /// Salveaza criteriile bancilor in SharedPreferences
@@ -724,10 +719,7 @@ class MatcherService extends ChangeNotifier {
       return b.matchScore.compareTo(a.matchScore);
     });
 
-    debugPrint('Generated ${recommendations.length} recommendations for client: ${client.name}');
-    for (final rec in recommendations) {
-      debugPrint('  ${rec.bankCriteria.bankName}: ${rec.isEligible ? 'ELIGIBLE' : 'NOT ELIGIBLE'} (${rec.matchScore.toStringAsFixed(1)}%)');
-    }
+
 
     return recommendations;
   }
@@ -737,16 +729,16 @@ class MatcherService extends ChangeNotifier {
     _setDefaultCriteria();
     await _saveBankCriteria();
     notifyListeners();
-    debugPrint('🔄 MATCHER_SERVICE: Reset bank criteria to defaults');
+
   }
   
   /// FIX: Forțează actualizarea la criteriile noi pentru toate consultantii
   Future<void> forceUpdateToNewCriteria() async {
-    debugPrint('🔧 MATCHER_SERVICE: Force updating to new criteria with higher maxLoanAmount values');
+
     _setDefaultCriteria();
     await _saveBankCriteria();
     notifyListeners();
-    debugPrint('✅ MATCHER_SERVICE: Successfully updated to new criteria');
+
   }
 
   /// Sterge toate criteriile pentru un consultant (folosit la stergerea contului)
