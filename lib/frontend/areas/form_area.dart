@@ -45,6 +45,10 @@ class _FormAreaState extends State<FormArea> {
   String? _newCreditFormSelectedType;
   String? _newIncomeFormSelectedBank;
   String? _newIncomeFormSelectedType;
+  
+  // TYPING GUARD: Track which controllers are currently being typed in
+  final Set<String> _typingControllers = {};
+  final Map<String, Timer> _typingTimers = {};
 
   @override
   void initState() {
@@ -57,6 +61,12 @@ class _FormAreaState extends State<FormArea> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    // Clean up typing timers
+    for (var timer in _typingTimers.values) {
+      timer.cancel();
+    }
+    _typingTimers.clear();
+    _typingControllers.clear();
     _disposeControllers();
     _formService.removeListener(_onFormServiceChanged);
     _clientService.removeListener(_onClientServiceChanged);
@@ -82,7 +92,9 @@ class _FormAreaState extends State<FormArea> {
 
   /// Dispose all text controllers
   void _disposeControllers() {
-    _textControllers.forEach((_, controller) => controller.dispose());
+    _textControllers.forEach((key, controller) {
+      controller.dispose();
+    });
     _textControllers.clear();
   }
 
@@ -319,6 +331,11 @@ class _FormAreaState extends State<FormArea> {
     final fieldType = parts.length >= 5 ? parts[4] : '';
     final cleanValue = _extractNumericValue(modelValue, fieldType);
     
+    // TYPING GUARD: Don't update controller if user is currently typing
+    if (_typingControllers.contains(key)) {
+      return controller;
+    }
+    
     // Check if we should update the controller
     // For numeric fields, compare the numeric values (without commas) to avoid formatting conflicts
     if (cleanValue.isNotEmpty) {
@@ -329,26 +346,18 @@ class _FormAreaState extends State<FormArea> {
           // Controller is empty, set initial value with proper formatting
           final formattedValue = _formatValueForDisplay(cleanValue, fieldType);
           controller.text = formattedValue;
-          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
-          // debugPrint('Controller $key initialized with formatted value: "$formattedValue" (from model: "$cleanValue")');
         } else if (controllerNumericValue != cleanValue && cleanValue != '0') {
           // Only update if the numeric values are actually different and not just placeholder
           final formattedValue = _formatValueForDisplay(cleanValue, fieldType);
           controller.text = formattedValue;
-          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
-          // debugPrint('Controller $key updated to formatted value: "$formattedValue" (from model: "$cleanValue")');
         }
         // Don't update if only formatting differs (e.g., "12000" vs "12,000")
       } else {
         // For non-numeric fields, use exact comparison
         if (controller.text.isEmpty) {
           controller.text = cleanValue;
-          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
-          // debugPrint('Controller $key initialized with: "$cleanValue"');
         } else if (controller.text != cleanValue && cleanValue != '0') {
           controller.text = cleanValue;
-          // OPTIMIZARE: Log redus - doar pentru debugging când e necesar
-          // debugPrint('Controller $key updated to: "$cleanValue" (from model: "$modelValue")');
         }
       }
     }
@@ -363,6 +372,19 @@ class _FormAreaState extends State<FormArea> {
 
   /// Salveaza valoarea din controller inapoi in model
   void _saveControllerValueToModel(String key, String value) {
+    // Parse key to extract field type for logging
+    key.split('_');
+    
+    // TYPING GUARD: Set typing state when user starts typing
+    _typingControllers.add(key);
+    
+    // Clear typing state after a delay (longer than the save timer)
+    _typingTimers[key]?.cancel();
+    _typingTimers[key] = Timer(Duration(milliseconds: 500), () {
+      _typingControllers.remove(key);
+      _typingTimers.remove(key);
+    });
+    
     // Cancel the previous timer if it exists
     _saveTimer?.cancel();
     
@@ -424,8 +446,6 @@ class _FormAreaState extends State<FormArea> {
                 
                 // Automatically save to Firebase after updating the form field
                 _autoSaveToFirebase(client);
-              } else {
-                // debugPrint('Skipping save for field $field - value unchanged: "$cleanValue"');
               }
             }
           }
@@ -1163,7 +1183,6 @@ class _FormAreaState extends State<FormArea> {
       
       if (index < forms.length) {
         final form = forms[index];
-        debugPrint('Original form values: bank=${form.bank}, sold=${form.sold}, rata=${form.rata}, perioada=${form.perioada}');
         
         final updatedForm = CreditFormModel(
           bank: field == 'bank' ? value : form.bank,
@@ -1176,15 +1195,10 @@ class _FormAreaState extends State<FormArea> {
           isNew: form.isNew,
         );
         
-        debugPrint('Updated form values: bank=${updatedForm.bank}, sold=${updatedForm.sold}, rata=${updatedForm.rata}, perioada=${updatedForm.perioada}');
-        
         _formService.updateCreditForm(client.phoneNumber, index, updatedForm, isClient: isClient);
-        debugPrint('Credit form updated in FormService');
         
         // Automatically save to Firebase after updating the form field
         _autoSaveToFirebase(client);
-      } else {
-        debugPrint('ERROR: Index $index out of bounds for credit forms (length: ${forms.length})');
       }
     } else {
       final forms = isClient 
@@ -1193,7 +1207,6 @@ class _FormAreaState extends State<FormArea> {
       
       if (index < forms.length) {
         final form = forms[index];
-        debugPrint('Original income form values: bank=${form.bank}, incomeAmount=${form.incomeAmount}, vechime=${form.vechime}');
         
         final updatedForm = IncomeFormModel(
           bank: field == 'bank' ? value : form.bank,
@@ -1203,15 +1216,10 @@ class _FormAreaState extends State<FormArea> {
           isNew: form.isNew,
         );
         
-        debugPrint('Updated income form values: bank=${updatedForm.bank}, incomeAmount=${updatedForm.incomeAmount}, vechime=${updatedForm.vechime}');
-        
         _formService.updateIncomeForm(client.phoneNumber, index, updatedForm, isClient: isClient);
-        debugPrint('Income form updated in FormService');
         
         // Automatically save to Firebase after updating the form field
         _autoSaveToFirebase(client);
-      } else {
-        debugPrint('ERROR: Index $index out of bounds for income forms (length: ${forms.length})');
       }
     }
   }

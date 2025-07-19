@@ -271,7 +271,7 @@ class _MyAppState extends State<MyApp> {
           textTheme: GoogleFonts.outfitTextTheme(),
           scaffoldBackgroundColor: Colors.transparent, // Make scaffold transparent to show gradient
           appBarTheme: AppBarTheme(
-            backgroundColor: Colors.transparent, // Make app bar transparent
+            backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
             titleTextStyle: GoogleFonts.outfit(

@@ -17,6 +17,7 @@ class BankCriteria {
   int maxAgeFemale; // varsta maxima pentru femei
   double minFicoScore; // scorul FICO minim
   double maxLoanAmount; // suma maxima de credit care poate fi acordata (in lei)
+  int minEmploymentDuration; // durata minima de angajament (in luni)
 
   BankCriteria({
     required this.bankName,
@@ -25,6 +26,7 @@ class BankCriteria {
     required this.maxAgeFemale,
     required this.minFicoScore,
     required this.maxLoanAmount,
+    required this.minEmploymentDuration,
   });
 
   /// Converteste la Map pentru salvare
@@ -36,6 +38,7 @@ class BankCriteria {
       'maxAgeFemale': maxAgeFemale,
       'minFicoScore': minFicoScore,
       'maxLoanAmount': maxLoanAmount,
+      'minEmploymentDuration': minEmploymentDuration,
     };
   }
 
@@ -48,12 +51,13 @@ class BankCriteria {
       maxAgeFemale: map['maxAgeFemale'] ?? 62,
       minFicoScore: (map['minFicoScore'] ?? 0).toDouble(),
       maxLoanAmount: (map['maxLoanAmount'] ?? (map['loanMultiplier'] ?? 5.0).toDouble() * 10000).toDouble(), // Migration fallback
+      minEmploymentDuration: map['minEmploymentDuration'] ?? 6, // Default 6 months
     );
   }
 
   @override
   String toString() {
-    return 'BankCriteria{bankName: $bankName, minIncome: $minIncome, maxAge: $maxAgeMale/$maxAgeFemale, minFico: $minFicoScore}';
+    return 'BankCriteria{bankName: $bankName, minIncome: $minIncome, maxAge: $maxAgeMale/$maxAgeFemale, minFico: $minFicoScore, minEmployment: ${minEmploymentDuration}luni}';
   }
 }
 
@@ -65,6 +69,7 @@ class ClientProfile {
   final double ficoScore;
   final String name;
   final String phoneNumber;
+  final int employmentDuration; // durata de angajament (in luni)
 
   ClientProfile({
     required this.totalIncome,
@@ -73,11 +78,12 @@ class ClientProfile {
     required this.ficoScore,
     required this.name,
     required this.phoneNumber,
+    required this.employmentDuration,
   });
 
   @override
   String toString() {
-    return 'ClientProfile{name: $name, income: $totalIncome, age: $age, gender: $gender, fico: $ficoScore}';
+    return 'ClientProfile{name: $name, income: $totalIncome, age: $age, gender: $gender, fico: $ficoScore, employment: ${employmentDuration}luni}';
   }
 }
 
@@ -145,7 +151,7 @@ class MatcherService extends ChangeNotifier {
   );
 
   // Date client
-  final ClientGender _gender = ClientGender.male;
+  ClientGender _gender = ClientGender.male;
   
   // Debouncing pentru refreshClientData
   Timer? _refreshDebounceTimer;
@@ -171,9 +177,19 @@ class MatcherService extends ChangeNotifier {
   // Getters
   List<BankCriteria> get bankCriteriaList => List.unmodifiable(_bankCriteriaList);
   MatcherUIData get uiData => _uiData;
+  ClientGender get gender => _gender;
   
   /// Obtine ID-ul consultantului curent
   String? get _consultantId => _auth.currentUser?.uid;
+
+  /// Actualizeaza genul clientului si reanalizeaza recomandarile
+  void updateGender(ClientGender newGender) {
+    if (_gender != newGender) {
+      _gender = newGender;
+      _updateRecommendations();
+      notifyListeners();
+    }
+  }
 
   /// Initializeaza service-ul cu criteriile implicite
   Future<void> initialize() async {
@@ -187,6 +203,9 @@ class MatcherService extends ChangeNotifier {
       
       // OPTIMIZARE: Configurează curățarea automată a cache-ului de venituri
       _setupIncomeCacheCleanup();
+      
+      // DEBUG: Testeaza parsing-ul duratei de angajament
+      _testTenureParsing();
       
       // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
       Future.microtask(() {
@@ -389,7 +408,18 @@ class MatcherService extends ChangeNotifier {
       ficoScore: fico,
       name: _clientService.focusedClient?.name ?? 'Client',
       phoneNumber: _clientService.focusedClient?.phoneNumber ?? '',
+      employmentDuration: extractEmploymentDuration(),
     );
+
+    // Validare 4: Verifica daca exista date despre vechimea la locul de munca
+    if (clientProfile.employmentDuration <= 0) {
+      _updateUIData(
+        totalIncome: _uiData.totalIncome,
+        errorMessage: 'Nu exista date despre vechimea la locul de munca a clientului',
+        recommendations: [],
+      );
+      return;
+    }
 
     // Genereaza recomandarile
     final recommendations = generateRecommendations(clientProfile);
@@ -551,7 +581,7 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
-  /// Seteaza criteriile implicite pentru banci
+  /// Seteaza criteriile implicite pentru bancile principale
   void _setDefaultCriteria() {
     _bankCriteriaList = [
       BankCriteria(
@@ -561,6 +591,7 @@ class MatcherService extends ChangeNotifier {
         maxAgeFemale: 58,
         minFicoScore: 600,
         maxLoanAmount: 200000,
+        minEmploymentDuration: 6,
       ),
       BankCriteria(
         bankName: 'BRD',
@@ -569,6 +600,7 @@ class MatcherService extends ChangeNotifier {
         maxAgeFemale: 58,
         minFicoScore: 0,
         maxLoanAmount: 250000,
+        minEmploymentDuration: 12,
       ),
       BankCriteria(
         bankName: 'Raiffeisen',
@@ -577,6 +609,7 @@ class MatcherService extends ChangeNotifier {
         maxAgeFemale: 58,
         minFicoScore: 600,
         maxLoanAmount: 250000,
+        minEmploymentDuration: 6,
       ),
       BankCriteria(
         bankName: 'CEC Bank',
@@ -585,6 +618,7 @@ class MatcherService extends ChangeNotifier {
         maxAgeFemale: 59,
         minFicoScore: 540,
         maxLoanAmount: 200000,
+        minEmploymentDuration: 18,
       ),
       BankCriteria(
         bankName: 'ING',
@@ -593,6 +627,7 @@ class MatcherService extends ChangeNotifier {
         maxAgeFemale: 58,
         minFicoScore: 0,
         maxLoanAmount: 200000,
+        minEmploymentDuration: 12,
       ),
       BankCriteria(
         bankName: 'Garanti',
@@ -601,9 +636,9 @@ class MatcherService extends ChangeNotifier {
         maxAgeFemale: 60,
         minFicoScore: 420,
         maxLoanAmount: 200000,
+        minEmploymentDuration: 6,
       ),
     ];
-
   }
 
   /// Salveaza criteriile bancilor in SharedPreferences
@@ -679,6 +714,43 @@ class MatcherService extends ChangeNotifier {
       matchScore -= 45;
     }
 
+    // Verifica durata de angajament
+    if (client.employmentDuration < bankCriteria.minEmploymentDuration) {
+      final clientYears = client.employmentDuration ~/ 12;
+      final clientMonths = client.employmentDuration % 12;
+      final requiredYears = bankCriteria.minEmploymentDuration ~/ 12;
+      final requiredMonths = bankCriteria.minEmploymentDuration % 12;
+      
+      String clientTenure = '';
+      String requiredTenure = '';
+      
+      if (clientYears > 0) {
+        clientTenure = '$clientYears ani';
+        if (clientMonths > 0) clientTenure += ' $clientMonths luni';
+      } else {
+        clientTenure = '$clientMonths luni';
+      }
+      
+      if (requiredYears > 0) {
+        requiredTenure = '$requiredYears ani';
+        if (requiredMonths > 0) requiredTenure += ' $requiredMonths luni';
+      } else {
+        requiredTenure = '$requiredMonths luni';
+      }
+      
+      final errorMessage = 'Vechime insuficienta ($clientTenure < $requiredTenure)';
+      failedCriteria.add(errorMessage);
+      matchScore -= 20;
+      
+      debugPrint('Employment duration check failed for ${bankCriteria.bankName}:');
+      debugPrint('  Client: ${client.employmentDuration} months ($clientTenure)');
+      debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months ($requiredTenure)');
+    } else {
+      debugPrint('Employment duration check passed for ${bankCriteria.bankName}:');
+      debugPrint('  Client: ${client.employmentDuration} months');
+      debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months');
+    }
+
     // Calculeaza bonus pentru supraindeplinirea criteriilor
     if (failedCriteria.isEmpty) {
       // Bonus pentru venit superior
@@ -688,6 +760,11 @@ class MatcherService extends ChangeNotifier {
       
       // Bonus pentru scor FICO superior
       if (client.ficoScore > bankCriteria.minFicoScore * 1.2) {
+        matchScore += 5;
+      }
+      
+      // Bonus pentru vechime superiora
+      if (client.employmentDuration > bankCriteria.minEmploymentDuration * 1.5) {
         matchScore += 5;
       }
     }
@@ -756,5 +833,176 @@ class MatcherService extends ChangeNotifier {
   Future<void> onConsultantChanged() async {
     await _loadBankCriteria();
     notifyListeners();
+  }
+
+  /// Extrage durata de angajament din formularele de venit
+  int extractEmploymentDuration() {
+    try {
+      final currentClient = _clientService.focusedClient;
+      if (currentClient == null) {
+        debugPrint('No focused client available for employment duration extraction');
+        return 0;
+      }
+
+      final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
+      final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+      
+      debugPrint('Extracting employment duration for client: ${currentClient.phoneNumber}');
+      debugPrint('Client income forms: ${clientIncomeForms.length}, Coborrower income forms: ${coborrowerIncomeForms.length}');
+      
+      // Cauta in formularele clientului
+      for (int i = 0; i < clientIncomeForms.length; i++) {
+        final income = clientIncomeForms[i];
+        if (income.vechime.isNotEmpty && income.incomeAmount.isNotEmpty) {
+          debugPrint('Found client income form $i with vechime: "${income.vechime}" and income: "${income.incomeAmount}"');
+          final tenure = _parseTenure(income.vechime);
+          if (tenure > 0) {
+            debugPrint('Using client employment duration: $tenure months (from: "${income.vechime}")');
+            return tenure;
+          }
+        }
+      }
+      
+      // Cauta in formularele coborrower-ului
+      for (int i = 0; i < coborrowerIncomeForms.length; i++) {
+        final income = coborrowerIncomeForms[i];
+        if (income.vechime.isNotEmpty && income.incomeAmount.isNotEmpty) {
+          debugPrint('Found coborrower income form $i with vechime: "${income.vechime}" and income: "${income.incomeAmount}"');
+          final tenure = _parseTenure(income.vechime);
+          if (tenure > 0) {
+            debugPrint('Using coborrower employment duration: $tenure months (from: "${income.vechime}")');
+            return tenure;
+          }
+        }
+      }
+      
+      debugPrint('No valid employment duration found in income forms');
+      
+      // Log detailed information about why employment duration is missing
+      if (clientIncomeForms.isEmpty && coborrowerIncomeForms.isEmpty) {
+        debugPrint('No income forms found for client');
+      } else {
+        debugPrint('Income forms found but no valid employment duration:');
+        for (int i = 0; i < clientIncomeForms.length; i++) {
+          final income = clientIncomeForms[i];
+          debugPrint('  Client form $i: vechime="${income.vechime}", income="${income.incomeAmount}"');
+        }
+        for (int i = 0; i < coborrowerIncomeForms.length; i++) {
+          final income = coborrowerIncomeForms[i];
+          debugPrint('  Coborrower form $i: vechime="${income.vechime}", income="${income.incomeAmount}"');
+        }
+      }
+      
+      return 0; // Default daca nu gaseste
+    } catch (e) {
+      debugPrint('Error extracting employment duration: $e');
+      return 0;
+    }
+  }
+
+  /// Parseaza durata de angajament din formatul "ani/luni" (ex: "2/6" = 30 luni)
+  /// Suporta formate: "6/7" (6 ani 7 luni), "6" (6 ani), "0/6" (6 luni)
+  int _parseTenure(String tenure) {
+    try {
+      if (tenure.isEmpty || tenure.trim().isEmpty) return 0;
+      
+      final cleanTenure = tenure.trim();
+      
+      // Verifica daca contine "/" pentru formatul ani/luni
+      if (cleanTenure.contains('/')) {
+        final parts = cleanTenure.split('/');
+        
+        // Validare: trebuie sa aiba exact 2 parti
+        if (parts.length != 2) {
+          debugPrint('Invalid tenure format: $tenure - expected format: years/months');
+          return 0;
+        }
+        
+        // Parseaza ani si luni
+        final yearsStr = parts[0].trim();
+        final monthsStr = parts[1].trim();
+        
+        // Validare: ambele parti trebuie sa fie numere
+        if (yearsStr.isEmpty || monthsStr.isEmpty) {
+          debugPrint('Invalid tenure format: $tenure - years and months cannot be empty');
+          return 0;
+        }
+        
+        final years = int.tryParse(yearsStr);
+        final months = int.tryParse(monthsStr);
+        
+        if (years == null || months == null) {
+          debugPrint('Invalid tenure format: $tenure - years and months must be numbers');
+          return 0;
+        }
+        
+        // Validare: ani si luni trebuie sa fie pozitive
+        if (years < 0 || months < 0) {
+          debugPrint('Invalid tenure format: $tenure - years and months must be positive');
+          return 0;
+        }
+        
+        // Validare: luni trebuie sa fie intre 0-11
+        if (months > 11) {
+          debugPrint('Invalid tenure format: $tenure - months must be 0-11');
+          return 0;
+        }
+        
+        // Calculeaza totalul in luni
+        final totalMonths = years * 12 + months;
+        
+        debugPrint('Parsed tenure: $tenure -> $years years, $months months = $totalMonths total months');
+        return totalMonths;
+        
+      } else {
+        // Format simplu: doar un numar (presupunem ca sunt ani)
+        final years = int.tryParse(cleanTenure);
+        
+        if (years == null) {
+          debugPrint('Invalid tenure format: $tenure - must be a number');
+          return 0;
+        }
+        
+        if (years < 0) {
+          debugPrint('Invalid tenure format: $tenure - years must be positive');
+          return 0;
+        }
+        
+        // Converteste ani in luni
+        final totalMonths = years * 12;
+        
+        debugPrint('Parsed tenure: $tenure -> $years years = $totalMonths total months');
+        return totalMonths;
+      }
+      
+    } catch (e) {
+      debugPrint('Error parsing tenure: $tenure - $e');
+      return 0;
+    }
+  }
+
+  /// Testeaza si valideaza parsing-ul duratei de angajament (pentru debugging)
+  void _testTenureParsing() {
+    final testCases = [
+      '6/7',    // 6 ani 7 luni = 79 luni
+      '6',      // 6 ani = 72 luni
+      '0/6',    // 6 luni = 6 luni
+      '2/0',    // 2 ani = 24 luni
+      '0/0',    // 0 luni = 0 luni
+      '1/11',   // 1 an 11 luni = 23 luni
+      '10/5',   // 10 ani 5 luni = 125 luni
+      '',       // gol = 0 luni
+      'invalid', // invalid = 0 luni
+      '6/12',   // invalid (luni > 11) = 0 luni
+      '-1/5',   // invalid (ani negativ) = 0 luni
+      '5/-1',   // invalid (luni negative) = 0 luni
+    ];
+    
+    debugPrint('=== Testing Tenure Parsing ===');
+    for (final testCase in testCases) {
+      final result = _parseTenure(testCase);
+      debugPrint('Input: "$testCase" -> Output: $result months');
+    }
+    debugPrint('=== End Testing ===');
   }
 }

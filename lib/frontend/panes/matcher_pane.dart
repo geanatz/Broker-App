@@ -6,6 +6,7 @@ import '../../backend/services/splash_service.dart';
 import '../components/items/light_item7.dart';
 import '../components/items/dark_item7.dart';
 import '../components/headers/widget_header1.dart';
+import '../components/fields/dropdown_field1.dart';
 import '../popups/bank_popup.dart';
 import 'package:intl/intl.dart';
 
@@ -201,6 +202,30 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
     );
   }
 
+  /// Construieste dropdown-ul pentru selectia genului
+  Widget _buildGenderSelection() {
+    return DropdownField1<ClientGender>(
+      title: 'Gen',
+      value: _matcherService.gender,
+      items: [
+        DropdownMenuItem<ClientGender>(
+          value: ClientGender.male,
+          child: Text('Masculin'),
+        ),
+        DropdownMenuItem<ClientGender>(
+          value: ClientGender.female,
+          child: Text('Feminin'),
+        ),
+      ],
+      onChanged: (ClientGender? newGender) {
+        if (newGender != null) {
+          _matcherService.updateGender(newGender);
+        }
+      },
+      hintText: 'Selecteaza genul',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -288,6 +313,11 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                           LengthLimitingTextInputFormatter(3),
                         ],
                       ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Camp pentru gen
+                      _buildGenderSelection(),
                     ],
                   ),
                 ),

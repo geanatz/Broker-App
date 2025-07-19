@@ -29,6 +29,7 @@ class _BankPopupState extends State<BankPopup> {
   late TextEditingController _maxAgeFemaleController;
   late TextEditingController _minFicoController;
   late TextEditingController _maxLoanAmountController;
+  late TextEditingController _minEmploymentDurationController;
 
   @override
   void initState() {
@@ -49,6 +50,9 @@ class _BankPopupState extends State<BankPopup> {
     );
     _maxLoanAmountController = TextEditingController(
       text: _formatWithCommas(widget.bankCriteria.maxLoanAmount.toStringAsFixed(0))
+    );
+    _minEmploymentDurationController = TextEditingController(
+      text: _formatEmploymentDuration(widget.bankCriteria.minEmploymentDuration)
     );
   }
 
@@ -80,6 +84,24 @@ class _BankPopupState extends State<BankPopup> {
     return value;
   }
 
+  /// Formateaza durata de munca cu virgule
+  String _formatEmploymentDuration(int duration) {
+    if (duration == 0) return '0 luni';
+    
+    final years = duration ~/ 12;
+    final months = duration % 12;
+    
+    if (years > 0) {
+      if (months > 0) {
+        return '$years ani $months luni';
+      } else {
+        return '$years ani';
+      }
+    } else {
+      return '$months luni';
+    }
+  }
+
   @override
   void dispose() {
     _minIncomeController.dispose();
@@ -87,6 +109,7 @@ class _BankPopupState extends State<BankPopup> {
     _maxAgeFemaleController.dispose();
     _minFicoController.dispose();
     _maxLoanAmountController.dispose();
+    _minEmploymentDurationController.dispose();
     super.dispose();
   }
 
@@ -207,6 +230,17 @@ class _BankPopupState extends State<BankPopup> {
                     hintText: 'Plafon',
                     keyboardType: TextInputType.number,
                     enableCommaFormatting: true,
+                    enabled: false, // FIX: Read-only
+                  ),
+
+                  const SizedBox(height: AppTheme.smallGap),
+
+                  // Durata munca (read-only)
+                  InputField1(
+                    title: 'Durata munca',
+                    controller: _minEmploymentDurationController,
+                    hintText: 'Durata munca',
+                    keyboardType: TextInputType.text,
                     enabled: false, // FIX: Read-only
                   ),
                 ],
