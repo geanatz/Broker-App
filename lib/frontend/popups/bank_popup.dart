@@ -25,6 +25,8 @@ class BankPopup extends StatefulWidget {
 
 class _BankPopupState extends State<BankPopup> {
   late TextEditingController _minIncomeController;
+  late TextEditingController _minAgeMaleController;
+  late TextEditingController _minAgeFemaleController;
   late TextEditingController _maxAgeMaleController;
   late TextEditingController _maxAgeFemaleController;
   late TextEditingController _minFicoController;
@@ -38,6 +40,12 @@ class _BankPopupState extends State<BankPopup> {
     // FIX: Initializeaza controlerele cu valorile curente formatate (read-only)
     _minIncomeController = TextEditingController(
       text: _formatWithCommas(widget.bankCriteria.minIncome.toStringAsFixed(0))
+    );
+    _minAgeMaleController = TextEditingController(
+      text: widget.bankCriteria.minAgeMale.toString()
+    );
+    _minAgeFemaleController = TextEditingController(
+      text: widget.bankCriteria.minAgeFemale.toString()
     );
     _maxAgeMaleController = TextEditingController(
       text: widget.bankCriteria.maxAgeMale.toString()
@@ -105,6 +113,8 @@ class _BankPopupState extends State<BankPopup> {
   @override
   void dispose() {
     _minIncomeController.dispose();
+    _minAgeMaleController.dispose();
+    _minAgeFemaleController.dispose();
     _maxAgeMaleController.dispose();
     _maxAgeFemaleController.dispose();
     _minFicoController.dispose();
@@ -173,12 +183,82 @@ class _BankPopupState extends State<BankPopup> {
                   
                   const SizedBox(height: AppTheme.smallGap),
                   
-                  // Varsta maxima row (barbati si femei) - read-only
+                  // Varsta minima row (barbati si femei) - read-only
                   Row(
                     children: [
                       Expanded(
                         child: InputField1(
                           title: 'Varsta barbati',
+                          controller: _minAgeMaleController,
+                          hintText: 'Varsta min',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(2),
+                          ],
+                          enabled: false, // FIX: Read-only
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.smallGap),
+                      Expanded(
+                        child: InputField1(
+                          title: 'Varsta femei',
+                          controller: _minAgeFemaleController,
+                          hintText: 'Varsta min',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(2),
+                          ],
+                          enabled: false, // FIX: Read-only
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: AppTheme.smallGap),
+                  
+                  // Varsta minima row (barbati si femei) - read-only
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InputField1(
+                          title: 'Varsta min barbati',
+                          controller: _minAgeMaleController,
+                          hintText: 'Varsta min',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(2),
+                          ],
+                          enabled: false, // FIX: Read-only
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.smallGap),
+                      Expanded(
+                        child: InputField1(
+                          title: 'Varsta min femei',
+                          controller: _minAgeFemaleController,
+                          hintText: 'Varsta min',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(2),
+                          ],
+                          enabled: false, // FIX: Read-only
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: AppTheme.smallGap),
+                  
+                  // Varsta maxima row (barbati si femei) - read-only
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InputField1(
+                          title: 'Varsta max barbati',
                           controller: _maxAgeMaleController,
                           hintText: 'Varsta max',
                           keyboardType: TextInputType.number,
@@ -192,7 +272,7 @@ class _BankPopupState extends State<BankPopup> {
                       const SizedBox(width: AppTheme.smallGap),
                       Expanded(
                         child: InputField1(
-                          title: 'Varsta femei',
+                          title: 'Varsta max femei',
                           controller: _maxAgeFemaleController,
                           hintText: 'Varsta max',
                           keyboardType: TextInputType.number,

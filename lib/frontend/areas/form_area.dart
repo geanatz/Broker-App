@@ -1,6 +1,6 @@
-import 'package:broker_app/app_theme.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:broker_app/app_theme.dart';
 import 'package:broker_app/backend/services/form_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -49,6 +49,9 @@ class _FormAreaState extends State<FormArea> {
   // TYPING GUARD: Track which controllers are currently being typed in
   final Set<String> _typingControllers = {};
   final Map<String, Timer> _typingTimers = {};
+  
+  // OPTIMIZARE: Debouncing pentru schimbarea clientului
+  Timer? _clientChangeDebounceTimer;
 
   @override
   void initState() {
@@ -61,6 +64,7 @@ class _FormAreaState extends State<FormArea> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _clientChangeDebounceTimer?.cancel();
     // Clean up typing timers
     for (var timer in _typingTimers.values) {
       timer.cancel();
@@ -127,91 +131,94 @@ class _FormAreaState extends State<FormArea> {
 
   /// Callback pentru schimbarile din ClientService
   void _onClientServiceChanged() {
-    // OPTIMIZARE: Folosește microtask pentru a evita blocking
-    Future.microtask(() {
-      _handleClientChange();
-    });
+    // FIX: Remove microtask to ensure immediate response
+    _handleClientChange();
   }
 
   /// Gestioneaza schimbarea clientului
-  /// OPTIMIZAT: Cu loading instant și debouncing
+  /// FIX: Improved stability with better change detection
   Future<void> _handleClientChange() async {
     final currentClient = _clientService.focusedClient;
     
-    // OPTIMIZARE: Nu face nimic dacă clientul nu s-a schimbat
-    if (currentClient?.phoneNumber == _previousClient?.phoneNumber) {
+    // FIX: More robust change detection
+    final hasClientChanged = currentClient?.phoneNumber != _previousClient?.phoneNumber ||
+                            currentClient?.id != _previousClient?.id;
+    
+    if (!hasClientChanged) {
       return;
     }
     
-    // Salveaza datele clientului anterior daca exista (doar pentru clienti reali)
-    if (_previousClient != null && !_previousClient!.id.startsWith('temp_')) {
-      // FIX: Verifică dacă clientul anterior încă există înainte de a salva datele
-      final clientStillExists = _clientService.clients.any(
-        (client) => client.phoneNumber == _previousClient!.phoneNumber
-      );
-      
-      if (clientStillExists) {
-        await _saveFormDataForClient(_previousClient!);
-      } else {
-        app_log.AppLogger.error('FORM', 'Skipping form save for deleted client: ${_previousClient!.phoneNumber}');
-      }
+    // FIX: Reduced debouncing for better responsiveness
+    if (_clientChangeDebounceTimer?.isActive == true) {
+      _clientChangeDebounceTimer?.cancel();
     }
     
-    // Curata controller-ele pentru noul client
-    _disposeControllers();
-    
-    // OPTIMIZARE: Încarcă datele pentru noul client instant
-    if (currentClient != null) {
-      await _loadFormDataForCurrentClient();
-    }
-    
-    // Actualizeaza referinta clientului anterior
-    _previousClient = currentClient;
-    
-    // OPTIMIZARE: Actualizeaza UI-ul imediat pentru a afișa schimbarea
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {});
+    _clientChangeDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
+      await _performClientChange(currentClient);
+    });
+  }
+
+  /// FIX: Improved client change execution
+  Future<void> _performClientChange(ClientModel? currentClient) async {
+    try {
+      // Save previous client data if exists
+      if (_previousClient != null && !_previousClient!.id.startsWith('temp_')) {
+        final clientStillExists = _clientService.clients.any(
+          (client) => client.phoneNumber == _previousClient!.phoneNumber
+        );
+        
+        if (clientStillExists) {
+          await _saveFormDataForClient(_previousClient!);
         }
-      });
+      }
+      
+      // Clear controllers for new client
+      _disposeControllers();
+      
+      // Load form data for new client
+      if (currentClient != null && !currentClient.id.startsWith('temp_')) {
+        await _loadFormDataForCurrentClient();
+      }
+      
+      // Update previous client reference
+      _previousClient = currentClient;
+      
+      // Update UI immediately
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      app_log.AppLogger.error('FORM', 'Error in client change', e);
     }
   }
 
-  /// Incarca datele formularului pentru clientul curent
-  /// OPTIMIZAT: Cu loading instant și cache
+  /// FIX: Improved form data loading with better error handling
   Future<void> _loadFormDataForCurrentClient() async {
-    app_log.PerformanceMonitor.startTimer('loadFormData');
     final currentClient = _clientService.focusedClient;
-    if (currentClient != null) {
-      try {
-        // OPTIMIZARE: Nu încerca să încarci date pentru clienti temporari
-        if (currentClient.id.startsWith('temp_')) {
-          return;
-        }
-        
-        // OPTIMIZARE: Încarcă datele instant din cache dacă sunt disponibile
-        await _formService.loadFormDataForClient(
-          currentClient.phoneNumber,
-          currentClient.phoneNumber,
-        );
-        
-        // Clear all controllers to force fresh data loading
-        _disposeControllers();
-        
-        // OPTIMIZARE: Force refresh controllers after loading data cu delay
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              // This will trigger rebuild and sync controllers with loaded data
-            });
-          }
-        });
-      } catch (e) {
-        app_log.AppLogger.error('FORM', 'Error loading form data', e);
-      } finally {
-        app_log.PerformanceMonitor.endTimer('loadFormData');
+    if (currentClient == null || currentClient.id.startsWith('temp_')) {
+      return;
+    }
+    
+    try {
+      app_log.PerformanceMonitor.startTimer('loadFormData');
+      
+      // FIX: Force load form data without cache for immediate response
+      await _formService.loadFormDataForClient(
+        currentClient.phoneNumber,
+        currentClient.phoneNumber,
+      );
+      
+      // FIX: Clear controllers to ensure fresh data loading
+      _disposeControllers();
+      
+      // FIX: Force UI update after data loading
+      if (mounted) {
+        setState(() {});
       }
+      
+      app_log.PerformanceMonitor.endTimer('loadFormData');
+    } catch (e) {
+      app_log.AppLogger.error('FORM', 'Error loading form data', e);
     }
   }
 
@@ -497,21 +504,49 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
+  /// FIX: Force refresh form data for current client
+  Future<void> forceRefreshFormData() async {
+    final currentClient = _clientService.focusedClient;
+    if (currentClient != null && !currentClient.id.startsWith('temp_')) {
+      await _formService.forceRefreshFormData(
+        currentClient.phoneNumber,
+        currentClient.phoneNumber,
+      );
+      
+      // Clear controllers to force fresh data loading
+      _disposeControllers();
+      
+      // Force UI update
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final focusedClient = _clientService.focusedClient;
     
-    // Verifica daca clientul focusat este temporar
-    if (focusedClient != null && focusedClient.id.startsWith('temp_')) {
-      return _buildTemporaryClientPlaceholder(focusedClient);
-    }
-    
-    // Verifica daca nu exista client focusat
+    // FIX: Better handling of empty states
     if (focusedClient == null) {
       return _buildNoClientSelectedPlaceholder();
     }
     
-    // Construieste formularul pentru clientul real
+    // FIX: Better handling of temporary clients
+    if (focusedClient.id.startsWith('temp_')) {
+      return _buildTemporaryClientPlaceholder(focusedClient);
+    }
+    
+    // FIX: Check if form data is loaded for the current client
+    final hasFormData = _formService.getClientCreditForms(focusedClient.phoneNumber).isNotEmpty ||
+                       _formService.getClientIncomeForms(focusedClient.phoneNumber).isNotEmpty;
+    
+    if (!hasFormData) {
+      // FIX: Show loading state while form data is being loaded
+      return _buildLoadingPlaceholder(focusedClient);
+    }
+    
+    // Build form content for real client
     return _buildFormContent(focusedClient);
   }
 
@@ -660,6 +695,28 @@ class _FormAreaState extends State<FormArea> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// FIX: Build loading placeholder while form data is being loaded
+  Widget _buildLoadingPlaceholder(ClientModel client) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor1),
+          ),
+          const SizedBox(height: AppTheme.mediumGap),
+          Text(
+            'Se incarca datele pentru ${client.name}...',
+            style: TextStyle(
+              color: AppTheme.elementColor1,
+              fontSize: AppTheme.fontSizeMedium,
+            ),
+          ),
+        ],
       ),
     );
   }

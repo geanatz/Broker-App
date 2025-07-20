@@ -979,17 +979,24 @@ class ClientUIService extends ChangeNotifier {
   }
   
   /// Obtine clientii dintr-o anumita categorie inclusiv cel temporar
+  /// FIX: Sorteaza clientii dupa nume pentru a preveni shuffling-ul in UI
   List<ClientModel> getClientsByCategoryWithTemporary(ClientCategory category) {
     final categoryClients = _clients.where((client) => client.category == category).toList();
     if (_temporaryClient != null && _temporaryClient!.category == category) {
       categoryClients.add(_temporaryClient!);
     }
+    // FIX: Sorteaza dupa nume pentru ordine consistenta
+    categoryClients.sort((a, b) => a.name.compareTo(b.name));
     return categoryClients;
   }
   
   /// Obtine clientii dintr-o anumita categorie fara cel temporar (pentru clients-pane)
+  /// FIX: Sorteaza clientii dupa nume pentru a preveni shuffling-ul in UI
   List<ClientModel> getClientsByCategoryWithoutTemporary(ClientCategory category) {
-    return _clients.where((client) => client.category == category).toList();
+    final categoryClients = _clients.where((client) => client.category == category).toList();
+    // FIX: Sorteaza dupa nume pentru ordine consistenta
+    categoryClients.sort((a, b) => a.name.compareTo(b.name));
+    return categoryClients;
   }
   
   /// Initializeaza serviciul si incarca clientii din Firebase pentru consultantul curent
@@ -1042,6 +1049,9 @@ class ClientUIService extends ChangeNotifier {
   void cleanupFocusStateFromCache(List<ClientModel> cachedClients) {
     // Replace the clients list with cached clients
     _clients = List.from(cachedClients);
+    
+    // FIX: Sorteaza clientii dupa nume pentru ordine consistenta
+    _clients.sort((a, b) => a.name.compareTo(b.name));
     
     // Run the same cleanup logic
     _cleanupFocusStateOnStartup();
@@ -1128,6 +1138,9 @@ class ClientUIService extends ChangeNotifier {
               newClient.name == client.name));
 
       if (hasChanged || _clients.isEmpty) {
+        // FIX: Sorteaza clientii dupa nume pentru ordine consistenta
+        newClients.sort((a, b) => a.name.compareTo(b.name));
+        
         // Actualizează lista de clienți
         _clients = newClients;
         
@@ -1167,43 +1180,46 @@ class ClientUIService extends ChangeNotifier {
 
   bool _isFocusingClient = false;
 
-  /// Focusa un client specific
-  void focusClient(String phoneNumber) {
+  /// FIX: Improved client focusing with better form data synchronization
+  Future<void> focusClient(String phoneNumber) async {
     if (_isFocusingClient) return;
     
-    // FIX: Check if client is already focused to prevent unnecessary operations
-    if (_focusedClient?.phoneNumber == phoneNumber) {
-      return;
-    }
-    
-    _isFocusingClient = true;
-    
     try {
-      // Verifica daca clientul exista
-      final clientIndex = _clients.indexWhere((c) => c.phoneNumber == phoneNumber);
-      if (clientIndex != -1) {
-        // Defocuseaza toti clientii
-        for (int i = 0; i < _clients.length; i++) {
-          if (_clients[i].status == ClientStatus.focused) {
-            _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-          }
-        }
-        
-        // Focusa clientul specificat
-        _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.focused);
-        _focusedClient = _clients[clientIndex];
-        
-        // Notifica listenerii
-        notifyListeners();
-      } else {
-        // Dacă clientul nu există, focusa primul client disponibil
-        if (_clients.isNotEmpty) {
-          _focusedClient = _clients.first;
-          focusClient(_clients.first.phoneNumber);
-        } else {
-          _focusedClient = null;
+      _isFocusingClient = true;
+      
+      // Find the client to focus
+      final clientIndex = _clients.indexWhere((client) => client.phoneNumber == phoneNumber);
+      if (clientIndex == -1) {
+        debugPrint('❌ CLIENTS: Client not found for focus: $phoneNumber');
+        return;
+      }
+      
+      // Clear focus from all clients
+      for (int i = 0; i < _clients.length; i++) {
+        if (_clients[i].status == ClientStatus.focused) {
+          _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
         }
       }
+      
+      // Focus the selected client
+      _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.focused);
+      _focusedClient = _clients[clientIndex];
+      
+      // FIX: Ensure form data is loaded for the focused client
+      if (_focusedClient != null && !_focusedClient!.id.startsWith('temp_')) {
+        // Trigger form data loading
+        final formService = SplashService().formService;
+        await formService.loadFormDataForClient(
+          _focusedClient!.phoneNumber,
+          _focusedClient!.phoneNumber,
+        );
+            }
+      
+      // Notify listeners
+      notifyListeners();
+      
+    } catch (e) {
+      debugPrint('❌ CLIENTS: Error focusing client: $e');
     } finally {
       _isFocusingClient = false;
     }
@@ -1217,6 +1233,8 @@ class ClientUIService extends ChangeNotifier {
       if (_focusedClient?.phoneNumber == phoneNumber) {
         _focusedClient = null;
       }
+      // FIX: Sorteaza lista dupa defocus pentru ordine consistenta
+      _clients.sort((a, b) => a.name.compareTo(b.name));
       notifyListeners();
     }
   }
@@ -1234,6 +1252,8 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       _focusedClient = focusedClients.first;
+      // FIX: Sorteaza lista dupa focus operations pentru ordine consistenta
+      _clients.sort((a, b) => a.name.compareTo(b.name));
       notifyListeners();
     } else if (focusedClients.length == 1) {
       _focusedClient = focusedClients.first;
@@ -1269,6 +1289,8 @@ class ClientUIService extends ChangeNotifier {
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureSingleFocus(); // FIX: Asigură consistența focus-ului
+      // FIX: Sorteaza lista dupa crearea clientului temporar
+      _clients.sort((a, b) => a.name.compareTo(b.name));
       notifyListeners();
     });
   }
@@ -1370,6 +1392,9 @@ class ClientUIService extends ChangeNotifier {
       if (hasChanged || _clients.isEmpty) {
         // CRITICAL FIX: Preserve focused client during real-time updates
         final currentlyFocusedPhone = _focusedClient?.phoneNumber;
+        
+        // FIX: Sorteaza clientii dupa nume pentru ordine consistenta
+        updatedClients.sort((a, b) => a.name.compareTo(b.name));
         
         // Actualizează lista de clienți
         _clients = updatedClients;
@@ -1532,6 +1557,9 @@ class ClientUIService extends ChangeNotifier {
         );
         _clients.add(realClient);
         
+        // FIX: Sorteaza lista dupa adaugarea noului client
+        _clients.sort((a, b) => a.name.compareTo(b.name));
+        
         // Focuseaza clientul real
         _focusedClient = realClient;
         _temporaryClient = null;
@@ -1573,6 +1601,8 @@ class ClientUIService extends ChangeNotifier {
     // FIX: Notificare simplă fără cache refresh pentru a evita infinite loop
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureSingleFocus();
+      // FIX: Sorteaza lista dupa anularea clientului temporar
+      _clients.sort((a, b) => a.name.compareTo(b.name));
       notifyListeners();
     });
   }
@@ -1589,6 +1619,8 @@ class ClientUIService extends ChangeNotifier {
       }
       
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        // FIX: Sorteaza lista dupa actualizarea formularului
+        _clients.sort((a, b) => a.name.compareTo(b.name));
         notifyListeners();
       });
     }
@@ -1620,6 +1652,9 @@ class ClientUIService extends ChangeNotifier {
       
       // OPTIMISTIC UPDATE: Adauga imediat in lista locala pentru UI instant
       _clients.add(clientWithPhoneId);
+      
+      // FIX: Sorteaza lista dupa adaugarea noului client
+      _clients.sort((a, b) => a.name.compareTo(b.name));
       
       // Focuseaza primul client daca este primul client adaugat
       if (_clients.length == 1) {
@@ -1692,6 +1727,8 @@ class ClientUIService extends ChangeNotifier {
       if (!success) {
         // Rollback dacă ștergerea a eșuat
         _clients.add(clientToRemove);
+        // FIX: Sorteaza lista dupa rollback
+        _clients.sort((a, b) => a.name.compareTo(b.name));
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _ensureSingleFocus();
           notifyListeners();
@@ -1732,6 +1769,8 @@ class ClientUIService extends ChangeNotifier {
         // 6. Notify listeners
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _ensureSingleFocus();
+          // FIX: Sorteaza lista dupa stergerea clientilor
+          _clients.sort((a, b) => a.name.compareTo(b.name));
           notifyListeners();
         });
       } else {
@@ -1789,6 +1828,8 @@ class ClientUIService extends ChangeNotifier {
           _focusedClient = previousClient;
         }
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          // FIX: Sorteaza lista dupa rollback
+          _clients.sort((a, b) => a.name.compareTo(b.name));
           notifyListeners();
         });
       }
@@ -1838,6 +1879,8 @@ class ClientUIService extends ChangeNotifier {
         } else {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            // FIX: Sorteaza lista dupa mutarea clientului
+            _clients.sort((a, b) => a.name.compareTo(b.name));
             notifyListeners();
           });
         }
@@ -1888,6 +1931,8 @@ class ClientUIService extends ChangeNotifier {
         } else {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            // FIX: Sorteaza lista dupa mutarea clientului
+            _clients.sort((a, b) => a.name.compareTo(b.name));
             notifyListeners();
           });
         }
@@ -1936,6 +1981,8 @@ class ClientUIService extends ChangeNotifier {
         } else {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            // FIX: Sorteaza lista dupa mutarea clientului
+            _clients.sort((a, b) => a.name.compareTo(b.name));
             notifyListeners();
           });
         }
@@ -1967,6 +2014,8 @@ class ClientUIService extends ChangeNotifier {
       await splashService.invalidateClientsCacheAndRefresh();
       
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        // FIX: Sorteaza lista dupa stergerea tuturor clientilor
+        _clients.sort((a, b) => a.name.compareTo(b.name));
         notifyListeners();
       });
     } catch (e) {

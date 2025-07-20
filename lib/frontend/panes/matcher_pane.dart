@@ -288,6 +288,11 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Camp pentru gen
+                      _buildGenderSelection(),
+                      
+                      const SizedBox(height: 8),
+                      
                       // Camp pentru varsta
                       _buildInputField(
                         title: 'Varsta',
@@ -313,11 +318,6 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                           LengthLimitingTextInputFormatter(3),
                         ],
                       ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Camp pentru gen
-                      _buildGenderSelection(),
                     ],
                   ),
                 ),

@@ -820,57 +820,173 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
+  /// Verifică dacă serviciul Google Sheets este complet inițializat
+  bool _isServiceReady() {
+    final isReady = _isAuthenticated && _driveApi != null && _sheetsApi != null;
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Service ready check - Auth: $_isAuthenticated, Drive: ${_driveApi != null}, Sheets: ${_sheetsApi != null}');
+    return isReady;
+  }
+
+  /// Debug method to dump form data structure
+  void _dumpFormDataStructure(Map<String, dynamic> formData, [String prefix = '']) {
+    for (var entry in formData.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      
+      if (value is Map<String, dynamic>) {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: $prefix$key: {');
+        _dumpFormDataStructure(value, '$prefix  ');
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: $prefix}');
+      } else if (value is List) {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: $prefix$key: [${value.length} items]');
+        for (int i = 0; i < value.length; i++) {
+          if (value[i] is Map<String, dynamic>) {
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: $prefix  [$i]: {');
+            _dumpFormDataStructure(value[i] as Map<String, dynamic>, '$prefix    ');
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: $prefix  }');
+          } else {
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: $prefix  [$i]: ${value[i]}');
+          }
+        }
+      } else {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: $prefix$key: $value');
+      }
+    }
+  }
+
+  /// Validează datele clientului înainte de salvare
+  bool _validateClientData(dynamic client) {
+    if (client == null) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client is null');
+      return false;
+    }
+    
+    final name = client.name?.toString() ?? '';
+    final phoneNumber = client.phoneNumber?.toString() ?? client.phoneNumber1?.toString() ?? '';
+    
+    if (name.isEmpty) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client name is empty');
+      return false;
+    }
+    
+    if (phoneNumber.isEmpty) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client phone number is empty');
+      return false;
+    }
+    
+    debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client data validation passed');
+    return true;
+  }
+
   /// Salveaza un singur client in Google Sheets cu noua logica automata
   Future<String?> saveClientToXlsx(dynamic client) async {
-    debugPrint('[DRIVE] Saving client to Google Sheets: ${client?.name ?? 'NULL'} (${client?.phoneNumber ?? 'NULL'})');
+    debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx START ==========');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client: ${client?.name ?? 'NULL'} (${client?.phoneNumber ?? 'NULL'})');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client type: ${client.runtimeType}');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Authentication status: $_isAuthenticated');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Drive API: ${_driveApi != null ? 'OK' : 'NULL'}');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Sheets API: ${_sheetsApi != null ? 'OK' : 'NULL'}');
+    
     try {
+      // Step 0: Validate client data
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 0 - Validating client data...');
+      if (!_validateClientData(client)) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client data validation failed');
+        return 'Datele clientului sunt incomplete sau invalide';
+      }
+      
+      // Step 1: Validate token
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 1 - Validating token...');
       final tokenValid = await _ensureValidToken();
       if (!tokenValid) {
-        debugPrint('[ERROR][DRIVE] Token not valid, cannot save client');
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Token validation failed');
         return 'Token expirat. Reconectați-vă la Google Drive din Setări';
       }
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Token validation successful');
       
+      // Step 2: Check authentication
       if (!_isAuthenticated) {
-        debugPrint('[ERROR][DRIVE] Not connected to Google Drive');
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Not authenticated');
         return 'Pentru a salva datele, conectați-vă la Google Drive din Setări';
       }
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Authentication check passed');
   
-      if (_driveApi == null || _sheetsApi == null) {
-        debugPrint('[ERROR][DRIVE] API clients not initialized');
-        return 'Eroare: API clients nu sunt inițializați';
+      // Step 3: Check service readiness
+      if (!_isServiceReady()) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Service not ready');
+        return 'Eroare: Serviciul Google Sheets nu este complet inițializat. Încercați să vă reconectați din Setări.';
       }
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Service readiness check passed');
   
-      // Find or create spreadsheet
+      // Step 4: Find or create spreadsheet
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 4 - Finding/creating spreadsheet...');
       final spreadsheetId = await _findOrCreateSpreadsheet('clienti');
       if (spreadsheetId == null) {
-        debugPrint('[ERROR][DRIVE] Could not find or create spreadsheet');
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create spreadsheet');
         return _lastError ?? 'Eroare la găsirea sau crearea fișierului Google Sheets.';
       }
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Spreadsheet ID: $spreadsheetId');
   
-      // Find or create sheet for current month
+      // Step 5: Find or create sheet for current month
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5 - Finding/creating sheet...');
       final sheetTitle = await _findOrCreateSheet(spreadsheetId);
       if (sheetTitle == null) {
-        debugPrint('[ERROR][DRIVE] Could not find or create sheet');
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create sheet');
         return _lastError ?? 'Eroare la găsirea sau crearea foii de calcul pentru luna curentă.';
       }
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet title: $sheetTitle');
   
-      // Prepare client data
+      // Step 6: Prepare client data
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 6 - Preparing client data...');
       final clientRowData = await _prepareClientRowData(client);
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Prepared row data: $clientRowData');
       
-      // Save row to sheet
-      final success = await _appendRowToSheet(spreadsheetId, sheetTitle, clientRowData);
-  
-      if (success) {
-        debugPrint('[DRIVE] Client saved successfully to Google Sheets');
-        return null; // Success
-      } else {
-        final error = _lastError ?? 'Eroare necunoscută la salvarea datelor.';
-        debugPrint('[ERROR][DRIVE] Failed to save to Google Sheets: $error');
-        return 'Eroare la salvarea în Google Sheets: $error';
+      // Step 7: Save row to sheet with retry mechanism
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 7 - Saving row to sheet with retry...');
+      
+      bool success = false;
+      String? lastError;
+      const int maxRetries = 3;
+      
+      for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Save attempt $attempt/$maxRetries');
+        
+        try {
+          success = await _appendRowToSheet(spreadsheetId, sheetTitle, clientRowData);
+          
+          if (success) {
+            debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client saved successfully to Google Sheets on attempt $attempt');
+            debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (SUCCESS) ==========');
+            return null; // Success
+          } else {
+            lastError = _lastError ?? 'Eroare necunoscută la salvarea datelor.';
+            debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to save on attempt $attempt: $lastError');
+            
+            if (attempt < maxRetries) {
+              debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Waiting 2 seconds before retry...');
+              await Future.delayed(const Duration(seconds: 2));
+            }
+          }
+        } catch (e) {
+          lastError = 'Eroare la încercarea $attempt: ${e.toString()}';
+          debugPrint('❌ GOOGLE_DRIVE_SERVICE: Exception on attempt $attempt: $e');
+          
+          if (attempt < maxRetries) {
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Waiting 2 seconds before retry...');
+            await Future.delayed(const Duration(seconds: 2));
+          }
+        }
       }
       
+      // All retries failed
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: All $maxRetries attempts failed. Last error: $lastError');
+      debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (FAILED) ==========');
+      return 'Eroare la salvarea în Google Sheets după $maxRetries încercări: $lastError';
+      
     } catch (e) {
-      debugPrint('[ERROR][DRIVE] Error saving client: $e');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error saving client: $e');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
+      debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (EXCEPTION) ==========');
       return 'Eroare la salvarea clientului: ${e.toString()}';
     }
   }
@@ -878,24 +994,40 @@ class GoogleDriveService extends ChangeNotifier {
   /// Gaseste un spreadsheet dupa nume sau il creeaza daca nu exista
   Future<String?> _findOrCreateSpreadsheet(String name) async {
     try {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSpreadsheet START - Name: $name');
+      
+      if (_driveApi == null) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Drive API is null');
+        _lastError = 'Drive API nu este inițializat';
+        return null;
+      }
+      
       final query = "mimeType='application/vnd.google-apps.spreadsheet' and name='$name' and trashed=false";
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Search query: $query');
+      
       final response = await _driveApi!.files.list(q: query, $fields: 'files(id, name)');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Search response: ${response.files?.length ?? 0} files found');
       
       if (response.files != null && response.files!.isNotEmpty) {
         final fileId = response.files!.first.id!;
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Found existing spreadsheet: $fileId');
         return fileId;
       } else {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: No existing spreadsheet found, creating new one...');
+        
         final newSheet = sheets.Spreadsheet(
           properties: sheets.SpreadsheetProperties(title: name),
         );
         
         final createdSheet = await _sheetsApi!.spreadsheets.create(newSheet);
         final fileId = createdSheet.spreadsheetId!;
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Created new spreadsheet: $fileId');
         return fileId;
       }
     } catch (e) {
       _lastError = 'Eroare la căutarea sau crearea fișierului: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _findOrCreateSpreadsheet: $_lastError');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       return null;
     }
   }
@@ -903,11 +1035,21 @@ class GoogleDriveService extends ChangeNotifier {
   /// Gaseste un sheet (tab) dupa titlu sau il creeaza daca nu exista
   Future<String?> _findOrCreateSheet(String spreadsheetId) async {
     try {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSheet START - SpreadsheetId: $spreadsheetId');
+      
+      if (_sheetsApi == null) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Sheets API is null');
+        _lastError = 'Sheets API nu este inițializat';
+        return null;
+      }
+      
       // Genereaza titlul pentru luna si anul curent (ex: Iul 25)
       final now = DateTime.now();
       final sheetTitle = _generateRomanianSheetTitle(now);
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Generated sheet title: $sheetTitle');
 
       final spreadsheet = await _sheetsApi!.spreadsheets.get(spreadsheetId, includeGridData: false);
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Retrieved spreadsheet with ${spreadsheet.sheets?.length ?? 0} sheets');
 
       final existingSheet = spreadsheet.sheets?.firstWhere(
         (s) => s.properties?.title == sheetTitle,
@@ -915,8 +1057,11 @@ class GoogleDriveService extends ChangeNotifier {
       );
 
       if (existingSheet?.properties?.title == sheetTitle) {
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Found existing sheet: $sheetTitle');
         return sheetTitle;
       } else {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Creating new sheet: $sheetTitle');
+        
         final addSheetRequest = sheets.AddSheetRequest(
           properties: sheets.SheetProperties(title: sheetTitle),
         );
@@ -926,14 +1071,19 @@ class GoogleDriveService extends ChangeNotifier {
           spreadsheetId,
         );
 
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Created new sheet: $sheetTitle');
+        
         // Adauga header-ul in noul sheet
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adding header to new sheet...');
         await _addHeaderToSheet(spreadsheetId, sheetTitle);
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Header added successfully');
         
         return sheetTitle;
       }
     } catch (e) {
       _lastError = 'Eroare la căutarea sau crearea foii de calcul: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _findOrCreateSheet: $_lastError');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       return null;
     }
   }
@@ -960,12 +1110,57 @@ class GoogleDriveService extends ChangeNotifier {
   /// Adauga un rand de date la finalul unui sheet
   Future<bool> _appendRowToSheet(String spreadsheetId, String sheetTitle, List<dynamic> rowData) async {
     try {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _appendRowToSheet START');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: SpreadsheetId: $spreadsheetId');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: SheetTitle: $sheetTitle');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: RowData: $rowData');
       
+      if (_sheetsApi == null) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Sheets API is null');
+        _lastError = 'Sheets API nu este inițializat';
+        return false;
+      }
       
-      return true;
+      // Construiește range-ul pentru ultimul rând
+      final range = "'$sheetTitle'!A:Z";
+      
+      // Obține datele existente pentru a găsi ultimul rând
+      final response = await _sheetsApi!.spreadsheets.values.get(spreadsheetId, range);
+      final existingRows = response.values ?? [];
+      
+      // Calculează următorul rând (ultimul rând + 1)
+      final nextRow = existingRows.length + 1;
+      final appendRange = "'$sheetTitle'!A$nextRow";
+      
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Next row: $nextRow');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Append range: $appendRange');
+      
+      // Creează ValueRange pentru datele noi
+      final valueRange = sheets.ValueRange()..values = [rowData];
+      
+      // Adaugă rândul nou
+      final updateResponse = await _sheetsApi!.spreadsheets.values.update(
+        valueRange,
+        spreadsheetId,
+        appendRange,
+        valueInputOption: 'USER_ENTERED',
+      );
+      
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Update response: ${updateResponse.updatedCells} cells updated');
+      
+      if (updateResponse.updatedCells != null && updateResponse.updatedCells! > 0) {
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Row appended successfully');
+        return true;
+      } else {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: No cells were updated');
+        _lastError = 'Nu s-au actualizat celule în Google Sheets';
+        return false;
+      }
+      
     } catch (e) {
       _lastError = 'Eroare la adăugarea rândului: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _appendRowToSheet: $_lastError');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       return false;
     }
   }
@@ -1011,10 +1206,15 @@ class GoogleDriveService extends ChangeNotifier {
   /// Pregătește datele clientului conform noii structuri
   Future<List<dynamic>> _prepareClientRowData(dynamic client) async {
     try {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _prepareClientRowData START');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client object: ${client.runtimeType}');
+      
       // Extrage datele de baza
       final String clientName = client.name ?? '';
       final phoneNumber1 = client.phoneNumber1 ?? client.phoneNumber ?? '';
       final phoneNumber2 = client.phoneNumber2 ?? '';
+      
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Basic data - Name: $clientName, Phone1: $phoneNumber1, Phone2: $phoneNumber2');
       
       // Formateaza numerele de telefon
       final formattedPhone1 = phoneNumber1.isNotEmpty ? phoneNumber1 : '';
@@ -1025,13 +1225,24 @@ class GoogleDriveService extends ChangeNotifier {
       final String ziua = DateTime.now().day.toString();
       final String status = client.additionalInfo ?? client.discussionStatus ?? '';
 
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted data - Contact: $contact, CoDebitor: $coDebitorName, Day: $ziua, Status: $status');
+
       // Extrage creditele si veniturile din formData
       final formData = client.formData as Map<String, dynamic>? ?? {};
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Form data keys: ${formData.keys.toList()}');
+      
+      // DEBUG: Dump entire form data structure
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: FULL FORM DATA DUMP:');
+      _dumpFormDataStructure(formData);
+      
       final clientCredits = _extractCredits(formData, 'client');
       final clientIncomes = _extractIncomes(formData, 'client');
       // Încearcă "coborrower" primul (numele corect din Firebase)
       final coDebitorCredits = _extractCredits(formData, 'coborrower');
       final coDebitorIncomes = _extractIncomes(formData, 'coborrower');
+      
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Extracted data - ClientCredits: $clientCredits, ClientIncomes: $clientIncomes');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Extracted data - CoDebitorCredits: $coDebitorCredits, CoDebitorIncomes: $coDebitorIncomes');
       
       final rowData = [
         clientName,
@@ -1045,9 +1256,13 @@ class GoogleDriveService extends ChangeNotifier {
         coDebitorIncomes,
       ];
       
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Final row data: $rowData');
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: _prepareClientRowData END');
+      
       return rowData;
     } catch (e) {
-      debugPrint('[ERROR][DRIVE] Error in _prepareClientRowData: $e');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error in _prepareClientRowData: $e');
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       rethrow;
     }
   }
@@ -1094,57 +1309,115 @@ class GoogleDriveService extends ChangeNotifier {
 
   /// Extrage veniturile din formData pentru un tip specific (client/coborrower)
   String _extractIncomes(Map<String, dynamic> formData, String type) {
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _extractIncomes START - Type: $type');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Form data keys: ${formData.keys.toList()}');
+    
     List<String> incomes = [];
     
     // Caută în structura incomeForms
-    if (formData.containsKey('incomeForms') && formData['incomeForms'] is Map<String, dynamic>) {
-      final incomeForms = formData['incomeForms'] as Map<String, dynamic>;
+    if (formData.containsKey('incomeForms')) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Found incomeForms key');
       
-      if (incomeForms.containsKey(type) && incomeForms[type] is List) {
-        final incomeList = incomeForms[type] as List;
+      if (formData['incomeForms'] is Map<String, dynamic>) {
+        final incomeForms = formData['incomeForms'] as Map<String, dynamic>;
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: IncomeForms keys: ${incomeForms.keys.toList()}');
         
-        for (var incomeData in incomeList) {
-          if (incomeData is Map<String, dynamic>) {
-            final formattedIncome = _formatIncomeSpecial(incomeData);
-            if (formattedIncome.isNotEmpty) {
-              incomes.add(formattedIncome);
+        if (incomeForms.containsKey(type)) {
+          debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Found type key: $type');
+          
+          if (incomeForms[type] is List) {
+            final incomeList = incomeForms[type] as List;
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Income list length: ${incomeList.length}');
+            
+            for (int i = 0; i < incomeList.length; i++) {
+              var incomeData = incomeList[i];
+              debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Processing income $i: $incomeData');
+              
+              if (incomeData is Map<String, dynamic>) {
+                final formattedIncome = _formatIncomeSpecial(incomeData);
+                debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted income: $formattedIncome');
+                
+                if (formattedIncome.isNotEmpty) {
+                  incomes.add(formattedIncome);
+                  debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Added income: $formattedIncome');
+                }
+              } else {
+                debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Income data is not Map: ${incomeData.runtimeType}');
+              }
             }
+          } else {
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Type data is not List: ${incomeForms[type].runtimeType}');
           }
+        } else {
+          debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Type key not found: $type');
         }
+      } else {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: IncomeForms is not Map: ${formData['incomeForms'].runtimeType}');
       }
+    } else {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: incomeForms key not found');
     }
     
     // Fallback pentru structura veche
     final incomeKey = '${type}Incomes';
-    if (incomes.isEmpty && formData.containsKey(incomeKey) && formData[incomeKey] is List) {
-      final incomeList = formData[incomeKey] as List;
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Checking fallback key: $incomeKey');
+    
+    if (incomes.isEmpty && formData.containsKey(incomeKey)) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Found fallback key: $incomeKey');
       
-      for (var incomeData in incomeList) {
-        if (incomeData is Map<String, dynamic>) {
-          final formattedIncome = _formatIncomeSpecial(incomeData);
-          if (formattedIncome.isNotEmpty) {
-            incomes.add(formattedIncome);
+      if (formData[incomeKey] is List) {
+        final incomeList = formData[incomeKey] as List;
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Fallback income list length: ${incomeList.length}');
+        
+        for (int i = 0; i < incomeList.length; i++) {
+          var incomeData = incomeList[i];
+          debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Processing fallback income $i: $incomeData');
+          
+          if (incomeData is Map<String, dynamic>) {
+            final formattedIncome = _formatIncomeSpecial(incomeData);
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted fallback income: $formattedIncome');
+            
+            if (formattedIncome.isNotEmpty) {
+              incomes.add(formattedIncome);
+              debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Added fallback income: $formattedIncome');
+            }
+          } else {
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Fallback income data is not Map: ${incomeData.runtimeType}');
           }
         }
+      } else {
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Fallback data is not List: ${formData[incomeKey].runtimeType}');
       }
+    } else {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Fallback key not found or incomes not empty');
     }
     
-    return incomes.join('; ');
+    final result = incomes.join('; ');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _extractIncomes END - Result: $result');
+    return result;
   }
 
   /// Formatează un venit în formatul special cerut (conform how_to_save_data.md)
   String _formatIncomeSpecial(Map<String, dynamic> incomeData) {
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _formatIncomeSpecial START - Data: $incomeData');
+    
     final bank = incomeData['bank']?.toString() ?? '';
     final incomeType = incomeData['incomeType']?.toString() ?? '';
-    final amount = incomeData['amount']?.toString() ?? '';
-    final period = incomeData['period']?.toString() ?? '';
+    
+    // FIX: Use correct field names from actual data structure
+    final amount = incomeData['incomeAmount']?.toString() ?? incomeData['amount']?.toString() ?? '';
+    final period = incomeData['vechime']?.toString() ?? incomeData['period']?.toString() ?? '';
+    
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Extracted values - Bank: $bank, Type: $incomeType, Amount: $amount, Period: $period');
     
     // Verifică dacă banca și tipul de venit sunt valide (nu "Selectează")
     if (_isSelectValue(bank)) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Bank is select value - skipping');
       return '';
     }
     
     if (_isSelectValue(incomeType)) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Income type is select value - skipping');
       return '';
     }
     
@@ -1161,14 +1434,19 @@ class GoogleDriveService extends ChangeNotifier {
       }
     }
     
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Amount formatted: $amountFormatted');
+    
     // Dacă suma este goală, nu salvăm venitul
     if (amountFormatted.isEmpty) {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Amount is empty - skipping');
       return '';
     }
     
     // Formatează banca și tipul de venit
     final bankFormatted = _formatBankName(bank);
     final incomeTypeFormatted = _formatIncomeTypeCode(incomeType);
+    
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted - Bank: $bankFormatted, Type: $incomeTypeFormatted');
     
     // Construiește rezultatul final
     String result = '$bankFormatted-$incomeTypeFormatted: $amountFormatted';
@@ -1178,6 +1456,7 @@ class GoogleDriveService extends ChangeNotifier {
       result += '($period)';
     }
     
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _formatIncomeSpecial END - Result: $result');
     return result;
   }
 
@@ -1188,6 +1467,8 @@ class GoogleDriveService extends ChangeNotifier {
         return 'sal';
       case 'pensie':
         return 'pen';
+      case 'pensie mai':
+        return 'pen_mai';
       case 'indemnizatie':
         return 'ind';
       default:

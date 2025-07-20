@@ -174,53 +174,28 @@ class _ClientsPaneState extends State<ClientsPane> {
     });
   }
 
-  /// OPTIMIZAT: Schimbă clientul cu debouncing pentru a preveni UI freezing
-  void _switchClient(ClientModel client) {
+  /// FIX: Improved client switching with better form data synchronization
+  Future<void> _handleClientTap(ClientModel client) async {
     if (_isSwitchingClient) return;
-    
-    // CRITICAL FIX: Near-instant debouncing for immediate sync
-    _clientSwitchDebounceTimer?.cancel();
-    _clientSwitchDebounceTimer = Timer(const Duration(milliseconds: 10), () {
-      _performClientSwitch(client);
-    });
-  }
-
-  /// OPTIMIZAT: Execută schimbarea efectivă a clientului
-  void _performClientSwitch(ClientModel client) {
-    
-    if (_isSwitchingClient) {
-  
-      return;
-    }
-    
-    // FIX: Check if client is already focused to prevent unnecessary switches
-    if (client.status == ClientStatus.focused) {
-  
-      return;
-    }
     
     try {
       _isSwitchingClient = true;
-  
       
       // Switch to form area when client is selected
       widget.onSwitchToFormArea?.call();
       
-      // Prima data face focus pentru a afisa formularul
-      _clientService.focusClient(client.phoneNumber);
+      // FIX: Focus client and ensure form data is loaded
+      await _clientService.focusClient(client.phoneNumber);
       
-      // OPTIMIZARE: Force refresh pentru a sincroniza UI-ul
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
+      // FIX: Force UI update after client switch
+      if (mounted) {
+        setState(() {});
+      }
       
     } catch (e) {
       debugPrint('❌ CLIENTS: Error switching client: $e');
     } finally {
       _isSwitchingClient = false;
-  
     }
   }
 
@@ -310,7 +285,7 @@ class _ClientsPaneState extends State<ClientsPane> {
         svgAsset: 'assets/viewIcon.svg', // Întotdeauna viewIcon pentru client nefocusat
         onTap: () {
           // OPTIMIZARE: Folosește mecanismul debounced pentru switching
-          _switchClient(client);
+          _handleClientTap(client);
         },
       );
     }

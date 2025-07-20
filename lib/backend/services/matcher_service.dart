@@ -13,6 +13,8 @@ enum ClientGender { male, female }
 class BankCriteria {
   final String bankName;
   double minIncome; // venitul minim necesar
+  int minAgeMale; // varsta minima pentru barbati
+  int minAgeFemale; // varsta minima pentru femei
   int maxAgeMale; // varsta maxima pentru barbati
   int maxAgeFemale; // varsta maxima pentru femei
   double minFicoScore; // scorul FICO minim
@@ -22,6 +24,8 @@ class BankCriteria {
   BankCriteria({
     required this.bankName,
     required this.minIncome,
+    required this.minAgeMale,
+    required this.minAgeFemale,
     required this.maxAgeMale,
     required this.maxAgeFemale,
     required this.minFicoScore,
@@ -34,6 +38,8 @@ class BankCriteria {
     return {
       'bankName': bankName,
       'minIncome': minIncome,
+      'minAgeMale': minAgeMale,
+      'minAgeFemale': minAgeFemale,
       'maxAgeMale': maxAgeMale,
       'maxAgeFemale': maxAgeFemale,
       'minFicoScore': minFicoScore,
@@ -47,17 +53,19 @@ class BankCriteria {
     return BankCriteria(
       bankName: map['bankName'] ?? '',
       minIncome: (map['minIncome'] ?? 0).toDouble(),
-      maxAgeMale: map['maxAgeMale'] ?? 65,
-      maxAgeFemale: map['maxAgeFemale'] ?? 62,
+      minAgeMale: (map['minAgeMale'] ?? 21) as int,
+      minAgeFemale: (map['minAgeFemale'] ?? 21) as int,
+      maxAgeMale: (map['maxAgeMale'] ?? 65) as int,
+      maxAgeFemale: (map['maxAgeFemale'] ?? 62) as int,
       minFicoScore: (map['minFicoScore'] ?? 0).toDouble(),
       maxLoanAmount: (map['maxLoanAmount'] ?? (map['loanMultiplier'] ?? 5.0).toDouble() * 10000).toDouble(), // Migration fallback
-      minEmploymentDuration: map['minEmploymentDuration'] ?? 6, // Default 6 months
+      minEmploymentDuration: (map['minEmploymentDuration'] ?? 6) as int, // Default 6 months
     );
   }
 
   @override
   String toString() {
-    return 'BankCriteria{bankName: $bankName, minIncome: $minIncome, maxAge: $maxAgeMale/$maxAgeFemale, minFico: $minFicoScore, minEmployment: ${minEmploymentDuration}luni}';
+    return 'BankCriteria{bankName: $bankName, minIncome: $minIncome, minAge: $minAgeMale/$minAgeFemale, maxAge: $maxAgeMale/$maxAgeFemale, minFico: $minFicoScore, minEmployment: ${minEmploymentDuration}luni}';
   }
 }
 
@@ -550,11 +558,15 @@ class MatcherService extends ChangeNotifier {
               .map((criteria) => BankCriteria.fromMap(criteria))
               .toList();
           
-          // FIX: Verifică dacă criteriile încărcate sunt din versiunea veche (cu valori mici pentru maxLoanAmount)
+          // FIX: Verifică dacă criteriile încărcate sunt din versiunea veche (cu valori mici pentru maxLoanAmount sau fără minAge)
           bool hasOldCriteria = false;
+          debugPrint('Checking loaded criteria for migration...');
           for (final criteria in loadedCriteria) {
-            if (criteria.maxLoanAmount < 100000) { // Dacă maxLoanAmount e sub 100.000, sunt criterii vechi
+            debugPrint('Checking criteria for ${criteria.bankName}: minAgeMale=${criteria.minAgeMale}, minAgeFemale=${criteria.minAgeFemale}');
+            if (criteria.maxLoanAmount < 100000 || // Dacă maxLoanAmount e sub 100.000, sunt criterii vechi
+                !_hasMinAgeFields(criteria)) { // Sau dacă nu au câmpurile minAge
               hasOldCriteria = true;
+              debugPrint('Found old criteria for ${criteria.bankName}, will migrate');
               break;
             }
           }
@@ -587,6 +599,8 @@ class MatcherService extends ChangeNotifier {
       BankCriteria(
         bankName: 'BCR',
         minIncome: 2500,
+        minAgeMale: 21,
+        minAgeFemale: 21,
         maxAgeMale: 60,
         maxAgeFemale: 58,
         minFicoScore: 600,
@@ -596,6 +610,8 @@ class MatcherService extends ChangeNotifier {
       BankCriteria(
         bankName: 'BRD',
         minIncome: 2000,
+        minAgeMale: 21,
+        minAgeFemale: 21,
         maxAgeMale: 60,
         maxAgeFemale: 58,
         minFicoScore: 0,
@@ -605,6 +621,8 @@ class MatcherService extends ChangeNotifier {
       BankCriteria(
         bankName: 'Raiffeisen',
         minIncome: 1500,
+        minAgeMale: 21,
+        minAgeFemale: 21,
         maxAgeMale: 60,
         maxAgeFemale: 58,
         minFicoScore: 600,
@@ -614,6 +632,8 @@ class MatcherService extends ChangeNotifier {
       BankCriteria(
         bankName: 'CEC Bank',
         minIncome: 2500,
+        minAgeMale: 21,
+        minAgeFemale: 21,
         maxAgeMale: 62,
         maxAgeFemale: 59,
         minFicoScore: 540,
@@ -623,6 +643,8 @@ class MatcherService extends ChangeNotifier {
       BankCriteria(
         bankName: 'ING',
         minIncome: 3000,
+        minAgeMale: 21,
+        minAgeFemale: 21,
         maxAgeMale: 60,
         maxAgeFemale: 58,
         minFicoScore: 0,
@@ -632,6 +654,8 @@ class MatcherService extends ChangeNotifier {
       BankCriteria(
         bankName: 'Garanti',
         minIncome: 2500,
+        minAgeMale: 21,
+        minAgeFemale: 21,
         maxAgeMale: 63,
         maxAgeFemale: 60,
         minFicoScore: 420,
@@ -687,99 +711,147 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
+  /// Verifica daca criteriile au câmpurile minAge (pentru migrarea de la versiunea veche)
+  bool _hasMinAgeFields(BankCriteria criteria) {
+    // Verifică dacă criteriile au câmpurile minAge setate la valori valide
+    // Dacă sunt 0 sau null, înseamnă că sunt din versiunea veche
+    try {
+      return criteria.minAgeMale > 0 && criteria.minAgeFemale > 0;
+    } catch (e) {
+      debugPrint('Error checking minAge fields: $e');
+      return false;
+    }
+  }
+
   /// Analizeaza eligibilitatea unui client pentru o banca specifica
   BankRecommendation analyzeClientEligibility(ClientProfile client, BankCriteria bankCriteria) {
-    final List<String> failedCriteria = [];
-    double matchScore = 100.0;
-
-    // Verifica venitul
-    if (client.totalIncome < bankCriteria.minIncome) {
-      failedCriteria.add('Venit insuficient (${client.totalIncome.toStringAsFixed(0)} < ${bankCriteria.minIncome.toStringAsFixed(0)} lei)');
-      matchScore -= 30;
-    }
-
-    // Verifica varsta in functie de gen
-    final maxAge = client.gender == ClientGender.male 
-        ? bankCriteria.maxAgeMale 
-        : bankCriteria.maxAgeFemale;
-    
-    if (client.age > maxAge) {
-      failedCriteria.add('Varsta prea mare (${client.age} > $maxAge ani)');
-      matchScore -= 25;
-    }
-
-    // Verifica scorul FICO
-    if (client.ficoScore < bankCriteria.minFicoScore) {
-      failedCriteria.add('Scor FICO insuficient (${client.ficoScore.toStringAsFixed(0)} < ${bankCriteria.minFicoScore.toStringAsFixed(0)})');
-      matchScore -= 45;
-    }
-
-    // Verifica durata de angajament
-    if (client.employmentDuration < bankCriteria.minEmploymentDuration) {
-      final clientYears = client.employmentDuration ~/ 12;
-      final clientMonths = client.employmentDuration % 12;
-      final requiredYears = bankCriteria.minEmploymentDuration ~/ 12;
-      final requiredMonths = bankCriteria.minEmploymentDuration % 12;
+    try {
+      final List<String> failedCriteria = [];
+      double matchScore = 100.0;
       
-      String clientTenure = '';
-      String requiredTenure = '';
+      debugPrint('Analyzing eligibility for ${bankCriteria.bankName}:');
+      debugPrint('  Client age: ${client.age}, gender: ${client.gender}');
+      debugPrint('  Bank minAgeMale: ${bankCriteria.minAgeMale}, minAgeFemale: ${bankCriteria.minAgeFemale}');
+      debugPrint('  Bank maxAgeMale: ${bankCriteria.maxAgeMale}, maxAgeFemale: ${bankCriteria.maxAgeFemale}');
+
+      // Verifica venitul
+      if (client.totalIncome < bankCriteria.minIncome) {
+        failedCriteria.add('Venit insuficient (${client.totalIncome.toStringAsFixed(0)} < ${bankCriteria.minIncome.toStringAsFixed(0)} lei)');
+        matchScore -= 30;
+      }
+
+      // Verifica varsta minima in functie de gen
+      final minAge = client.gender == ClientGender.male 
+          ? bankCriteria.minAgeMale 
+          : bankCriteria.minAgeFemale;
       
-      if (clientYears > 0) {
-        clientTenure = '$clientYears ani';
-        if (clientMonths > 0) clientTenure += ' $clientMonths luni';
+      if (client.age < minAge) {
+        failedCriteria.add('Varsta prea mica (${client.age} < $minAge ani)');
+        matchScore -= 25;
+        debugPrint('Age check failed for ${bankCriteria.bankName}:');
+        debugPrint('  Client: ${client.age} years, Required: $minAge years');
       } else {
-        clientTenure = '$clientMonths luni';
+        debugPrint('Minimum age check passed for ${bankCriteria.bankName}:');
+        debugPrint('  Client: ${client.age} years, Required: $minAge years');
       }
+
+      // Verifica varsta maxima in functie de gen
+      final maxAge = client.gender == ClientGender.male 
+          ? bankCriteria.maxAgeMale 
+          : bankCriteria.maxAgeFemale;
       
-      if (requiredYears > 0) {
-        requiredTenure = '$requiredYears ani';
-        if (requiredMonths > 0) requiredTenure += ' $requiredMonths luni';
+      if (client.age > maxAge) {
+        failedCriteria.add('Varsta prea mare (${client.age} > $maxAge ani)');
+        matchScore -= 25;
+        debugPrint('Age check failed for ${bankCriteria.bankName}:');
+        debugPrint('  Client: ${client.age} years, Required: $maxAge years');
       } else {
-        requiredTenure = '$requiredMonths luni';
+        debugPrint('Maximum age check passed for ${bankCriteria.bankName}:');
+        debugPrint('  Client: ${client.age} years, Required: $maxAge years');
       }
-      
-      final errorMessage = 'Vechime insuficienta ($clientTenure < $requiredTenure)';
-      failedCriteria.add(errorMessage);
-      matchScore -= 20;
-      
-      debugPrint('Employment duration check failed for ${bankCriteria.bankName}:');
-      debugPrint('  Client: ${client.employmentDuration} months ($clientTenure)');
-      debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months ($requiredTenure)');
-    } else {
-      debugPrint('Employment duration check passed for ${bankCriteria.bankName}:');
-      debugPrint('  Client: ${client.employmentDuration} months');
-      debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months');
+
+      // Verifica scorul FICO
+      if (client.ficoScore < bankCriteria.minFicoScore) {
+        failedCriteria.add('Scor FICO insuficient (${client.ficoScore.toStringAsFixed(0)} < ${bankCriteria.minFicoScore.toStringAsFixed(0)})');
+        matchScore -= 45;
+      }
+
+      // Verifica durata de angajament
+      if (client.employmentDuration < bankCriteria.minEmploymentDuration) {
+        final clientYears = client.employmentDuration ~/ 12;
+        final clientMonths = client.employmentDuration % 12;
+        final requiredYears = bankCriteria.minEmploymentDuration ~/ 12;
+        final requiredMonths = bankCriteria.minEmploymentDuration % 12;
+        
+        String clientTenure = '';
+        String requiredTenure = '';
+        
+        if (clientYears > 0) {
+          clientTenure = '$clientYears ani';
+          if (clientMonths > 0) clientTenure += ' $clientMonths luni';
+        } else {
+          clientTenure = '$clientMonths luni';
+        }
+        
+        if (requiredYears > 0) {
+          requiredTenure = '$requiredYears ani';
+          if (requiredMonths > 0) requiredTenure += ' $requiredMonths luni';
+        } else {
+          requiredTenure = '$requiredMonths luni';
+        }
+        
+        final errorMessage = 'Vechime insuficienta ($clientTenure < $requiredTenure)';
+        failedCriteria.add(errorMessage);
+        matchScore -= 20;
+        
+        debugPrint('Employment duration check failed for ${bankCriteria.bankName}:');
+        debugPrint('  Client: ${client.employmentDuration} months ($clientTenure)');
+        debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months ($requiredTenure)');
+      } else {
+        debugPrint('Employment duration check passed for ${bankCriteria.bankName}:');
+        debugPrint('  Client: ${client.employmentDuration} months');
+        debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months');
+      }
+
+      // Calculeaza bonus pentru supraindeplinirea criteriilor
+      if (failedCriteria.isEmpty) {
+        // Bonus pentru venit superior
+        if (client.totalIncome > bankCriteria.minIncome * 1.5) {
+          matchScore += 10;
+        }
+        
+        // Bonus pentru scor FICO superior
+        if (client.ficoScore > bankCriteria.minFicoScore * 1.2) {
+          matchScore += 5;
+        }
+        
+        // Bonus pentru vechime superiora
+        if (client.employmentDuration > bankCriteria.minEmploymentDuration * 1.5) {
+          matchScore += 5;
+        }
+      }
+
+      // Asigura ca scorul este intre 0 si 100
+      matchScore = matchScore.clamp(0.0, 100.0);
+
+      final isEligible = failedCriteria.isEmpty;
+
+      return BankRecommendation(
+        bankCriteria: bankCriteria,
+        isEligible: isEligible,
+        failedCriteria: failedCriteria,
+        matchScore: matchScore,
+      );
+    } catch (e) {
+      debugPrint('Error in analyzeClientEligibility: $e');
+      // Return a default recommendation in case of error
+      return BankRecommendation(
+        bankCriteria: bankCriteria,
+        isEligible: false,
+        failedCriteria: ['Eroare la analiza eligibilitatii: $e'],
+        matchScore: 0.0,
+      );
     }
-
-    // Calculeaza bonus pentru supraindeplinirea criteriilor
-    if (failedCriteria.isEmpty) {
-      // Bonus pentru venit superior
-      if (client.totalIncome > bankCriteria.minIncome * 1.5) {
-        matchScore += 10;
-      }
-      
-      // Bonus pentru scor FICO superior
-      if (client.ficoScore > bankCriteria.minFicoScore * 1.2) {
-        matchScore += 5;
-      }
-      
-      // Bonus pentru vechime superiora
-      if (client.employmentDuration > bankCriteria.minEmploymentDuration * 1.5) {
-        matchScore += 5;
-      }
-    }
-
-    // Asigura ca scorul este intre 0 si 100
-    matchScore = matchScore.clamp(0.0, 100.0);
-
-    final isEligible = failedCriteria.isEmpty;
-
-    return BankRecommendation(
-      bankCriteria: bankCriteria,
-      isEligible: isEligible,
-      failedCriteria: failedCriteria,
-      matchScore: matchScore,
-    );
   }
 
   /// Genereaza recomandari pentru toate bancile pentru un client

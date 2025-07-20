@@ -427,20 +427,22 @@ class FirebaseFormService {
     }
   }
 
-  /// Încarcă datele formularului pentru un client din noua structură
+  /// OPTIMIZAT: Încarcă datele formularului pentru un client din noua structură cu cache
   Future<Map<String, dynamic>?> loadClientFormData(String phoneNumber) async {
     try {
       return await _threadHandler.executeOnPlatformThread(() async {
-        final client = await _clientService.getClient(phoneNumber);
+        // OPTIMIZARE: Folosește NewFirebaseService pentru cache
+        final newFirebaseService = NewFirebaseService();
+        final client = await newFirebaseService.getClient(phoneNumber);
         
         if (client != null) {
-          // Obtine formularele clientului
-          final forms = await _clientService.getClientForms(phoneNumber);
+          // OPTIMIZARE: Folosește cache-ul pentru form data
+          final forms = await newFirebaseService.getClientForms(phoneNumber);
           final formData = forms.isNotEmpty ? forms.first['data'] ?? {} : {};
           
           return {
-            'clientName': client.name,
-            'phoneNumber': client.phoneNumber,
+            'clientName': client['name'],
+            'phoneNumber': client['phoneNumber'],
             'lastUpdated': DateTime.now().toIso8601String(),
             'formData': formData,
           };
@@ -631,6 +633,42 @@ class NewFirebaseService {
   DateTime? _tokenCacheTime;
   static const Duration _tokenCacheDuration = Duration(minutes: 5);
 
+  // OPTIMIZARE: Cache pentru client data
+  final Map<String, Map<String, dynamic>> _clientCache = {};
+  final Map<String, DateTime> _clientCacheTime = {};
+  static const Duration _clientCacheDuration = Duration(minutes: 2);
+
+  // OPTIMIZARE: Cache pentru form data
+  final Map<String, Map<String, dynamic>> _formCache = {};
+  final Map<String, DateTime> _formCacheTime = {};
+  static const Duration _formCacheDuration = Duration(minutes: 5);
+
+  // OPTIMIZARE: Cache pentru all clients list
+  List<Map<String, dynamic>>? _allClientsCache;
+  DateTime? _allClientsCacheTime;
+  static const Duration _allClientsCacheDuration = Duration(seconds: 30);
+
+  /// OPTIMIZARE: Curata cache-ul pentru client data
+  void clearClientCache() {
+    _clientCache.clear();
+    _clientCacheTime.clear();
+    _allClientsCache = null;
+    _allClientsCacheTime = null;
+  }
+
+  /// OPTIMIZARE: Curata cache-ul pentru form data
+  void clearFormCache() {
+    _formCache.clear();
+    _formCacheTime.clear();
+  }
+
+  /// OPTIMIZARE: Curata toate cache-urile
+  void clearAllCaches() {
+    clearClientCache();
+    clearFormCache();
+    invalidateConsultantTokenCache();
+  }
+
   /// Obtine token-ul consultantului curent din baza de data (cu cache)
   Future<String?> getCurrentConsultantToken() async {
     PerformanceMonitor.startTimer('getCurrentConsultantToken');
@@ -763,12 +801,23 @@ class NewFirebaseService {
     }
   }
 
-  /// Obtine un client dupa numarul de telefon (doar pentru consultantul curent)
+  /// OPTIMIZAT: Obtine un client dupa numarul de telefon cu cache (doar pentru consultantul curent)
   Future<Map<String, dynamic>?> getClient(String phoneNumber) async {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) {
       FirebaseLogger.error('getClient consultantToken is null');
       return null;
+    }
+
+    // OPTIMIZARE: Verifica cache-ul mai intai
+    if (_clientCache.containsKey(phoneNumber)) {
+      final cacheTime = _clientCacheTime[phoneNumber];
+      if (cacheTime != null && DateTime.now().difference(cacheTime) < _clientCacheDuration) {
+        final cachedData = _clientCache[phoneNumber]!;
+        if (cachedData['consultantToken'] == consultantToken) {
+          return cachedData;
+        }
+      }
     }
 
     try {
@@ -779,6 +828,10 @@ class NewFirebaseService {
       final data = doc.data();
       
       if (data != null && data['consultantToken'] == consultantToken) {
+        // OPTIMIZARE: Salveaza in cache
+        _clientCache[phoneNumber] = data;
+        _clientCacheTime[phoneNumber] = DateTime.now();
+        
         FirebaseLogger.success('getClient found matching client');
         return data;
       } else {
@@ -1019,12 +1072,20 @@ class NewFirebaseService {
     }
   }
 
-  /// Obtine toti clientii pentru consultantul curent (FIX: mai robust filtering)
+  /// OPTIMIZAT: Obtine toti clientii pentru consultantul curent cu cache
   Future<List<Map<String, dynamic>>> getAllClients() async {
     final consultantToken = await getCurrentConsultantToken();
     
     if (consultantToken == null) {
       return [];
+    }
+
+    // OPTIMIZARE: Verifica cache-ul pentru all clients
+    if (_allClientsCache != null && _allClientsCacheTime != null) {
+      final cacheAge = DateTime.now().difference(_allClientsCacheTime!);
+      if (cacheAge < _allClientsCacheDuration) {
+        return _allClientsCache!;
+      }
     }
 
     try {
@@ -1060,6 +1121,10 @@ class NewFirebaseService {
         return bTime.compareTo(aTime); // descending
       });
       
+      // OPTIMIZARE: Salveaza in cache
+      _allClientsCache = clientsList;
+      _allClientsCacheTime = DateTime.now();
+      
       return clientsList;
     } catch (e) {
       FirebaseLogger.error('Error getting all clients: $e');
@@ -1067,7 +1132,7 @@ class NewFirebaseService {
     }
   }
 
-  /// Actualizeaza un client
+  /// OPTIMIZAT: Actualizeaza un client cu invalidare cache
   Future<bool> updateClient(String phoneNumber, Map<String, dynamic> updates) async {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) return false;
@@ -1082,6 +1147,11 @@ class NewFirebaseService {
       await _threadHandler.executeOnPlatformThread(() =>
         _firestore.collection(_clientsCollection).doc(phoneNumber).update(updates)
       );
+      
+      // OPTIMIZARE: Invalideaza cache-ul pentru client
+      invalidateClientCache(phoneNumber);
+      invalidateAllClientsCache();
+      
       return true;
     } catch (e) {
       FirebaseLogger.error('Error updating client: $e');
@@ -1156,6 +1226,9 @@ class NewFirebaseService {
             .set(formDoc)
       );
 
+      // OPTIMIZARE: Invalideaza cache-ul pentru form data
+      invalidateFormCache(phoneNumber);
+      
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {'updatedAt': FieldValue.serverTimestamp()});
       return true;
@@ -1166,9 +1239,22 @@ class NewFirebaseService {
   }
 
   /// Obtine toate formularele pentru un client
+  /// OPTIMIZAT: Obtine formularele unui client cu cache
   Future<List<Map<String, dynamic>>> getClientForms(String phoneNumber) async {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) return [];
+
+    // OPTIMIZARE: Verifica cache-ul pentru form data
+    final cacheKey = '${phoneNumber}_forms';
+    if (_formCache.containsKey(cacheKey)) {
+      final cacheTime = _formCacheTime[cacheKey];
+      if (cacheTime != null && DateTime.now().difference(cacheTime) < _formCacheDuration) {
+        final cachedForms = _formCache[cacheKey]!['forms'] as List<Map<String, dynamic>>?;
+        if (cachedForms != null) {
+          return cachedForms;
+        }
+      }
+    }
 
     try {
       // Verifica daca clientul apartine consultantului curent
@@ -1183,10 +1269,16 @@ class NewFirebaseService {
             .get()
       );
 
-      return snapshot.docs.map((doc) => {
+      final forms = snapshot.docs.map((doc) => {
         'id': doc.id,
         ...doc.data(),
       }).toList();
+
+      // OPTIMIZARE: Salveaza in cache
+      _formCache[cacheKey] = {'forms': forms};
+      _formCacheTime[cacheKey] = DateTime.now();
+
+      return forms;
     } catch (e) {
       FirebaseLogger.error('Error getting client forms: $e');
       return [];
@@ -1626,6 +1718,31 @@ class NewFirebaseService {
       FirebaseLogger.error('Error during cleanup: $e');
       return false;
     }
+  }
+
+  /// OPTIMIZARE: Invalideaza cache-ul pentru un client specific
+  void invalidateClientCache(String phoneNumber) {
+    _clientCache.remove(phoneNumber);
+    _clientCacheTime.remove(phoneNumber);
+  }
+
+  /// OPTIMIZARE: Invalideaza cache-ul pentru form data pentru un client specific
+  void invalidateFormCache(String phoneNumber) {
+    final cacheKey = '${phoneNumber}_forms';
+    _formCache.remove(cacheKey);
+    _formCacheTime.remove(cacheKey);
+  }
+
+  /// OPTIMIZARE: Invalideaza toate cache-urile pentru un client
+  void invalidateAllCachesForClient(String phoneNumber) {
+    invalidateClientCache(phoneNumber);
+    invalidateFormCache(phoneNumber);
+  }
+
+  /// OPTIMIZARE: Invalideaza cache-ul pentru all clients
+  void invalidateAllClientsCache() {
+    _allClientsCache = null;
+    _allClientsCacheTime = null;
   }
 }
 
