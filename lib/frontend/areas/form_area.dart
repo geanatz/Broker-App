@@ -275,15 +275,13 @@ class _FormAreaState extends State<FormArea> {
     }
     
     try {
-      final loadStartTime = DateTime.now();
-      debugPrint('🚀 FORM: Advanced form loading started at ${loadStartTime.millisecondsSinceEpoch}');
+
       
       app_log.PerformanceMonitor.startTimer('loadFormData');
       
       // OPTIMIZATION: Immediate form initialization with strategic splash
       if (!_formService.hasFormDataForClient(currentClient.phoneNumber)) {
-        final initStartTime = DateTime.now();
-        debugPrint('🚀 FORM: Initializing empty forms for instant UI');
+
         
         _formService.initializeEmptyFormsForClient(currentClient.phoneNumber);
         
@@ -291,13 +289,12 @@ class _FormAreaState extends State<FormArea> {
           setState(() {});
         }
         
-        final initTime = DateTime.now().difference(initStartTime).inMilliseconds;
-        debugPrint('🚀 FORM: Empty form initialization completed in ${initTime}ms');
+        
       }
       
       // OPTIMIZATION: Strategic splash screen for perceived performance
       if (!_formService.hasCachedDataForClient(currentClient.phoneNumber)) {
-        debugPrint('🚀 FORM: Showing strategic splash for ${currentClient.name}');
+
         if (mounted) {
           setState(() {
             _isLoadingFormData = true;
@@ -312,9 +309,7 @@ class _FormAreaState extends State<FormArea> {
         currentClient.phoneNumber,
       );
       
-      final loadEndTime = DateTime.now();
-      final loadDuration = loadEndTime.difference(loadStartTime).inMilliseconds;
-      debugPrint('🚀 FORM: Advanced form loading completed in ${loadDuration}ms');
+      
       
       // FIX: Clear controllers to ensure fresh data loading
       _disposeControllers();
@@ -645,7 +640,7 @@ class _FormAreaState extends State<FormArea> {
   /// FIX: Ensure form area reflects current focus state
   void _ensureFocusStateConsistency() {
     final currentFocusedClient = _clientService.focusedClient;
-    debugPrint('🔧 FORM_AREA: Ensuring focus consistency - Current focused: ${currentFocusedClient?.phoneNumber ?? 'none'}');
+    
     
     if (currentFocusedClient != null) {
       // Validate that the focused client is properly set in the list
@@ -654,12 +649,12 @@ class _FormAreaState extends State<FormArea> {
           client.status == ClientStatus.focused);
       
       if (!focusedInList) {
-        debugPrint('🔧 FORM_AREA: Focus inconsistency detected, fixing...');
+
         _clientService.fixFocusStateInconsistencies();
       }
     }
     
-    debugPrint('🔧 FORM_AREA: Focus consistency check completed');
+    
   }
 
   @override
@@ -693,8 +688,7 @@ class _FormAreaState extends State<FormArea> {
 
   /// OPTIMIZATION: Advanced form rendering with performance profiling
   Widget _buildFormContent(ClientModel client) {
-    final renderStartTime = DateTime.now();
-    debugPrint('🚀 FORM: Starting form content render for ${client.name}');
+    
     
     final focusedClient = _clientService.focusedClient;
     
@@ -709,10 +703,10 @@ class _FormAreaState extends State<FormArea> {
     }
     
     // OPTIMIZATION: Check form data availability for strategic rendering
-    final hasFormData = _formService.hasFormDataForClient(client.phoneNumber);
-    final hasCachedData = _formService.hasCachedDataForClient(client.phoneNumber);
+    _formService.hasFormDataForClient(client.phoneNumber);
+    _formService.hasCachedDataForClient(client.phoneNumber);
     
-    debugPrint('🚀 FORM: Form data status - HasData: $hasFormData, HasCached: $hasCachedData');
+    
     
     // Afiseaza formularele pentru client conform design-ului exact din Figma
     final formContent = Row(
@@ -730,8 +724,7 @@ class _FormAreaState extends State<FormArea> {
       ],
     );
     
-    final renderTime = DateTime.now().difference(renderStartTime).inMilliseconds;
-    debugPrint('🚀 FORM: Form content render completed in ${renderTime}ms');
+    
     
     return formContent;
   }

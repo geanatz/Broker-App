@@ -928,14 +928,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   /// FIX: Track focus persistence during area transitions
   void _trackFocusPersistence(String transitionType) {
-    debugPrint('📊 MAIN_SCREEN: Focus persistence tracking [$transitionType]');
-    
-    // Log current focus state
-    _clientService.logFocusState('MAIN_SCREEN_$transitionType');
-    
     // Validate focus state consistency
     if (!_clientService.validateFocusState()) {
-      debugPrint('⚠️ MAIN_SCREEN: Focus state inconsistencies detected during $transitionType');
       _clientService.fixFocusStateInconsistencies();
     }
   }

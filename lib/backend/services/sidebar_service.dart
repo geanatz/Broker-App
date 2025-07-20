@@ -174,22 +174,22 @@ class SidebarService {
   /// Change the current area
   void changeArea(AreaType area) {
     if (_currentArea != area) {
-      debugPrint('🔄 SIDEBAR: Area change - From: $_currentArea, To: $area');
+
       _currentArea = area;
       onAreaChanged(area);
     } else {
-      debugPrint('🔄 SIDEBAR: Area unchanged - Current: $_currentArea');
+
     }
   }
   
   /// Change the current pane
   void changePane(PaneType pane) {
     if (_currentPane != pane) {
-      debugPrint('🔄 SIDEBAR: Pane change - From: $_currentPane, To: $pane');
+
       _currentPane = pane;
       onPaneChanged(pane);
     } else {
-      debugPrint('🔄 SIDEBAR: Pane unchanged - Current: $_currentPane');
+
     }
   }
   

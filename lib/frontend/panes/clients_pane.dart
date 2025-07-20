@@ -220,7 +220,7 @@ class _ClientsPaneState extends State<ClientsPane> {
         (_lastTappedClientId == client.phoneNumber && 
          _lastTapTime != null && 
          now.difference(_lastTapTime!).inMilliseconds < 50)) {
-      debugPrint('🚀 CLIENTS: Skipping redundant tap for client ${client.phoneNumber}');
+
       return;
     }
     
@@ -231,41 +231,30 @@ class _ClientsPaneState extends State<ClientsPane> {
       
       // FIX: Log focus state before client tap
       _clientService.logFocusState('CLIENTS_BEFORE_TAP');
-      
-      // OPTIMIZATION: Start precision timing for performance profiling
-      final tapStartTime = DateTime.now();
-      debugPrint('🚀 CLIENTS: Advanced client tap started at ${tapStartTime.millisecondsSinceEpoch}');
-      debugPrint('🚀 CLIENTS: Tapping client: ${client.phoneNumber} (${client.name})');
-      
+
+    
       // OPTIMIZATION: Strategic area switching with timing
-      final areaSwitchStartTime = DateTime.now();
       if (widget.onSwitchToFormArea != null) {
-        debugPrint('🚀 CLIENTS: Switching to form area');
+
         widget.onSwitchToFormArea!();
       }
-      final areaSwitchTime = DateTime.now().difference(areaSwitchStartTime).inMilliseconds;
-      debugPrint('🚀 CLIENTS: Strategic area switch completed in ${areaSwitchTime}ms');
+      
       
       // FIX: Advanced client focusing with detailed timing
-      final focusStartTime = DateTime.now();
-      debugPrint('🚀 CLIENTS: Starting focus operation for: ${client.phoneNumber}');
+      
       await _clientService.focusClient(client.phoneNumber);
-      final focusTime = DateTime.now().difference(focusStartTime).inMilliseconds;
-      debugPrint('🚀 CLIENTS: Advanced client focus completed in ${focusTime}ms');
+      
       
       // FIX: Log focus state after focus operation
       _clientService.logFocusState('CLIENTS_AFTER_FOCUS');
       
       // FIX: Force immediate UI update with timing
-      final uiUpdateStartTime = DateTime.now();
       if (mounted) {
         setState(() {});
       }
-      final uiUpdateTime = DateTime.now().difference(uiUpdateStartTime).inMilliseconds;
-      debugPrint('🚀 CLIENTS: UI update completed in ${uiUpdateTime}ms');
       
-      final totalTime = DateTime.now().difference(tapStartTime).inMilliseconds;
-      debugPrint('🚀 CLIENTS: Advanced client tap completed in ${totalTime}ms');
+      
+      
       
       // FIX: Log final focus state
       _clientService.logFocusState('CLIENTS_TAP_COMPLETE');
@@ -519,7 +508,7 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// FIX: Ensure clients pane reflects current focus state
   void _ensureFocusStateConsistency() {
     final currentFocusedClient = _clientService.focusedClient;
-    debugPrint('🔧 CLIENTS_PANE: Ensuring focus consistency - Current focused: ${currentFocusedClient?.phoneNumber ?? 'none'}');
+    
     
     if (currentFocusedClient != null) {
       // Validate that the focused client is properly set in the list
@@ -528,11 +517,11 @@ class _ClientsPaneState extends State<ClientsPane> {
           client.status == ClientStatus.focused);
       
       if (!focusedInList) {
-        debugPrint('🔧 CLIENTS_PANE: Focus inconsistency detected, fixing...');
+
         _clientService.fixFocusStateInconsistencies();
       }
     }
     
-    debugPrint('🔧 CLIENTS_PANE: Focus consistency check completed');
+    
   }
 }
