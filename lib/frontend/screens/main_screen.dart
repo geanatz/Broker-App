@@ -420,21 +420,37 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   void _handleAreaChanged(AreaType area) {
-
+    debugPrint('🔄 MAIN_SCREEN: Area change - From: $_currentArea, To: $area');
+    
+    // FIX: Track focus persistence before area change
+    _trackFocusPersistence('BEFORE_AREA_CHANGE');
+    
+    // FIX: Preserve focus state before area change
+    _clientService.preserveFocusState();
+    
     setState(() {
       _currentArea = area;
     });
     // Save navigation state
     _saveNavigationState();
     
-    // Force state sync after a short delay to handle any race conditions
+    // FIX: Restore focus state after area change
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _clientService.restoreFocusState();
+      _trackFocusPersistence('AFTER_AREA_CHANGE');
       _forceSyncStates();
     });
   }
   
   void _handlePaneChanged(PaneType pane) {
-
+    debugPrint('🔄 MAIN_SCREEN: Pane change - From: $_currentPane, To: $pane');
+    
+    // FIX: Track focus persistence before pane change
+    _trackFocusPersistence('BEFORE_PANE_CHANGE');
+    
+    // FIX: Preserve focus state before pane change
+    _clientService.preserveFocusState();
+    
     setState(() {
       _currentPane = pane;
     });
@@ -456,8 +472,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       });
     }
     
-    // Force state sync after a short delay to handle any race conditions
+    // FIX: Restore focus state after pane change
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _clientService.restoreFocusState();
+      _trackFocusPersistence('AFTER_PANE_CHANGE');
       _forceSyncStates();
     });
   }
@@ -905,6 +923,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     if (needsUpdate && mounted) {
       setState(() {});
+    }
+  }
+
+  /// FIX: Track focus persistence during area transitions
+  void _trackFocusPersistence(String transitionType) {
+    debugPrint('📊 MAIN_SCREEN: Focus persistence tracking [$transitionType]');
+    
+    // Log current focus state
+    _clientService.logFocusState('MAIN_SCREEN_$transitionType');
+    
+    // Validate focus state consistency
+    if (!_clientService.validateFocusState()) {
+      debugPrint('⚠️ MAIN_SCREEN: Focus state inconsistencies detected during $transitionType');
+      _clientService.fixFocusStateInconsistencies();
     }
   }
 

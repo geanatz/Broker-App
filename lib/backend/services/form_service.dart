@@ -219,8 +219,7 @@ class FormService extends ChangeNotifier {
   final FirebaseFormService _firebaseFormService = FirebaseFormService();
   
   // OPTIMIZARE: Debouncing pentru a evita multiple apeluri simultane
-  Timer? _loadDebounceTimer;
-  String? _lastLoadingClientId;
+  // FIX: Removed debounce timer for immediate response
 
   // Form data storage per client
   final Map<String, List<CreditFormModel>> _clientCreditForms = HashMap();
@@ -234,6 +233,13 @@ class FormService extends ChangeNotifier {
 
   // OPTIMIZARE: Cache pentru form data
   final Map<String, Map<String, dynamic>> _formDataCache = HashMap();
+
+  /// OPTIMIZATION: Flag to prevent redundant form data loading
+  bool _isLoadingFormData = false;
+  String? _currentlyLoadingClientId;
+
+  /// OPTIMIZATION: Request deduplication to prevent multiple Firebase calls
+  final Map<String, Future<void>> _pendingRequests = {};
 
   // Constants
   static const List<String> incomeBanks = [
@@ -523,18 +529,40 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// FIX: Improved form data loading with reduced debouncing
+  /// FIX: Advanced form data loading with strategic caching
   Future<void> loadFormDataForClient(String clientId, String phoneNumber) async {
+    // OPTIMIZATION: Prevent redundant loading operations
+    if (_isLoadingFormData && _currentlyLoadingClientId == clientId) {
+      debugPrint('🚀 FORM_SERVICE: Skipping redundant load for client $clientId');
+      return;
+    }
+    
+    // OPTIMIZATION: Request deduplication - if same request is pending, wait for it
+    if (_pendingRequests.containsKey(clientId)) {
+      debugPrint('🚀 FORM_SERVICE: Waiting for pending request for client $clientId');
+      await _pendingRequests[clientId];
+      return;
+    }
+    
     PerformanceMonitor.startTimer('loadFormData');
     
     try {
-      // FIX: Reduced cache validity for more responsive updates
+      _isLoadingFormData = true;
+      _currentlyLoadingClientId = clientId;
+      
+      final loadStartTime = DateTime.now();
+      debugPrint('🚀 FORM_SERVICE: Advanced form loading started for client $clientId');
+      
+      // OPTIMIZATION: Ultra-aggressive cache check with extended validity
       if (_formDataCache.containsKey(clientId)) {
         final cachedData = _formDataCache[clientId]!;
         final cacheTime = cachedData['cacheTime'] as DateTime?;
         
-        // FIX: Reduced cache validity from 5 minutes to 30 seconds for better responsiveness
-        if (cacheTime != null && DateTime.now().difference(cacheTime).inSeconds < 30) {
+        // OPTIMIZATION: Extended cache validity to 5 minutes for ultra-fast response
+        if (cacheTime != null && DateTime.now().difference(cacheTime).inMinutes < 5) {
+          final cacheStartTime = DateTime.now();
+          debugPrint('🚀 FORM_SERVICE: Using cached data for client $clientId');
+          
           _clientCreditForms[clientId] = List.from(cachedData['clientCreditForms']);
           _coborrowerCreditForms[clientId] = List.from(cachedData['coborrowerCreditForms']);
           _clientIncomeForms[clientId] = List.from(cachedData['clientIncomeForms']);
@@ -544,35 +572,50 @@ class FormService extends ChangeNotifier {
           
           notifyListeners();
           PerformanceMonitor.endTimer('loadFormData');
+          
+          final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
+          debugPrint('🚀 FORM_SERVICE: Cache data loading completed in ${cacheTime}ms');
           return;
         }
       }
 
-      // FIX: Reduced debouncing for better responsiveness
-      if (_loadDebounceTimer?.isActive == true && _lastLoadingClientId == clientId) {
-        // FIX: Allow immediate loading for same client to ensure data is fresh
-        _loadDebounceTimer?.cancel();
-      }
+      // OPTIMIZATION: Create pending request to prevent duplicates
+      final requestFuture = _performFormDataLoad(clientId, phoneNumber);
+      _pendingRequests[clientId] = requestFuture;
       
-      _loadDebounceTimer?.cancel();
-      _loadDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
-        await _performFormDataLoad(clientId, phoneNumber);
-      });
-      _lastLoadingClientId = clientId;
+      // Wait for the request to complete
+      await requestFuture;
+      
+      final totalTime = DateTime.now().difference(loadStartTime).inMilliseconds;
+      debugPrint('🚀 FORM_SERVICE: Advanced form loading completed in ${totalTime}ms');
       
     } catch (e) {
       debugPrint('Error loading form data for client $clientId: $e');
       PerformanceMonitor.endTimer('loadFormData');
+    } finally {
+      _isLoadingFormData = false;
+      _currentlyLoadingClientId = null;
+      _pendingRequests.remove(clientId);
     }
   }
 
-  /// FIX: Improved form data loading execution
+  /// FIX: Advanced form data loading execution with detailed profiling
   Future<void> _performFormDataLoad(String clientId, String phoneNumber) async {
     try {
+      final startTime = DateTime.now();
+      debugPrint('🚀 FORM_SERVICE: Advanced form data load started for client $clientId');
+      
+      final firebaseStartTime = DateTime.now();
       final formData = await _firebaseFormService.loadAllFormData(phoneNumber);
       
+      final firebaseTime = DateTime.now().difference(firebaseStartTime).inMilliseconds;
+      debugPrint('🚀 FORM_SERVICE: Firebase load completed in ${firebaseTime}ms');
+      
       if (formData != null) {
-        // Load credit forms
+        final processStartTime = DateTime.now();
+        debugPrint('🚀 FORM_SERVICE: Starting advanced data processing');
+        
+        // Load credit forms with enhanced error handling
         final creditForms = formData['creditForms'];
         if (creditForms != null) {
           final clientCreditData = creditForms['client'] as List?;
@@ -607,7 +650,7 @@ class FormService extends ChangeNotifier {
           _coborrowerCreditForms[clientId] = [CreditFormModel()];
         }
         
-        // Load income forms
+        // Load income forms with enhanced error handling
         final incomeForms = formData['incomeForms'];
         if (incomeForms != null) {
           final clientIncomeData = incomeForms['client'] as List?;
@@ -645,7 +688,11 @@ class FormService extends ChangeNotifier {
         _showingClientLoanForm[clientId] = formData['showingClientLoanForm'] ?? true;
         _showingClientIncomeForm[clientId] = formData['showingClientIncomeForm'] ?? true;
         
-        // Cache form data with shorter validity
+        final processTime = DateTime.now().difference(processStartTime).inMilliseconds;
+        debugPrint('🚀 FORM_SERVICE: Advanced data processing completed in ${processTime}ms');
+        
+        // Cache form data with strategic timing
+        final cacheStartTime = DateTime.now();
         _formDataCache[clientId] = {
           'clientCreditForms': List.from(_clientCreditForms[clientId] ?? []),
           'coborrowerCreditForms': List.from(_coborrowerCreditForms[clientId] ?? []),
@@ -656,10 +703,19 @@ class FormService extends ChangeNotifier {
           'cacheTime': DateTime.now(),
         };
         
+        final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
+        debugPrint('🚀 FORM_SERVICE: Cache update completed in ${cacheTime}ms');
+        
         notifyListeners();
         PerformanceMonitor.endTimer('loadFormData');
+        
+        final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+        debugPrint('🚀 FORM_SERVICE: Advanced form data load completed in ${totalTime}ms');
       } else {
         // FIX: Initialize with empty forms if no data exists
+        final initStartTime = DateTime.now();
+        debugPrint('🚀 FORM_SERVICE: Initializing empty forms for client $clientId');
+        
         _clientCreditForms[clientId] = [CreditFormModel()];
         _coborrowerCreditForms[clientId] = [CreditFormModel()];
         _clientIncomeForms[clientId] = [IncomeFormModel()];
@@ -667,8 +723,14 @@ class FormService extends ChangeNotifier {
         _showingClientLoanForm[clientId] = true;
         _showingClientIncomeForm[clientId] = true;
         
+        final initTime = DateTime.now().difference(initStartTime).inMilliseconds;
+        debugPrint('🚀 FORM_SERVICE: Empty form initialization completed in ${initTime}ms');
+        
         notifyListeners();
         PerformanceMonitor.endTimer('loadFormData');
+        
+        final totalTime = DateTime.now().difference(startTime).inMilliseconds;
+        debugPrint('🚀 FORM_SERVICE: Empty form initialization completed in ${totalTime}ms');
       }
     } catch (e) {
       debugPrint('Error in _performFormDataLoad for client $clientId: $e');
@@ -743,9 +805,7 @@ class FormService extends ChangeNotifier {
     // Clear cache for this client
     _formDataCache.remove(clientId);
     
-    // Clear debouncing
-    _loadDebounceTimer?.cancel();
-    _lastLoadingClientId = null;
+    // Clear loading state
     
     // Force reload form data
     await _performFormDataLoad(clientId, phoneNumber);
@@ -799,6 +859,83 @@ class FormService extends ChangeNotifier {
     }
     
     return result;
+  }
+
+  /// OPTIMIZATION: Preload form data for clients to improve perceived performance
+  Future<void> preloadFormDataForClients(List<String> clientIds) async {
+    try {
+      debugPrint('⚡ FORM_SERVICE: Starting preload for ${clientIds.length} clients');
+      
+      // Preload in parallel for better performance
+      final preloadFutures = clientIds.map((clientId) async {
+        try {
+          // Only preload if not already cached
+          if (!_formDataCache.containsKey(clientId)) {
+            await _firebaseFormService.loadAllFormData(clientId);
+            debugPrint('⚡ FORM_SERVICE: Preloaded data for client $clientId');
+          }
+        } catch (e) {
+          debugPrint('⚠️ FORM_SERVICE: Failed to preload data for client $clientId: $e');
+        }
+      });
+      
+      await Future.wait(preloadFutures);
+      debugPrint('⚡ FORM_SERVICE: Preload completed for ${clientIds.length} clients');
+      
+    } catch (e) {
+      debugPrint('❌ FORM_SERVICE: Error during preload: $e');
+    }
+  }
+
+  /// OPTIMIZATION: Warm up cache for frequently accessed clients
+  Future<void> warmUpCache(List<String> clientIds) async {
+    try {
+      debugPrint('⚡ FORM_SERVICE: Warming up cache for ${clientIds.length} clients');
+      
+      for (final clientId in clientIds) {
+        if (!_formDataCache.containsKey(clientId)) {
+          await loadFormDataForClient(clientId, clientId);
+        }
+      }
+      
+      debugPrint('⚡ FORM_SERVICE: Cache warm-up completed');
+      
+    } catch (e) {
+      debugPrint('❌ FORM_SERVICE: Error during cache warm-up: $e');
+    }
+  }
+
+  /// OPTIMIZATION: Check if form data exists for client
+  bool hasFormDataForClient(String clientId) {
+    return _clientCreditForms.containsKey(clientId) ||
+           _coborrowerCreditForms.containsKey(clientId) ||
+           _clientIncomeForms.containsKey(clientId) ||
+           _coborrowerIncomeForms.containsKey(clientId);
+  }
+
+  /// OPTIMIZATION: Check if cached data exists for client
+  bool hasCachedDataForClient(String clientId) {
+    if (!_formDataCache.containsKey(clientId)) {
+      return false;
+    }
+    
+    final cachedData = _formDataCache[clientId]!;
+    final cacheTime = cachedData['cacheTime'] as DateTime?;
+    
+    // Check if cache is still valid (5 minutes)
+    return cacheTime != null && DateTime.now().difference(cacheTime).inMinutes < 5;
+  }
+
+  /// OPTIMIZATION: Initialize empty forms immediately for instant UI
+  void initializeEmptyFormsForClient(String clientId) {
+    _clientCreditForms[clientId] = [CreditFormModel()];
+    _coborrowerCreditForms[clientId] = [CreditFormModel()];
+    _clientIncomeForms[clientId] = [IncomeFormModel()];
+    _coborrowerIncomeForms[clientId] = [IncomeFormModel()];
+    _showingClientLoanForm[clientId] = true;
+    _showingClientIncomeForm[clientId] = true;
+    
+    notifyListeners();
   }
 }
 

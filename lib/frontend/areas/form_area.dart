@@ -50,8 +50,20 @@ class _FormAreaState extends State<FormArea> {
   final Set<String> _typingControllers = {};
   final Map<String, Timer> _typingTimers = {};
   
-  // OPTIMIZARE: Debouncing pentru schimbarea clientului
-  Timer? _clientChangeDebounceTimer;
+  // FIX: Removed debouncing for immediate response
+  
+  // OPTIMIZATION: Loading state for immediate feedback
+  bool _isLoadingFormData = false;
+  String? _loadingClientId;
+  
+  // OPTIMIZATION: Precision timing for performance profiling
+  DateTime? _clientSelectionStartTime;
+
+  // OPTIMIZATION: Flag to prevent redundant client change operations
+  bool _isPerformingClientChange = false;
+
+  // Debounce timer for client changes
+  Timer? _clientChangeTimer;
 
   @override
   void initState() {
@@ -63,17 +75,17 @@ class _FormAreaState extends State<FormArea> {
 
   @override
   void dispose() {
-    _saveTimer?.cancel();
-    _clientChangeDebounceTimer?.cancel();
-    // Clean up typing timers
-    for (var timer in _typingTimers.values) {
-      timer.cancel();
-    }
-    _typingTimers.clear();
-    _typingControllers.clear();
+    // Cleanup controllers
     _disposeControllers();
-    _formService.removeListener(_onFormServiceChanged);
+    
+    // Cleanup timers
+    _saveTimer?.cancel();
+    _clientChangeTimer?.cancel();
+    
+    // Remove listeners
     _clientService.removeListener(_onClientServiceChanged);
+    _formService.removeListener(_onFormServiceChanged);
+    
     super.dispose();
   }
 
@@ -131,68 +143,131 @@ class _FormAreaState extends State<FormArea> {
 
   /// Callback pentru schimbarile din ClientService
   void _onClientServiceChanged() {
-    // FIX: Remove microtask to ensure immediate response
+    // FIX: Improved client change handling with debouncing
     _handleClientChange();
   }
 
-  /// Gestioneaza schimbarea clientului
-  /// FIX: Improved stability with better change detection
-  Future<void> _handleClientChange() async {
-    final currentClient = _clientService.focusedClient;
-    
-    // FIX: More robust change detection
-    final hasClientChanged = currentClient?.phoneNumber != _previousClient?.phoneNumber ||
-                            currentClient?.id != _previousClient?.id;
-    
-    if (!hasClientChanged) {
-      return;
-    }
-    
-    // FIX: Reduced debouncing for better responsiveness
-    if (_clientChangeDebounceTimer?.isActive == true) {
-      _clientChangeDebounceTimer?.cancel();
-    }
-    
-    _clientChangeDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
-      await _performClientChange(currentClient);
-    });
-  }
-
-  /// FIX: Improved client change execution
-  Future<void> _performClientChange(ClientModel? currentClient) async {
+  /// FIX: Ultra-fast client change handling with minimal debouncing
+  void _handleClientChange() {
     try {
-      // Save previous client data if exists
-      if (_previousClient != null && !_previousClient!.id.startsWith('temp_')) {
-        final clientStillExists = _clientService.clients.any(
-          (client) => client.phoneNumber == _previousClient!.phoneNumber
-        );
-        
-        if (clientStillExists) {
-          await _saveFormDataForClient(_previousClient!);
+      final currentClient = _clientService.focusedClient;
+      
+      // FIX: Log focus state before processing
+      _clientService.logFocusState('FORM_BEFORE_CHANGE');
+      
+      // OPTIMIZATION: Minimal debounce for ultra-fast response
+      if (_clientChangeTimer?.isActive == true) {
+        _clientChangeTimer!.cancel();
+      }
+      
+      _clientChangeTimer = Timer(const Duration(milliseconds: 10), () {
+        // OPTIMIZATION: Only process if client actually changed
+        if (_previousClient?.phoneNumber != currentClient?.phoneNumber) {
+          debugPrint('🔄 FORM: Client actually changed - Previous: ${_previousClient?.phoneNumber ?? 'none'}, Current: ${currentClient?.phoneNumber ?? 'none'}');
+          _performClientChange(currentClient);
+        } else {
+          debugPrint('🔄 FORM: Client unchanged - Skipping redundant operation');
         }
-      }
-      
-      // Clear controllers for new client
-      _disposeControllers();
-      
-      // Load form data for new client
-      if (currentClient != null && !currentClient.id.startsWith('temp_')) {
-        await _loadFormDataForCurrentClient();
-      }
-      
-      // Update previous client reference
-      _previousClient = currentClient;
-      
-      // Update UI immediately
-      if (mounted) {
-        setState(() {});
-      }
+      });
     } catch (e) {
       app_log.AppLogger.error('FORM', 'Error in client change', e);
     }
   }
 
-  /// FIX: Improved form data loading with better error handling
+  /// FIX: Improved client change execution with aggressive optimization
+  Future<void> _performClientChange(ClientModel? currentClient) async {
+    // OPTIMIZATION: Prevent redundant operations
+    if (_isPerformingClientChange) {
+      debugPrint('⚡ FORM: Skipping redundant client change operation');
+      return;
+    }
+    
+    try {
+      _isPerformingClientChange = true;
+      
+      // FIX: Log focus state at start of client change
+      _clientService.logFocusState('FORM_CLIENT_CHANGE_START');
+      
+      // OPTIMIZATION: Start precision timing
+      _clientSelectionStartTime = DateTime.now();
+      debugPrint('⚡ FORM: Client selection started at ${_clientSelectionStartTime!.millisecondsSinceEpoch}');
+      debugPrint('⚡ FORM: Processing client change - Previous: ${_previousClient?.phoneNumber ?? 'none'}, Current: ${currentClient?.phoneNumber ?? 'none'}');
+      
+      // OPTIMIZATION: Set loading state immediately for instant feedback
+      if (mounted) {
+        setState(() {
+          _isLoadingFormData = true;
+          _loadingClientId = currentClient?.phoneNumber;
+        });
+      }
+      
+      // OPTIMIZATION: Only save if client actually changed
+      if (_previousClient != null && 
+          _previousClient!.phoneNumber != currentClient?.phoneNumber &&
+          !_previousClient!.id.startsWith('temp_')) {
+        final clientStillExists = _clientService.clients.any(
+          (client) => client.phoneNumber == _previousClient!.phoneNumber
+        );
+        
+        if (clientStillExists) {
+          debugPrint('⚡ FORM: Saving form data for previous client: ${_previousClient!.phoneNumber}');
+          await _saveFormDataForClient(_previousClient!);
+        } else {
+          debugPrint('⚡ FORM: Previous client no longer exists, skipping save');
+        }
+      }
+      
+      // OPTIMIZATION: Only clear controllers if client actually changed
+      if (_previousClient?.phoneNumber != currentClient?.phoneNumber) {
+        debugPrint('⚡ FORM: Clearing controllers for client change');
+        _disposeControllers();
+      }
+      
+      // OPTIMIZATION: Only load form data if client changed and is not temporary
+      if (currentClient != null && 
+          !currentClient.id.startsWith('temp_') &&
+          _previousClient?.phoneNumber != currentClient.phoneNumber) {
+        debugPrint('⚡ FORM: Loading form data for new client: ${currentClient.phoneNumber}');
+        await _loadFormDataForCurrentClient();
+      } else if (currentClient?.id.startsWith('temp_') == true) {
+        debugPrint('⚡ FORM: Skipping form data load for temporary client');
+      }
+      
+      // Update previous client reference
+      _previousClient = currentClient;
+      
+      // FIX: Log focus state after client change
+      _clientService.logFocusState('FORM_CLIENT_CHANGE_END');
+      
+      // OPTIMIZATION: Clear loading state and update UI
+      if (mounted) {
+        setState(() {
+          _isLoadingFormData = false;
+          _loadingClientId = null;
+        });
+        
+        // OPTIMIZATION: Log total time from selection to render
+        if (_clientSelectionStartTime != null) {
+          final totalTime = DateTime.now().difference(_clientSelectionStartTime!).inMilliseconds;
+          debugPrint('⚡ FORM: Total client selection time: ${totalTime}ms');
+        }
+      }
+    } catch (e) {
+      app_log.AppLogger.error('FORM', 'Error in client change', e);
+      
+      // OPTIMIZATION: Clear loading state on error
+      if (mounted) {
+        setState(() {
+          _isLoadingFormData = false;
+          _loadingClientId = null;
+        });
+      }
+    } finally {
+      _isPerformingClientChange = false;
+    }
+  }
+
+  /// OPTIMIZATION: Advanced form rendering with strategic splash screens
   Future<void> _loadFormDataForCurrentClient() async {
     final currentClient = _clientService.focusedClient;
     if (currentClient == null || currentClient.id.startsWith('temp_')) {
@@ -200,25 +275,69 @@ class _FormAreaState extends State<FormArea> {
     }
     
     try {
+      final loadStartTime = DateTime.now();
+      debugPrint('🚀 FORM: Advanced form loading started at ${loadStartTime.millisecondsSinceEpoch}');
+      
       app_log.PerformanceMonitor.startTimer('loadFormData');
       
-      // FIX: Force load form data without cache for immediate response
+      // OPTIMIZATION: Immediate form initialization with strategic splash
+      if (!_formService.hasFormDataForClient(currentClient.phoneNumber)) {
+        final initStartTime = DateTime.now();
+        debugPrint('🚀 FORM: Initializing empty forms for instant UI');
+        
+        _formService.initializeEmptyFormsForClient(currentClient.phoneNumber);
+        
+        if (mounted) {
+          setState(() {});
+        }
+        
+        final initTime = DateTime.now().difference(initStartTime).inMilliseconds;
+        debugPrint('🚀 FORM: Empty form initialization completed in ${initTime}ms');
+      }
+      
+      // OPTIMIZATION: Strategic splash screen for perceived performance
+      if (!_formService.hasCachedDataForClient(currentClient.phoneNumber)) {
+        debugPrint('🚀 FORM: Showing strategic splash for ${currentClient.name}');
+        if (mounted) {
+          setState(() {
+            _isLoadingFormData = true;
+            _loadingClientId = currentClient.phoneNumber;
+          });
+        }
+      }
+      
+      // FIX: Force load form data with enhanced caching
       await _formService.loadFormDataForClient(
         currentClient.phoneNumber,
         currentClient.phoneNumber,
       );
+      
+      final loadEndTime = DateTime.now();
+      final loadDuration = loadEndTime.difference(loadStartTime).inMilliseconds;
+      debugPrint('🚀 FORM: Advanced form loading completed in ${loadDuration}ms');
       
       // FIX: Clear controllers to ensure fresh data loading
       _disposeControllers();
       
       // FIX: Force UI update after data loading
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _isLoadingFormData = false;
+          _loadingClientId = null;
+        });
       }
       
       app_log.PerformanceMonitor.endTimer('loadFormData');
     } catch (e) {
       app_log.AppLogger.error('FORM', 'Error loading form data', e);
+      
+      // OPTIMIZATION: Clear loading state on error
+      if (mounted) {
+        setState(() {
+          _isLoadingFormData = false;
+          _loadingClientId = null;
+        });
+      }
     }
   }
 
@@ -415,11 +534,11 @@ class _FormAreaState extends State<FormArea> {
             final isClient = clientType == 'client';
             
             if (mounted) {
-              // Process value based on field type
-              String cleanValue = value;
-              if (field == 'sold' || field == 'rata' || field == 'consumat' || field == 'incomeAmount') {
-                // Remove commas for numeric fields
-                cleanValue = value.replaceAll(',', '');
+                              // Process value based on field type
+                String cleanValue = value;
+                if (field == 'sold' || field == 'rata' || field == 'consumat' || field == 'incomeAmount') {
+                  // Remove commas for numeric fields
+                  cleanValue = value.replaceAll(',', '');
               } else if (field == 'perioada' || field == 'vechime') {
                 // Keep original format for period and seniority fields (allows "year/month" format)
                 cleanValue = value;
@@ -523,8 +642,34 @@ class _FormAreaState extends State<FormArea> {
     }
   }
 
+  /// FIX: Ensure form area reflects current focus state
+  void _ensureFocusStateConsistency() {
+    final currentFocusedClient = _clientService.focusedClient;
+    debugPrint('🔧 FORM_AREA: Ensuring focus consistency - Current focused: ${currentFocusedClient?.phoneNumber ?? 'none'}');
+    
+    if (currentFocusedClient != null) {
+      // Validate that the focused client is properly set in the list
+      final focusedInList = _clientService.clients.any((client) => 
+          client.phoneNumber == currentFocusedClient.phoneNumber && 
+          client.status == ClientStatus.focused);
+      
+      if (!focusedInList) {
+        debugPrint('🔧 FORM_AREA: Focus inconsistency detected, fixing...');
+        _clientService.fixFocusStateInconsistencies();
+      }
+    }
+    
+    debugPrint('🔧 FORM_AREA: Focus consistency check completed');
+  }
+
   @override
   Widget build(BuildContext context) {
+    // FIX: Log focus state during build
+    _clientService.logFocusState('FORM_BUILD');
+    
+    // FIX: Ensure focus consistency when area is shown
+    _ensureFocusStateConsistency();
+    
     final focusedClient = _clientService.focusedClient;
     
     // FIX: Better handling of empty states
@@ -537,21 +682,20 @@ class _FormAreaState extends State<FormArea> {
       return _buildTemporaryClientPlaceholder(focusedClient);
     }
     
-    // FIX: Check if form data is loaded for the current client
-    final hasFormData = _formService.getClientCreditForms(focusedClient.phoneNumber).isNotEmpty ||
-                       _formService.getClientIncomeForms(focusedClient.phoneNumber).isNotEmpty;
-    
-    if (!hasFormData) {
-      // FIX: Show loading state while form data is being loaded
-      return _buildLoadingPlaceholder(focusedClient);
+    // OPTIMIZATION: Show loading state only for very brief periods
+    if (_isLoadingFormData && _loadingClientId == focusedClient.phoneNumber) {
+      return _buildOptimizedLoadingPlaceholder(focusedClient);
     }
     
-    // Build form content for real client
+    // OPTIMIZATION: Always show form content - data will load in background
     return _buildFormContent(focusedClient);
   }
 
-  /// Construieste continutul formularului conform design-ului din formArea.md
+  /// OPTIMIZATION: Advanced form rendering with performance profiling
   Widget _buildFormContent(ClientModel client) {
+    final renderStartTime = DateTime.now();
+    debugPrint('🚀 FORM: Starting form content render for ${client.name}');
+    
     final focusedClient = _clientService.focusedClient;
     
     // Daca nu exista client focusat, afiseaza un placeholder
@@ -564,8 +708,14 @@ class _FormAreaState extends State<FormArea> {
       return _buildTemporaryClientPlaceholder(focusedClient);
     }
     
+    // OPTIMIZATION: Check form data availability for strategic rendering
+    final hasFormData = _formService.hasFormDataForClient(client.phoneNumber);
+    final hasCachedData = _formService.hasCachedDataForClient(client.phoneNumber);
+    
+    debugPrint('🚀 FORM: Form data status - HasData: $hasFormData, HasCached: $hasCachedData');
+    
     // Afiseaza formularele pentru client conform design-ului exact din Figma
-    return Row(
+    final formContent = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -579,6 +729,11 @@ class _FormAreaState extends State<FormArea> {
         ),
       ],
     );
+    
+    final renderTime = DateTime.now().difference(renderStartTime).inMilliseconds;
+    debugPrint('🚀 FORM: Form content render completed in ${renderTime}ms');
+    
+    return formContent;
   }
 
   /// Construieste placeholder-ul pentru client temporar
@@ -699,24 +854,62 @@ class _FormAreaState extends State<FormArea> {
     );
   }
 
-  /// FIX: Build loading placeholder while form data is being loaded
-  Widget _buildLoadingPlaceholder(ClientModel client) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor1),
-          ),
-          const SizedBox(height: AppTheme.mediumGap),
-          Text(
-            'Se incarca datele pentru ${client.name}...',
-            style: TextStyle(
-              color: AppTheme.elementColor1,
-              fontSize: AppTheme.fontSizeMedium,
-            ),
-          ),
+
+  /// OPTIMIZATION: Build optimized loading placeholder with refined splash screen
+  Widget _buildOptimizedLoadingPlaceholder(ClientModel client) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.largeGap),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: AppTheme.popupBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32),
+        ),
+        shadows: [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 15,
+            offset: Offset(0, 0),
+            spreadRadius: 0,
+          )
         ],
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // OPTIMIZATION: Animated loading indicator for better perceived performance
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor1),
+              ),
+            ),
+            const SizedBox(height: AppTheme.mediumGap),
+            Text(
+              'Se incarca formularul...',
+              style: TextStyle(
+                fontSize: AppTheme.fontSizeLarge,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.elementColor2,
+              ),
+            ),
+            const SizedBox(height: AppTheme.smallGap),
+            Text(
+              'Client: ${client.name}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: AppTheme.fontSizeMedium,
+                color: AppTheme.elementColor1,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

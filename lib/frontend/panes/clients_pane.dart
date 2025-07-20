@@ -62,6 +62,10 @@ class _ClientsPaneState extends State<ClientsPane> {
   bool _reveniriCollapseInitialized = false;
   bool _recenteCollapseInitialized = false;
 
+  /// OPTIMIZATION: Track last tapped client to prevent redundant operations
+  String? _lastTappedClientId;
+  DateTime? _lastTapTime;
+
   @override
   void initState() {
     super.initState();
@@ -99,6 +103,9 @@ class _ClientsPaneState extends State<ClientsPane> {
         });
       }
       
+      // OPTIMIZATION: Preload form data after cache load
+      await _preloadFormDataForVisibleClients();
+      
     } catch (e) {
       debugPrint('❌ CLIENTS: Error loading from cache: $e');
       // Fallback to normal loading
@@ -106,7 +113,35 @@ class _ClientsPaneState extends State<ClientsPane> {
     }
   }
 
-  /// OPTIMIZAT: Force refresh pentru a sincroniza cu starea reală
+  /// OPTIMIZATION: Ultra-fast preloading for most likely clients
+  Future<void> _preloadFormDataForVisibleClients() async {
+    try {
+      // OPTIMIZATION: Only preload for the most likely client (first from each category)
+      final clientsToPreload = <String>[];
+      
+      // Add first client from each category only
+      for (final category in ClientCategory.values) {
+        final categoryClients = _clientService.getClientsByCategoryWithoutTemporary(category);
+        if (categoryClients.isNotEmpty) {
+          clientsToPreload.add(categoryClients.first.phoneNumber);
+        }
+      }
+      
+      // Limit to first 3 clients total for ultra-fast preloading
+      final limitedClients = clientsToPreload.take(3).toList();
+      
+      if (limitedClients.isNotEmpty) {
+        debugPrint('⚡ CLIENTS: Preloading form data for ${limitedClients.length} clients');
+        final formService = SplashService().formService;
+        await formService.preloadFormDataForClients(limitedClients);
+      }
+      
+    } catch (e) {
+      debugPrint('❌ CLIENTS: Error preloading form data: $e');
+    }
+  }
+
+  /// OPTIMIZATION: Force refresh clients with preloading
   Future<void> _forceRefreshClients() async {
     if (_isRefreshing) return;
     
@@ -124,6 +159,9 @@ class _ClientsPaneState extends State<ClientsPane> {
           _cachedClients = cachedClients;
         });
       }
+      
+      // OPTIMIZATION: Preload form data after refresh
+      await _preloadFormDataForVisibleClients();
       
     } catch (e) {
       debugPrint('❌ CLIENTS: Error refreshing clients: $e');
@@ -174,23 +212,63 @@ class _ClientsPaneState extends State<ClientsPane> {
     });
   }
 
-  /// FIX: Improved client switching with better form data synchronization
+  /// FIX: Advanced client switching with detailed performance profiling
   Future<void> _handleClientTap(ClientModel client) async {
-    if (_isSwitchingClient) return;
+    // OPTIMIZATION: Minimal protection for ultra-fast response
+    final now = DateTime.now();
+    if (_isSwitchingClient || 
+        (_lastTappedClientId == client.phoneNumber && 
+         _lastTapTime != null && 
+         now.difference(_lastTapTime!).inMilliseconds < 50)) {
+      debugPrint('🚀 CLIENTS: Skipping redundant tap for client ${client.phoneNumber}');
+      return;
+    }
     
     try {
       _isSwitchingClient = true;
+      _lastTappedClientId = client.phoneNumber;
+      _lastTapTime = now;
       
-      // Switch to form area when client is selected
-      widget.onSwitchToFormArea?.call();
+      // FIX: Log focus state before client tap
+      _clientService.logFocusState('CLIENTS_BEFORE_TAP');
       
-      // FIX: Focus client and ensure form data is loaded
+      // OPTIMIZATION: Start precision timing for performance profiling
+      final tapStartTime = DateTime.now();
+      debugPrint('🚀 CLIENTS: Advanced client tap started at ${tapStartTime.millisecondsSinceEpoch}');
+      debugPrint('🚀 CLIENTS: Tapping client: ${client.phoneNumber} (${client.name})');
+      
+      // OPTIMIZATION: Strategic area switching with timing
+      final areaSwitchStartTime = DateTime.now();
+      if (widget.onSwitchToFormArea != null) {
+        debugPrint('🚀 CLIENTS: Switching to form area');
+        widget.onSwitchToFormArea!();
+      }
+      final areaSwitchTime = DateTime.now().difference(areaSwitchStartTime).inMilliseconds;
+      debugPrint('🚀 CLIENTS: Strategic area switch completed in ${areaSwitchTime}ms');
+      
+      // FIX: Advanced client focusing with detailed timing
+      final focusStartTime = DateTime.now();
+      debugPrint('🚀 CLIENTS: Starting focus operation for: ${client.phoneNumber}');
       await _clientService.focusClient(client.phoneNumber);
+      final focusTime = DateTime.now().difference(focusStartTime).inMilliseconds;
+      debugPrint('🚀 CLIENTS: Advanced client focus completed in ${focusTime}ms');
       
-      // FIX: Force UI update after client switch
+      // FIX: Log focus state after focus operation
+      _clientService.logFocusState('CLIENTS_AFTER_FOCUS');
+      
+      // FIX: Force immediate UI update with timing
+      final uiUpdateStartTime = DateTime.now();
       if (mounted) {
         setState(() {});
       }
+      final uiUpdateTime = DateTime.now().difference(uiUpdateStartTime).inMilliseconds;
+      debugPrint('🚀 CLIENTS: UI update completed in ${uiUpdateTime}ms');
+      
+      final totalTime = DateTime.now().difference(tapStartTime).inMilliseconds;
+      debugPrint('🚀 CLIENTS: Advanced client tap completed in ${totalTime}ms');
+      
+      // FIX: Log final focus state
+      _clientService.logFocusState('CLIENTS_TAP_COMPLETE');
       
     } catch (e) {
       debugPrint('❌ CLIENTS: Error switching client: $e');
@@ -398,6 +476,12 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   @override
   Widget build(BuildContext context) {
+    // FIX: Log focus state during build
+    _clientService.logFocusState('CLIENTS_BUILD');
+    
+    // FIX: Ensure focus consistency when pane is shown
+    _ensureFocusStateConsistency();
+    
     return SizedBox(
       width: double.infinity,
       height: double.infinity,
@@ -430,5 +514,25 @@ class _ClientsPaneState extends State<ClientsPane> {
     if (_clientService.clients.isEmpty) {
       await _clientService.initializeDemoData();
     }
+  }
+
+  /// FIX: Ensure clients pane reflects current focus state
+  void _ensureFocusStateConsistency() {
+    final currentFocusedClient = _clientService.focusedClient;
+    debugPrint('🔧 CLIENTS_PANE: Ensuring focus consistency - Current focused: ${currentFocusedClient?.phoneNumber ?? 'none'}');
+    
+    if (currentFocusedClient != null) {
+      // Validate that the focused client is properly set in the list
+      final focusedInList = _clientService.clients.any((client) => 
+          client.phoneNumber == currentFocusedClient.phoneNumber && 
+          client.status == ClientStatus.focused);
+      
+      if (!focusedInList) {
+        debugPrint('🔧 CLIENTS_PANE: Focus inconsistency detected, fixing...');
+        _clientService.fixFocusStateInconsistencies();
+      }
+    }
+    
+    debugPrint('🔧 CLIENTS_PANE: Focus consistency check completed');
   }
 }
