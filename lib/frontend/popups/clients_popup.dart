@@ -182,7 +182,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     
       }
     } catch (e) {
-      debugPrint('❌ Eroare la selectia imaginilor: $e');
+      // Error handling for image selection
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -243,10 +243,10 @@ class _ClientsPopupState extends State<ClientsPopup> {
                 ));
             
               } else {
-                debugPrint('❌ Cannot decode image ${file.name}');
+                // Cannot decode image
               }
             } catch (e) {
-              debugPrint('❌ Error decoding image ${file.name}: $e');
+              // Error decoding image
             }
           }
         }
@@ -307,7 +307,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
   
 
     } catch (e) {
-      debugPrint('❌ CLIENTS_POPUP: Eroare la procesul OCR: $e');
+      // Error in OCR process
       
       setState(() {
         _isOcrProcessing = false;
@@ -364,11 +364,8 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Selecteaza o imagine din rezultatele OCR si afiseaza clientii
   void _selectOcrImage(String imagePath) {
-    final fileName = imagePath.split('/').last.split('\\').last;
-    final result = _ocrResults?[imagePath];
-    final clientCount = result?.extractedClients?.length ?? 0;
     
-    debugPrint('✅ CLIENTS_POPUP: Image selected | File: $fileName | Clients: $clientCount');
+            // Image selected successfully
     
     setState(() {
       _selectedOcrImagePath = imagePath;
@@ -488,16 +485,15 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Gestioneaza click-ul pe item-ul imaginii OCR
   void _handleOcrImageTap(String imagePath) {
-    final fileName = imagePath.split('/').last.split('\\').last;
-    debugPrint('🔍 CLIENTS_POPUP: Click pe imagine: $fileName (path: $imagePath)');
+            // Image clicked
     
     if (_selectedOcrImagePath == imagePath) {
       // Daca imaginea e deja selectata, afiseaza popup de confirmare pentru salvare
-      debugPrint('📤 CLIENTS_POPUP: Imaginea $fileName e selectata - afisez dialog salvare');
+              // Show save dialog for selected image
       _showSaveConfirmationDialog(imagePath);
     } else {
       // Daca imaginea nu e selectata, o selecteaza si afiseaza clientii
-      debugPrint('📋 CLIENTS_POPUP: Selectez imaginea $fileName pentru afisarea clientilor');
+              // Select image for client display
       _selectOcrImage(imagePath);
     }
   }
@@ -1334,7 +1330,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   
   /// Cancel temporary client creation
   void _cancelClientCreation() {
-    debugPrint('❌ POPUP: Canceling client creation');
+    // Canceling client creation
     
     // Cancel the temporary client first
     final clientService = SplashService().clientUIService;
@@ -1394,7 +1390,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         // Don't call Navigator.pop() since this is not a dialog
         // The parent will handle closing the popup
       } else {
-        debugPrint('❌ POPUP: Failed to save client');
+        // Failed to save client
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1405,7 +1401,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         }
       }
         } catch (e) {
-      debugPrint('❌ POPUP: Exception in _saveClient: $e');
+      // Exception in _saveClient
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

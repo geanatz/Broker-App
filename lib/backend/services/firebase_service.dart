@@ -320,8 +320,9 @@ class FirebaseThreadHandler {
       }
     }
     
-    // Always schedule on the main thread to prevent threading issues
-    WidgetsBinding.instance.addPostFrameCallback((_) => runOperation());
+    // FIX: Use microtask instead of addPostFrameCallback to avoid UI dependency
+    // This ensures operations run immediately without waiting for frame rendering
+    scheduleMicrotask(() => runOperation());
     
     return completer.future;
   }
@@ -1162,12 +1163,17 @@ class NewFirebaseService {
   /// Sterge un client si toate sub-colectiile sale
   Future<bool> deleteClient(String phoneNumber) async {
     final consultantToken = await getCurrentConsultantToken();
-    if (consultantToken == null) return false;
+    if (consultantToken == null) {
+      FirebaseLogger.error('❌ DELETE_CLIENT: No consultant token available for client: $phoneNumber');
+      return false;
+    }
 
     try {
       // Verifica daca clientul apartine consultantului curent
       final existingClient = await getClient(phoneNumber);
-      if (existingClient == null) return false;
+      if (existingClient == null) {
+        return false;
+      }
 
       final batch = _firestore.batch();
       final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
@@ -1187,10 +1193,16 @@ class NewFirebaseService {
       // Sterge clientul
       batch.delete(clientRef);
 
+      // FIX: Use microtask-based execution for immediate processing
       await _threadHandler.executeOnPlatformThread(() => batch.commit());
+      
+      // OPTIMIZARE: Invalideaza cache-ul pentru client
+      invalidateClientCache(phoneNumber);
+      invalidateAllClientsCache();
+      
       return true;
     } catch (e) {
-      FirebaseLogger.error('Error deleting client: $e');
+      FirebaseLogger.error('❌ DELETE_CLIENT: Error deleting client $phoneNumber: $e');
       return false;
     }
   }

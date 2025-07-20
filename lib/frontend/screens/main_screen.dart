@@ -142,7 +142,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       
 
     } catch (e) {
-      debugPrint('❌ MAIN_SCREEN: Error initializing for current consultant: $e');
+      // Error initializing for current consultant
     }
   }
   
@@ -241,7 +241,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         });
       }
     } catch (e) {
-      debugPrint('Error restoring navigation state: $e');
+      // Error restoring navigation state
       // În caz de eroare, folosim default-urile
       _currentArea = AreaType.dashboard;
       _currentPane = PaneType.clients;
@@ -258,7 +258,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       await prefs.setInt(_currentAreaKey, _currentArea.index);
       await prefs.setInt(_currentPaneKey, _currentPane.index);
     } catch (e) {
-      debugPrint('Error saving navigation state: $e');
+      // Error saving navigation state
     }
   }
   
@@ -420,7 +420,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   void _handleAreaChanged(AreaType area) {
-    debugPrint('🔄 MAIN_SCREEN: Area change - From: $_currentArea, To: $area');
+    // Area change
     
     // FIX: Track focus persistence before area change
     _trackFocusPersistence('BEFORE_AREA_CHANGE');
@@ -443,7 +443,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   void _handlePaneChanged(PaneType pane) {
-    debugPrint('🔄 MAIN_SCREEN: Pane change - From: $_currentPane, To: $pane');
+    // Pane change
     
     // FIX: Track focus persistence before pane change
     _trackFocusPersistence('BEFORE_PANE_CHANGE');
@@ -553,19 +553,25 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   /// Performs the actual deletion of all clients
   void _performDeleteAllClients() async {
-    // Sterge toti clientii din ClientService
-    await _clientService.deleteAllClients();
-    
-    // Inchide popup-ul
-    _closeAllPopups();
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Toti clientii au fost stersi din lista'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    try {
+      // Use the enhanced deletion method with forced execution
+      await _clientService.deleteAllClientsWithForcedExecution();
+      
+      // Inchide popup-ul
+      _closeAllPopups();
+      
+    } catch (e) {
+      FirebaseLogger.error('❌ MAIN_SCREEN: Error during forced deletion: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eroare la stergerea clientilor: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -574,7 +580,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Aceasta metoda este apelata cand se sterge complet imaginea OCR selectata
     // Logica efectiva de stergere se face in ClientsPopup prin _deleteOcrClientsFromSelectedImage()
     // Aici putem adauga logging sau alte actiuni suplimentare daca e necesar
-    debugPrint('🗑️ OCR image completely removed from gallery');
+    // OCR image completely removed from gallery
   }
   
   /// Handles saving a client (create or edit)

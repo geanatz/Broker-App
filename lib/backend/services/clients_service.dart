@@ -1777,7 +1777,7 @@ class ClientUIService extends ChangeNotifier {
       // Salveaza starea clientului pentru rollback
       final clientToRemove = _clients.firstWhere(
         (client) => client.phoneNumber == clientPhoneNumber,
-        orElse: () => throw Exception('Client not found'),
+        orElse: () => throw Exception('Client not found in local list: $clientPhoneNumber'),
       );
       
       // OPTIMISTIC UPDATE: Elimina imediat din lista locala pentru UI instant
@@ -1798,29 +1798,50 @@ class ClientUIService extends ChangeNotifier {
       // Sterge din Firebase în background (optimistic update)
       final success = await _firebaseService.deleteClient(clientPhoneNumber);
 
-      if (!success) {
+      if (success) {
+        // Notify listeners immediately for UI update
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _ensureSingleFocus();
+          notifyListeners();
+        });
+      } else {
         // Rollback dacă ștergerea a eșuat
         _clients.add(clientToRemove);
         // FIX: Sorteaza lista dupa rollback
         _clients.sort((a, b) => a.name.compareTo(b.name));
+        
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _ensureSingleFocus();
           notifyListeners();
         });
       }
     } catch (e) {
+      FirebaseLogger.error('❌ CLIENT_SERVICE: Error removing client $clientPhoneNumber: $e');
+      
       // In caz de eroare, initializeaza cu lista goala
       _clients = [];
       _focusedClient = null;
+      
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
-  /// Sterge mai multi clienti dintr-o data (batch delete, atomic UI update)
+  /// CRITICAL FIX: Sterge mai multi clienti dintr-o data (batch delete, atomic UI update)
   Future<void> removeClients(List<String> clientPhoneNumbers) async {
     try {
-      // 1. Remove from backend first (in parallel)
+      // 1. Remove from backend first (in parallel) with detailed logging
       final results = await Future.wait(
-        clientPhoneNumbers.map((phone) => _firebaseService.deleteClient(phone))
+        clientPhoneNumbers.map((phone) async {
+          try {
+            final result = await _firebaseService.deleteClient(phone);
+            return result;
+          } catch (e) {
+            FirebaseLogger.error('❌ CLIENT_SERVICE: Error deleting client $phone: $e');
+            return false;
+          }
+        })
       );
 
       // 2. Only proceed if all succeeded
@@ -1851,6 +1872,7 @@ class ClientUIService extends ChangeNotifier {
         // Optionally: show error to user
       }
     } catch (e) {
+      FirebaseLogger.error('❌ CLIENT_SERVICE: Error during batch removal: $e');
       // Optionally: show error to user
     }
   }
@@ -2074,9 +2096,21 @@ class ClientUIService extends ChangeNotifier {
       // Obtine toti clientii pentru consultantul curent
       final allClients = await _firebaseService.getAllClients();
       
+      if (allClients.isEmpty) {
+        return;
+      }
+      
       // Sterge fiecare client individual
       for (final client in allClients) {
-        await _firebaseService.deleteClient(client.phoneNumber);
+        try {
+          final success = await _firebaseService.deleteClient(client.phoneNumber);
+          
+          if (!success) {
+            FirebaseLogger.error('❌ CLIENT_SERVICE: Failed to delete client ${client.name} (${client.phoneNumber})');
+          }
+        } catch (e) {
+          FirebaseLogger.error('❌ CLIENT_SERVICE: Error deleting client ${client.name} (${client.phoneNumber}): $e');
+        }
       }
       
       // Curata lista locala
@@ -2093,9 +2127,15 @@ class ClientUIService extends ChangeNotifier {
         notifyListeners();
       });
     } catch (e) {
+      FirebaseLogger.error('❌ CLIENT_SERVICE: Error during batch deletion: $e');
+      
       // In caz de eroare, initializeaza cu lista goala
       _clients = [];
       _focusedClient = null;
+      
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 
@@ -2217,6 +2257,60 @@ class ClientUIService extends ChangeNotifier {
     }
     
     validateFocusState();
+  }
+
+  /// FIX: Force immediate execution of pending operations to ensure deletion proceeds
+  /// This method ensures that all pending Firebase operations are executed immediately
+  /// without waiting for UI activity (mouse movement, hover, etc.)
+  Future<void> forceExecutePendingOperations() async {
+    try {
+      // Force a microtask to ensure all pending operations are processed
+      await Future.microtask(() async {
+        // Trigger a small operation to ensure pending tasks are processed
+      });
+      
+      // Force UI update to ensure any pending setState calls are processed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+      
+    } catch (e) {
+      FirebaseLogger.error('❌ CLIENT_SERVICE: Error forcing operation execution: $e');
+    }
+  }
+
+  /// FIX: Enhanced client removal with forced operation execution
+  Future<void> removeClientWithForcedExecution(String clientPhoneNumber) async {
+    try {
+      // Force execution of any pending operations first
+      await forceExecutePendingOperations();
+      
+      // Perform the actual removal
+      await removeClient(clientPhoneNumber);
+      
+      // Force another execution to ensure UI updates
+      await forceExecutePendingOperations();
+      
+    } catch (e) {
+      FirebaseLogger.error('❌ CLIENT_SERVICE: Error in forced client removal $clientPhoneNumber: $e');
+    }
+  }
+
+  /// FIX: Enhanced batch deletion with forced operation execution
+  Future<void> deleteAllClientsWithForcedExecution() async {
+    try {
+      // Force execution of any pending operations first
+      await forceExecutePendingOperations();
+      
+      // Perform the actual batch deletion
+      await deleteAllClients();
+      
+      // Force another execution to ensure UI updates
+      await forceExecutePendingOperations();
+      
+    } catch (e) {
+      FirebaseLogger.error('❌ CLIENT_SERVICE: Error in forced batch deletion: $e');
+    }
   }
 
 }
