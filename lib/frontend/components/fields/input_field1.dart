@@ -144,28 +144,43 @@ class _InputField1State extends State<InputField1> {
       return;
     }
 
+    final oldValue = widget.controller?.value;
+    final oldText = oldValue?.text ?? '';
+    final oldSelection = oldValue?.selection ?? const TextSelection.collapsed(offset: 0);
+    final oldCursorPos = oldSelection.baseOffset;
+
     String processedValue = value;
-    
-    // First, handle "k" transformation if enabled
+
     if (widget.enableKTransformation) {
       processedValue = _transformKToZeros(processedValue);
     }
-    
-    // Then, handle comma formatting if enabled
+
     if (widget.enableCommaFormatting) {
-      // Remove existing commas before processing
       final numericValue = processedValue.replaceAll(',', '');
       if (numericValue.isNotEmpty && RegExp(r'^\d*\.?\d*$').hasMatch(numericValue)) {
         processedValue = _formatWithCommas(numericValue);
       }
     }
-    
-    // Update the controller if the value changed
+
     if (processedValue != value && widget.controller != null) {
-      final newSelection = TextSelection.collapsed(offset: processedValue.length);
+      // Numar de caractere non-virgula inainte de cursor in vechiul text
+      int nonCommaBeforeCursor = 0;
+      for (int i = 0; i < oldCursorPos && i < oldText.length; i++) {
+        if (oldText[i] != ',') nonCommaBeforeCursor++;
+      }
+      // Gasim pozitia in noul text dupa acelasi numar de caractere non-virgula
+      int newCursorPos = 0;
+      int nonCommaCount = 0;
+      while (newCursorPos < processedValue.length && nonCommaCount < nonCommaBeforeCursor) {
+        if (processedValue[newCursorPos] != ',') nonCommaCount++;
+        newCursorPos++;
+      }
+      // Ajustam daca e nevoie
+      if (newCursorPos > processedValue.length) newCursorPos = processedValue.length;
+      if (newCursorPos < 0) newCursorPos = 0;
       widget.controller!.value = TextEditingValue(
         text: processedValue,
-        selection: newSelection,
+        selection: TextSelection.collapsed(offset: newCursorPos),
       );
     }
   }

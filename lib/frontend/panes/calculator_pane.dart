@@ -8,7 +8,7 @@ import '../popups/amortization_popup.dart';
 import '../components/headers/widget_header1.dart';
 import '../components/items/light_item3.dart';
 import '../components/buttons/flex_buttons2.dart';
-import 'package:intl/intl.dart';
+import '../components/fields/input_field1.dart';
 
 /// Widget pentru panoul de calculator de credit
 /// 
@@ -52,19 +52,18 @@ class _CalculatorPaneState extends State<CalculatorPane> {
   @override
   void initState() {
     super.initState();
+    // Seteaza valorile implicite inainte de a adauga listener-ele
     _loanYearsController.text = '5';
     _loanMonthsController.text = '0';
-    
-    // Add listeners to all controllers to trigger automatic calculation
+    _interestRateController.text = '10';
+
+    // Abia acum adauga listener-ele
     _principalController.addListener(_calculateLoan);
     _interestRateController.addListener(_calculateLoan);
     _loanYearsController.addListener(_calculateLoan);
     _loanMonthsController.addListener(_calculateLoan);
     
-    // Listen to form service changes to update income calculation
     _formService.addListener(_calculateIncomePercentage);
-    
-    // Calculate initial income percentage
     _calculateIncomePercentage();
   }
   
@@ -228,105 +227,30 @@ class _CalculatorPaneState extends State<CalculatorPane> {
   Widget _buildCustomInputField({
     required String title,
     required TextEditingController controller,
-    TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
   }) {
     final String placeholderText = (title == 'Ani' || title == 'Luni') ? '0' : 'Introdu ${title.toLowerCase()}';
-    
-    // Define formatters based on field type
-    final List<TextInputFormatter> formatters;
+
     if (title == 'Suma' || title == 'Dobanda') {
-      formatters = [FilteringTextInputFormatter.allow(RegExp(r'[\d,\.]'))];
+      return InputField1(
+        title: title,
+        controller: controller,
+        hintText: placeholderText,
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        enableCommaFormatting: true,
+        enableKTransformation: false,
+      );
     } else {
-      formatters = inputFormatters ?? [];
+      return InputField1(
+        title: title,
+        controller: controller,
+        hintText: placeholderText,
+        keyboardType: TextInputType.number,
+        enableCommaFormatting: false,
+        enableKTransformation: false,
+        inputFormatters: inputFormatters,
+      );
     }
-    
-    return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: 128),
-      child: SizedBox(
-        width: double.infinity,
-        height: 72, // Same as InputField1 default height
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title area
-            Container(
-              width: double.infinity,
-              height: 21,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                title,
-                style: AppTheme.safeOutfit(
-                  color: AppTheme.elementColor2,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            
-            // Input area
-            Container(
-              width: double.infinity,
-              height: 48,
-              decoration: ShapeDecoration(
-                color: AppTheme.containerColor2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: TextField(
-                controller: controller,
-                keyboardType: keyboardType,
-                inputFormatters: formatters,
-                style: AppTheme.safeOutfit(
-                  color: AppTheme.elementColor3,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                ),
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15 ),
-                  border: InputBorder.none,
-                  hintText: placeholderText,
-                  hintStyle: AppTheme.safeOutfit(
-                    color: AppTheme.elementColor3,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                onChanged: (value) {
-                  if (title == 'Suma' || title == 'Dobanda') {
-                    final numericValue = value.replaceAll(',', '');
-                    if (numericValue.isEmpty) {
-                      controller.value = TextEditingValue(
-                        text: '',
-                        selection: TextSelection.collapsed(offset: 0),
-                      );
-                    } else {
-                      try {
-                        final parts = numericValue.split('.');
-                        final intPart = parts[0];
-                        final decPart = parts.length > 1 ? parts[1] : '';
-                        final formattedInt = NumberFormat('#,###').format(int.parse(intPart));
-                        final newText = decPart.isNotEmpty ? '$formattedInt.$decPart' : formattedInt;
-                        controller.value = TextEditingValue(
-                          text: newText,
-                          selection: TextSelection.collapsed(offset: newText.length),
-                        );
-                      } catch (e) {
-                        // Handle parsing errors
-                      }
-                    }
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Calculeaza 40% din totalul veniturilor pentru clientul activ
@@ -402,10 +326,6 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             _buildCustomInputField(
                               title: 'Suma',
                               controller: _principalController,
-                              keyboardType: TextInputType.numberWithOptions(decimal: true),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                              ],
                             ),
                             const SizedBox(height: 8),
                             
@@ -413,10 +333,6 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             _buildCustomInputField(
                               title: 'Dobanda',
                               controller: _interestRateController,
-                              keyboardType: TextInputType.numberWithOptions(decimal: true),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                              ],
                             ),
                             const SizedBox(height: 8),
                             
@@ -432,7 +348,6 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                                     child: _buildCustomInputField(
                                       title: 'Ani',
                                       controller: _loanYearsController,
-                                      keyboardType: TextInputType.number,
                                       inputFormatters: [
                                         FilteringTextInputFormatter.digitsOnly,
                                       ],
@@ -446,7 +361,6 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                                     child: _buildCustomInputField(
                                       title: 'Luni',
                                       controller: _loanMonthsController,
-                                      keyboardType: TextInputType.number,
                                       inputFormatters: [
                                         FilteringTextInputFormatter.digitsOnly,
                                       ],
