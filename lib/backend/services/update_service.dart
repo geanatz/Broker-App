@@ -61,6 +61,9 @@ class UpdateService {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       _currentVersion = packageInfo.version;
+      
+      // Curata scripturile ramase de la update-uri anterioare
+      await cleanupRemainingScripts();
   
     } catch (e) {
       debugPrint('❌ Error initializing UpdateService: $e');
@@ -174,12 +177,24 @@ class UpdateService {
     
     try {
       debugPrint('🔧 Starting update installation...');
-      _updateStatus('Se instaleaza update-ul...');
+      _updateStatus('Incepand instalarea update-ului...');
+      
+      // Verifica fisierul de update
+      _updateStatus('Verificare fisier update...');
+      final updateFile = File(_updateFilePath!);
+      if (!await updateFile.exists()) {
+        _onError?.call('Fisierul de update nu exista');
+        return false;
+      }
+      
+      final fileSize = await updateFile.length();
+      _updateStatus('Fisier update gasit: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
       
       final success = await _installWindowsUpdate(_updateFilePath!);
       
       if (success) {
         debugPrint('✅ Update installed successfully');
+        _updateStatus('Instalare finalizata cu succes!');
         // Application will restart automatically
       } else {
         _onError?.call('Eroare la instalarea update-ului');
@@ -366,46 +381,97 @@ class UpdateService {
   Future<bool> _installWindowsUpdate(String zipPath) async {
     try {
       debugPrint('🔧 Installing Windows update...');
+      _updateStatus('Citire fisier ZIP...');
       
       // Extract ZIP
       final bytes = await File(zipPath).readAsBytes();
+      _updateStatus('Decodare arhiva ZIP...');
       final archive = ZipDecoder().decodeBytes(bytes);
+      _updateStatus('Arhiva decodata: ${archive.length} fisiere gasite');
       
       // Get application directory
       final appDir = Directory.current;
+      _updateStatus('Director aplicatie: ${appDir.path}');
       
       // Create backup if enabled
       if (UpdateConfig.createBackup) {
+        _updateStatus('Creare backup...');
         final backupSuccess = await _createBackup(appDir);
         if (!backupSuccess) {
           debugPrint('❌ Failed to create backup, aborting update');
+          _onError?.call('Eroare la crearea backup-ului');
           return false;
         }
       }
       
-      // Extract new files
+      // Extract new files with smart replacement strategy
+      _updateStatus('Extragere fisiere (strategie inteligenta)...');
       int filesInstalled = 0;
+      int filesSkipped = 0;
+      int totalFiles = archive.where((file) => file.isFile).length;
+      
       for (final file in archive) {
         final filename = file.name;
         if (file.isFile) {
           final data = file.content as List<int>;
           final newFile = File('${appDir.path}/$filename');
-          await newFile.create(recursive: true);
-          await newFile.writeAsBytes(data);
-          filesInstalled++;
+          
+          // Create directory if needed
+          final parentDir = newFile.parent;
+          if (!await parentDir.exists()) {
+            await parentDir.create(recursive: true);
+          }
+          
+          // Check if file is in use (only for DLL and EXE files)
+          bool shouldSkip = false;
+          if (filename.endsWith('.dll') || filename.endsWith('.exe')) {
+            try {
+              // Try to open file for writing to check if it's in use
+              final testFile = await newFile.open(mode: FileMode.write);
+              await testFile.close();
+            } catch (e) {
+              _updateStatus('Fisier in uz, va fi actualizat la restart: $filename');
+              shouldSkip = true;
+              filesSkipped++;
+            }
+          }
+          
+          if (!shouldSkip) {
+            try {
+              await newFile.writeAsBytes(data);
+              filesInstalled++;
+            } catch (e) {
+              _updateStatus('Eroare la scrierea fisierului $filename: $e');
+              filesSkipped++;
+            }
+          }
+          
+          if ((filesInstalled + filesSkipped) % 10 == 0 || (filesInstalled + filesSkipped) == totalFiles) {
+            _updateStatus('Fisiere procesate: ${filesInstalled + filesSkipped}/$totalFiles (instalate: $filesInstalled, sarite: $filesSkipped)');
+          }
         }
       }
       
-      debugPrint('✅ Windows update installed successfully | Files: $filesInstalled | Archive: ${archive.length}');
+      _updateStatus('Instalare finalizata: $filesInstalled fisiere instalate, $filesSkipped sarite');
+      debugPrint('✅ Windows update installed successfully | Files: $filesInstalled | Skipped: $filesSkipped | Archive: ${archive.length}');
+      
+      // Create update script for files that couldn't be replaced
+      if (filesSkipped > 0) {
+        _updateStatus('Creare script pentru fisierele ramase...');
+        await _createUpdateScript(appDir, archive, filesSkipped);
+      }
       
       // Cleanup download file
+      _updateStatus('Curatare fisiere temporare...');
       await _cleanupDownload(zipPath);
       
       // Restart application
+      _updateStatus('Pregatire restart aplicatie...');
       await _restartApplication();
       return true;
     } catch (e) {
       debugPrint('❌ Error installing Windows update: $e');
+      _onError?.call('Eroare la instalare: $e');
       await _rollbackUpdate();
       return false;
     }
@@ -420,20 +486,26 @@ class UpdateService {
     
     try {
       debugPrint('💾 Creating backup...');
+      _updateStatus('Creare backup...');
       
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final backupDir = Directory('${appDir.path}${UpdateConfig.backupSuffix}_$timestamp');
+      _updateStatus('Backup path: ${backupDir.path}');
       
       // Sterge backup-uri vechi
+      _updateStatus('Curatare backup-uri vechi...');
       await _cleanupOldBackups(appDir.parent);
       
       // Creaza backup nou
+      _updateStatus('Copiere fisiere in backup...');
       await _copyDirectory(appDir, backupDir);
       
       debugPrint('✅ Backup created successfully | Path: ${backupDir.path}');
+      _updateStatus('Backup creat cu succes');
       return true;
     } catch (e) {
       debugPrint('❌ Error creating backup: $e');
+      _onError?.call('Eroare la crearea backup-ului: $e');
       return false;
     }
   }
@@ -473,7 +545,19 @@ class UpdateService {
         await _copyDirectory(entity, newDirectory);
       } else if (entity is File) {
         final newFile = File('${destination.path}/${entity.uri.pathSegments.last}');
-        await entity.copy(newFile.path);
+        try {
+          await entity.copy(newFile.path);
+        } catch (e) {
+          // Daca fisierul este in uz, incearca sa-l copiezi cu nume temporar
+          if (e.toString().contains('being used by another process')) {
+            final tempFile = File('${newFile.path}.tmp');
+            await entity.copy(tempFile.path);
+            // Rename-ul se va face la restart
+            debugPrint('⚠️ File in use, copied as temp: ${newFile.path}');
+          } else {
+            rethrow;
+          }
+        }
       }
     }
   }
@@ -500,9 +584,11 @@ class UpdateService {
     
     try {
       debugPrint('🔄 Rolling back update...');
+      _updateStatus('Rollback la versiunea anterioara...');
       
       final appDir = Directory.current;
       final parentDir = appDir.parent;
+      _updateStatus('Cautare backup...');
       
       // Gaseste cel mai recent backup
       Directory? latestBackup;
@@ -520,21 +606,132 @@ class UpdateService {
       }
       
       if (latestBackup != null) {
-        // Sterge directorul curent
-        await appDir.delete(recursive: true);
+        _updateStatus('Backup gasit: ${latestBackup.path}');
         
-        // Restabileste backup-ul
-        await _copyDirectory(latestBackup, appDir);
+        // In loc sa stergem directorul curent (care poate fi in uz),
+        // copiem fisierele din backup peste cele existente
+        _updateStatus('Restaurare fisiere din backup...');
         
-        debugPrint('✅ Rollback completed successfully');
-        return true;
+        try {
+          await _copyDirectory(latestBackup, appDir);
+          debugPrint('✅ Rollback completed successfully');
+          _updateStatus('Rollback finalizat cu succes');
+          return true;
+        } catch (e) {
+          _updateStatus('Eroare la restaurare, se incearca stergerea...');
+          
+          // Daca copierea esueaza, incearca stergerea
+          try {
+            await appDir.delete(recursive: true);
+            await _copyDirectory(latestBackup, appDir);
+            debugPrint('✅ Rollback completed successfully (with deletion)');
+            _updateStatus('Rollback finalizat cu succes (cu stergere)');
+            return true;
+          } catch (deleteError) {
+            debugPrint('❌ Error during rollback deletion: $deleteError');
+            _onError?.call('Eroare la stergerea fisierelor: $deleteError');
+            return false;
+          }
+        }
       } else {
         debugPrint('❌ No backup found for rollback');
+        _onError?.call('Nu s-a gasit backup pentru rollback');
         return false;
       }
     } catch (e) {
       debugPrint('❌ Error during rollback: $e');
+      _onError?.call('Eroare la rollback: $e');
       return false;
+    }
+  }
+  
+  /// Creeaza script pentru actualizarea fisierelor ramase
+  Future<void> _createUpdateScript(Directory appDir, Archive archive, int skippedFiles) async {
+    try {
+      _updateStatus('Creare script batch pentru fisierele ramase...');
+      
+      final scriptPath = '${appDir.path}/update_remaining.bat';
+      final tempDir = '${appDir.path}/temp_update';
+      
+      // Extract remaining files to temp directory
+      _updateStatus('Extragere fisiere in director temporar...');
+      final tempDirObj = Directory(tempDir);
+      if (!await tempDirObj.exists()) {
+        await tempDirObj.create(recursive: true);
+      }
+      
+      // Extract files that were skipped
+      int extractedCount = 0;
+      for (final file in archive) {
+        if (file.isFile) {
+          final filename = file.name;
+          if (filename.endsWith('.dll') || filename.endsWith('.exe')) {
+            final data = file.content as List<int>;
+            final tempFile = File('$tempDir/$filename');
+            await tempFile.writeAsBytes(data);
+            extractedCount++;
+            _updateStatus('Extras in temp: $filename');
+          }
+        }
+      }
+      
+      final scriptContent = StringBuffer();
+      scriptContent.writeln('@echo off');
+      scriptContent.writeln('echo ========================================');
+      scriptContent.writeln('echo ACTUALIZARE BROKER APP');
+      scriptContent.writeln('echo ========================================');
+      scriptContent.writeln('echo Se actualizeaza aplicatia...');
+      scriptContent.writeln('echo Nu inchide aceasta fereastra!');
+      scriptContent.writeln('echo ========================================');
+      scriptContent.writeln('timeout /t 2 /nobreak > nul');
+      
+              // Copy files from temp directory
+        int fileCount = 0;
+        int totalFiles = archive.where((file) => file.isFile && (file.name.endsWith('.dll') || file.name.endsWith('.exe'))).length;
+        for (final file in archive) {
+          if (file.isFile) {
+            final filename = file.name;
+            if (filename.endsWith('.dll') || filename.endsWith('.exe')) {
+              fileCount++;
+              scriptContent.writeln('echo Actualizare fisier $fileCount/$totalFiles...');
+              scriptContent.writeln('copy /Y "$tempDir\\$filename" "$filename" > nul 2>&1');
+              scriptContent.writeln('if errorlevel 1 (');
+              scriptContent.writeln('  echo Eroare la actualizarea: $filename');
+              scriptContent.writeln(') else (');
+              scriptContent.writeln('  echo Fisier actualizat: $filename');
+              scriptContent.writeln(')');
+            }
+          }
+        }
+      
+      scriptContent.writeln('echo.');
+      scriptContent.writeln('echo ========================================');
+      scriptContent.writeln('echo Curatare fisiere temporare...');
+      scriptContent.writeln('rmdir /S /Q "$tempDir" > nul 2>&1');
+      scriptContent.writeln('echo ========================================');
+      scriptContent.writeln('echo Pornire aplicatie...');
+      scriptContent.writeln('timeout /t 1 /nobreak > nul');
+      scriptContent.writeln('start "" "${appDir.path}\\broker_app.exe"');
+      scriptContent.writeln('echo ========================================');
+      scriptContent.writeln('echo ACTUALIZARE FINALIZATA!');
+      scriptContent.writeln('echo Aplicatia a fost actualizata si pornita cu succes.');
+      scriptContent.writeln('echo ========================================');
+      scriptContent.writeln('del "%~f0" > nul 2>&1');
+      scriptContent.writeln(':end');
+      
+      final scriptFile = File(scriptPath);
+      await scriptFile.writeAsString(scriptContent.toString());
+      
+      // Verify script was created
+      if (await scriptFile.exists()) {
+        final scriptSize = await scriptFile.length();
+        _updateStatus('Script creat cu succes: $scriptPath ($scriptSize bytes)');
+        _updateStatus('Fisiere extrase in temp: $extractedCount');
+      } else {
+        throw Exception('Script file was not created');
+      }
+    } catch (e) {
+      _updateStatus('Eroare la crearea script-ului: $e');
     }
   }
   
@@ -547,16 +744,34 @@ class UpdateService {
     
     try {
       debugPrint('🔄 Restarting application...');
+      _updateStatus('Restart aplicatie...');
       
-      await Process.start('cmd', ['/c', 'start', '', Platform.resolvedExecutable], runInShell: true);
+      final executablePath = Platform.resolvedExecutable;
+      _updateStatus('Executable path: $executablePath');
       
-      // Exit current process
-      await Future.delayed(const Duration(milliseconds: 500));
-      exit(0);
+      // Check if we have an update script
+      final updateScript = File('${Directory.current.path}/update_remaining.bat');
+      if (await updateScript.exists()) {
+        _updateStatus('Executare script pentru fisierele ramase...');
+        await Process.start('cmd', ['/c', 'start', '', updateScript.path], runInShell: true);
+        
+        // Don't start the app here, let the script do it
+        _updateStatus('Script pornit, inchidere aplicatie curenta...');
+        await Future.delayed(const Duration(milliseconds: 1000));
+        exit(0);
+      } else {
+        // No update script, start normally
+        await Process.start('cmd', ['/c', 'start', '', executablePath], runInShell: true);
+        _updateStatus('Aplicatie noua pornita, inchidere aplicatie curenta...');
+        await Future.delayed(const Duration(milliseconds: 500));
+        exit(0);
+      }
     } catch (e) {
       debugPrint('❌ Error restarting application: $e');
+      _onError?.call('Eroare la restart: $e');
     }
   }
+  
   
   /// Reseteaza starea serviciului
   void reset() {
@@ -600,6 +815,37 @@ class UpdateService {
     }
     
     return false;
+  }
+  
+  /// Curata scripturile ramase de la update-uri anterioare
+  Future<void> cleanupRemainingScripts() async {
+    if (kIsWeb || !Platform.isWindows) return;
+    
+    try {
+      final appDir = Directory.current;
+      final updateScript = File('${appDir.path}/update_remaining.bat');
+      final cleanupScript = File('${appDir.path}/cleanup_temp.bat');
+      
+      // Sterge scripturile ramase
+      if (await updateScript.exists()) {
+        await updateScript.delete();
+        debugPrint('🗑️ Cleaned up remaining update script');
+      }
+      
+      if (await cleanupScript.exists()) {
+        await cleanupScript.delete();
+        debugPrint('🗑️ Cleaned up remaining cleanup script');
+      }
+      
+      // Sterge directorul temporar daca exista
+      final tempDir = Directory('${appDir.path}/temp_update');
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+        debugPrint('🗑️ Cleaned up remaining temp directory');
+      }
+    } catch (e) {
+      debugPrint('❌ Error cleaning up remaining scripts: $e');
+    }
   }
   
   /// Verifica periodic daca există update-uri în background (Discord-style)

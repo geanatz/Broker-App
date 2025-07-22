@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 
@@ -247,6 +248,32 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 ),
               ),
             ],
+            const SizedBox(height: 16),
+            Text(
+              'Ce este nou in aceasta versiune:',
+              style: GoogleFonts.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.elementColor1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.widgetBackground,
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
+                border: Border.all(color: AppTheme.elementColor2.withAlpha(30)),
+              ),
+              child: Text(
+                _getReleaseDescription(),
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppTheme.elementColor1,
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -262,13 +289,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             ),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+              _startCompleteUpdate();
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.elementColor2,
               foregroundColor: Colors.white,
             ),
             child: Text(
-              'Descarca acum',
+              'Actualizeaza',
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -433,47 +463,43 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
   
   void _showInstallDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.widgetBackground,
-        title: Text(
-          'Noua versiune este gata',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.elementColor2,
-          ),
-        ),
-        content: Text(
-          'Update-ul a fost descarcat. Aplicatia trebuie repornita pentru a finaliza instalarea.',
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: AppTheme.elementColor1,
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _updateService.installUpdate();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.elementColor2,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(
-              'Reporneste acum',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    // This dialog is no longer needed - the main update popup handles everything
+    // Keeping empty method for compatibility
+  }
+  
+  String _getReleaseDescription() {
+    // Get release description from update service
+    final updateInfo = _updateService.getUpdateInfo();
+    final releaseDescription = updateInfo['releaseDescription'];
+    
+    if (releaseDescription != null && releaseDescription.isNotEmpty) {
+      return releaseDescription;
+    }
+    
+    // Fallback to default description
+    return '• Îmbunătățiri de performanță\n• Corectări de bug-uri\n• Funcționalități noi\n• Securitate îmbunătățită';
+  }
+
+  void _startCompleteUpdate() async {
+    // First, download the update if not already downloaded
+    final updateInfo = _updateService.getUpdateInfo();
+    bool hasUpdate = updateInfo['hasUpdate'] ?? false;
+    
+    if (!hasUpdate) {
+      // Check for updates first
+      hasUpdate = await _updateService.checkForUpdates();
+    }
+    
+    if (hasUpdate) {
+      // Start download if not already downloaded
+      final isUpdateReady = updateInfo['isUpdateReady'] ?? false;
+      if (!isUpdateReady) {
+        await _updateService.startDownload();
+      }
+      
+      // Now install the update
+      await _updateService.installUpdate();
+    }
   }
   
   void _showUpdateFailedDialog() {
