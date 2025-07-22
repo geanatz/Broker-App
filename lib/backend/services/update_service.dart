@@ -22,6 +22,7 @@ class UpdateService {
   String? _currentVersion;
   String? _downloadUrl;
   String? _updateFilePath;
+  String? _releaseDescription; // Adaug variabila pentru descrierea release-ului
   double _downloadProgress = 0.0;
   int _downloadedBytes = 0;
   int _totalBytes = 0;
@@ -40,6 +41,7 @@ class UpdateService {
   double get downloadProgress => _downloadProgress;
   String? get latestVersion => _latestVersion;
   String? get currentVersion => _currentVersion;
+  String? get releaseDescription => _releaseDescription; // Adaug getter pentru descriere
   bool get hasUpdate => _latestVersion != null && _currentVersion != null && _isNewerVersion(_latestVersion!, _currentVersion!);
   String get downloadProgressText => _totalBytes > 0 ? 
     '${(_downloadedBytes / 1024 / 1024).toStringAsFixed(1)} MB / ${(_totalBytes / 1024 / 1024).toStringAsFixed(1)} MB' : 
@@ -96,10 +98,16 @@ class UpdateService {
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           _latestVersion = data['tag_name']?.toString().replaceAll('v', '');
+          _releaseDescription = data['body']; // Preia descrierea
           
           if (_latestVersion != null) {
             debugPrint('🔍 Latest version found: $_latestVersion');
             debugPrint('🔍 Current version: $_currentVersion');
+            if (_releaseDescription != null && _releaseDescription!.isNotEmpty) {
+              debugPrint('📝 Release description found: ${_releaseDescription!.substring(0, _releaseDescription!.length > 100 ? 100 : _releaseDescription!.length)}...');
+            } else {
+              debugPrint('📝 No release description available');
+            }
             
             if (hasUpdate) {
               debugPrint('✅ Update available!');
@@ -785,6 +793,7 @@ class UpdateService {
     _downloadProgress = 0.0;
     _downloadedBytes = 0;
     _totalBytes = 0;
+    _releaseDescription = null; // Resetare descriere
   }
   
   /// Verifica daca exista un update descarcat si gata pentru instalare
@@ -885,6 +894,7 @@ class UpdateService {
       'downloadProgress': _downloadProgress,
       'downloadProgressText': downloadProgressText,
       'canInstall': _isUpdateReady && !_isInstalling,
+      'releaseDescription': _releaseDescription, // Adaug descrierea la info
     };
   }
   
