@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../backend/services/matcher_service.dart';
 import '../../backend/services/splash_service.dart';
-import '../components/items/light_item7.dart';
-import '../components/items/dark_item7.dart';
 import '../components/headers/widget_header1.dart';
+import '../components/headers/field_header2.dart';
 import '../components/fields/dropdown_field1.dart';
 import '../popups/bank_popup.dart';
 import 'package:intl/intl.dart';
@@ -361,29 +360,87 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                               ),
                               child: ListView.separated(
                                 itemCount: recommendations.length,
-                                separatorBuilder: (context, index) => const SizedBox(height: 8),
-                                                                 itemBuilder: (context, index) {
-                                   final recommendation = recommendations[index];
-                                   final bankName = recommendation.bankCriteria.bankName;
-                                   final loanAmount = _matcherService.calculateLoanAmount(bankName);
-                                   final isFocused = _focusedBankName == bankName;
-                                   
-                                   if (isFocused) {
-                                     return DarkItem7(
-                                       title: bankName,
-                                       description: '${NumberFormat('#,###').format(loanAmount)} lei',
-                                       svgAsset: 'assets/viewIcon.svg',
-                                       onTap: () => _showBankDetailsPopup(recommendation.bankCriteria),
-                                     );
-                                   } else {
-                                     return LightItem7(
-                                       title: bankName,
-                                       description: '${NumberFormat('#,###').format(loanAmount)} lei',
-                                       svgAsset: 'assets/viewIcon.svg',
-                                       onTap: () => _showBankDetailsPopup(recommendation.bankCriteria),
-                                     );
-                                   }
-                                 },
+                                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                                itemBuilder: (context, index) {
+                                  final recommendation = recommendations[index];
+                                  final bankName = recommendation.bankCriteria.bankName;
+                                  final isFocused = _focusedBankName == bankName;
+                                  
+                                  // Calculeaza sumele pentru fiecare tip
+                                  final freshAmount = _matcherService.calculateFreshAmount(bankName);
+                                  final refinantareAmount = _matcherService.calculateRefinantareAmount(bankName);
+                                  final ordinPlataAmount = _matcherService.calculateOrdinPlataAmount(bankName);
+                                  
+                                  return Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(AppTheme.smallGap),
+                                    decoration: ShapeDecoration(
+                                      color: isFocused ? AppTheme.containerColor2 : AppTheme.containerColor1,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Header banca cu click pentru popup
+                                        GestureDetector(
+                                          onTap: () => _showBankDetailsPopup(recommendation.bankCriteria),
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  bankName,
+                                                  style: AppTheme.safeOutfit(
+                                                    color: AppTheme.elementColor1,
+                                                    fontSize: 17,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                Icon(
+                                                  Icons.info_outline,
+                                                  color: AppTheme.elementColor1,
+                                                  size: 20,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        
+                                        const SizedBox(height: 8),
+                                        
+                                        // Sectiunea Fresh
+                                        FieldHeader2(
+                                          title: 'Fresh',
+                                          altText: '${NumberFormat('#,###').format(freshAmount)} lei',
+                                        ),
+                                        
+                                        const SizedBox(height: 8),
+                                        
+                                        // Sectiunea Refinantare
+                                        FieldHeader2(
+                                          title: 'Refinantare',
+                                          altText: '${NumberFormat('#,###').format(refinantareAmount)} lei',
+                                        ),
+                                        
+                                        // Sectiunea Ordin de plata (doar pentru ING si BCR)
+                                        if (bankName == 'ING' || bankName == 'BCR') ...[
+                                          const SizedBox(height: 8),
+                                          FieldHeader2(
+                                            title: 'Ordin de plata',
+                                            altText: '${NumberFormat('#,###').format(ordinPlataAmount)} lei',
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                 ),

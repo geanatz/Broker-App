@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'form_service.dart';
 import 'clients_service.dart';
+import 'dart:math'; // Added for pow function
 
 /// Enum pentru tipul de gen al clientului
 enum ClientGender { male, female }
@@ -1077,4 +1078,297 @@ class MatcherService extends ChangeNotifier {
     }
     debugPrint('=== End Testing ===');
   }
+
+  /// Calculeaza factorul de anuitate PMT_FACTOR(r, n) = r / (1 - (1+r)^-n)
+  double _pmtFactor(double rate, int years) {
+    final r = rate / 12;
+    final n = years * 12;
+    return r / (1 - pow(1 + r, -n));
+  }
+
+  /// Normalizeaza numele bancilor pentru comparare
+  String _normalizeBankName(String bankName) {
+    // Elimina spatiile si normalizeaza numele bancilor
+    final normalized = bankName.trim().toLowerCase();
+    if (normalized.contains('ing')) return 'ing';
+    if (normalized.contains('bcr')) return 'bcr';
+    return normalized;
+  }
+
+
+  /// Calculeaza suma maxima pentru o rata lunara data
+  double _reverseAnnuity(double instalment, double rate, int years) {
+    return instalment / _pmtFactor(rate, years);
+  }
+
+
+
+  /// Calculeaza suma acordabila pentru tipul Fresh
+  double calculateFreshAmount(String bankName) {
+    final currentClient = _clientService.focusedClient;
+    if (currentClient == null) return 0;
+
+    // 1. Calculeaza venitul total (salary)
+    double salary = 0;
+    final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
+    final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+
+    for (final income in clientIncomeForms) {
+      if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
+        salary += double.tryParse(income.incomeAmount) ?? 0;
+      }
+    }
+    for (final income in coborrowerIncomeForms) {
+      if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
+        salary += double.tryParse(income.incomeAmount) ?? 0;
+      }
+    }
+
+    // 2. Calculeaza maxInst = salary * 0.40
+    final maxInst = salary * 0.40;
+
+    // 3. Extrage toate creditele existente
+    final clientCreditForms = _formService.getClientCreditForms(currentClient.phoneNumber);
+    final coborrowerCreditForms = _formService.getCoborrowerCreditForms(currentClient.phoneNumber);
+    final allLoans = <Map<String, dynamic>>[];
+
+    // Adauga creditele clientului
+    for (final credit in clientCreditForms) {
+      if (credit.rata.isNotEmpty && !credit.isEmpty) {
+        allLoans.add({
+          'bank': credit.bank,
+          'type': credit.creditType,
+          'balance': double.tryParse(credit.sold) ?? 0,
+          'instalment': double.tryParse(credit.rata) ?? 0,
+        });
+      }
+    }
+
+    // Adauga creditele codebitorului
+    for (final credit in coborrowerCreditForms) {
+      if (credit.rata.isNotEmpty && !credit.isEmpty) {
+        allLoans.add({
+          'bank': credit.bank,
+          'type': credit.creditType,
+          'balance': double.tryParse(credit.sold) ?? 0,
+          'instalment': double.tryParse(credit.rata) ?? 0,
+        });
+      }
+    }
+
+    // 4. FRESH: Toate ratele existente sunt pastrate in denominator
+    double totalExisting = 0;
+    for (final loan in allLoans) {
+      totalExisting += loan['instalment'];
+    }
+
+    // 5. Calculeaza suma disponibila
+    final available = maxInst - totalExisting;
+    if (available <= 0) return 0;
+
+    // 6. Calculeaza suma maxima pentru rata disponibila
+    final result = _reverseAnnuity(available, 0.08, 5);
+
+    // 8. Nu depaseste suma maxima a bancii
+    final criteria = getBankCriteria(bankName);
+    if (criteria != null) {
+      return result.clamp(0.0, criteria.maxLoanAmount);
+    }
+    return result;
+  }
+
+  /// Calculeaza suma acordabila pentru tipul Refinantare
+  double calculateRefinantareAmount(String bankName) {
+    final currentClient = _clientService.focusedClient;
+    if (currentClient == null) return 0;
+
+    // 1. Calculeaza venitul total (salary)
+    double salary = 0;
+    final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
+    final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+
+    for (final income in clientIncomeForms) {
+      if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
+        salary += double.tryParse(income.incomeAmount) ?? 0;
+      }
+    }
+    for (final income in coborrowerIncomeForms) {
+      if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
+        salary += double.tryParse(income.incomeAmount) ?? 0;
+      }
+    }
+
+    // 2. Calculeaza maxInst = salary * 0.40
+    final maxInst = salary * 0.40;
+
+    // 3. Extrage toate creditele existente
+    final clientCreditForms = _formService.getClientCreditForms(currentClient.phoneNumber);
+    final coborrowerCreditForms = _formService.getCoborrowerCreditForms(currentClient.phoneNumber);
+    final allLoans = <Map<String, dynamic>>[];
+
+    // Adauga creditele clientului
+    for (final credit in clientCreditForms) {
+      if (credit.rata.isNotEmpty && !credit.isEmpty) {
+        allLoans.add({
+          'bank': credit.bank,
+          'type': credit.creditType,
+          'balance': double.tryParse(credit.sold) ?? 0,
+          'instalment': double.tryParse(credit.rata) ?? 0,
+        });
+      }
+    }
+
+    // Adauga creditele codebitorului
+    for (final credit in coborrowerCreditForms) {
+      if (credit.rata.isNotEmpty && !credit.isEmpty) {
+        allLoans.add({
+          'bank': credit.bank,
+          'type': credit.creditType,
+          'balance': double.tryParse(credit.sold) ?? 0,
+          'instalment': double.tryParse(credit.rata) ?? 0,
+        });
+      }
+    }
+
+    // 4. REFINANCE: Doar creditele ipotecar si prima_casa sunt pastrate in denominator
+    final refiLoans = <Map<String, dynamic>>[];
+    final remainingLoans = <Map<String, dynamic>>[];
+
+    for (final loan in allLoans) {
+      final type = loan['type'] as String;
+      if (type == 'ipotecar' || type == 'prima_casa') {
+        remainingLoans.add(loan); // Pastrate in denominator
+      } else {
+        refiLoans.add(loan); // Pentru refinanțare
+      }
+    }
+
+    // 5. Calculeaza soldul total pentru refinanțare
+    double refiBalance = 0;
+    for (final loan in refiLoans) {
+      refiBalance += loan['balance'];
+    }
+
+    // 6. Calculeaza ratele ramase (ipotecar + prima_casa)
+    double remInst = 0;
+    for (final loan in remainingLoans) {
+      remInst += loan['instalment'];
+    }
+
+    // 7. Calculeaza suma maxima pentru refinanțare
+    final available = maxInst - remInst;
+    if (available <= 0) return 0;
+
+    final maxRefi = _reverseAnnuity(available, 0.08, 5);
+
+    // 8. Calculeaza surplus (maxRefi - refiBalance)
+    final surplus = maxRefi - refiBalance;
+    final result = surplus.clamp(0.0, double.infinity);
+
+    // 9. Nu depaseste suma maxima a bancii
+    final criteria = getBankCriteria(bankName);
+    if (criteria != null) {
+      return result.clamp(0.0, criteria.maxLoanAmount);
+    }
+    return result;
+  }
+
+  /// Calculeaza suma acordabila pentru tipul Ordin de plata
+  double calculateOrdinPlataAmount(String bankName) {
+    // Doar ING si BCR ofera ordin de plata
+    if (bankName != 'ING' && bankName != 'BCR') return 0;
+
+    final currentClient = _clientService.focusedClient;
+    if (currentClient == null) return 0;
+
+    // 1. Calculeaza venitul total (salary)
+    double salary = 0;
+    final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
+    final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+
+    for (final income in clientIncomeForms) {
+      if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
+        salary += double.tryParse(income.incomeAmount) ?? 0;
+      }
+    }
+    for (final income in coborrowerIncomeForms) {
+      if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
+        salary += double.tryParse(income.incomeAmount) ?? 0;
+      }
+    }
+
+    // 2. Calculeaza maxInst = salary * 0.40
+    final maxInst = salary * 0.40;
+
+    // 3. Extrage toate creditele existente
+    final clientCreditForms = _formService.getClientCreditForms(currentClient.phoneNumber);
+    final coborrowerCreditForms = _formService.getCoborrowerCreditForms(currentClient.phoneNumber);
+    final allLoans = <Map<String, dynamic>>[];
+
+    // Adauga creditele clientului
+    for (final credit in clientCreditForms) {
+      if (credit.rata.isNotEmpty && !credit.isEmpty) {
+        allLoans.add({
+          'bank': credit.bank,
+          'type': credit.creditType,
+          'balance': double.tryParse(credit.sold) ?? 0,
+          'instalment': double.tryParse(credit.rata) ?? 0,
+        });
+      }
+    }
+
+    // Adauga creditele codebitorului
+    for (final credit in coborrowerCreditForms) {
+      if (credit.rata.isNotEmpty && !credit.isEmpty) {
+        allLoans.add({
+          'bank': credit.bank,
+          'type': credit.creditType,
+          'balance': double.tryParse(credit.sold) ?? 0,
+          'instalment': double.tryParse(credit.rata) ?? 0,
+        });
+      }
+    }
+
+    // 4. OP-BANK-TARGET: Nu se scad ratele de la alte banci - ordinul de plata le extingue automat
+    // Pentru ordin de plata, consideram toate ratele disponibile
+    double nonTargetInst = 0;
+    debugPrint('🔍 OP DEBUG: Target bank: $bankName');
+    debugPrint('🔍 OP DEBUG: OP-BANK-TARGET: Nu se scad ratele de la alte banci');
+    debugPrint('🔍 OP DEBUG: Total nonTargetInst: $nonTargetInst');
+
+    // 5. Calculeaza suma disponibila (toate ratele disponibile pentru ordin de plata)
+    final available = maxInst - nonTargetInst;
+    debugPrint('🔍 OP DEBUG: maxInst: $maxInst, available: $available');
+    if (available <= 0) return 0;
+
+    // 6. Calculeaza suma maxima pentru ordin de plata
+    final result = _reverseAnnuity(available, 0.08, 5);
+    debugPrint('🔍 OP DEBUG: Result brut: $result');
+    
+    // 7. Pentru BCR, scade soldul existent la BCR
+    double finalResult = result;
+    if (bankName == 'BCR') {
+      double bcrBalance = 0;
+      for (final loan in allLoans) {
+        final loanBank = loan['bank'] as String;
+        final normalizedLoanBank = _normalizeBankName(loanBank);
+        if (normalizedLoanBank == 'bcr') {
+          bcrBalance += loan['balance'];
+        }
+      }
+      finalResult = result - bcrBalance;
+      debugPrint('🔍 OP DEBUG: BCR balance to subtract: $bcrBalance');
+      debugPrint('🔍 OP DEBUG: Final result after BCR subtraction: $finalResult');
+    }
+    
+    debugPrint('🔍 OP DEBUG: Final result: $finalResult');
+
+    // 7. Nu depaseste suma maxima a bancii
+    final criteria = getBankCriteria(bankName);
+    if (criteria != null) {
+      return result.clamp(0.0, criteria.maxLoanAmount);
+    }
+    return result;
+  }
 }
+
