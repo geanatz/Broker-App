@@ -356,7 +356,7 @@ class ClientsService {
 
       if (success) {
         // Notifica dashboard-ul
-        await _notifyMeetingCreated();
+        await _notifyMeetingCreated(phoneNumber);
       }
 
       return success;
@@ -444,13 +444,13 @@ class ClientsService {
   }
 
   /// Notifica dashboard-ul ca o intalnire a fost creata
-  Future<void> _notifyMeetingCreated() async {
+  Future<void> _notifyMeetingCreated(String clientPhoneNumber) async {
     try {
       final consultantToken = await _firebaseService.getCurrentConsultantToken();
       if (consultantToken != null) {
         // Pentru moment, folosim token-ul ca identificator
         // În viitor, ar putea fi nevoie de o conversie token -> uid
-        await dashboard.DashboardService().onMeetingCreated(consultantToken);
+        await dashboard.DashboardService().onMeetingCreated(consultantToken, clientPhoneNumber);
       }
     } catch (e) {
       // In caz de eroare, initializeaza cu lista goala
@@ -1951,7 +1951,7 @@ class ClientUIService extends ChangeNotifier {
         final consultantToken = await firebaseService.getCurrentConsultantToken();
         if (consultantToken != null) {
           final dashboardService = dashboard.DashboardService();
-          await dashboardService.onFormCompleted(consultantToken);
+          await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
           dashboardService.refreshData();
         }
       }
@@ -2003,7 +2003,7 @@ class ClientUIService extends ChangeNotifier {
         final consultantToken = await firebaseService.getCurrentConsultantToken();
         if (consultantToken != null) {
           final dashboardService = dashboard.DashboardService();
-          await dashboardService.onFormCompleted(consultantToken);
+          await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
           dashboardService.refreshData();
         }
       }
@@ -2054,7 +2054,7 @@ class ClientUIService extends ChangeNotifier {
         final consultantToken = await firebaseService.getCurrentConsultantToken();
         if (consultantToken != null) {
           final dashboardService = dashboard.DashboardService();
-          await dashboardService.onFormCompleted(consultantToken);
+          await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
           dashboardService.refreshData();
         }
       }

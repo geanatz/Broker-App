@@ -592,16 +592,16 @@ class DashboardService extends ChangeNotifier {
     }
   }
 
-  /// Notifica serviciul ca o intalnire a fost creata (FIX: mai robust cu refresh automat)
-  Future<void> onMeetingCreated(String consultantToken) async {
+  /// Notifica serviciul ca o intalnire a fost creata (FIX: robust cu tracking clienti contorizati)
+  Future<void> onMeetingCreated(String consultantToken, String clientPhoneNumber) async {
     try {
       final now = DateTime.now();
       final yearMonth = DateFormat('yyyy-MM').format(now);
       final today = DateFormat('yyyy-MM-dd').format(now);
       
-      debugPrint('📈 DASHBOARD_SERVICE: Recording meeting for consultant ${consultantToken.substring(0, 8)}... in $yearMonth');
+      debugPrint('📈 DASHBOARD_SERVICE: Recording meeting for consultant ${consultantToken.substring(0, 8)}... in $yearMonth for client $clientPhoneNumber');
       
-      // Salveaza in noua structura: data/stats/monthly/{year-month}/consultants/{consultantToken}
+      // Verifica daca clientul a fost deja contorizat pentru intalniri
       final monthlyDocRef = _firestore
           .collection('data')
           .doc('stats')
@@ -610,8 +610,21 @@ class DashboardService extends ChangeNotifier {
           .collection('consultants')
           .doc(consultantToken);
           
+      final monthlyDoc = await monthlyDocRef.get();
+      final monthlyData = monthlyDoc.data() ?? {};
+      final completedClientsForMeetings = List<String>.from(monthlyData['completedClientsForMeetings'] ?? []);
+      
+      if (completedClientsForMeetings.contains(clientPhoneNumber)) {
+        debugPrint('⚠️ DASHBOARD_SERVICE: Client $clientPhoneNumber already counted for meetings, skipping increment');
+        return;
+      }
+      
+      // IMPORTANT: Adaugă clientul la listă înainte de increment pentru a preveni race conditions
+      completedClientsForMeetings.add(clientPhoneNumber);
+      
       await monthlyDocRef.set({
         'meetingsHeld': FieldValue.increment(1),
+        'completedClientsForMeetings': completedClientsForMeetings,
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       
@@ -624,12 +637,21 @@ class DashboardService extends ChangeNotifier {
           .collection('consultants')
           .doc(consultantToken);
           
-      await dailyDocRef.set({
-        'meetingsHeld': FieldValue.increment(1),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      final dailyDoc = await dailyDocRef.get();
+      final dailyData = dailyDoc.data() ?? {};
+      final dailyCompletedClientsForMeetings = List<String>.from(dailyData['completedClientsForMeetings'] ?? []);
       
-      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in $yearMonth');
+      if (!dailyCompletedClientsForMeetings.contains(clientPhoneNumber)) {
+        dailyCompletedClientsForMeetings.add(clientPhoneNumber);
+        
+        await dailyDocRef.set({
+          'meetingsHeld': FieldValue.increment(1),
+          'completedClientsForMeetings': dailyCompletedClientsForMeetings,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+      
+      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in $yearMonth for client $clientPhoneNumber');
       
       // FIX: Invalidează cache-ul pentru acest consultant și refresh complet
       _consultantsRankingCache.remove(consultantToken);
@@ -647,16 +669,16 @@ class DashboardService extends ChangeNotifier {
     }
   }
   
-  /// Notifica serviciul ca un formular a fost finalizat (FIX: mai robust cu refresh automat)
-  Future<void> onFormCompleted(String consultantToken) async {
+  /// Notifica serviciul ca un formular a fost finalizat (FIX: robust cu tracking clienti contorizati)
+  Future<void> onFormCompleted(String consultantToken, String clientPhoneNumber) async {
     try {
       final now = DateTime.now();
       final yearMonth = DateFormat('yyyy-MM').format(now);
       final today = DateFormat('yyyy-MM-dd').format(now);
       
-      debugPrint('📈 DASHBOARD_SERVICE: Recording form completion for consultant ${consultantToken.substring(0, 8)}... in $yearMonth');
+      debugPrint('📈 DASHBOARD_SERVICE: Recording form completion for consultant ${consultantToken.substring(0, 8)}... in $yearMonth for client $clientPhoneNumber');
       
-      // Salveaza in noua structura: data/stats/monthly/{year-month}/consultants/{consultantToken}
+      // Verifica daca clientul a fost deja contorizat pentru formulare
       final monthlyDocRef = _firestore
           .collection('data')
           .doc('stats')
@@ -665,8 +687,21 @@ class DashboardService extends ChangeNotifier {
           .collection('consultants')
           .doc(consultantToken);
           
+      final monthlyDoc = await monthlyDocRef.get();
+      final monthlyData = monthlyDoc.data() ?? {};
+      final completedClientsForForms = List<String>.from(monthlyData['completedClientsForForms'] ?? []);
+      
+      if (completedClientsForForms.contains(clientPhoneNumber)) {
+        debugPrint('⚠️ DASHBOARD_SERVICE: Client $clientPhoneNumber already counted for forms, skipping increment');
+        return;
+      }
+      
+      // IMPORTANT: Adaugă clientul la listă înainte de increment pentru a preveni race conditions
+      completedClientsForForms.add(clientPhoneNumber);
+      
       await monthlyDocRef.set({
         'formsCompleted': FieldValue.increment(1),
+        'completedClientsForForms': completedClientsForForms,
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       
@@ -679,12 +714,21 @@ class DashboardService extends ChangeNotifier {
           .collection('consultants')
           .doc(consultantToken);
           
-      await dailyDocRef.set({
-        'formsCompleted': FieldValue.increment(1),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      final dailyDoc = await dailyDocRef.get();
+      final dailyData = dailyDoc.data() ?? {};
+      final dailyCompletedClientsForForms = List<String>.from(dailyData['completedClientsForForms'] ?? []);
       
-      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in $yearMonth');
+      if (!dailyCompletedClientsForForms.contains(clientPhoneNumber)) {
+        dailyCompletedClientsForForms.add(clientPhoneNumber);
+        
+        await dailyDocRef.set({
+          'formsCompleted': FieldValue.increment(1),
+          'completedClientsForForms': dailyCompletedClientsForForms,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+      
+      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in $yearMonth for client $clientPhoneNumber');
       
       // FIX: Invalidează cache-ul pentru acest consultant și refresh complet
       _consultantsRankingCache.remove(consultantToken);

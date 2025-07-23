@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../../backend/services/matcher_service.dart';
 import '../../backend/services/splash_service.dart';
 import '../components/headers/widget_header1.dart';
-import '../components/headers/field_header2.dart';
 import '../components/fields/dropdown_field1.dart';
 import '../popups/bank_popup.dart';
 import 'package:intl/intl.dart';
@@ -34,7 +33,6 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
   late final TextEditingController _ficoController;
   
   // Tine evidenta bancii cu popup deschis pentru focused state
-  String? _focusedBankName;
   
   @override
   bool get wantKeepAlive => true;
@@ -109,7 +107,6 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
-          _focusedBankName = bankCriteria.bankName;
         });
       }
     });
@@ -124,7 +121,6 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
       // Reseteaza focused state cand se inchide popup-ul
       if (mounted) {
         setState(() {
-          _focusedBankName = null;
         });
       }
     });
@@ -353,91 +349,135 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                             )
                           : Container(
                               width: double.infinity,
+                              clipBehavior: Clip.antiAlias,
                               decoration: ShapeDecoration(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
                               ),
                               child: ListView.separated(
                                 itemCount: recommendations.length,
-                                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                                separatorBuilder: (context, index) => const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
                                   final recommendation = recommendations[index];
                                   final bankName = recommendation.bankCriteria.bankName;
-                                  final isFocused = _focusedBankName == bankName;
                                   
                                   // Calculeaza sumele pentru fiecare tip
                                   final freshAmount = _matcherService.calculateFreshAmount(bankName);
                                   final refinantareAmount = _matcherService.calculateRefinantareAmount(bankName);
                                   final ordinPlataAmount = _matcherService.calculateOrdinPlataAmount(bankName);
                                   
-                                  return Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(AppTheme.smallGap),
-                                    decoration: ShapeDecoration(
-                                      color: isFocused ? AppTheme.containerColor2 : AppTheme.containerColor1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
+                                  return GestureDetector(
+                                    onTap: () => _showBankDetailsPopup(recommendation.bankCriteria),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      decoration: ShapeDecoration(
+                                        color: AppTheme.containerColor1,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
+                                        ),
                                       ),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Header banca cu click pentru popup
-                                        GestureDetector(
-                                          onTap: () => _showBankDetailsPopup(recommendation.bankCriteria),
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  bankName,
-                                                  style: AppTheme.safeOutfit(
-                                                    color: AppTheme.elementColor1,
-                                                    fontSize: 17,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                                Icon(
-                                                  Icons.info_outline,
-                                                  color: AppTheme.elementColor1,
-                                                  size: 20,
-                                                ),
-                                              ],
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            bankName,
+                                            style: AppTheme.safeOutfit(
+                                              color: AppTheme.elementColor2,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                        ),
-                                        
-                                        const SizedBox(height: 8),
-                                        
-                                        // Sectiunea Fresh
-                                        FieldHeader2(
-                                          title: 'Fresh',
-                                          altText: '${NumberFormat('#,###').format(freshAmount)} lei',
-                                        ),
-                                        
-                                        const SizedBox(height: 8),
-                                        
-                                        // Sectiunea Refinantare
-                                        FieldHeader2(
-                                          title: 'Refinantare',
-                                          altText: '${NumberFormat('#,###').format(refinantareAmount)} lei',
-                                        ),
-                                        
-                                        // Sectiunea Ordin de plata (doar pentru ING si BCR)
-                                        if (bankName == 'ING' || bankName == 'BCR') ...[
-                                          const SizedBox(height: 8),
-                                          FieldHeader2(
-                                            title: 'Ordin de plata',
-                                            altText: '${NumberFormat('#,###').format(ordinPlataAmount)} lei',
+                                          const SizedBox(height: 2),
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment: MainAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Fresh',
+                                                      style: AppTheme.safeOutfit(
+                                                        color: AppTheme.elementColor1,
+                                                        fontSize: 15,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    NumberFormat('#,###').format(freshAmount),
+                                                    style: AppTheme.safeOutfit(
+                                                      color: AppTheme.elementColor1,
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Refinantare',
+                                                      style: AppTheme.safeOutfit(
+                                                        color: AppTheme.elementColor1,
+                                                        fontSize: 15,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    NumberFormat('#,###').format(refinantareAmount),
+                                                    style: AppTheme.safeOutfit(
+                                                      color: AppTheme.elementColor1,
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              // Sectiunea Ordin de plata (doar pentru ING si BCR)
+                                              if (bankName == 'ING' || bankName == 'BCR') ...[
+                                                const SizedBox(height: 2),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        'Ordin de plata',
+                                                        style: AppTheme.safeOutfit(
+                                                          color: AppTheme.elementColor1,
+                                                          fontSize: 15,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      NumberFormat('#,###').format(ordinPlataAmount),
+                                                      style: AppTheme.safeOutfit(
+                                                        color: AppTheme.elementColor1,
+                                                        fontSize: 15,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         ],
-                                      ],
+                                      ),
                                     ),
                                   );
                                 },

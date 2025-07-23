@@ -812,13 +812,19 @@ class GoogleDriveService extends ChangeNotifier {
 
   /// Validează datele clientului înainte de salvare
   bool _validateClientData(dynamic client) {
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _validateClientData START');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client type: ${client.runtimeType}');
+    
     if (client == null) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client is null');
       return false;
     }
     
-    final name = client.name?.toString() ?? '';
-    final phoneNumber = client.phoneNumber?.toString() ?? client.phoneNumber1?.toString() ?? '';
+    // Acceseaza datele din Map
+    final name = client['name']?.toString() ?? '';
+    final phoneNumber = client['phoneNumber']?.toString() ?? client['phoneNumber1']?.toString() ?? '';
+    
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Validation data - Name: "$name", Phone: "$phoneNumber"');
     
     if (name.isEmpty) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client name is empty');
@@ -837,7 +843,7 @@ class GoogleDriveService extends ChangeNotifier {
   /// Salveaza un singur client in Google Sheets cu noua logica automata
   Future<String?> saveClientToXlsx(dynamic client) async {
     debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx START ==========');
-    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client: ${client?.name ?? 'NULL'} (${client?.phoneNumber ?? 'NULL'})');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client: ${client?['name'] ?? 'NULL'} (${client?['phoneNumber'] ?? 'NULL'})');
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client type: ${client.runtimeType}');
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Authentication status: $_isAuthenticated');
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Drive API: ${_driveApi != null ? 'OK' : 'NULL'}');
@@ -891,6 +897,18 @@ class GoogleDriveService extends ChangeNotifier {
         return _lastError ?? 'Eroare la găsirea sau crearea foii de calcul pentru luna curentă.';
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet title: $sheetTitle');
+
+      // Step 5.5: Check if client already exists in sheet
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5.5 - Checking if client already exists...');
+      final clientPhoneNumber = client['phoneNumber']?.toString() ?? client['phoneNumber1']?.toString() ?? '';
+      final clientExists = await _checkIfClientExistsInSheet(spreadsheetId, sheetTitle, clientPhoneNumber);
+      
+      if (clientExists) {
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client already exists in sheet, skipping save to prevent duplicates');
+        debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (SKIPPED - ALREADY EXISTS) ==========');
+        return null; // Success - client already exists, no need to save again
+      }
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client does not exist in sheet, proceeding with save');
   
       // Step 6: Prepare client data
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 6 - Preparing client data...');
@@ -944,6 +962,62 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (EXCEPTION) ==========');
       return 'Eroare la salvarea clientului: ${e.toString()}';
+    }
+  }
+
+  /// Verifica daca un client exista deja in sheet dupa numarul de telefon
+  Future<bool> _checkIfClientExistsInSheet(String spreadsheetId, String sheetTitle, String phoneNumber) async {
+    try {
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _checkIfClientExistsInSheet - Phone: $phoneNumber');
+      
+      if (_sheetsApi == null) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Sheets API is null');
+        return false;
+      }
+
+      if (phoneNumber.isEmpty) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Phone number is empty, cannot check for duplicates');
+        return false;
+      }
+
+      // Obtine toate datele din sheet
+      final response = await _sheetsApi!.spreadsheets.values.get(
+        spreadsheetId,
+        '$sheetTitle!A:Z', // Cauta in toate coloanele
+      );
+
+      if (response.values == null || response.values!.isEmpty) {
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet is empty, client does not exist');
+        return false;
+      }
+
+      // Normalizeaza numarul de telefon pentru comparare (elimina spatii, caractere speciale)
+      final normalizedPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Normalized phone: $normalizedPhone');
+
+      // Cauta numarul de telefon in toate randurile
+      for (int rowIndex = 0; rowIndex < response.values!.length; rowIndex++) {
+        final row = response.values![rowIndex];
+        for (int colIndex = 0; colIndex < row.length; colIndex++) {
+          final cell = row[colIndex];
+          final cellValue = cell.toString();
+          
+          // Normalizeaza valoarea celulei pentru comparare
+          final normalizedCellValue = cellValue.replaceAll(RegExp(r'[^\d]'), '');
+          
+          if (normalizedCellValue.isNotEmpty && normalizedCellValue.contains(normalizedPhone)) {
+            debugPrint('✅ GOOGLE_DRIVE_SERVICE: Found existing client with phone: $phoneNumber in row ${rowIndex + 1}, col ${colIndex + 1}');
+            return true;
+          }
+        }
+      }
+
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client with phone $phoneNumber does not exist in sheet');
+      return false;
+    } catch (e) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error checking if client exists: $e');
+      // In caz de eroare, permitem salvarea pentru a nu bloca procesul
+      return false;
     }
   }
 
@@ -1165,10 +1239,10 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _prepareClientRowData START');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client object: ${client.runtimeType}');
       
-      // Extrage datele de baza
-      final String clientName = client.name ?? '';
-      final phoneNumber1 = client.phoneNumber1 ?? client.phoneNumber ?? '';
-      final phoneNumber2 = client.phoneNumber2 ?? '';
+      // Extrage datele de baza din Map
+      final String clientName = client['name'] ?? '';
+      final phoneNumber1 = client['phoneNumber'] ?? client['phoneNumber1'] ?? '';
+      final phoneNumber2 = client['phoneNumber2'] ?? '';
       
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Basic data - Name: $clientName, Phone1: $phoneNumber1, Phone2: $phoneNumber2');
       
@@ -1177,14 +1251,14 @@ class GoogleDriveService extends ChangeNotifier {
       final formattedPhone2 = phoneNumber2.isNotEmpty ? phoneNumber2 : '';
       
       final String contact = ([formattedPhone1, formattedPhone2].where((p) => p.isNotEmpty).join('/'));
-      final String coDebitorName = client.coDebitorName ?? '';
+      final String coDebitorName = client['coDebitorName'] ?? '';
       final String ziua = DateTime.now().day.toString();
-      final String status = client.additionalInfo ?? client.discussionStatus ?? '';
+      final String status = client['additionalInfo'] ?? client['discussionStatus'] ?? '';
 
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted data - Contact: $contact, CoDebitor: $coDebitorName, Day: $ziua, Status: $status');
 
       // Extrage creditele si veniturile din formData
-      final formData = client.formData as Map<String, dynamic>? ?? {};
+      final formData = client['formData'] as Map<String, dynamic>? ?? {};
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Form data keys: ${formData.keys.toList()}');
       
       // DEBUG: Dump entire form data structure

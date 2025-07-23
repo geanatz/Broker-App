@@ -11,9 +11,8 @@ import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/auth_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/sheets_service.dart';
-import 'package:broker_app/backend/services/form_service.dart';
 import 'package:broker_app/backend/services/firebase_service.dart';
+import 'package:broker_app/backend/services/sheets_service.dart';
 
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
@@ -435,85 +434,78 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         } catch (e) {
           debugPrint('❌ STATUS_POPUP: Error invalidating cache: $e');
         }
-      }
-
-      // Muta clientul in categoria corespunzatoare in functie de status
-      switch (_selectedStatus) {
-        case 'Acceptat':
-          await _clientService.moveClientToRecente(
-            widget.client.phoneNumber,
-            additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
-            scheduledDateTime: finalDateTime ?? DateTime.now(), // FIX: Provide default value if null
-          );
-          break;
-          
-        case 'Amanat':
-          if (finalDateTime != null) {
-            await _clientService.moveClientToReveniri(
+        
+        // IMPORTANT: Nu mai apelează moveClientToRecente dacă întâlnirea a fost creată cu succes
+        // MeetingService deja gestionează mutarea clientului și incrementarea statisticilor
+        debugPrint('✅ STATUS_POPUP: Meeting creation handled by MeetingService, skipping duplicate client move');
+      } else {
+        // Doar dacă nu s-a creat întâlnire (ex: Acceptat fără dată programată), mută clientul manual
+        switch (_selectedStatus) {
+          case 'Acceptat':
+            await _clientService.moveClientToRecente(
               widget.client.phoneNumber,
-              scheduledDateTime: finalDateTime,
+              additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
+              scheduledDateTime: finalDateTime ?? DateTime.now(), // FIX: Provide default value if null
+            );
+            break;
+            
+          case 'Amanat':
+            if (finalDateTime != null) {
+              await _clientService.moveClientToReveniri(
+                widget.client.phoneNumber,
+                scheduledDateTime: finalDateTime,
+                additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
+              );
+            }
+            break;
+            
+          case 'Refuzat':
+            await _clientService.moveClientToRecenteRefuzat(
+              widget.client.phoneNumber,
               additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
             );
-          }
-          break;
-          
-        case 'Refuzat':
-          await _clientService.moveClientToRecenteRefuzat(
-            widget.client.phoneNumber,
-            additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
-          );
-          break;
+            break;
+        }
       }
 
       debugPrint('✅ Client mutat cu succes: ${widget.client.name} - Status: $_selectedStatus');
 
-      // Salveaza client in Excel prin Google Drive dupa salvarea cu succes
+      // IMPORTANT: Salveaza datele clientului in Google Sheets
+      debugPrint('🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE START ==========');
+      debugPrint('🔧 STATUS_POPUP: Client: ${widget.client.name} (${widget.client.phoneNumber})');
+      debugPrint('🔧 STATUS_POPUP: Status: $_selectedStatus');
+      debugPrint('🔧 STATUS_POPUP: Additional info: ${_statusController.text}');
+      debugPrint('🔧 STATUS_POPUP: Scheduled date: $finalDateTime');
+      
       try {
-        // IMPORTANT: Actualizeaza clientul cu statusul nou si informatiile aditionale
-        final updatedClient = widget.client.copyWith(
-          discussionStatus: _selectedStatus,
-          additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
-          scheduledDateTime: finalDateTime,
-        );
+        // Obtine clientul complet cu toate datele din Firebase
+        final firebaseService = NewFirebaseService();
+        final completeClient = await firebaseService.getClient(widget.client.phoneNumber);
         
-        // Obtine datele de formular din FormService si le ataseaza la client
-        final formService = FormService();
-        final clientFormData = formService.prepareDataForExport();
-        final clientData = clientFormData[widget.client.phoneNumber];
-        
-        // Ataseaza datele de formular la client
-        final clientWithFormData = updatedClient.copyWith(
-          formData: clientData,
-        );
-        
-        final googleDriveService = GoogleDriveService();
-        final saveResult = await googleDriveService.saveClientToXlsx(clientWithFormData);
-        
-        if (saveResult != null) {
-          // A fost o eroare la salvare
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Avertizare: $saveResult'),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 4),
-              ),
-            );
+        if (completeClient != null) {
+          debugPrint('✅ STATUS_POPUP: Retrieved complete client data from Firebase');
+          debugPrint('🔧 STATUS_POPUP: Client formData keys: ${completeClient['formData']?.keys.toList() ?? 'NULL'}');
+          
+          // Salveaza in Google Sheets
+          final googleDriveService = GoogleDriveService();
+          final saveResult = await googleDriveService.saveClientToXlsx(completeClient);
+          
+          if (saveResult == null) {
+            debugPrint('✅ STATUS_POPUP: Client saved successfully to Google Sheets');
+          } else {
+            debugPrint('❌ STATUS_POPUP: Failed to save to Google Sheets: $saveResult');
+            // Nu afișa eroare utilizatorului - salvarea în Firebase a reușit
           }
+        } else {
+          debugPrint('❌ STATUS_POPUP: Could not retrieve complete client data from Firebase');
         }
       } catch (e) {
-        debugPrint('❌ STATUS_POPUP: Error saving to Google Drive: $e');
-        // Nu oprim procesul pentru ca statusul a fost salvat cu succes
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Avertizare: Eroare la salvarea în Google Drive Excel'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
+        debugPrint('❌ STATUS_POPUP: Exception during Google Sheets save: $e');
+        debugPrint('❌ STATUS_POPUP: Stack trace: ${StackTrace.current}');
+        // Nu afișa eroare utilizatorului - salvarea în Firebase a reușit
       }
+      
+      debugPrint('🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE END ==========');
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -522,13 +514,13 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
       }
       
-      String successMessage = "Statusul a fost salvat cu succes si datele au fost salvate in Google Sheets";
+      String successMessage = "Statusul a fost salvat cu succes";
       if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
-        successMessage = "Statusul a fost salvat, intalnirea a fost programata si datele au fost salvate in Google Sheets";
+        successMessage = "Statusul a fost salvat si intalnirea a fost programata";
       } else if (_selectedStatus == 'Amanat') {
-        successMessage = "Clientul a fost mutat in sectiunea Reveniri si datele au fost salvate in Google Sheets";
+        successMessage = "Clientul a fost mutat in sectiunea Reveniri";
       } else if (_selectedStatus == 'Refuzat') {
-        successMessage = "Clientul a fost mutat in sectiunea Recente si datele au fost salvate in Google Sheets";
+        successMessage = "Clientul a fost mutat in sectiunea Recente";
       }
       _showSuccess(successMessage);
     } catch (e) {

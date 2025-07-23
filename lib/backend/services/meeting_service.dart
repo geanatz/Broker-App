@@ -110,10 +110,10 @@ class MeetingService {
   Timer? _availabilityCacheTimer;
 
   /// OPTIMIZAT: Notifica dashboard-ul cu debouncing îmbunătățit
-  Future<void> _notifyMeetingCreated() async {
+  Future<void> _notifyMeetingCreated(String clientPhoneNumber) async {
     try {
       final consultantToken = await _firebaseService.getCurrentConsultantToken();
-      debugPrint('🔔 MEETING_SERVICE: Notifying meeting created for consultant: ${consultantToken?.substring(0, 8) ?? 'NULL'}');
+      debugPrint('🔔 MEETING_SERVICE: Notifying meeting created for consultant: ${consultantToken?.substring(0, 8) ?? 'NULL'} for client: $clientPhoneNumber');
       
       if (consultantToken != null) {
         // OPTIMIZARE: Debouncing îmbunătățit pentru notificări
@@ -124,7 +124,7 @@ class MeetingService {
         _notificationDebounceTimer = Timer(const Duration(milliseconds: 50), () async {
           try {
             final dashboardService = DashboardService();
-            await dashboardService.onMeetingCreated(consultantToken);
+            await dashboardService.onMeetingCreated(consultantToken, clientPhoneNumber);
             debugPrint('✅ MEETING_SERVICE: Dashboard notified successfully');
             
             // OPTIMIZARE: Refresh singur în loc de multiple
@@ -177,18 +177,28 @@ class MeetingService {
       if (client != null) {
         debugPrint('📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: ${client.name}');
         
-        // OPTIMIZARE: Operație paralelă pentru mutarea clientului cu delay redus
-        await Future.wait([
-          clientService.moveClientToRecente(
-            phoneNumber,
-            scheduledDateTime: dateTime,
-            additionalInfo: 'Intalnire programata din calendar',
-          ),
-          // OPTIMIZARE: Invalidează cache-ul în paralel cu delay redus
-          _invalidateCacheWithDelay(),
-        ]);
-        
-        debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
+        // VERIFICARE: Nu incrementeaza statisticile daca clientul a fost deja contorizat
+        if (!client.isCompleted) {
+          debugPrint('📱 MEETING_SERVICE: Client not completed, proceeding with move and statistics increment');
+          
+          // OPTIMIZARE: Operație paralelă pentru mutarea clientului cu delay redus
+          await Future.wait([
+            clientService.moveClientToRecente(
+              phoneNumber,
+              scheduledDateTime: dateTime,
+              additionalInfo: 'Intalnire programata din calendar',
+            ),
+            // OPTIMIZARE: Invalidează cache-ul în paralel cu delay redus
+            _invalidateCacheWithDelay(),
+          ]);
+          
+          debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
+        } else {
+          debugPrint('⚠️ MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates');
+          
+          // Doar invalideaza cache-ul fara a incrementa statisticile
+          await _invalidateCacheWithDelay();
+        }
       } else {
         debugPrint('⚠️ MEETING_SERVICE: Client not found for phone: $phoneNumber');
       }
@@ -307,7 +317,7 @@ class MeetingService {
           },
         ),
         // OPTIMIZARE: Operații secundare în paralel pentru performanță
-        _notifyMeetingCreated(),
+        _notifyMeetingCreated(meetingData.phoneNumber),
       ]);
 
       final meetingCreated = results[0] as bool;
@@ -366,7 +376,7 @@ class MeetingService {
             'consultantId': FirebaseAuth.instance.currentUser?.uid,
           },
         ),
-        _notifyMeetingCreated(),
+        _notifyMeetingCreated(meetingData.phoneNumber),
       ]);
 
       debugPrint('✅ MEETING_SERVICE: Meeting edited successfully');
