@@ -62,9 +62,6 @@ enum PopupState {
 
 /// Main responsive clients popup widget
 class ClientsPopup extends StatefulWidget {
-  /// List of clients to display
-  final List<Client> clients;
-
   /// Callback when "Add Client" button is tapped
   final VoidCallback? onAddClient;
 
@@ -94,7 +91,6 @@ class ClientsPopup extends StatefulWidget {
 
   const ClientsPopup({
     super.key,
-    required this.clients,
     this.onAddClient,
     this.onExtractClients,
     this.onDeleteAllClients,
@@ -103,7 +99,7 @@ class ClientsPopup extends StatefulWidget {
     this.onEditClient,
     this.onSaveClient,
     this.onDeleteClient,
-    this.selectedClient,
+    this.selectedClient, required List<Client> clients,
   });
 
   @override
@@ -121,9 +117,35 @@ class _ClientsPopupState extends State<ClientsPopup> {
   double _ocrProgress = 0.0;
   String? _ocrError;
   Client? _editingClient;
+  
+  // Service pentru a asculta schimbările
+  late final ClientUIService _clientService;
+
+  @override
+  void initState() {
+    super.initState();
+    _clientService = SplashService().clientUIService;
+    _clientService.addListener(_onClientServiceChanged);
+  }
+
+  @override
+  void dispose() {
+    _clientService.removeListener(_onClientServiceChanged);
+    super.dispose();
+  }
+
+  /// Callback pentru schimbările în service
+  void _onClientServiceChanged() {
+    if (mounted) {
+      setState(() {
+        // Rebuild UI când se schimbă clienții în service
+      });
+    }
+  }
 
   /// Incepe procesul de creare client cu client temporar
   void _startClientCreation() {
+    debugPrint('🔵 POPUP: Starting client creation');
     
     // Creeaza clientul temporar in service
     final clientService = SplashService().clientUIService;
@@ -617,17 +639,30 @@ class _ClientsPopupState extends State<ClientsPopup> {
       final ocrResult = _ocrResults![_selectedOcrImagePath];
       if (ocrResult?.extractedClients != null) {
         // Converteste UnifiedClientModel la Client
-        return ocrResult!.extractedClients!.map((contact) => Client(
+        final ocrClients = ocrResult!.extractedClients!.map((contact) => Client(
           name: contact.basicInfo.name,
           phoneNumber1: contact.basicInfo.phoneNumber1,
           phoneNumber2: contact.basicInfo.phoneNumber2,
           coDebitorName: contact.basicInfo.coDebitorName,
         )).toList();
+        
+        return ocrClients;
       }
       return [];
     } else {
-      // Afiseaza toti clientii din lista principala
-      return widget.clients;
+      // Afiseaza toti clientii din service (inclusiv temporari pentru popup)
+      final clientService = SplashService().clientUIService;
+      final serviceClients = clientService.clientsWithTemporary;
+      
+      // Converteste ClientModel la Client pentru popup
+      final popupClients = serviceClients.map((clientModel) => Client(
+        name: clientModel.name,
+        phoneNumber1: clientModel.phoneNumber1,
+        phoneNumber2: clientModel.phoneNumber2,
+        coDebitorName: clientModel.coDebitorName,
+      )).toList();
+      
+      return popupClients;
     }
   }
 
@@ -1078,7 +1113,12 @@ class _ClientsPopupState extends State<ClientsPopup> {
                                     const SizedBox(height: AppTheme.smallGap),
                                 itemBuilder: (context, index) {
                                   final client = _getClientsToDisplay()[index];
-                                  final isSelected = widget.selectedClient == client;
+                                  
+                                  // Determina focus-ul din service în loc de widget.selectedClient
+                                  final focusedClient = _clientService.focusedClient;
+                  final isSelected = focusedClient != null && 
+                      focusedClient.phoneNumber1 == client.phoneNumber1 &&
+                      focusedClient.name == client.name;
                                   
                                   if (isSelected) {
                                     return DarkItem3(
@@ -1330,6 +1370,8 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   
   /// Cancel temporary client creation
   void _cancelClientCreation() {
+    debugPrint('🔵 POPUP: Canceling client creation');
+    
     // Canceling client creation
     
     // Cancel the temporary client first
@@ -1365,6 +1407,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
 
   /// Salveaza clientul curent
   Future<void> _saveClient() async {
+    debugPrint('🔵 POPUP: Saving client');
     
     try {
       final client = _buildClientFromForm();
@@ -1382,6 +1425,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
       final success = await clientService.finalizeTemporaryClient();
       
       if (success) {
+        debugPrint('🔵 POPUP: Client saved successfully');
         
         if (widget.onSaveClient != null) {
           widget.onSaveClient!(client);
@@ -1390,6 +1434,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         // Don't call Navigator.pop() since this is not a dialog
         // The parent will handle closing the popup
       } else {
+        debugPrint('🔵 POPUP: Failed to save client');
         // Failed to save client
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1401,6 +1446,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         }
       }
         } catch (e) {
+      debugPrint('🔵 POPUP: Exception in _saveClient: $e');
       // Exception in _saveClient
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,6 +1,5 @@
 import '../../app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
 import '../components/headers/widget_header2.dart';
 import '../components/headers/widget_header3.dart';
@@ -65,6 +64,10 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// OPTIMIZATION: Track last tapped client to prevent redundant operations
   String? _lastTappedClientId;
   DateTime? _lastTapTime;
+  
+  // FIX: Track last focused clients to prevent unnecessary updates
+  String? _lastFocusedTemporaryClient;
+  String? _lastFocusedRealClient;
 
   @override
   void initState() {
@@ -212,59 +215,6 @@ class _ClientsPaneState extends State<ClientsPane> {
     });
   }
 
-  /// FIX: Advanced client switching with detailed performance profiling
-  Future<void> _handleClientTap(ClientModel client) async {
-    // OPTIMIZATION: Minimal protection for ultra-fast response
-    final now = DateTime.now();
-    if (_isSwitchingClient || 
-        (_lastTappedClientId == client.phoneNumber && 
-         _lastTapTime != null && 
-         now.difference(_lastTapTime!).inMilliseconds < 50)) {
-
-      return;
-    }
-    
-    try {
-      _isSwitchingClient = true;
-      _lastTappedClientId = client.phoneNumber;
-      _lastTapTime = now;
-      
-      // FIX: Log focus state before client tap
-      _clientService.logFocusState('CLIENTS_BEFORE_TAP');
-
-    
-      // OPTIMIZATION: Strategic area switching with timing
-      if (widget.onSwitchToFormArea != null) {
-
-        widget.onSwitchToFormArea!();
-      }
-      
-      
-      // FIX: Advanced client focusing with detailed timing
-      
-      await _clientService.focusClient(client.phoneNumber);
-      
-      
-      // FIX: Log focus state after focus operation
-      _clientService.logFocusState('CLIENTS_AFTER_FOCUS');
-      
-      // FIX: Force immediate UI update with timing
-      if (mounted) {
-        setState(() {});
-      }
-      
-      
-      
-      
-      // FIX: Log final focus state
-      _clientService.logFocusState('CLIENTS_TAP_COMPLETE');
-      
-    } catch (e) {
-      debugPrint('❌ CLIENTS: Error switching client: $e');
-    } finally {
-      _isSwitchingClient = false;
-    }
-  }
 
   /// OPTIMIZAT: Construieste lista de clienti pentru o anumita categorie cu cache
   Widget _buildClientsList(ClientCategory category) {
@@ -290,14 +240,12 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isApeluri = category == ClientCategory.apeluri;
     
     if (isApeluri) {
-              // Pentru sectiunea Clienti (care e Expanded), folosim ListView normal
       return ListView.separated(
         itemCount: clients.length,
         separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
         itemBuilder: (context, index) => _buildClientItem(clients[index]),
       );
     } else {
-      // Pentru Reveniri si Recente, limitez la maxim 3 clienti vizibili
       const int maxVisibleClients = 3;
       const double itemHeight = 64.0; // Inaltime ajustata pentru LightItem7/DarkItem7 (56px + padding)
       final double gapHeight = AppTheme.smallGap; // Folosesc valoarea exacta din tema
@@ -319,58 +267,106 @@ class _ClientsPaneState extends State<ClientsPane> {
     }
   }
 
-  /// Construieste un item pentru un client
+  /// Construieste un item de client cu focus management
   Widget _buildClientItem(ClientModel client) {
-    final bool isFocused = client.status == ClientStatus.focused;
-    final bool hasDiscussionStatus = client.discussionStatus != null && client.discussionStatus!.isNotEmpty;
+    final bool isFocused = _clientService.focusedClient?.phoneNumber == client.phoneNumber;
     
-    // Determina ce sa afiseze ca descriere
-    String description;
-    if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
-      // Pentru clientii amanati, afiseaza mereu timpul ramas pana la data amanarii
-      description = _getTimeUntilScheduledDate(client.scheduledDateTime!);
-    } else if (hasDiscussionStatus) {
-      // Pentru ceilalti clienti, daca are status salvat, afiseaza statusul
-      description = client.discussionStatus!;
-    } else {
-      // Pentru ceilalti clienti, afiseaza numarul de telefon
-      description = client.phoneNumber;
+    // FIX: Previne focus loss la editare prin verificarea daca clientul este temporar
+    final bool isTemporary = client.id.startsWith('temp_');
+    
+    // FIX: Pentru clientii temporari, nu reseteaza focusul la fiecare update
+    if (isTemporary && _lastFocusedTemporaryClient != client.id) {
+      _lastFocusedTemporaryClient = client.id;
     }
     
-    if (isFocused) {
-      return DarkItem7(
+    // FIX: Pentru clientii reali, reseteaza focusul doar daca s-a schimbat
+    if (!isTemporary && _lastFocusedRealClient != client.phoneNumber) {
+      _lastFocusedRealClient = client.phoneNumber;
+    }
+    
+    // FIX: Verifica daca clientul are status de discutie salvat
+    final bool hasDiscussionStatus = client.formData['discussionStatus'] != null;
+    
+    return GestureDetector(
+      onTap: () {
+        // FIX: Pentru clientii din "Recente" - primul click focus, al doilea click status popup
+        if (client.category == ClientCategory.recente && hasDiscussionStatus) {
+          // Client din "Recente" cu status salvat - al doilea click deschide status popup
+          _showStatusPopup(client);
+        } else {
+          // FIX: Pentru TOATE clientii - primul click focus formular
+          _focusClient(client);
+        }
+      },
+      child: isFocused ? DarkItem7(
         title: client.name,
-        description: description,
-        svgAsset: 'assets/editIcon.svg', // Întotdeauna editIcon pentru client focusat
-        onTap: () => _showClientSavePopup(client),
-        onIconTap: () => _showClientSavePopup(client),
-      );
-    } else {
-      return LightItem7(
+        description: client.phoneNumber1,
+      ) : LightItem7(
         title: client.name,
-        description: description,
-        svgAsset: 'assets/viewIcon.svg', // Întotdeauna viewIcon pentru client nefocusat
-        onTap: () {
-          // OPTIMIZARE: Folosește mecanismul debounced pentru switching
-          _handleClientTap(client);
-        },
-      );
+        description: client.phoneNumber1,
+      ),
+    );
+  }
+  
+  /// FIX: Focus client and switch to form area
+  void _focusClient(ClientModel client) async {
+    // OPTIMIZATION: Minimal protection for ultra-fast response
+    final now = DateTime.now();
+    if (_isSwitchingClient || 
+        (_lastTappedClientId == client.phoneNumber && 
+         _lastTapTime != null && 
+         now.difference(_lastTapTime!).inMilliseconds < 50)) {
+      return;
+    }
+    
+    try {
+      _isSwitchingClient = true;
+      _lastTappedClientId = client.phoneNumber;
+      _lastTapTime = now;
+      
+      // FIX: Log focus state before client tap
+      _clientService.logFocusState('CLIENTS_BEFORE_TAP');
+
+      // OPTIMIZATION: Strategic area switching with timing
+      if (widget.onSwitchToFormArea != null) {
+        widget.onSwitchToFormArea!();
+      }
+      
+      // FIX: Advanced client focusing with detailed timing
+      await _clientService.focusClient(client.phoneNumber);
+      
+      // FIX: Log focus state after focus operation
+      _clientService.logFocusState('CLIENTS_AFTER_FOCUS');
+      
+      // FIX: Force immediate UI update with timing
+      if (mounted) {
+        setState(() {});
+      }
+      
+      // FIX: Log final focus state
+      _clientService.logFocusState('CLIENTS_TAP_COMPLETE');
+      
+    } catch (e) {
+      debugPrint('❌ CLIENTS: Error switching client: $e');
+    } finally {
+      _isSwitchingClient = false;
     }
   }
-
-  /// Afiseaza popup-ul pentru salvarea statusului clientului
-  void _showClientSavePopup(ClientModel client) {
+  
+  /// FIX: Show status popup for client
+  void _showStatusPopup(ClientModel client) {
     showDialog(
       context: context,
       builder: (context) => ClientSavePopup(
         client: client,
         onSaved: () {
-          // Refresh UI sau alte actiuni dupa salvare
-          setState(() {});
+          // Handle save
+          debugPrint('🔵 CLIENTS: Status saved for ${client.name}');
         },
       ),
     );
   }
+
 
   /// Construieste o sectiune (Clienti, Reveniri, Recente)
   Widget _buildSection(String title, ClientCategory category, {bool canCollapse = true}) {
@@ -465,6 +461,7 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   @override
   Widget build(BuildContext context) {
+    
     // FIX: Log focus state during build
     _clientService.logFocusState('CLIENTS_BUILD');
     
@@ -507,8 +504,8 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   /// FIX: Ensure clients pane reflects current focus state
   void _ensureFocusStateConsistency() {
-    final currentFocusedClient = _clientService.focusedClient;
     
+    final currentFocusedClient = _clientService.focusedClient;
     
     if (currentFocusedClient != null) {
       // Validate that the focused client is properly set in the list
@@ -517,49 +514,10 @@ class _ClientsPaneState extends State<ClientsPane> {
           client.status == ClientStatus.focused);
       
       if (!focusedInList) {
-
         _clientService.fixFocusStateInconsistencies();
       }
     }
     
-    
   }
 
-  /// Calculeaza timpul ramas pana la data amanarii in format text
-  String _getTimeUntilScheduledDate(DateTime scheduledDateTime) {
-    final now = DateTime.now();
-    final difference = scheduledDateTime.difference(now);
-    
-    if (difference.isNegative) {
-      // Pentru programarile din trecut, calculeaza cat timp a trecut
-      final pastDifference = now.difference(scheduledDateTime);
-      final days = pastDifference.inDays;
-      final hours = pastDifference.inHours;
-      final minutes = pastDifference.inMinutes;
-      
-      if (days > 0) {
-        return 'acum $days ${days == 1 ? 'zi' : 'zile'}';
-      } else if (hours > 0) {
-        return 'acum $hours ${hours == 1 ? 'ora' : 'ore'}';
-      } else if (minutes > 0) {
-        return 'acum $minutes ${minutes == 1 ? 'minut' : 'minute'}';
-      } else {
-        return 'acum';
-      }
-    }
-    
-    final days = difference.inDays;
-    final hours = difference.inHours;
-    final minutes = difference.inMinutes;
-    
-    if (days > 0) {
-      return 'in $days ${days == 1 ? 'zi' : 'zile'}';
-    } else if (hours > 0) {
-      return 'in $hours ${hours == 1 ? 'ora' : 'ore'}';
-    } else if (minutes > 0) {
-      return 'in $minutes ${minutes == 1 ? 'minut' : 'minute'}';
-    } else {
-      return 'acum';
-    }
-  }
 }

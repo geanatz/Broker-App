@@ -937,9 +937,6 @@ class ClientUIService extends ChangeNotifier {
   // Clientul curent focusat (pentru care se afiseaza formularul)
   ClientModel? _focusedClient;
   
-  // Client temporar pentru crearea in timp real
-  ClientModel? _temporaryClient;
-  
   // Firebase service pentru persistenta datelor
   final ClientsService _firebaseService = ClientsService();
   
@@ -950,7 +947,6 @@ class ClientUIService extends ChangeNotifier {
   // Getters
   List<ClientModel> get clients => List.unmodifiable(_clients);
   ClientModel? get focusedClient => _focusedClient;
-  ClientModel? get temporaryClient => _temporaryClient;
   
   /// Expune ClientsService pentru componente care au nevoie de el direct
   ClientsService get firebaseService => _firebaseService;
@@ -971,20 +967,14 @@ class ClientUIService extends ChangeNotifier {
   
   /// Obtine clientii inclusiv cel temporar pentru afisare
   List<ClientModel> get clientsWithTemporary {
-    final allClients = List<ClientModel>.from(_clients);
-    if (_temporaryClient != null) {
-      allClients.add(_temporaryClient!);
-    }
-    return allClients;
+    // Clientul temporar este acum in lista principala, deci returnam direct lista
+    return List.unmodifiable(_clients);
   }
   
   /// Obtine clientii dintr-o anumita categorie inclusiv cel temporar
   /// FIX: Sorteaza clientii dupa nume pentru a preveni shuffling-ul in UI
   List<ClientModel> getClientsByCategoryWithTemporary(ClientCategory category) {
     final categoryClients = _clients.where((client) => client.category == category).toList();
-    if (_temporaryClient != null && _temporaryClient!.category == category) {
-      categoryClients.add(_temporaryClient!);
-    }
     // FIX: Sorteaza dupa nume pentru ordine consistenta
     categoryClients.sort((a, b) => a.name.compareTo(b.name));
     return categoryClients;
@@ -993,9 +983,12 @@ class ClientUIService extends ChangeNotifier {
   /// Obtine clientii dintr-o anumita categorie fara cel temporar (pentru clients-pane)
   /// FIX: Sorteaza clientii dupa nume pentru a preveni shuffling-ul in UI
   List<ClientModel> getClientsByCategoryWithoutTemporary(ClientCategory category) {
-    final categoryClients = _clients.where((client) => client.category == category).toList();
+    // Exclude clientii temporari (cu ID care incepe cu 'temp_')
+    final categoryClients = _clients.where((client) => 
+        client.category == category && !client.id.startsWith('temp_')).toList();
     // FIX: Sorteaza dupa nume pentru ordine consistenta
     categoryClients.sort((a, b) => a.name.compareTo(b.name));
+    
     return categoryClients;
   }
   
@@ -1340,16 +1333,11 @@ class ClientUIService extends ChangeNotifier {
   
   /// Creeaza un client temporar pentru crearea in timp real
   void createTemporaryClient() {
-    // FIX: Defocuseaza TOȚI clienții înainte de a crea clientul temporar
-    for (int i = 0; i < _clients.length; i++) {
-      if (_clients[i].status == ClientStatus.focused) {
-        _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-      }
-    }
+    debugPrint('🔵 TEMP_CLIENT: Creating temporary client');
     
     // Creeaza un client temporar cu ID unic
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    _temporaryClient = ClientModel(
+    final tempClient = ClientModel(
       id: tempId,
       name: 'Client nou',
       phoneNumber1: '', // Empty phone number initially
@@ -1358,15 +1346,17 @@ class ClientUIService extends ChangeNotifier {
       formData: {},
     );
     
-    // Focuseaza clientul temporar
-    _focusedClient = _temporaryClient;
+    // Adauga direct in lista principala (nu separat)
+    _clients.add(tempClient);
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureSingleFocus(); // FIX: Asigură consistența focus-ului
-      // FIX: Sorteaza lista dupa crearea clientului temporar
-      _clients.sort((a, b) => a.name.compareTo(b.name));
-      notifyListeners();
-    });
+    // Focuseaza clientul temporar
+    _focusedClient = tempClient;
+    
+    // Sorteaza lista
+    _clients.sort((a, b) => a.name.compareTo(b.name));
+    
+    debugPrint('🔵 TEMP_CLIENT: Added temp client to main list, total clients: ${_clients.length}');
+    notifyListeners();
   }
 
   // =================== REAL-TIME LISTENERS ===================
@@ -1455,6 +1445,9 @@ class ClientUIService extends ChangeNotifier {
         }
       }
 
+      // FIX: Preserve temporary clients during real-time updates
+      final temporaryClients = _clients.where((client) => client.id.startsWith('temp_')).toList();
+      
       // FIX: Check if data actually changed before updating
       final hasChanged = _clients.length != updatedClients.length ||
           !_clients.every((client) => updatedClients.any((newClient) => 
@@ -1470,8 +1463,8 @@ class ClientUIService extends ChangeNotifier {
         // FIX: Sorteaza clientii dupa nume pentru ordine consistenta
         updatedClients.sort((a, b) => a.name.compareTo(b.name));
         
-        // Actualizează lista de clienți
-        _clients = updatedClients;
+        // Actualizează lista de clienți, păstrând clienții temporari
+        _clients = [...updatedClients, ...temporaryClients];
         
         // FIX: Preserve focus on the same client if it still exists
         if (currentlyFocusedPhone != null) {
@@ -1492,8 +1485,8 @@ class ClientUIService extends ChangeNotifier {
         } else {
           // No client was focused before, focus first available
           if (_clients.isNotEmpty) {
+            _focusedClient = _clients.first;
             _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
-            _focusedClient = _clients[0];
           } else {
             _focusedClient = null;
           }
@@ -1571,114 +1564,117 @@ class ClientUIService extends ChangeNotifier {
     String? phoneNumber2,
     String? coDebitorName,
   }) {
-    if (_temporaryClient == null) return;
+    // Gaseste clientul temporar in lista principala
+    final tempIndex = _clients.indexWhere((client) => client.id.startsWith('temp_'));
+    if (tempIndex == -1) {
+      debugPrint('🔵 TEMP_CLIENT: No temporary client found in list');
+      return;
+    }
     
     // Only update name if user actually typed something (not empty)
     final newName = name?.trim();
     final shouldUpdateName = newName != null && newName.isNotEmpty;
     
-    _temporaryClient = _temporaryClient!.copyWith(
-      name: shouldUpdateName ? newName : _temporaryClient!.name,
-      phoneNumber1: phoneNumber?.trim() ?? _temporaryClient!.phoneNumber1,
+    // Actualizeaza direct in lista principala
+    _clients[tempIndex] = _clients[tempIndex].copyWith(
+      name: shouldUpdateName ? newName : _clients[tempIndex].name,
+      phoneNumber1: phoneNumber?.trim() ?? _clients[tempIndex].phoneNumber1,
       phoneNumber2: phoneNumber2?.trim().isEmpty == true ? null : phoneNumber2?.trim(),
       coDebitorName: coDebitorName?.trim().isEmpty == true ? null : coDebitorName?.trim(),
     );
     
-    // Update focused client if it's the same
-    if (_focusedClient?.id == _temporaryClient!.id) {
-      _focusedClient = _temporaryClient;
-    }
+    // Update focused client reference
+    _focusedClient = _clients[tempIndex];
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifyListeners();
-    });
+    notifyListeners();
   }
   
   /// Finalizeaza clientul temporar si il salveaza in Firebase
   Future<bool> finalizeTemporaryClient() async {
-    if (_temporaryClient == null) return false;
+    // Gaseste clientul temporar in lista principala
+    final tempIndex = _clients.indexWhere((client) => client.id.startsWith('temp_'));
+    if (tempIndex == -1) {
+      debugPrint('🔵 TEMP_CLIENT: No temporary client found in list');
+      return false;
+    }
+    
+    final tempClient = _clients[tempIndex];
+    debugPrint('🔵 TEMP_CLIENT: Finalizing client: ${tempClient.name} (${tempClient.phoneNumber1})');
     
     try {
       // Valideaza datele
-      if (_temporaryClient!.name.trim().isEmpty || 
-          _temporaryClient!.phoneNumber1.trim().isEmpty) {
+      if (tempClient.name.trim().isEmpty || 
+          tempClient.phoneNumber1.trim().isEmpty) {
+        debugPrint('🔵 TEMP_CLIENT: Validation failed - empty name or phone');
         return false;
       }
       
       // Creeaza clientul real in Firebase
       final success = await _firebaseService.createClient(
-        phoneNumber: _temporaryClient!.phoneNumber1.trim(),
-        name: _temporaryClient!.name.trim(),
-        coDebitorName: _temporaryClient!.coDebitorName,
-        phoneNumber2: _temporaryClient!.phoneNumber2,
-        status: _temporaryClient!.status,
-        category: _temporaryClient!.category,
-        formData: _temporaryClient!.formData,
+        phoneNumber: tempClient.phoneNumber1.trim(),
+        name: tempClient.name.trim(),
+        coDebitorName: tempClient.coDebitorName,
+        phoneNumber2: tempClient.phoneNumber2,
+        status: tempClient.status,
+        category: tempClient.category,
+        formData: tempClient.formData,
       );
       
       if (success) {
-        // FIX: Defocuseaza TOȚI clienții înainte de a adăuga noul client
-        for (int i = 0; i < _clients.length; i++) {
-          if (_clients[i].status == ClientStatus.focused) {
-            _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-          }
-        }
+        debugPrint('🔵 TEMP_CLIENT: Firebase creation successful');
         
-        // Adauga in lista locala
-        final realClient = _temporaryClient!.copyWith(
-          id: _temporaryClient!.phoneNumber1.trim(),
-          status: ClientStatus.focused, // Focuseaza noul client real
+        // Transforma clientul temporar in client real (in-place)
+        final realClient = tempClient.copyWith(
+          id: tempClient.phoneNumber1.trim(), // ID real
         );
-        _clients.add(realClient);
         
-        // FIX: Sorteaza lista dupa adaugarea noului client
-        _clients.sort((a, b) => a.name.compareTo(b.name));
+        // Inlocuieste clientul temporar cu cel real in aceeasi pozitie
+        _clients[tempIndex] = realClient;
         
         // Focuseaza clientul real
         _focusedClient = realClient;
-        _temporaryClient = null;
         
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          notifyListeners();
-        });
+        // Sorteaza lista
+        _clients.sort((a, b) => a.name.compareTo(b.name));
+        
+        debugPrint('🔵 TEMP_CLIENT: Client finalized successfully');
+        
+        notifyListeners();
         return true;
       } else {
+        debugPrint('🔵 TEMP_CLIENT: Firebase creation failed');
         return false;
       }
     } catch (e) {
+      debugPrint('🔵 TEMP_CLIENT: Exception during finalization: $e');
       return false;
     }
   }
   
   /// Anuleaza clientul temporar
   void cancelTemporaryClient() {
-    if (_temporaryClient == null) return;
-    
-    // FIX: Defocuseaza TOȚI clienții înainte de a anula clientul temporar
-    for (int i = 0; i < _clients.length; i++) {
-      if (_clients[i].status == ClientStatus.focused) {
-        _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-      }
+    // Gaseste clientul temporar in lista principala
+    final tempIndex = _clients.indexWhere((client) => client.id.startsWith('temp_'));
+    if (tempIndex == -1) {
+      debugPrint('🔵 TEMP_CLIENT: No temporary client found in list');
+      return;
     }
+    
+    debugPrint('🔵 TEMP_CLIENT: Canceling temporary client');
+    
+    // Elimina clientul temporar din lista principala
+    _clients.removeAt(tempIndex);
     
     // Focuseaza primul client real daca exista
     if (_clients.isNotEmpty) {
       _focusedClient = _clients.first;
-      // FIX: Nu apele focusClient pentru a evita recursiunea
       _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
     } else {
       _focusedClient = null;
     }
     
-    _temporaryClient = null;
-    
-    // FIX: Notificare simplă fără cache refresh pentru a evita infinite loop
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureSingleFocus();
-      // FIX: Sorteaza lista dupa anularea clientului temporar
-      _clients.sort((a, b) => a.name.compareTo(b.name));
-      notifyListeners();
-    });
+    debugPrint('🔵 TEMP_CLIENT: Temporary client canceled');
+    notifyListeners();
   }
   
   /// Actualizeaza datele formularului pentru clientul focusat
@@ -2200,7 +2196,7 @@ class ClientUIService extends ChangeNotifier {
 
   /// FIX: Log current focus state
   void logFocusState(String context) {
-    // Focus state logging removed for cleanup
+    // Focus state logging for debugging purposes
   }
 
   @override
@@ -2310,6 +2306,20 @@ class ClientUIService extends ChangeNotifier {
       
     } catch (e) {
       FirebaseLogger.error('❌ CLIENT_SERVICE: Error in forced batch deletion: $e');
+    }
+  }
+
+  /// Verifica daca exista clienti temporari in lista
+  bool get hasTemporaryClient {
+    return _clients.any((client) => client.id.startsWith('temp_'));
+  }
+  
+  /// Obtine clientul temporar din lista (daca exista)
+  ClientModel? get temporaryClient {
+    try {
+      return _clients.firstWhere((client) => client.id.startsWith('temp_'));
+    } catch (e) {
+      return null;
     }
   }
 
