@@ -151,13 +151,34 @@ class _InputField1State extends State<InputField1> {
 
     String processedValue = value;
 
+    int kAdjustment = 0;
+    int kStart = 0;
+    int kCount = 0;
+    // Detectam daca la pozitia cursorului era un k (sau mai multe)
+    if (widget.enableKTransformation && oldCursorPos > 0 && oldCursorPos <= value.length) {
+      // Cautam inapoi de la cursor pentru secventa de k-uri
+      int i = oldCursorPos - 1;
+      while (i >= 0 && (value[i] == 'k' || value[i] == 'K')) {
+        kCount++;
+        i--;
+      }
+      if (kCount > 0 && i >= 0 && RegExp(r'\d').hasMatch(value[i])) {
+        // Avem secventa de k-uri dupa cifra
+        kStart = i + 1;
+        kAdjustment = kCount * 2; // fiecare k devine 000 (deci +2 caractere in plus fata de k)
+      } else {
+        kCount = 0;
+        kAdjustment = 0;
+      }
+    }
+
     if (widget.enableKTransformation) {
       processedValue = _transformKToZeros(processedValue);
     }
 
     if (widget.enableCommaFormatting) {
       final numericValue = processedValue.replaceAll(',', '');
-      if (numericValue.isNotEmpty && RegExp(r'^\d*\.?\d*$').hasMatch(numericValue)) {
+      if (numericValue.isNotEmpty && RegExp(r'^\d*\.?\d*').hasMatch(numericValue)) {
         processedValue = _formatWithCommas(numericValue);
       }
     }
@@ -176,6 +197,10 @@ class _InputField1State extends State<InputField1> {
         newCursorPos++;
       }
       // Ajustam daca e nevoie
+      if (kAdjustment > 0 && kStart < oldCursorPos) {
+        // Daca secventa de k-uri era inainte de cursor, ajustam pozitia
+        newCursorPos += kAdjustment;
+      }
       if (newCursorPos > processedValue.length) newCursorPos = processedValue.length;
       if (newCursorPos < 0) newCursorPos = 0;
       widget.controller!.value = TextEditingValue(
