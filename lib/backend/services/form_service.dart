@@ -356,7 +356,10 @@ class FormService extends ChangeNotifier {
 
   /// Gestioneaza schimbarea clientului
   void _onClientChanged() {
-    notifyListeners();
+    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    Future.microtask(() {
+      notifyListeners();
+    });
   }
 
   /// Obtine formularele de credit pentru client
@@ -433,7 +436,10 @@ class FormService extends ChangeNotifier {
         forms.add(CreditFormModel());
       }
       
-      notifyListeners();
+      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      Future.microtask(() {
+        notifyListeners();
+      });
       
       // Automatically save to Firebase after updating form
       _autoSaveToFirebaseForClient(clientId);
@@ -452,7 +458,10 @@ class FormService extends ChangeNotifier {
         forms.add(IncomeFormModel());
       }
       
-      notifyListeners();
+      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      Future.microtask(() {
+        notifyListeners();
+      });
       
       // Automatically save to Firebase after updating form
       _autoSaveToFirebaseForClient(clientId);
@@ -476,7 +485,10 @@ class FormService extends ChangeNotifier {
         forms.add(CreditFormModel());
       }
       
-      notifyListeners();
+      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      Future.microtask(() {
+        notifyListeners();
+      });
       
       // Automatically save to Firebase after removing form
       _autoSaveToFirebaseForClient(clientId);
@@ -500,7 +512,10 @@ class FormService extends ChangeNotifier {
         forms.add(IncomeFormModel());
       }
       
-      notifyListeners();
+      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      Future.microtask(() {
+        notifyListeners();
+      });
       
       // Automatically save to Firebase after removing form
       _autoSaveToFirebaseForClient(clientId);
@@ -570,7 +585,10 @@ class FormService extends ChangeNotifier {
           _showingClientLoanForm[clientId] = cachedData['showingClientLoanForm'];
           _showingClientIncomeForm[clientId] = cachedData['showingClientIncomeForm'];
           
-          notifyListeners();
+          // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+          Future.microtask(() {
+            notifyListeners();
+          });
           PerformanceMonitor.endTimer('loadFormData');
           
           final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
@@ -706,7 +724,10 @@ class FormService extends ChangeNotifier {
         final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
         debugPrint('🚀 FORM_SERVICE: Cache update completed in ${cacheTime}ms');
         
-        notifyListeners();
+        // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+        Future.microtask(() {
+          notifyListeners();
+        });
         PerformanceMonitor.endTimer('loadFormData');
         
         final totalTime = DateTime.now().difference(startTime).inMilliseconds;
@@ -726,7 +747,10 @@ class FormService extends ChangeNotifier {
         final initTime = DateTime.now().difference(initStartTime).inMilliseconds;
         debugPrint('🚀 FORM_SERVICE: Empty form initialization completed in ${initTime}ms');
         
-        notifyListeners();
+        // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+        Future.microtask(() {
+          notifyListeners();
+        });
         PerformanceMonitor.endTimer('loadFormData');
         
         final totalTime = DateTime.now().difference(startTime).inMilliseconds;
@@ -791,7 +815,10 @@ class FormService extends ChangeNotifier {
     // OPTIMIZARE: Clear cache pentru client
     _formDataCache.remove(clientId);
     
-    notifyListeners();
+    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    Future.microtask(() {
+      notifyListeners();
+    });
   }
 
   /// OPTIMIZARE: Curata cache-ul de form data
@@ -814,7 +841,10 @@ class FormService extends ChangeNotifier {
   /// FIX: Clear form data cache for a specific client
   void clearFormDataCacheForClient(String clientId) {
     _formDataCache.remove(clientId);
-    notifyListeners();
+    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    Future.microtask(() {
+      notifyListeners();
+    });
   }
 
   /// Pregateste datele pentru export
@@ -935,7 +965,10 @@ class FormService extends ChangeNotifier {
     _showingClientLoanForm[clientId] = true;
     _showingClientIncomeForm[clientId] = true;
     
-    notifyListeners();
+    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    Future.microtask(() {
+      notifyListeners();
+    });
   }
 }
 

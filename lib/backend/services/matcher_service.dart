@@ -212,11 +212,7 @@ class MatcherService extends ChangeNotifier {
       // OPTIMIZARE: Configurează curățarea automată a cache-ului de venituri
       _setupIncomeCacheCleanup();
       
-      // DEBUG: Testeaza parsing-ul duratei de angajament
-      _testTenureParsing();
-      
-      // TEST: Verifica calculele conform documentatiei
-      testCalculations();
+
       
       // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
       Future.microtask(() {
@@ -563,13 +559,10 @@ class MatcherService extends ChangeNotifier {
           
           // FIX: Verifică dacă criteriile încărcate sunt din versiunea veche (cu valori mici pentru maxLoanAmount sau fără minAge)
           bool hasOldCriteria = false;
-          debugPrint('Checking loaded criteria for migration...');
           for (final criteria in loadedCriteria) {
-            debugPrint('Checking criteria for ${criteria.bankName}: minAgeMale=${criteria.minAgeMale}, minAgeFemale=${criteria.minAgeFemale}');
             if (criteria.maxLoanAmount < 100000 || // Dacă maxLoanAmount e sub 100.000, sunt criterii vechi
                 !_hasMinAgeFields(criteria)) { // Sau dacă nu au câmpurile minAge
               hasOldCriteria = true;
-              debugPrint('Found old criteria for ${criteria.bankName}, will migrate');
               break;
             }
           }
@@ -583,7 +576,6 @@ class MatcherService extends ChangeNotifier {
         
           }
         } catch (e) {
-          debugPrint('❌ MATCHER_SERVICE: Error parsing bank criteria: $e');
           _setDefaultCriteria();
         }
       } else {
@@ -679,10 +671,9 @@ class MatcherService extends ChangeNotifier {
           _bankCriteriaList.map((criteria) => criteria.toMap()).toList()
         );
         await prefs.setString('$_bankCriteriaPrefix$consultantId', criteriaJson);
-        debugPrint('Saved bank criteria for consultant');
       }
     } catch (e) {
-      debugPrint('Error saving bank criteria: $e');
+      // Error saving bank criteria
     }
   }
 
@@ -700,7 +691,6 @@ class MatcherService extends ChangeNotifier {
     
     await _saveBankCriteria();
     notifyListeners();
-    debugPrint('Updated criteria for bank: ${updatedCriteria.bankName}');
   }
 
   /// Obtine criteriile pentru o banca specifica
@@ -721,7 +711,6 @@ class MatcherService extends ChangeNotifier {
     try {
       return criteria.minAgeMale > 0 && criteria.minAgeFemale > 0;
     } catch (e) {
-      debugPrint('Error checking minAge fields: $e');
       return false;
     }
   }
@@ -731,11 +720,6 @@ class MatcherService extends ChangeNotifier {
     try {
       final List<String> failedCriteria = [];
       double matchScore = 100.0;
-      
-      debugPrint('Analyzing eligibility for ${bankCriteria.bankName}:');
-      debugPrint('  Client age: ${client.age}, gender: ${client.gender}');
-      debugPrint('  Bank minAgeMale: ${bankCriteria.minAgeMale}, minAgeFemale: ${bankCriteria.minAgeFemale}');
-      debugPrint('  Bank maxAgeMale: ${bankCriteria.maxAgeMale}, maxAgeFemale: ${bankCriteria.maxAgeFemale}');
 
       // Verifica venitul
       if (client.totalIncome < bankCriteria.minIncome) {
@@ -751,11 +735,6 @@ class MatcherService extends ChangeNotifier {
       if (client.age < minAge) {
         failedCriteria.add('Varsta prea mica (${client.age} < $minAge ani)');
         matchScore -= 25;
-        debugPrint('Age check failed for ${bankCriteria.bankName}:');
-        debugPrint('  Client: ${client.age} years, Required: $minAge years');
-      } else {
-        debugPrint('Minimum age check passed for ${bankCriteria.bankName}:');
-        debugPrint('  Client: ${client.age} years, Required: $minAge years');
       }
 
       // Verifica varsta maxima in functie de gen
@@ -766,11 +745,6 @@ class MatcherService extends ChangeNotifier {
       if (client.age > maxAge) {
         failedCriteria.add('Varsta prea mare (${client.age} > $maxAge ani)');
         matchScore -= 25;
-        debugPrint('Age check failed for ${bankCriteria.bankName}:');
-        debugPrint('  Client: ${client.age} years, Required: $maxAge years');
-      } else {
-        debugPrint('Maximum age check passed for ${bankCriteria.bankName}:');
-        debugPrint('  Client: ${client.age} years, Required: $maxAge years');
       }
 
       // Verifica scorul FICO
@@ -806,14 +780,6 @@ class MatcherService extends ChangeNotifier {
         final errorMessage = 'Vechime insuficienta ($clientTenure < $requiredTenure)';
         failedCriteria.add(errorMessage);
         matchScore -= 20;
-        
-        debugPrint('Employment duration check failed for ${bankCriteria.bankName}:');
-        debugPrint('  Client: ${client.employmentDuration} months ($clientTenure)');
-        debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months ($requiredTenure)');
-      } else {
-        debugPrint('Employment duration check passed for ${bankCriteria.bankName}:');
-        debugPrint('  Client: ${client.employmentDuration} months');
-        debugPrint('  Required: ${bankCriteria.minEmploymentDuration} months');
       }
 
       // Calculeaza bonus pentru supraindeplinirea criteriilor
@@ -851,7 +817,7 @@ class MatcherService extends ChangeNotifier {
       return BankRecommendation(
         bankCriteria: bankCriteria,
         isEligible: false,
-        failedCriteria: ['Eroare la analiza eligibilitatii: $e'],
+        failedCriteria: ['Eroare la analiza eligibilitatii'],
         matchScore: 0.0,
       );
     }
@@ -898,9 +864,8 @@ class MatcherService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('$_bankCriteriaPrefix$consultantId');
-      debugPrint('Cleared bank criteria for consultant: $consultantId');
     } catch (e) {
-      debugPrint('Error clearing consultant data: $e');
+      // Error clearing consultant data
     }
   }
 
@@ -915,24 +880,18 @@ class MatcherService extends ChangeNotifier {
     try {
       final currentClient = _clientService.focusedClient;
       if (currentClient == null) {
-        debugPrint('No focused client available for employment duration extraction');
         return 0;
       }
 
       final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
       final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
       
-      debugPrint('Extracting employment duration for client: ${currentClient.phoneNumber}');
-      debugPrint('Client income forms: ${clientIncomeForms.length}, Coborrower income forms: ${coborrowerIncomeForms.length}');
-      
       // Cauta in formularele clientului
       for (int i = 0; i < clientIncomeForms.length; i++) {
         final income = clientIncomeForms[i];
         if (income.vechime.isNotEmpty && income.incomeAmount.isNotEmpty) {
-          debugPrint('Found client income form $i with vechime: "${income.vechime}" and income: "${income.incomeAmount}"');
           final tenure = _parseTenure(income.vechime);
           if (tenure > 0) {
-            debugPrint('Using client employment duration: $tenure months (from: "${income.vechime}")');
             return tenure;
           }
         }
@@ -942,35 +901,15 @@ class MatcherService extends ChangeNotifier {
       for (int i = 0; i < coborrowerIncomeForms.length; i++) {
         final income = coborrowerIncomeForms[i];
         if (income.vechime.isNotEmpty && income.incomeAmount.isNotEmpty) {
-          debugPrint('Found coborrower income form $i with vechime: "${income.vechime}" and income: "${income.incomeAmount}"');
           final tenure = _parseTenure(income.vechime);
           if (tenure > 0) {
-            debugPrint('Using coborrower employment duration: $tenure months (from: "${income.vechime}")');
             return tenure;
           }
         }
       }
       
-      debugPrint('No valid employment duration found in income forms');
-      
-      // Log detailed information about why employment duration is missing
-      if (clientIncomeForms.isEmpty && coborrowerIncomeForms.isEmpty) {
-        debugPrint('No income forms found for client');
-      } else {
-        debugPrint('Income forms found but no valid employment duration:');
-        for (int i = 0; i < clientIncomeForms.length; i++) {
-          final income = clientIncomeForms[i];
-          debugPrint('  Client form $i: vechime="${income.vechime}", income="${income.incomeAmount}"');
-        }
-        for (int i = 0; i < coborrowerIncomeForms.length; i++) {
-          final income = coborrowerIncomeForms[i];
-          debugPrint('  Coborrower form $i: vechime="${income.vechime}", income="${income.incomeAmount}"');
-        }
-      }
-      
       return 0; // Default daca nu gaseste
     } catch (e) {
-      debugPrint('Error extracting employment duration: $e');
       return 0;
     }
   }
@@ -989,7 +928,6 @@ class MatcherService extends ChangeNotifier {
         
         // Validare: trebuie sa aiba exact 2 parti
         if (parts.length != 2) {
-          debugPrint('Invalid tenure format: $tenure - expected format: years/months');
           return 0;
         }
         
@@ -999,7 +937,6 @@ class MatcherService extends ChangeNotifier {
         
         // Validare: ambele parti trebuie sa fie numere
         if (yearsStr.isEmpty || monthsStr.isEmpty) {
-          debugPrint('Invalid tenure format: $tenure - years and months cannot be empty');
           return 0;
         }
         
@@ -1007,26 +944,22 @@ class MatcherService extends ChangeNotifier {
         final months = int.tryParse(monthsStr);
         
         if (years == null || months == null) {
-          debugPrint('Invalid tenure format: $tenure - years and months must be numbers');
           return 0;
         }
         
         // Validare: ani si luni trebuie sa fie pozitive
         if (years < 0 || months < 0) {
-          debugPrint('Invalid tenure format: $tenure - years and months must be positive');
           return 0;
         }
         
         // Validare: luni trebuie sa fie intre 0-11
         if (months > 11) {
-          debugPrint('Invalid tenure format: $tenure - months must be 0-11');
           return 0;
         }
         
         // Calculeaza totalul in luni
         final totalMonths = years * 12 + months;
         
-        debugPrint('Parsed tenure: $tenure -> $years years, $months months = $totalMonths total months');
         return totalMonths;
         
       } else {
@@ -1034,52 +967,25 @@ class MatcherService extends ChangeNotifier {
         final years = int.tryParse(cleanTenure);
         
         if (years == null) {
-          debugPrint('Invalid tenure format: $tenure - must be a number');
           return 0;
         }
         
         if (years < 0) {
-          debugPrint('Invalid tenure format: $tenure - years must be positive');
           return 0;
         }
         
         // Converteste ani in luni
         final totalMonths = years * 12;
         
-        debugPrint('Parsed tenure: $tenure -> $years years = $totalMonths total months');
         return totalMonths;
       }
       
     } catch (e) {
-      debugPrint('Error parsing tenure: $tenure - $e');
       return 0;
     }
   }
 
-  /// Testeaza si valideaza parsing-ul duratei de angajament (pentru debugging)
-  void _testTenureParsing() {
-    final testCases = [
-      '6/7',    // 6 ani 7 luni = 79 luni
-      '6',      // 6 ani = 72 luni
-      '0/6',    // 6 luni = 6 luni
-      '2/0',    // 2 ani = 24 luni
-      '0/0',    // 0 luni = 0 luni
-      '1/11',   // 1 an 11 luni = 23 luni
-      '10/5',   // 10 ani 5 luni = 125 luni
-      '',       // gol = 0 luni
-      'invalid', // invalid = 0 luni
-      '6/12',   // invalid (luni > 11) = 0 luni
-      '-1/5',   // invalid (ani negativ) = 0 luni
-      '5/-1',   // invalid (luni negative) = 0 luni
-    ];
-    
-    debugPrint('=== Testing Tenure Parsing ===');
-    for (final testCase in testCases) {
-      final result = _parseTenure(testCase);
-      debugPrint('Input: "$testCase" -> Output: $result months');
-    }
-    debugPrint('=== End Testing ===');
-  }
+
 
   /// Factor de imprumut pentru 8% dobanda, 72 luni (conform documentatiei)
   static const double _LOAN_FACTOR = 50.5; // Factor fix pentru 8% dobanda, 72 luni
@@ -1293,38 +1199,5 @@ class MatcherService extends ChangeNotifier {
     return opNet;
   }
 
-  /// Testeaza calculele conform exemplelor din documentatie
-  void testCalculations() {
-    debugPrint('=== TESTING CALCULATIONS ===');
-    
-    // Test 1: Salariu 6000, Ipotecar 400, Prima Casa 300, Credite: BCR: 35k/1000, BCR:20k/500, ING:10k/300
-    debugPrint('Test 1:');
-    debugPrint('Salariu: 6000, Ipotecar: 400, Prima Casa: 300');
-    debugPrint('Credite: BCR: 35k/1000, BCR:20k/500, ING:10k/300');
-    
-    // Simuleaza datele pentru test
-    final testSalary = 6000.0;
-    
-    // Calculeaza bugetul disponibil
-    final availableBudget = testSalary * 0.4 - 400 - 300; // 2400 - 400 - 300 = 1700
-    debugPrint('Buget disponibil: $availableBudget');
-    
-    // Fresh: max(0, 1700 - 1800) * 50.5 = 0 (nu poate obtine credit nou)
-    final freshTest = (availableBudget - 1800).clamp(0.0, double.infinity) * _LOAN_FACTOR;
-    debugPrint('Fresh: $freshTest');
-    
-    // Refinantare: (1700 * 50.5) - 65000 = 85850 - 65000 = 20850
-    final refinantareTest = (availableBudget * _LOAN_FACTOR) - 65000;
-    debugPrint('Refinantare: $refinantareTest');
-    
-    // OP BCR: (1700 * 50.5) - 55000 = 85850 - 55000 = 30850
-    final opBcrTest = (availableBudget * _LOAN_FACTOR) - 55000;
-    debugPrint('OP BCR: $opBcrTest');
-    
-    // OP ING: (1700 * 50.5) - 10000 = 85850 - 10000 = 75850
-    final opIngTest = (availableBudget * _LOAN_FACTOR) - 10000;
-    debugPrint('OP ING: $opIngTest');
-    
-    debugPrint('=== END TEST 1 ===');
-  }
+
 }

@@ -64,7 +64,11 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     _loanMonthsController.addListener(_calculateLoan);
     
     _formService.addListener(_calculateIncomePercentage);
-    _calculateIncomePercentage();
+    
+    // Folosește addPostFrameCallback pentru a evita setState în timpul build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateIncomePercentage();
+    });
   }
   
   // Functie pentru calcularea valorilor
@@ -201,7 +205,9 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     });
     
     // Recalculate income percentage after reset
-    _calculateIncomePercentage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateIncomePercentage();
+    });
   }
 
   @override
