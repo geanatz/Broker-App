@@ -326,12 +326,12 @@ class _ClientsPaneState extends State<ClientsPane> {
     
     // Determina ce sa afiseze ca descriere
     String description;
-    if (hasDiscussionStatus) {
-      // Daca are status salvat, afiseaza statusul
+    if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
+      // Pentru clientii amanati, afiseaza mereu timpul ramas pana la data amanarii
+      description = _getTimeUntilScheduledDate(client.scheduledDateTime!);
+    } else if (hasDiscussionStatus) {
+      // Pentru ceilalti clienti, daca are status salvat, afiseaza statusul
       description = client.discussionStatus!;
-    } else if (client.category == ClientCategory.reveniri && client.scheduledDateTime != null) {
-      // Pentru clientii amanati, afiseaza data si ora
-      description = DateFormat('dd/MM/yy HH:mm').format(client.scheduledDateTime!);
     } else {
       // Pentru ceilalti clienti, afiseaza numarul de telefon
       description = client.phoneNumber;
@@ -523,5 +523,43 @@ class _ClientsPaneState extends State<ClientsPane> {
     }
     
     
+  }
+
+  /// Calculeaza timpul ramas pana la data amanarii in format text
+  String _getTimeUntilScheduledDate(DateTime scheduledDateTime) {
+    final now = DateTime.now();
+    final difference = scheduledDateTime.difference(now);
+    
+    if (difference.isNegative) {
+      // Pentru programarile din trecut, calculeaza cat timp a trecut
+      final pastDifference = now.difference(scheduledDateTime);
+      final days = pastDifference.inDays;
+      final hours = pastDifference.inHours;
+      final minutes = pastDifference.inMinutes;
+      
+      if (days > 0) {
+        return 'acum $days ${days == 1 ? 'zi' : 'zile'}';
+      } else if (hours > 0) {
+        return 'acum $hours ${hours == 1 ? 'ora' : 'ore'}';
+      } else if (minutes > 0) {
+        return 'acum $minutes ${minutes == 1 ? 'minut' : 'minute'}';
+      } else {
+        return 'acum';
+      }
+    }
+    
+    final days = difference.inDays;
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes;
+    
+    if (days > 0) {
+      return 'in $days ${days == 1 ? 'zi' : 'zile'}';
+    } else if (hours > 0) {
+      return 'in $hours ${hours == 1 ? 'ora' : 'ore'}';
+    } else if (minutes > 0) {
+      return 'in $minutes ${minutes == 1 ? 'minut' : 'minute'}';
+    } else {
+      return 'acum';
+    }
   }
 }

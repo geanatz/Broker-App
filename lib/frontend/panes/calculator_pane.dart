@@ -196,7 +196,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
   void _resetFields() {
     setState(() {
       _principalController.clear();
-      _interestRateController.clear();
+      _interestRateController.text = '10';
       _loanYearsController.text = '5';
       _loanMonthsController.text = '0';
       _monthlyPayment = 0;
@@ -235,7 +235,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     required TextEditingController controller,
     List<TextInputFormatter>? inputFormatters,
   }) {
-    final String placeholderText = (title == 'Ani' || title == 'Luni') ? '0' : 'Introdu ${title.toLowerCase()}';
+    final String placeholderText = (title == 'Ani' || title == 'Luni' || title == 'Dobanda') ? '0' : 'Introdu ${title.toLowerCase()}';
 
     if (title == 'Suma' || title == 'Dobanda') {
       return InputField1(
@@ -245,6 +245,8 @@ class _CalculatorPaneState extends State<CalculatorPane> {
         keyboardType: TextInputType.numberWithOptions(decimal: true),
         enableCommaFormatting: true,
         enableKTransformation: false,
+        suffixText: title == 'Dobanda' ? '%' : null,
+        suffixTextColor: title == 'Dobanda' ? AppTheme.elementColor3 : null,
       );
     } else {
       return InputField1(
@@ -396,7 +398,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                           children: [
                             // Monthly Payment
                             LightItem3(
-                              title: 'Rata aviatocco13',
+                              title: 'Rata lunara',
                               description: _monthlyPayment > 0 ? _monthlyPayment.toStringAsFixed(1) : '0.0',
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,
