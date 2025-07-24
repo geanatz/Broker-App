@@ -1,6 +1,5 @@
 import '../../app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
 import '../components/headers/widget_header2.dart';
 import '../components/headers/widget_header3.dart';

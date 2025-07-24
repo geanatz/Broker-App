@@ -2,12 +2,13 @@ import 'package:broker_app/app_theme.dart';
 // lib/components/fields/dropdown_field1.dart
 
 import 'package:flutter/material.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 
 /// A real dropdown field component with a title and DropdownButtonFormField.
 ///
 /// This component shows a title label above a styled DropdownButtonFormField
 /// that allows real selection from a list of items.
-class DropdownField1<T> extends StatelessWidget {
+class DropdownField1<T> extends StatefulWidget {
   /// The title label displayed above the dropdown area.
   final String title;
 
@@ -73,18 +74,24 @@ class DropdownField1<T> extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Fixed color scheme: header uses elementColor2, content uses elementColor3
-    final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
-    final Color effectiveSelectedOptionColor = selectedOptionColor ?? AppTheme.elementColor3;
-    final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
-    final Color effectiveDropdownContainerColor = dropdownContainerColor ?? AppTheme.containerColor2;
+  State<DropdownField1<T>> createState() => _DropdownField1State<T>();
+}
 
-    final double effectiveHeight = fieldHeight ?? 72.0;
+class _DropdownField1State<T> extends State<DropdownField1<T>> {
+  bool _isDropdownOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor2;
+    final Color effectiveSelectedOptionColor = widget.selectedOptionColor ?? AppTheme.elementColor3;
+    final Color effectiveIconColor = widget.iconColor ?? AppTheme.elementColor3;
+    final Color effectiveDropdownContainerColor = widget.dropdownContainerColor ?? AppTheme.containerColor2;
+
+    final double effectiveHeight = widget.fieldHeight ?? 72.0;
     final double labelAreaHeight = 21.0;
     final double dropdownAreaHeight = 48.0;
-    final double effectiveDropdownBorderRadius = dropdownBorderRadius ?? AppTheme.borderRadiusSmall;
-    final double effectiveIconSize = iconSize ?? 24.0;
+    final double effectiveDropdownBorderRadius = widget.dropdownBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveIconSize = widget.iconSize ?? 24.0;
 
     final TextStyle titleStyle = AppTheme.safeOutfit(
       color: effectiveTitleColor,
@@ -100,8 +107,24 @@ class DropdownField1<T> extends StatelessWidget {
 
     final EdgeInsets labelPadding = const EdgeInsets.symmetric(horizontal: 8);
 
+    // Border radius logic
+    BorderRadius buttonRadius = _isDropdownOpen
+        ? BorderRadius.only(
+            topLeft: Radius.circular(effectiveDropdownBorderRadius),
+            topRight: Radius.circular(effectiveDropdownBorderRadius),
+            bottomLeft: Radius.circular(0),
+            bottomRight: Radius.circular(0),
+          )
+        : BorderRadius.circular(effectiveDropdownBorderRadius);
+    BorderRadius dropdownRadius = BorderRadius.only(
+      topLeft: Radius.circular(0),
+      topRight: Radius.circular(0),
+      bottomLeft: Radius.circular(effectiveDropdownBorderRadius),
+      bottomRight: Radius.circular(effectiveDropdownBorderRadius),
+    );
+
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: minWidth),
+      constraints: BoxConstraints(minWidth: widget.minWidth),
       child: SizedBox(
         width: double.infinity,
         height: effectiveHeight,
@@ -118,7 +141,7 @@ class DropdownField1<T> extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      title,
+                      widget.title,
                       style: titleStyle,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -131,45 +154,87 @@ class DropdownField1<T> extends StatelessWidget {
               height: dropdownAreaHeight,
               decoration: BoxDecoration(
                 color: effectiveDropdownContainerColor,
-                borderRadius: BorderRadius.circular(effectiveDropdownBorderRadius),
+                borderRadius: buttonRadius,
+                // Fara shadow pe buton, doar pe lista
               ),
-              child: DropdownButtonFormField<T>(
-                value: value,
-                items: items,
-                onChanged: enabled ? onChanged : null,
-                hint: hintText != null
-                    ? Text(
-                        hintText!,
-                        style: selectedOptionStyle,
-                      )
-                    : null,
-                isExpanded: true,
-                icon: Icon(
-                  trailingIcon ?? Icons.expand_more,
-                  color: effectiveIconColor,
-                  size: effectiveIconSize,
-                ),
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.mediumGap,
-                    vertical: 15.0,
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton2<T>(
+                  value: widget.value,
+                  items: widget.items,
+                  onChanged: widget.enabled ? widget.onChanged : null,
+                  hint: widget.hintText != null
+                      ? Text(
+                          widget.hintText!,
+                          style: selectedOptionStyle,
+                        )
+                      : null,
+                  isExpanded: true,
+                  buttonStyleData: ButtonStyleData(
+                    height: dropdownAreaHeight,
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap),
+                    decoration: BoxDecoration(
+                      color: effectiveDropdownContainerColor,
+                      borderRadius: buttonRadius,
+                      // Fara shadow pe buton
+                    ),
                   ),
+                  iconStyleData: IconStyleData(
+                    icon: Icon(
+                      widget.trailingIcon ?? Icons.expand_more,
+                      color: effectiveIconColor,
+                      size: effectiveIconSize,
+                    ),
+                    iconSize: effectiveIconSize,
+                    iconEnabledColor: effectiveIconColor,
+                    iconDisabledColor: effectiveIconColor.withOpacity(0.5),
+                  ),
+                  dropdownStyleData: DropdownStyleData(
+                    maxHeight: 480,
+                    decoration: BoxDecoration(
+                      color: effectiveDropdownContainerColor,
+                      borderRadius: dropdownRadius,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.10),
+                          blurRadius: 16,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                  style: selectedOptionStyle,
+                  selectedItemBuilder: (BuildContext context) {
+                    return widget.items.map<Widget>((DropdownMenuItem<T> item) {
+                      return Container(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          item.child is Text ? (item.child as Text).data ?? '' : item.value.toString(),
+                          style: selectedOptionStyle,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList();
+                  },
+                  disabledHint: widget.value != null
+                      ? Text(
+                          widget.items.firstWhere((item) => item.value == widget.value, orElse: () => DropdownMenuItem<T>(value: widget.value, child: Text(widget.value.toString()))).child is Text
+                              ? (widget.items.firstWhere((item) => item.value == widget.value).child as Text).data ?? ''
+                              : widget.value.toString(),
+                          style: selectedOptionStyle,
+                        )
+                      : (widget.hintText != null
+                          ? Text(
+                              widget.hintText!,
+                              style: selectedOptionStyle,
+                            )
+                          : null),
+                  onMenuStateChange: (isOpen) {
+                    setState(() {
+                      _isDropdownOpen = isOpen;
+                    });
+                  },
                 ),
-                style: selectedOptionStyle,
-                dropdownColor: effectiveDropdownContainerColor,
-                selectedItemBuilder: (BuildContext context) {
-                  return items.map<Widget>((DropdownMenuItem<T> item) {
-                    return Container(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        item.child is Text ? (item.child as Text).data ?? '' : item.value.toString(),
-                        style: selectedOptionStyle,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  }).toList();
-                },
               ),
             ),
           ],
