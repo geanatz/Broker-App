@@ -292,10 +292,6 @@ class MatcherService extends ChangeNotifier {
       // OPTIMIZARE: Folosește cache-ul dacă e valid (mai nou de 2 minute)
       if (cachedIncome != null && cacheTime != null && 
           DateTime.now().difference(cacheTime).inMinutes < 2) {
-        // Log cache usage with reduced frequency
-        if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) { // Log only every ~5 seconds
-      
-        }
         
         _updateUIData(
           totalIncome: cachedIncome,

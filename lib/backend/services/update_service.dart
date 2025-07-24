@@ -56,7 +56,6 @@ class UpdateService {
   /// Initializeaza serviciul si obtine versiunea curenta
   Future<void> initialize() async {
     if (kIsWeb || !Platform.isWindows) {
-      debugPrint('⚠️ UpdateService: Only Windows platform is supported for in-app updates');
       return;
     }
     
@@ -77,7 +76,6 @@ class UpdateService {
     if (_isChecking || _currentVersion == null || kIsWeb || !Platform.isWindows) return false;
     
     if (UpdateConfig.skipVersionCheck) {
-      debugPrint('🔍 Skipping version check (debug mode)');
       return false;
     }
     
@@ -88,7 +86,6 @@ class UpdateService {
     
     while (retryCount < UpdateConfig.maxRetries) {
       try {
-        debugPrint('🔍 Checking for updates... (attempt ${retryCount + 1}/${UpdateConfig.maxRetries})');
         
         final response = await http.get(
           Uri.parse(UpdateConfig.githubApiUrl),
@@ -101,16 +98,9 @@ class UpdateService {
           _releaseDescription = data['body']; // Preia descrierea
           
           if (_latestVersion != null) {
-            debugPrint('🔍 Latest version found: $_latestVersion');
-            debugPrint('🔍 Current version: $_currentVersion');
-            if (_releaseDescription != null && _releaseDescription!.isNotEmpty) {
-              debugPrint('📝 Release description found: ${_releaseDescription!.substring(0, _releaseDescription!.length > 100 ? 100 : _releaseDescription!.length)}...');
-            } else {
-              debugPrint('📝 No release description available');
-            }
             
             if (hasUpdate) {
-              debugPrint('✅ Update available!');
+              
               _downloadUrl = _getDownloadUrl(data['assets']);
               
               if (_downloadUrl != null) {
@@ -119,7 +109,7 @@ class UpdateService {
                 debugPrint('❌ No Windows asset found in release');
               }
             } else {
-              debugPrint('✅ App is up to date');
+              
             }
           }
           break; // Success, exit retry loop
@@ -152,7 +142,7 @@ class UpdateService {
     _downloadProgress = 0.0;
     
     try {
-      debugPrint('📥 Starting update download for Windows...');
+      
       _updateStatus('Se descarca update-ul...');
       
       final success = await _downloadUpdate();
@@ -161,10 +151,10 @@ class UpdateService {
         _isUpdateReady = true;
         _onUpdateReady?.call(true);
         _updateStatus('Update gata de instalare');
-        debugPrint('✅ Update download completed successfully');
+        
       } else {
         _onError?.call('Eroare la descarcarea update-ului');
-        debugPrint('❌ Update download failed');
+        
       }
       
       return success;
@@ -184,7 +174,7 @@ class UpdateService {
     _isInstalling = true;
     
     try {
-      debugPrint('🔧 Starting update installation...');
+      
       _updateStatus('Incepand instalarea update-ului...');
       
       // Verifica fisierul de update
@@ -201,12 +191,12 @@ class UpdateService {
       final success = await _installWindowsUpdate(_updateFilePath!);
       
       if (success) {
-        debugPrint('✅ Update installed successfully');
+        
         _updateStatus('Instalare finalizata cu succes!');
         // Application will restart automatically
       } else {
         _onError?.call('Eroare la instalarea update-ului');
-        debugPrint('❌ Update installation failed');
+        
       }
       
       return success;
@@ -302,7 +292,6 @@ class UpdateService {
       
       _updateFilePath = '${updateDir.path}/broker_app_update.zip';
       
-      debugPrint('📥 Downloading to: $_updateFilePath');
       
       final request = http.Request('GET', Uri.parse(_downloadUrl!));
       final response = await request.send();
@@ -327,8 +316,7 @@ class UpdateService {
             _onDownloadProgress?.call(_downloadProgress);
             
             if (progressPercent > lastLoggedProgress && progressPercent % 10 == 0) {
-              debugPrint('📥 Download progress: $progressPercent%');
-              _updateStatus('Se descarca: $progressPercent%');
+              
               lastLoggedProgress = progressPercent;
             }
           }
@@ -336,12 +324,11 @@ class UpdateService {
         
         await sink.close();
         final sizeMB = (_downloadedBytes / 1024 / 1024).toStringAsFixed(2);
-        debugPrint('✅ Download completed: ${sizeMB}MB | File: $_updateFilePath');
         
         // Valideaza fisierul descarcat
         return await _validateDownload(_updateFilePath!);
       } else {
-        debugPrint('❌ Download failed with status: ${response.statusCode}');
+        
         return false;
       }
     } catch (e) {
@@ -373,7 +360,6 @@ class UpdateService {
           debugPrint('❌ Downloaded ZIP file is empty');
           return false;
         }
-        debugPrint('✅ Download validation successful | Size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB | Files: ${archive.length}');
         return true;
       } catch (e) {
         debugPrint('❌ Downloaded file is not a valid ZIP: $e');
@@ -388,7 +374,7 @@ class UpdateService {
   /// Instaleaza update-ul pe Windows
   Future<bool> _installWindowsUpdate(String zipPath) async {
     try {
-      debugPrint('🔧 Installing Windows update...');
+      
       _updateStatus('Citire fisier ZIP...');
       
       // Extract ZIP
@@ -461,7 +447,6 @@ class UpdateService {
       }
       
       _updateStatus('Instalare finalizata: $filesInstalled fisiere instalate, $filesSkipped sarite');
-      debugPrint('✅ Windows update installed successfully | Files: $filesInstalled | Skipped: $filesSkipped | Archive: ${archive.length}');
       
       // Create update script for files that couldn't be replaced
       if (filesSkipped > 0) {
@@ -493,7 +478,7 @@ class UpdateService {
     }
     
     try {
-      debugPrint('💾 Creating backup...');
+      
       _updateStatus('Creare backup...');
       
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -508,8 +493,6 @@ class UpdateService {
       _updateStatus('Copiere fisiere in backup...');
       await _copyDirectory(appDir, backupDir);
       
-      debugPrint('✅ Backup created successfully | Path: ${backupDir.path}');
-      _updateStatus('Backup creat cu succes');
       return true;
     } catch (e) {
       debugPrint('❌ Error creating backup: $e');
@@ -536,7 +519,6 @@ class UpdateService {
       while (backupDirs.length > UpdateConfig.maxBackups) {
         final oldBackup = backupDirs.removeAt(0);
         await oldBackup.delete(recursive: true);
-        debugPrint('🗑️ Removed old backup: ${oldBackup.path}');
       }
     } catch (e) {
       debugPrint('❌ Error cleaning up old backups: $e');
@@ -561,7 +543,6 @@ class UpdateService {
             final tempFile = File('${newFile.path}.tmp');
             await entity.copy(tempFile.path);
             // Rename-ul se va face la restart
-            debugPrint('⚠️ File in use, copied as temp: ${newFile.path}');
           } else {
             rethrow;
           }
@@ -576,7 +557,6 @@ class UpdateService {
       final file = File(filePath);
       if (await file.exists()) {
         await file.delete();
-        debugPrint('🗑️ Cleaned up download file: $filePath');
       }
     } catch (e) {
       debugPrint('❌ Error cleaning up download: $e');
@@ -591,7 +571,7 @@ class UpdateService {
     }
     
     try {
-      debugPrint('🔄 Rolling back update...');
+      
       _updateStatus('Rollback la versiunea anterioara...');
       
       final appDir = Directory.current;
@@ -622,8 +602,6 @@ class UpdateService {
         
         try {
           await _copyDirectory(latestBackup, appDir);
-          debugPrint('✅ Rollback completed successfully');
-          _updateStatus('Rollback finalizat cu succes');
           return true;
         } catch (e) {
           _updateStatus('Eroare la restaurare, se incearca stergerea...');
@@ -632,8 +610,6 @@ class UpdateService {
           try {
             await appDir.delete(recursive: true);
             await _copyDirectory(latestBackup, appDir);
-            debugPrint('✅ Rollback completed successfully (with deletion)');
-            _updateStatus('Rollback finalizat cu succes (cu stergere)');
             return true;
           } catch (deleteError) {
             debugPrint('❌ Error during rollback deletion: $deleteError');
@@ -751,7 +727,7 @@ class UpdateService {
     }
     
     try {
-      debugPrint('🔄 Restarting application...');
+      
       _updateStatus('Restart aplicatie...');
       
       final executablePath = Platform.resolvedExecutable;
@@ -811,12 +787,10 @@ class UpdateService {
         if (isValid) {
           _updateFilePath = updateFile.path;
           _isUpdateReady = true;
-          debugPrint('✅ Found ready update: ${updateFile.path}');
           return true;
         } else {
           // Sterge fisierul corupt
           await updateFile.delete();
-          debugPrint('🗑️ Deleted corrupted update file');
         }
       }
     } catch (e) {
@@ -838,19 +812,16 @@ class UpdateService {
       // Sterge scripturile ramase
       if (await updateScript.exists()) {
         await updateScript.delete();
-        debugPrint('🗑️ Cleaned up remaining update script');
       }
       
       if (await cleanupScript.exists()) {
         await cleanupScript.delete();
-        debugPrint('🗑️ Cleaned up remaining cleanup script');
       }
       
       // Sterge directorul temporar daca exista
       final tempDir = Directory('${appDir.path}/temp_update');
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
-        debugPrint('🗑️ Cleaned up remaining temp directory');
       }
     } catch (e) {
       debugPrint('❌ Error cleaning up remaining scripts: $e');
@@ -865,11 +836,11 @@ class UpdateService {
       if (_isChecking || _isDownloading) return;
       
       try {
-        debugPrint('🔄 Background update check...');
+        
         final hasUpdate = await checkForUpdates();
         
         if (hasUpdate && UpdateConfig.isAutoInstallEnabled()) {
-          debugPrint('📥 Auto-downloading update in background...');
+          
           await startDownload();
         }
       } catch (e) {
@@ -905,7 +876,6 @@ class UpdateService {
         final file = File(_updateFilePath!);
         if (await file.exists()) {
           await file.delete();
-          debugPrint('🗑️ Canceled update, deleted file: $_updateFilePath');
         }
       } catch (e) {
         debugPrint('❌ Error canceling update: $e');

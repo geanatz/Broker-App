@@ -2,6 +2,7 @@ import '../../app_theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import '../components/headers/widget_header1.dart';
 import '../components/items/light_item3.dart';
@@ -130,44 +131,62 @@ class _ClientsPopupState extends State<ClientsPopup> {
     _clientService.addListener(_onClientServiceChanged);
     // Nu mai defocusam toti clientii la deschiderea popup-ului!
     // Focusul din pane ramane neatins.
-    debugPrint('🔵 CLIENTS_POPUP: Popup opened, focus in pane is not affected');
   }
 
   @override
   void dispose() {
     _clientService.removeListener(_onClientServiceChanged);
+    // Sterge clientul temporar la inchiderea popup-ului
+    try {
+      _clientService.cancelTemporaryClient();
+    } catch (_) {}
     super.dispose();
   }
 
-  /// Callback pentru schimbările în service
+  /// Callback pentru schimbările în servicea
   void _onClientServiceChanged() {
     if (mounted) {
-      setState(() {
-        // Rebuild UI când se schimbă clienții în service
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        // DEBUG: Log focus state la fiecare schimbare
+        final focused = _clientService.focusedClient;
+        // Daca nu mai exista client focusat, inchide editarea
+        if (focused == null || (_editingClient != null && _editingClient!.phoneNumber1 != focused.phoneNumber)) {
+          if (_editingClient != null) {
+          }
+          setState(() {
+            _editingClient = null;
+            if (_selectedImages.isNotEmpty && _selectedOcrImagePath != null) {
+              _currentState = PopupState.ocrWithClients;
+            } else if (_selectedImages.isNotEmpty) {
+              _currentState = PopupState.ocrOnly;
+            } else {
+              _currentState = PopupState.clientsOnly;
+            }
+          });
+        } else {
+          setState(() {});
+        }
       });
     }
   }
 
   /// Incepe procesul de creare client cu client temporar
   void _startClientCreation() {
-    debugPrint('POPUP: Starting client creation');
-    
     // Creeaza clientul temporar in service
     final clientService = SplashService().clientUIService;
     clientService.createTemporaryClient();
-    
-    // Gaseste clientul temporar creat
-    final tempClient = clientService.clientsWithTemporary.firstWhere(
-      (c) => c.id.startsWith('temp_'),
-      orElse: () => clientService.clientsWithTemporary.first,
-    );
+    // Gaseste clientul temporar creat (acum focusat)
+    final focusedTempClient = clientService.focusedClient;
+    if (focusedTempClient == null) {
+      debugPrint('EROARE: Nu s-a putut focusa clientul temporar dupa creare!');
+      return;
+    }
     setState(() {
-      _selectedClientPhoneInPopup = tempClient.phoneNumber1;
+      _selectedClientPhoneInPopup = focusedTempClient.phoneNumber;
     });
-    debugPrint('POPUP: Focused temporary client in popup: ${tempClient.name} (${tempClient.phoneNumber1})');
-      
-    // Deschide formularul de editare pentru clientul temporar
-    _openEditClient(null); // null pentru client nou
+    // Deschide formularul de editare pentru clientul nou (null = creare noua)
+    _openEditClient(null);
   }
 
   /// Deschide file picker pentru selectia imaginilor OCR
@@ -660,7 +679,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
           phoneNumber2: contact.basicInfo.phoneNumber2,
           coDebitorName: contact.basicInfo.coDebitorName,
         )).toList();
-        
         return ocrClients;
       }
       return [];
@@ -668,7 +686,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
       // Afiseaza toti clientii din service (inclusiv temporari pentru popup)
       final clientService = SplashService().clientUIService;
       final serviceClients = clientService.clientsWithTemporary;
-      
       // Converteste ClientModel la Client pentru popup
       final popupClients = serviceClients.map((clientModel) => Client(
         name: clientModel.name,
@@ -676,17 +693,14 @@ class _ClientsPopupState extends State<ClientsPopup> {
         phoneNumber2: clientModel.phoneNumber2,
         coDebitorName: clientModel.coDebitorName,
       )).toList();
-      
       return popupClients;
     }
   }
 
   /// Deschide widgetul de editare/creare client
   void _openEditClient([Client? client]) {
-    debugPrint('POPUP: Scheduling setState for _openEditClient cu client:  [33m [1m [0m [39m${client?.name ?? "nou"}');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      debugPrint('POPUP: Executing setState in _openEditClient pentru client: ${client?.name ?? "nou"}');
     setState(() {
       _editingClient = client;
       if (_selectedImages.isNotEmpty) {
@@ -1114,21 +1128,21 @@ class _ClientsPopupState extends State<ClientsPopup> {
                           const SizedBox(height: AppTheme.smallGap),
                       itemBuilder: (context, index) {
                         final client = _getClientsToDisplay()[index];
-                        // --- FOCUS LOCAL ---
                         final isSelected = _selectedClientPhoneInPopup == client.phoneNumber1;
-                        debugPrint('🔵 CLIENTS_POPUP: Building client item ${client.name} (${client.phoneNumber1}) - isSelected: $isSelected');
+                        // Daca este client temporar (phoneNumber1 gol) si numele este gol, afiseaza placeholder
+                        final isTempClient = client.phoneNumber1.isEmpty && (client.name.isEmpty);
+                        final displayName = isTempClient ? 'Client nou' : client.name;
                         if (isSelected) {
                           return DarkItem3(
-                            title: client.name,
+                            title: displayName,
                             description: client.phoneNumber,
                             onTap: () => _openEditClient(client),
                           );
                         } else {
                           return LightItem3(
-                            title: client.name,
+                            title: displayName,
                             description: client.phoneNumber,
                             onTap: () {
-                              debugPrint('🔵 CLIENTS_POPUP: Client item selected in popup: ${client.name} (${client.phoneNumber1})');
                               setState(() {
                                 _selectedClientPhoneInPopup = client.phoneNumber1;
                               });
@@ -1178,6 +1192,25 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   @override
   Widget build(BuildContext context) {
+    // Sincronizez focusul cu backend-ul
+    final focusedClient = _clientService.focusedClient;
+    // Daca nu exista client focusat, inchid editarea
+    if (focusedClient == null && _editingClient != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _editingClient = null;
+            if (_selectedImages.isNotEmpty && _selectedOcrImagePath != null) {
+              _currentState = PopupState.ocrWithClients;
+            } else if (_selectedImages.isNotEmpty) {
+              _currentState = PopupState.ocrOnly;
+            } else {
+              _currentState = PopupState.clientsOnly;
+            }
+          });
+        }
+      });
+    }
     // Calculate total width based on current state  
     double totalWidth;
     switch (_currentState) {
@@ -1227,11 +1260,13 @@ class _ClientsPopupState extends State<ClientsPopup> {
             ],
             
             // Edit Client Widget (if active)
-            if (_currentState == PopupState.clientsWithEdit || 
-                _currentState == PopupState.ocrWithClientsAndEdit) ...[
-              const SizedBox(width: 16),
-              _buildEditClientWidget(_editWidgetWidth),
-            ],
+            if ((_currentState == PopupState.clientsWithEdit || _currentState == PopupState.ocrWithClientsAndEdit)
+                && focusedClient != null
+                && (_editingClient != null || _clientService.temporaryClient != null))
+              ...[
+                const SizedBox(width: 16),
+                _buildEditClientWidget(_editWidgetWidth),
+              ],
           ],
         ),
       ),
@@ -1307,6 +1342,9 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   late TextEditingController _phoneController2;
   late TextEditingController _coDebitorNameController;
 
+  // Adaug un ValueNotifier pentru a notifica parintele la modificari live
+  ValueNotifier<int>? _liveUpdateNotifier;
+
   @override
   void initState() {
     super.initState();
@@ -1314,12 +1352,13 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
     _phoneController1 = TextEditingController(text: widget.editingClient?.phoneNumber1 ?? '');
     _phoneController2 = TextEditingController(text: widget.editingClient?.phoneNumber2 ?? '');
     _coDebitorNameController = TextEditingController(text: widget.editingClient?.coDebitorName ?? '');
-    
     // Add listeners for live updates to temporary client
     _nameController.addListener(_onFormChanged);
     _phoneController1.addListener(_onFormChanged);
     _phoneController2.addListener(_onFormChanged);
     _coDebitorNameController.addListener(_onFormChanged);
+    // Notificare live update
+    _liveUpdateNotifier = ValueNotifier<int>(0);
   }
 
   @override
@@ -1338,7 +1377,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
 
   /// Update temporary client as user types
   void _onFormChanged() {
-    // Only update if we're creating a new client (not editing existing)
+    // Update if we're creating a new client (editingClient is null)
     if (widget.editingClient == null) {
       final clientService = SplashService().clientUIService;
       clientService.updateTemporaryClient(
@@ -1351,14 +1390,27 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
             ? null 
             : _coDebitorNameController.text.trim(),
       );
+      // Notifica parintele ca s-a modificat formularul (pentru rebuild live)
+      if (_liveUpdateNotifier != null) {
+        _liveUpdateNotifier!.value++;
+      }
+      // DEBUG LOG
+      debugPrint('[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent');
+      // Foloseste postFrameCallback pentru a evita blocajul
+      if (mounted && context.findAncestorStateOfType<_ClientsPopupState>() != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            debugPrint('[ClientsPopup2] Executing setState in parent after frame');
+            context.findAncestorStateOfType<_ClientsPopupState>()!.setState(() {});
+          }
+        });
+      }
+    } else {
     }
   }
   
   /// Cancel temporary client creation
   void _cancelClientCreation() {
-    debugPrint('🔵 POPUP: Canceling client creation');
-    
-    // Canceling client creation
     
     // Cancel the temporary client first
     final clientService = SplashService().clientUIService;
@@ -1395,7 +1447,6 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
 
   /// Salveaza clientul curent
   Future<void> _saveClient() async {
-    debugPrint('🔵 POPUP: Saving client');
     
     try {
       final client = _buildClientFromForm();
@@ -1413,7 +1464,6 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
       final success = await clientService.finalizeTemporaryClient();
       
       if (success) {
-        debugPrint('🔵 POPUP: Client saved successfully');
         
         if (widget.onSaveClient != null) {
           widget.onSaveClient!(client);
@@ -1546,6 +1596,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                               controller: _phoneController1,
                               keyboardType: TextInputType.phone,
                               minWidth: 128,
+                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+#]+'))],
                             ),
                             
                             const SizedBox(height: AppTheme.smallGap),
@@ -1557,6 +1608,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                               controller: _phoneController2,
                               keyboardType: TextInputType.phone,
                               minWidth: 128,
+                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+#]+'))],
                             ),
                             
                             const SizedBox(height: AppTheme.smallGap),

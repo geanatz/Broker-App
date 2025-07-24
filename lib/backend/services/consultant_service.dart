@@ -43,7 +43,6 @@ class ConsultantService {
       }
       return null;
     } catch (e) {
-      debugPrint("Error fetching consultant data: $e");
       return null;
     }
   }
@@ -60,7 +59,6 @@ class ConsultantService {
       }
       return null;
     } catch (e) {
-      debugPrint("Error fetching consultant data: $e");
       return null;
     }
   }
@@ -92,7 +90,6 @@ class ConsultantService {
         return data;
       }).toList();
     } catch (e) {
-      debugPrint("Error fetching team consultants: $e");
       return [];
     }
   }
@@ -114,7 +111,6 @@ class ConsultantService {
 
       return teams.toList()..sort();
     } catch (e) {
-      debugPrint("Error fetching teams: $e");
       return [];
     }
   }
@@ -135,7 +131,6 @@ class ConsultantService {
         );
       }).toList();
     } catch (e) {
-      debugPrint("Error fetching all consultants: $e");
       return [];
     }
   }

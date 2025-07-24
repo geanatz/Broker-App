@@ -248,17 +248,14 @@ class _MeetingPopupState extends State<MeetingPopup> {
   }
 
   Future<void> _saveMeeting() async {
-    debugPrint('🔍 MEETING_POPUP: Starting _saveMeeting()');
     
     // Validare
     if (_selectedDate == null) {
-      debugPrint('❌ MEETING_POPUP: _selectedDate is null');
       _showError("Selecteaza o data");
       return;
     }
 
     if (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty) {
-      debugPrint('❌ MEETING_POPUP: _selectedTimeSlot is null or empty');
       _showError("Selecteaza o ora");
       return;
     }
@@ -266,7 +263,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
     // FIX: Validare pentru numele clientului
     final clientName = _clientNameController.text.trim();
     if (clientName.isEmpty) {
-      debugPrint('❌ MEETING_POPUP: clientName is empty');
       _showError("Introduceti numele clientului");
       return;
     }
@@ -304,7 +300,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
       
       // FIX: Validare pentru consultantToken
       if (consultantToken == null || consultantToken.isEmpty) {
-        debugPrint('❌ MEETING_POPUP: consultantToken is null or empty');
         _showError("Eroare: Nu s-a putut obtine token-ul consultantului");
         return;
       }
@@ -322,8 +317,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
         consultantName: consultantName,
       );
 
-      debugPrint('🔍 MEETING_POPUP: Creating meeting | Client: $clientName | Date: $finalDateTime | Type: $_selectedType');
-      
       Map<String, dynamic> result;
       if (isEditMode) {
         result = await _meetingService.updateMeeting(widget.meetingId!, meetingData);
@@ -332,7 +325,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
       }
 
       if (result['success']) {
-        debugPrint('✅ MEETING_POPUP: Meeting saved successfully | ${isEditMode ? 'Edit' : 'Create'} mode');
         
         // OPTIMIZARE: Închide popup-ul imediat pentru feedback instant
         if (mounted) {
@@ -348,10 +340,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
         _invalidateCacheInBackground();
       } else {
         final errorMessage = result['message'] ?? 'Eroare necunoscuta la salvarea intalnirii';
-        debugPrint('❌ MEETING_POPUP: Meeting save failed: $errorMessage');
-        if (mounted) {
-          _showError(errorMessage);
-        }
+        _showError(errorMessage);
       }
     } catch (e) {
       debugPrint("❌ MEETING_POPUP: Exception in _saveMeeting: $e");
@@ -380,13 +369,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
   Future<void> _deleteMeeting() async {
     if (!isEditMode || widget.meetingId == null) {
-      debugPrint("Delete meeting called but not in edit mode or no meeting ID");
       return;
     }
 
-    debugPrint("Delete meeting called for ID: ${widget.meetingId}");
-
-    // Afiseaza dialog de confirmare
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -406,7 +391,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
     );
 
     if (shouldDelete != true) {
-      debugPrint("Delete cancelled by user");
       return;
     }
 
@@ -415,12 +399,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
 
     try {
-      debugPrint("Attempting to delete meeting with ID: ${widget.meetingId}");
-      // Get phone number from the phone controller
       final phoneNumber = _phoneController.text.trim();
       final result = await _meetingService.deleteMeeting(widget.meetingId!, phoneNumber);
-      
-      debugPrint("Delete result: $result");
       
       if (result['success']) {
         // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
@@ -441,7 +421,8 @@ class _MeetingPopupState extends State<MeetingPopup> {
         }
       }
     } catch (e) {
-      debugPrint("Eroare la stergerea intalnirii: $e");
+      debugPrint("❌ MEETING_POPUP: Exception in _deleteMeeting: $e");
+      debugPrint("❌ MEETING_POPUP: Stack trace: ${StackTrace.current}");
       if (mounted) {
         _showError("Eroare la stergerea intalnirii");
       }
@@ -614,7 +595,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
                   onPrimaryButtonTap: _saveMeeting,
                   trailingIconPath: "assets/deleteIcon.svg",
                   onTrailingIconTap: () {
-                    debugPrint("Delete button tapped. isEditMode: $isEditMode, meetingId: ${widget.meetingId}");
                     if (isEditMode) {
                       _deleteMeeting();
                     } else {

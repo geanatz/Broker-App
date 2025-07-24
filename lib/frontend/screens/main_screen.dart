@@ -487,7 +487,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _isShowingClientListPopup = true;
       // Nu selecta niciun client implicit la deschiderea popup-ului
       _selectedPopupClient = null;
-      debugPrint('🔵 MAIN_SCREEN: No client selected by default at popup open');
     });
   }
 
@@ -676,8 +675,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       _selectedPopupClient = null;
     });
-    // Close the popup after deletion
-    _closeAllPopups();
+    // Popup-ul ramane deschis pentru a permite stergerea mai multor clienti
+    // _closeAllPopups(); // Removed automatic popup closing
   }
 
   // =================== SIDEBAR METHODS ===================

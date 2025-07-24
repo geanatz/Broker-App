@@ -192,20 +192,11 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   /// FIX: Asculta la schimbarile din ClientUIService pentru refresh automat
   void _onClientServiceChanged() {
-    debugPrint('🔍 CLIENTS_PANE: _onClientServiceChanged triggered');
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isRefreshing) {
         // FIX: Check if data actually changed before updating UI
         final newClients = _clientService.clients;
-        
-        debugPrint('🔍 CLIENTS_PANE: _onClientServiceChanged - newClients count: ${newClients.length}');
-        
-        // Log current clients for debugging
-        for (int i = 0; i < newClients.length; i++) {
-          final client = newClients[i];
-          debugPrint('🔍 CLIENTS_PANE: New client [$i] - ${client.name} (${client.phoneNumber}) - category: ${client.category} - isTemp: ${client.id.startsWith('temp_')}');
-        }
         
         final hasChanged = _cachedClients.length != newClients.length ||
             !_cachedClients.every((client) => newClients.any((newClient) => 
@@ -214,15 +205,10 @@ class _ClientsPaneState extends State<ClientsPane> {
                 newClient.status == client.status &&
                 newClient.name == client.name));
 
-        debugPrint('🔍 CLIENTS_PANE: _onClientServiceChanged - hasChanged: $hasChanged, cachedClients: ${_cachedClients.length}, newClients: ${newClients.length}');
-
         if (hasChanged || _cachedClients.isEmpty) {
-          debugPrint('🔍 CLIENTS_PANE: _onClientServiceChanged - updating UI with new clients');
           setState(() {
             _cachedClients = newClients;
           });
-        } else {
-          debugPrint('🔍 CLIENTS_PANE: _onClientServiceChanged - no changes detected, skipping update');
         }
       }
     });
@@ -300,16 +286,11 @@ class _ClientsPaneState extends State<ClientsPane> {
     // FIX: Verifica daca clientul are status de discutie salvat
     final bool hasDiscussionStatus = client.formData['discussionStatus'] != null;
     
-    // DEBUG: Log item creation
-    debugPrint('🔍 CLIENTS_PANE: Building item for ${client.name} (${client.phoneNumber}) - isFocused: $isFocused');
-    
     return isFocused ? DarkItem7(
       title: client.name,
       description: client.phoneNumber1,
       svgAsset: 'assets/doneIcon.svg',
       onTap: () {
-        debugPrint('🔍 CLIENTS_PANE: FOCUSED item clicked for ${client.name} (${client.phoneNumber})');
-        // FIX: Pentru itemele focusate - click deschide status popup
         _showStatusPopup(client);
       },
     ) : LightItem7(
@@ -317,15 +298,9 @@ class _ClientsPaneState extends State<ClientsPane> {
       description: client.phoneNumber1,
       svgAsset: 'assets/viewIcon.svg',
       onTap: () {
-        debugPrint('🔍 CLIENTS_PANE: UNFOCUSED item clicked for ${client.name} (${client.phoneNumber})');
-        // FIX: Pentru itemele nefocusate - primul click focus, al doilea click status popup
         if (client.category == ClientCategory.recente && hasDiscussionStatus) {
-          // Client din "Recente" cu status salvat - al doilea click deschide status popup
-          debugPrint('🔍 CLIENTS_PANE: Opening status popup for recente client ${client.name}');
           _showStatusPopup(client);
         } else {
-          // FIX: Pentru TOATE clientii - primul click focus formular
-          debugPrint('🔍 CLIENTS_PANE: Focusing client ${client.name} (${client.phoneNumber})');
           _focusClient(client);
         }
       },
@@ -334,7 +309,6 @@ class _ClientsPaneState extends State<ClientsPane> {
   
   /// FIX: Focus client and switch to form area
   void _focusClient(ClientModel client) async {
-    debugPrint('🔍 CLIENTS_PANE: _focusClient START for ${client.name} (${client.phoneNumber})');
     
     // OPTIMIZATION: Minimal protection for ultra-fast response
     final now = DateTime.now();
@@ -342,7 +316,6 @@ class _ClientsPaneState extends State<ClientsPane> {
         (_lastTappedClientId == client.phoneNumber && 
          _lastTapTime != null && 
          now.difference(_lastTapTime!).inMilliseconds < 50)) {
-      debugPrint('🔍 CLIENTS_PANE: _focusClient BLOCKED - already switching or too fast');
       return;
     }
     
@@ -351,59 +324,31 @@ class _ClientsPaneState extends State<ClientsPane> {
       _lastTappedClientId = client.phoneNumber;
       _lastTapTime = now;
       
-      debugPrint('🔍 CLIENTS_PANE: _focusClient - switching to form area');
-      
-      // FIX: Log focus state before client tap
-      _clientService.logFocusState('CLIENTS_BEFORE_TAP');
-
       // OPTIMIZATION: Strategic area switching with timing
       if (widget.onSwitchToFormArea != null) {
-        debugPrint('🔍 CLIENTS_PANE: _focusClient - calling onSwitchToFormArea');
         widget.onSwitchToFormArea!();
       }
       
-      debugPrint('🔍 CLIENTS_PANE: _focusClient - calling focusClient on service');
-      // FIX: Advanced client focusing with detailed timing
       await _clientService.focusClient(client.phoneNumber);
-      
-      debugPrint('🔍 CLIENTS_PANE: _focusClient - focusClient completed');
-      
-      // FIX: Log focus state after focus operation
-      _clientService.logFocusState('CLIENTS_AFTER_FOCUS');
-      
-      // FIX: Force immediate UI update with timing
-      if (mounted) {
-        debugPrint('🔍 CLIENTS_PANE: _focusClient - calling setState');
-        setState(() {});
-      }
-      
-      // FIX: Log final focus state
-      _clientService.logFocusState('CLIENTS_TAP_COMPLETE');
-      
-      debugPrint('🔍 CLIENTS_PANE: _focusClient COMPLETED for ${client.name}');
       
     } catch (e) {
       debugPrint('❌ CLIENTS: Error switching client: $e');
     } finally {
       _isSwitchingClient = false;
-      debugPrint('🔍 CLIENTS_PANE: _focusClient - _isSwitchingClient set to false');
     }
   }
   
   /// FIX: Show status popup for client
   void _showStatusPopup(ClientModel client) {
-    debugPrint('🔍 CLIENTS_PANE: _showStatusPopup START for ${client.name} (${client.phoneNumber})');
     showDialog(
       context: context,
       builder: (context) => ClientSavePopup(
         client: client,
         onSaved: () {
           // Handle save
-          debugPrint('🔵 CLIENTS: Status saved for ${client.name}');
         },
       ),
     );
-    debugPrint('🔍 CLIENTS_PANE: _showStatusPopup END - dialog shown');
   }
 
 
@@ -488,11 +433,18 @@ class _ClientsPaneState extends State<ClientsPane> {
                   padding: headerPadding,
                   titleContainerHeight: headerHeight,
                 ),
-                if (!isCollapsed) ...[
-                  SizedBox(height: AppTheme.smallGap),
-                  // Lista de clienti pentru Reveniri si Recente
-                  _buildClientsList(category),
-                ],
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeInOut,
+                  child: isCollapsed
+                      ? const SizedBox.shrink()
+                      : Column(
+                          children: [
+                            SizedBox(height: AppTheme.smallGap),
+                            _buildClientsList(category),
+                          ],
+                        ),
+                ),
               ],
             ),
     );
@@ -500,9 +452,6 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   @override
   Widget build(BuildContext context) {
-    
-    // FIX: Log focus state during build
-    _clientService.logFocusState('CLIENTS_BUILD');
     
     // FIX: Ensure focus consistency when pane is shown
     _ensureFocusStateConsistency();

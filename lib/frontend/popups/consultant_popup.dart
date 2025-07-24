@@ -131,7 +131,6 @@ class ConsultantPopup extends StatelessWidget {
       height: 48,
       child: FlexButtonSingle(
         onTap: () async {
-          debugPrint('🔴 CONSULTANT_POPUP: Logout button tapped');
           
           try {
             // Salvam referinta la navigator INAINTE de pop
@@ -142,13 +141,11 @@ class ConsultantPopup extends StatelessWidget {
             
             // Sign out from Firebase
             await FirebaseAuth.instance.signOut();
-            debugPrint('🔴 CONSULTANT_POPUP: Firebase signOut completed');
             
             // Abordare directă - forțăm navigația imediată către AuthScreen
             await _forceLogoutNavigation(navigator);
             
           } catch (e) {
-            debugPrint('🔴 CONSULTANT_POPUP: Error during logout: $e');
             
             // In caz de eroare, incearca sa închida popup-ul oricum
             if (context.mounted) {
@@ -169,15 +166,12 @@ class ConsultantPopup extends StatelessWidget {
 
   /// Forțează navigația către AuthScreen după logout
   Future<void> _forceLogoutNavigation(NavigatorState navigator) async {
-    debugPrint('🔴 CONSULTANT_POPUP: Forcing immediate logout navigation');
     
     // Verificam ca signOut-ul a reusit
     final currentUser = FirebaseAuth.instance.currentUser;
-    debugPrint('🔴 CONSULTANT_POPUP: Current user after signOut: ${currentUser?.email ?? 'null'}');
     
     if (currentUser != null) {
       // Daca user-ul inca exista, incercam din nou
-      debugPrint('🔴 CONSULTANT_POPUP: User still exists, trying signOut again');
       await FirebaseAuth.instance.signOut();
       await Future.delayed(const Duration(milliseconds: 100));
     }
@@ -187,9 +181,8 @@ class ConsultantPopup extends StatelessWidget {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('main_screen_current_area');
       await prefs.remove('main_screen_current_pane');
-      debugPrint('🔴 CONSULTANT_POPUP: Navigation preferences cleared - next login will show dashboard');
     } catch (e) {
-      debugPrint('🔴 CONSULTANT_POPUP: Error clearing navigation preferences: $e');
+      
     }
     
     // Navigare directa si imediata - eliminam toate rutele si navigam la AuthWrapper
@@ -198,17 +191,14 @@ class ConsultantPopup extends StatelessWidget {
         MaterialPageRoute(builder: (context) => const AuthWrapper()),
         (route) => false,
       );
-      debugPrint('🔴 CONSULTANT_POPUP: Immediate navigation to AuthWrapper executed');
     } catch (e) {
-      debugPrint('🔴 CONSULTANT_POPUP: Error in immediate navigation: $e');
       
       // Fallback - incearcam sa resetam aplicatia
       try {
         // Restart app prin navigare la root si refresh
         navigator.pushNamedAndRemoveUntil('/', (route) => false);
-        debugPrint('🔴 CONSULTANT_POPUP: Fallback navigation to root executed');
       } catch (e2) {
-        debugPrint('🔴 CONSULTANT_POPUP: Fallback navigation failed: $e2');
+        
       }
     }
   }

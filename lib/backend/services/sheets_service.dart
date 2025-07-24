@@ -1254,6 +1254,9 @@ class GoogleDriveService extends ChangeNotifier {
       final String coDebitorName = client['coDebitorName'] ?? '';
       final String ziua = DateTime.now().day.toString();
       final String status = client['additionalInfo'] ?? client['discussionStatus'] ?? '';
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG additionalInfo: ${client['additionalInfo']}');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG discussionStatus: ${client['discussionStatus']}');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG status (to be saved in sheet): $status');
 
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted data - Contact: $contact, CoDebitor: $coDebitorName, Day: $ziua, Status: $status');
 

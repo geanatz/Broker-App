@@ -987,10 +987,8 @@ class ClientUIService extends ChangeNotifier {
       if (bTime == null) return -1;
       return aTime.compareTo(bTime); // crescator
     });
-    debugPrint('ORDER: clientsWithTemporary - ordinea clientilor (creare):');
     for (int i = 0; i < creationOrderClients.length; i++) {
       final c = creationOrderClients[i];
-      debugPrint('ORDER: [$i] ${c.name} (${c.phoneNumber}) - createdAt: [36m${c.createdAt}[0m');
     }
     return List.unmodifiable(creationOrderClients);
   }
@@ -1284,12 +1282,10 @@ class ClientUIService extends ChangeNotifier {
           } else {
             // Previously focused client no longer exists, do not focus any client
             _focusedClient = null;
-            debugPrint('🔵 CLIENT_SERVICE: No client focused after update (no previous focus found)');
           }
         } else {
           // No previously focused client, do not focus any client
           _focusedClient = null;
-          debugPrint('🔵 CLIENT_SERVICE: No client focused after update (no previous focus)');
         }
         
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1427,7 +1423,7 @@ class ClientUIService extends ChangeNotifier {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempClient = ClientModel(
       id: tempId,
-      name: 'Client nou',
+      name: '', // Numele este gol la creare
       phoneNumber1: '', // Empty phone number initially
       status: ClientStatus.focused,
       category: ClientCategory.apeluri,
@@ -1564,12 +1560,10 @@ class ClientUIService extends ChangeNotifier {
           } else {
             // Focused client was deleted, do not focus any client
             _focusedClient = null;
-            debugPrint('🔵 CLIENT_SERVICE: No client focused after real-time update (previous focus deleted)');
           }
         } else {
           // No client was focused before, do not focus any client
           _focusedClient = null;
-          debugPrint('🔵 CLIENT_SERVICE: No client focused after real-time update (no previous focus)');
         }
         
         // FIX: Ensure proper notification to all listeners
@@ -1650,11 +1644,11 @@ class ClientUIService extends ChangeNotifier {
       debugPrint('🔵 TEMP_CLIENT: No temporary client found in list');
       return;
     }
-    
+    debugPrint('🔵 TEMP_CLIENT: updateTemporaryClient called with: name="$name" phone1="$phoneNumber" phone2="$phoneNumber2" codebitor="$coDebitorName"');
+    debugPrint('🔵 TEMP_CLIENT: Before update: name="${_clients[tempIndex].name}" phone1="${_clients[tempIndex].phoneNumber1}" phone2="${_clients[tempIndex].phoneNumber2}" codebitor="${_clients[tempIndex].coDebitorName}"');
     // Only update name if user actually typed something (not empty)
     final newName = name?.trim();
     final shouldUpdateName = newName != null && newName.isNotEmpty;
-    
     // Actualizeaza direct in lista principala
     _clients[tempIndex] = _clients[tempIndex].copyWith(
       name: shouldUpdateName ? newName : _clients[tempIndex].name,
@@ -1662,15 +1656,11 @@ class ClientUIService extends ChangeNotifier {
       phoneNumber2: phoneNumber2?.trim().isEmpty == true ? null : phoneNumber2?.trim(),
       coDebitorName: coDebitorName?.trim().isEmpty == true ? null : coDebitorName?.trim(),
     );
-    
+    debugPrint('🔵 TEMP_CLIENT: After update: name="${_clients[tempIndex].name}" phone1="${_clients[tempIndex].phoneNumber1}" phone2="${_clients[tempIndex].phoneNumber2}" codebitor="${_clients[tempIndex].coDebitorName}"');
     // Update focused client reference
     _focusedClient = _clients[tempIndex];
-    
-    // FIX: Nu sorta lista când se actualizează clientul temporar
-    // Sortarea se va face doar când clientul devine real
-    // _sortClientsByUpdatedAt(_clients);
-    
     notifyListeners();
+    debugPrint('🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient');
   }
   
   /// Finalizeaza clientul temporar si il salveaza in Firebase

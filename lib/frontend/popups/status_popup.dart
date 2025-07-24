@@ -478,23 +478,31 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       debugPrint('🔧 STATUS_POPUP: Scheduled date: $finalDateTime');
       
       try {
-        // Obtine clientul complet cu toate datele din Firebase
+        // 1. Actualizeaza statusul si informatiile aditionale in Firebase
         final firebaseService = NewFirebaseService();
+        await firebaseService.updateClient(
+          widget.client.phoneNumber,
+          {
+            'discussionStatus': _selectedStatus,
+            'additionalInfo': _statusController.text.isNotEmpty ? _statusController.text : null,
+          },
+        );
+        debugPrint('✅ STATUS_POPUP: Updated discussionStatus and additionalInfo in Firebase');
+
+        // 2. Obtine clientul complet cu toate datele din Firebase (date actualizate)
         final completeClient = await firebaseService.getClient(widget.client.phoneNumber);
-        
         if (completeClient != null) {
           debugPrint('✅ STATUS_POPUP: Retrieved complete client data from Firebase');
           debugPrint('🔧 STATUS_POPUP: Client formData keys: ${completeClient['formData']?.keys.toList() ?? 'NULL'}');
-          
-          // Salveaza in Google Sheets
+          debugPrint('🔧 STATUS_POPUP: DEBUG additionalInfo from Firebase: ${completeClient['additionalInfo'] ?? 'NULL'}');
+          // 3. Salveaza in Google Sheets
           final googleDriveService = GoogleDriveService();
           final saveResult = await googleDriveService.saveClientToXlsx(completeClient);
-          
           if (saveResult == null) {
             debugPrint('✅ STATUS_POPUP: Client saved successfully to Google Sheets');
           } else {
             debugPrint('❌ STATUS_POPUP: Failed to save to Google Sheets: $saveResult');
-            // Nu afișa eroare utilizatorului - salvarea în Firebase a reușit
+            // Nu afisa eroare utilizatorului - salvarea in Firebase a reusit
           }
         } else {
           debugPrint('❌ STATUS_POPUP: Could not retrieve complete client data from Firebase');

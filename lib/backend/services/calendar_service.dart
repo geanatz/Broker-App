@@ -49,8 +49,6 @@ class CalendarService {
       _isInitialized = true;
   
     } catch (e) {
-      debugPrint('Error initializing calendar date formatting: $e');
-      // Fallback to default formatting
       _dateFormatter = DateFormat('d MMM');
       _isInitialized = true;
     }

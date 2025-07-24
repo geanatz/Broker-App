@@ -548,13 +548,11 @@ class FormService extends ChangeNotifier {
   Future<void> loadFormDataForClient(String clientId, String phoneNumber) async {
     // OPTIMIZATION: Prevent redundant loading operations
     if (_isLoadingFormData && _currentlyLoadingClientId == clientId) {
-      debugPrint('🚀 FORM_SERVICE: Skipping redundant load for client $clientId');
       return;
     }
     
     // OPTIMIZATION: Request deduplication - if same request is pending, wait for it
     if (_pendingRequests.containsKey(clientId)) {
-      debugPrint('🚀 FORM_SERVICE: Waiting for pending request for client $clientId');
       await _pendingRequests[clientId];
       return;
     }
@@ -566,7 +564,6 @@ class FormService extends ChangeNotifier {
       _currentlyLoadingClientId = clientId;
       
       final loadStartTime = DateTime.now();
-      debugPrint('🚀 FORM_SERVICE: Advanced form loading started for client $clientId');
       
       // OPTIMIZATION: Ultra-aggressive cache check with extended validity
       if (_formDataCache.containsKey(clientId)) {
@@ -576,7 +573,6 @@ class FormService extends ChangeNotifier {
         // OPTIMIZATION: Extended cache validity to 5 minutes for ultra-fast response
         if (cacheTime != null && DateTime.now().difference(cacheTime).inMinutes < 5) {
           final cacheStartTime = DateTime.now();
-          debugPrint('🚀 FORM_SERVICE: Using cached data for client $clientId');
           
           _clientCreditForms[clientId] = List.from(cachedData['clientCreditForms']);
           _coborrowerCreditForms[clientId] = List.from(cachedData['coborrowerCreditForms']);
@@ -592,7 +588,6 @@ class FormService extends ChangeNotifier {
           PerformanceMonitor.endTimer('loadFormData');
           
           final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
-          debugPrint('🚀 FORM_SERVICE: Cache data loading completed in ${cacheTime}ms');
           return;
         }
       }
@@ -603,9 +598,6 @@ class FormService extends ChangeNotifier {
       
       // Wait for the request to complete
       await requestFuture;
-      
-      final totalTime = DateTime.now().difference(loadStartTime).inMilliseconds;
-      debugPrint('🚀 FORM_SERVICE: Advanced form loading completed in ${totalTime}ms');
       
     } catch (e) {
       debugPrint('Error loading form data for client $clientId: $e');
@@ -621,17 +613,14 @@ class FormService extends ChangeNotifier {
   Future<void> _performFormDataLoad(String clientId, String phoneNumber) async {
     try {
       final startTime = DateTime.now();
-      debugPrint('🚀 FORM_SERVICE: Advanced form data load started for client $clientId');
       
       final firebaseStartTime = DateTime.now();
       final formData = await _firebaseFormService.loadAllFormData(phoneNumber);
       
       final firebaseTime = DateTime.now().difference(firebaseStartTime).inMilliseconds;
-      debugPrint('🚀 FORM_SERVICE: Firebase load completed in ${firebaseTime}ms');
       
       if (formData != null) {
         final processStartTime = DateTime.now();
-        debugPrint('🚀 FORM_SERVICE: Starting advanced data processing');
         
         // Load credit forms with enhanced error handling
         final creditForms = formData['creditForms'];
@@ -707,7 +696,6 @@ class FormService extends ChangeNotifier {
         _showingClientIncomeForm[clientId] = formData['showingClientIncomeForm'] ?? true;
         
         final processTime = DateTime.now().difference(processStartTime).inMilliseconds;
-        debugPrint('🚀 FORM_SERVICE: Advanced data processing completed in ${processTime}ms');
         
         // Cache form data with strategic timing
         final cacheStartTime = DateTime.now();
@@ -722,7 +710,6 @@ class FormService extends ChangeNotifier {
         };
         
         final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
-        debugPrint('🚀 FORM_SERVICE: Cache update completed in ${cacheTime}ms');
         
         // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
         Future.microtask(() {
@@ -730,12 +717,9 @@ class FormService extends ChangeNotifier {
         });
         PerformanceMonitor.endTimer('loadFormData');
         
-        final totalTime = DateTime.now().difference(startTime).inMilliseconds;
-        debugPrint('🚀 FORM_SERVICE: Advanced form data load completed in ${totalTime}ms');
       } else {
         // FIX: Initialize with empty forms if no data exists
         final initStartTime = DateTime.now();
-        debugPrint('🚀 FORM_SERVICE: Initializing empty forms for client $clientId');
         
         _clientCreditForms[clientId] = [CreditFormModel()];
         _coborrowerCreditForms[clientId] = [CreditFormModel()];
@@ -745,7 +729,6 @@ class FormService extends ChangeNotifier {
         _showingClientIncomeForm[clientId] = true;
         
         final initTime = DateTime.now().difference(initStartTime).inMilliseconds;
-        debugPrint('🚀 FORM_SERVICE: Empty form initialization completed in ${initTime}ms');
         
         // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
         Future.microtask(() {
@@ -753,8 +736,6 @@ class FormService extends ChangeNotifier {
         });
         PerformanceMonitor.endTimer('loadFormData');
         
-        final totalTime = DateTime.now().difference(startTime).inMilliseconds;
-        debugPrint('🚀 FORM_SERVICE: Empty form initialization completed in ${totalTime}ms');
       }
     } catch (e) {
       debugPrint('Error in _performFormDataLoad for client $clientId: $e');
@@ -824,7 +805,6 @@ class FormService extends ChangeNotifier {
   /// OPTIMIZARE: Curata cache-ul de form data
   void clearFormDataCache() {
     _formDataCache.clear();
-    debugPrint('🗑️ FORM_SERVICE: Cleared form data cache');
   }
 
   /// FIX: Force refresh form data for a specific client
@@ -894,7 +874,6 @@ class FormService extends ChangeNotifier {
   /// OPTIMIZATION: Preload form data for clients to improve perceived performance
   Future<void> preloadFormDataForClients(List<String> clientIds) async {
     try {
-      debugPrint('⚡ FORM_SERVICE: Starting preload for ${clientIds.length} clients');
       
       // Preload in parallel for better performance
       final preloadFutures = clientIds.map((clientId) async {
@@ -902,7 +881,6 @@ class FormService extends ChangeNotifier {
           // Only preload if not already cached
           if (!_formDataCache.containsKey(clientId)) {
             await _firebaseFormService.loadAllFormData(clientId);
-            debugPrint('⚡ FORM_SERVICE: Preloaded data for client $clientId');
           }
         } catch (e) {
           debugPrint('⚠️ FORM_SERVICE: Failed to preload data for client $clientId: $e');
@@ -910,7 +888,6 @@ class FormService extends ChangeNotifier {
       });
       
       await Future.wait(preloadFutures);
-      debugPrint('⚡ FORM_SERVICE: Preload completed for ${clientIds.length} clients');
       
     } catch (e) {
       debugPrint('❌ FORM_SERVICE: Error during preload: $e');
@@ -920,15 +897,12 @@ class FormService extends ChangeNotifier {
   /// OPTIMIZATION: Warm up cache for frequently accessed clients
   Future<void> warmUpCache(List<String> clientIds) async {
     try {
-      debugPrint('⚡ FORM_SERVICE: Warming up cache for ${clientIds.length} clients');
       
       for (final clientId in clientIds) {
         if (!_formDataCache.containsKey(clientId)) {
           await loadFormDataForClient(clientId, clientId);
         }
       }
-      
-      debugPrint('⚡ FORM_SERVICE: Cache warm-up completed');
       
     } catch (e) {
       debugPrint('❌ FORM_SERVICE: Error during cache warm-up: $e');

@@ -904,7 +904,7 @@ class NewFirebaseService {
   Stream<Map<String, dynamic>?> getClientRealTimeStream(String phoneNumber) async* {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: No consultant token for client stream');
+      FirebaseLogger.error('No consultant token for client stream');
       return;
     }
 
@@ -927,7 +927,6 @@ class NewFirebaseService {
           return data;
         }
       }
-      debugPrint('🔄 FIREBASE_SERVICE: Client not found or not accessible');
       return null;
     });
   }
@@ -936,7 +935,7 @@ class NewFirebaseService {
   Stream<List<Map<String, dynamic>>> getClientsByCategoryRealTimeStream(String category) async* {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: No consultant token for category stream');
+      FirebaseLogger.error('No consultant token for category stream');
       return;
     }
 
@@ -966,7 +965,7 @@ class NewFirebaseService {
   Stream<List<Map<String, dynamic>>> getClientsByStatusRealTimeStream(String status) async* {
     final consultantToken = await getCurrentConsultantToken();
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: No consultant token for status stream');
+      FirebaseLogger.error('No consultant token for status stream');
       return;
     }
 
@@ -1312,7 +1311,7 @@ class NewFirebaseService {
     final consultantToken = await getCurrentConsultantToken();
 
     if (consultantToken == null) {
-      debugPrint('❌ FIREBASE_SERVICE: consultantToken is null');
+      FirebaseLogger.error('❌ FIREBASE_SERVICE: consultantToken is null');
       return false;
     }
 
