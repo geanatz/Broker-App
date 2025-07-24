@@ -404,7 +404,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       onClientSelected: _handleClientSelected,
                       onEditClient: _handleEditClient,
                       onSaveClient: _handleSaveClient,
-                      onDeleteClient: () => _handleDeleteClient(_selectedPopupClient!),
+                      onDeleteClient: (client) => _handleDeleteClient(client),
                       onDeleteAllClients: _handleDeleteAllClients,
                       onDeleteOcrClients: _handleDeleteOcrClients,
                     ),
@@ -644,7 +644,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   }
   
   /// Handles deleting a client
-  void _handleDeleteClient(Client client) async {
+  void _handleDeleteClient(Client? client) async {
+    if (client == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Selecteaza un client pentru stergere'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
     // Check if this is a temporary client being cancelled
     final clientService = SplashService().clientUIService;
     if (clientService.temporaryClient != null) {
@@ -654,20 +666,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _closeAllPopups();
       return;
     }
-    
     // Find the client in the list
     final clientModel = _clientService.clients.firstWhere(
       (clientModel) => clientModel.phoneNumber1 == client.phoneNumber1,
     );
-    
     // Delete the client using phoneNumber1 as ID
     await _clientService.removeClient(clientModel.phoneNumber1);
-    
     // Update selection after deletion
     setState(() {
       _selectedPopupClient = null;
     });
-    
     // Close the popup after deletion
     _closeAllPopups();
   }
@@ -723,9 +731,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       children: [
         WidgetHeader3(
           title: 'Principal',
-          trailingIcon: _isAreaSectionCollapsed 
-              ? Icons.keyboard_arrow_up 
-              : Icons.keyboard_arrow_down,
+          isExpanded: !_isAreaSectionCollapsed, // animatie
           onTrailingIconTap: () {
             setState(() {
               _isAreaSectionCollapsed = !_isAreaSectionCollapsed;
@@ -745,9 +751,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       children: [
         WidgetHeader3(
           title: 'Secundar',
-          trailingIcon: _isPaneSectionCollapsed 
-              ? Icons.keyboard_arrow_up 
-              : Icons.keyboard_arrow_down,
+          isExpanded: !_isPaneSectionCollapsed, // animatie
           onTrailingIconTap: () {
             setState(() {
               _isPaneSectionCollapsed = !_isPaneSectionCollapsed;

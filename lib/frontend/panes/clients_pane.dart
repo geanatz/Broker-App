@@ -306,7 +306,7 @@ class _ClientsPaneState extends State<ClientsPane> {
     return isFocused ? DarkItem7(
       title: client.name,
       description: client.phoneNumber1,
-      svgAsset: 'assets/saveIcon.svg',
+      svgAsset: 'assets/doneIcon.svg',
       onTap: () {
         debugPrint('🔍 CLIENTS_PANE: FOCUSED item clicked for ${client.name} (${client.phoneNumber})');
         // FIX: Pentru itemele focusate - click deschide status popup
@@ -483,7 +483,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                 // Header pentru Reveniri si Recente
                 WidgetHeader3(
                   title: title,
-                  trailingIcon: isCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                  isExpanded: !isCollapsed, // animatie
                   onTrailingIconTap: toggleCallback,
                   padding: headerPadding,
                   titleContainerHeight: headerHeight,

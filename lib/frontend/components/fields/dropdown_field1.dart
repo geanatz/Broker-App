@@ -3,6 +3,7 @@ import 'package:broker_app/app_theme.dart';
 
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:broker_app/frontend/components/headers/widget_header3.dart';
 
 /// A real dropdown field component with a title and DropdownButtonFormField.
 ///
@@ -180,14 +181,14 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
                     ),
                   ),
                   iconStyleData: IconStyleData(
-                    icon: Icon(
-                      widget.trailingIcon ?? Icons.expand_more,
-                      color: effectiveIconColor,
+                    icon: ExpandIconSvg(
+                      isExpanded: _isDropdownOpen,
                       size: effectiveIconSize,
+                      color: effectiveIconColor,
                     ),
                     iconSize: effectiveIconSize,
                     iconEnabledColor: effectiveIconColor,
-                    iconDisabledColor: effectiveIconColor.withOpacity(0.5),
+                    iconDisabledColor: effectiveIconColor.withAlpha(50),
                   ),
                   dropdownStyleData: DropdownStyleData(
                     maxHeight: 480,
@@ -196,7 +197,7 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
                       borderRadius: dropdownRadius,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.10),
+                          color: Colors.black.withAlpha(15),
                           blurRadius: 16,
                           offset: Offset(0, 4),
                         ),

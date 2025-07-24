@@ -1416,8 +1416,13 @@ class ClientUIService extends ChangeNotifier {
   
   /// Creeaza un client temporar pentru popup-ul de clienti
   void createTemporaryClient() {
-    debugPrint('🔵 TEMP_CLIENT: Creating temporary client');
-    
+    // Verifica daca exista deja un client temporar
+    final alreadyExists = _clients.any((client) => client.id.startsWith('temp_'));
+    if (alreadyExists) {
+      debugPrint('TEMP_CLIENT: Temporary client already exists, creation skipped');
+      return;
+    }
+    debugPrint('TEMP_CLIENT: Creating temporary client');
     // Creeaza un client temporar cu ID unic
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempClient = ClientModel(
@@ -1429,24 +1434,16 @@ class ClientUIService extends ChangeNotifier {
       formData: {},
       createdAt: DateTime.now(), // <-- nou
     );
-    
-    debugPrint('🔵 TEMP_CLIENT: Created temp client with ID: $tempId, updatedAt: ${tempClient.updatedAt}');
-    
+    debugPrint('TEMP_CLIENT: Created temp client with ID: $tempId, updatedAt: ${tempClient.updatedAt}');
     // Adauga direct in lista principala (nu separat)
     _clients.add(tempClient);
-    
-    debugPrint('🔵 TEMP_CLIENT: Added temp client to main list, total clients: ${_clients.length}');
-    
+    debugPrint('TEMP_CLIENT: Added temp client to main list, total clients: ${_clients.length}');
     // Focuseaza clientul temporar
     _focusedClient = tempClient;
-    
-    debugPrint('🔵 TEMP_CLIENT: About to sort clients list');
-    
-    // FIX: Nu sorta lista principala când se adaugă un client temporar
-    // Sortarea se va face doar când clientul devine real
-    // _sortClientsByUpdatedAt(_clients);
-    
-    debugPrint('🔵 TEMP_CLIENT: Sort skipped for temp client, total clients: ${_clients.length}');
+    debugPrint('TEMP_CLIENT: About to sort clients list');
+    // FIX: Nu sorta lista principala cand se adauga un client temporar
+    // Sortarea se va face doar cand clientul devine real
+    debugPrint('TEMP_CLIENT: Sort skipped for temp client, total clients: ${_clients.length}');
     notifyListeners();
   }
 

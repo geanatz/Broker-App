@@ -2,8 +2,37 @@ import 'package:broker_app/app_theme.dart';
 // lib/components/headers/widget_header3.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// A widget header displaying a title on the left and a trailing icon on the right.
+class ExpandIconSvg extends StatelessWidget {
+  final bool isExpanded;
+  final Duration duration;
+  final double size;
+  final Color? color;
+  const ExpandIconSvg({
+    super.key,
+    required this.isExpanded,
+    this.duration = const Duration(milliseconds: 180),
+    this.size = 24,
+    this.color,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedRotation(
+      turns: isExpanded ? 0.5 : 0.0,
+      duration: duration,
+      curve: Curves.easeInOut,
+      child: SvgPicture.asset(
+        'assets/expandIcon.svg',
+        width: size,
+        height: size,
+        colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,
+      ),
+    );
+  }
+}
+
 class WidgetHeader3 extends StatelessWidget {
   /// The main title text.
   final String title;
@@ -41,6 +70,8 @@ class WidgetHeader3 extends StatelessWidget {
   /// Defaults to AppTheme.iconSizeMedium.
   final double? iconSize;
 
+  final bool? isExpanded; // ADDED
+
   const WidgetHeader3({
     super.key,
     required this.title,
@@ -53,6 +84,7 @@ class WidgetHeader3 extends StatelessWidget {
     this.spacing,
     this.titleContainerHeight,
     this.iconSize,
+    this.isExpanded, // ADDED
   });
 
   @override
@@ -73,7 +105,32 @@ class WidgetHeader3 extends StatelessWidget {
     final TextStyle effectiveTitleStyle = titleStyle ?? defaultTitleStyle;
 
     Widget? iconWidget;
-    if (trailingIcon != null) {
+    if (isExpanded != null) {
+      iconWidget = ExpandIconSvg(
+        isExpanded: isExpanded!,
+        size: effectiveIconSize,
+        color: effectiveIconColor,
+      );
+      if (onTrailingIconTap != null) {
+        iconWidget = InkResponse(
+          onTap: onTrailingIconTap,
+          radius: effectiveIconSize, // Or a bit larger for easier tap
+          child: Container( // Container helps with tap area sizing
+            width: effectiveIconSize,
+            height: effectiveIconSize,
+            alignment: Alignment.center,
+            child: iconWidget,
+          ),
+        );
+      } else {
+         iconWidget = Container( // Ensure consistent sizing even if not tappable
+            width: effectiveIconSize,
+            height: effectiveIconSize,
+            alignment: Alignment.center,
+            child: iconWidget,
+          );
+      }
+    } else if (trailingIcon != null) {
       iconWidget = Icon(
         trailingIcon,
         color: effectiveIconColor,

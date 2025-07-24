@@ -1,0 +1,447 @@
+Flutter error caught: setState() or markNeedsBuild() called during build.
+This ClientsPopup widget cannot be marked as needing to build because the framework is already in the process of building widgets. A widget can be marked as needing to be built during the build phase only if one of its ancestors is currently building. This exception is allowed because the framework builds parent widgets before children, which means a dirty descendant will always be built. Otherwise, the framework might not visit this widget during this build phase.
+The widget on which setState() or markNeedsBuild() was called was:
+  ClientsPopup
+The widget which was currently being built when the offending call was made was:
+  Container
+#0      Element.markNeedsBuild.<anonymous closure> (package:flutter/src/widgets/framework.dart:5271:9)
+#1      Element.markNeedsBuild (package:flutter/src/widgets/framework.dart:5283:6)
+#2      State.setState (package:flutter/src/widgets/framework.dart:1219:15)
+#3      _ClientsPopupState._onClientServiceChanged (package:broker_app/frontend/popups/clients_popup.dart:145:7)
+#4      ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#5      ClientUIService.notifyListeners (package:broker_app/backend/services/clients_service.dart:2304:11)
+#6      ClientUIService.updateTemporaryClient (package:broker_app/backend/services/clients_service.dart:1676:5)
+#7      _ClientsPopup2State._onFormChanged (package:broker_app/frontend/popups/clients_popup.dart:1334:21)
+#8      ChangeNotifier.notifyListeners (package:flutter/src/foundation/change_notifier.dart:435:24)
+#9      ValueNotifier.value= (package:flutter/src/foundation/change_notifier.dart:560:5)
+#10     TextEditingController.value= (package:flutter/src/widgets/editable_text.dart:290:11)
+#11     TextEditingController.text= (package:flutter/src/widgets/editable_text.dart:275:5)
+#12     _ClientsPopup2State.didUpdateWidget (package:broker_app/frontend/popups/clients_popup.dart:1322:23)
+#13     StatefulElement.update (package:flutter/src/widgets/framework.dart:5883:55)
+#14     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#15     Element.updateChildren (package:flutter/src/widgets/framework.dart:4140:11)
+#16     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#17     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#18     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#19     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#20     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#21     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#22     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#23     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#24     StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#25     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#26     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#27     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#28     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#29     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#30     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#31     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#32     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#33     Element.updateChildren (package:flutter/src/widgets/framework.dart:4140:11)
+#34     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#35     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#36     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#37     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#38     ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#39     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#40     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#41     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#42     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#43     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#44     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#45     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#46     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#47     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#48     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#49     ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#50     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#51     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#52     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#53     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#54     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#55     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#56     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#57     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#58     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#59     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#60     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#61     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#62     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#63     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#64     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#65     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#66     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#67     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#68     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#69     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#70     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#71     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#72     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#73     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#74     StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#75     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#76     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#77     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#78     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#79     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#80     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#81     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#82     StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#83     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#84     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#85     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#86     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#87     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#88     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#89     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#90     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#91     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#92     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#93     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#94     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#95     StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#96     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#97     Element.updateChildren (package:flutter/src/widgets/framework.dart:4140:11)
+#98     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#99     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#100    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#101    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#102    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#103    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#104    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#105    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#106    StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#107    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#108    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#109    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#110    StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#111    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#112    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#113    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#114    StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#115    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#116    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#117    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#118    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#119    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#120    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#121    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#122    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#123    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#124    Element.updateChildren (package:flutter/src/widgets/framework.dart:4140:11)
+#125    MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#126    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#127    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#128    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#129    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#130    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#131    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#132    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#133    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#134    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+Restarted application in 653ms.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/bf5a04a0-9f6c-41dc-a787-ba71cf0318be' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+✅ Download validation successful | Size: 19.29MB | Files: 85
+✅ Found ready update: C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/broker_app_update.zip
+📦 SPLASH_SCREEN: Found ready update, will show notification in main screen
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/86763cf3-9a7f-4979-aadd-ef44c5cfc9ff' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/362e9f86-8cd8-4636-810e-fd9a2fbc18f8' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/0db032cb-a256-4a85-86a2-9e2a8cb71b67' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+🔄 SORT: Starting sort for 0 clients
+🔄 SORT: After sorting:
+🔵 CLIENT_SERVICE: No client focused after update (no previous focus)
+🔄 SORT: Starting sort for 0 clients
+🔄 SORT: After sorting:
+🔵 CLIENT_SERVICE: No client focused after real-time update (no previous focus)
+✅ GOOGLE_DRIVE_SERVICE: Token is still valid, no refresh needed
+📊 SPLASH_SERVICE: Performance Metrics:
+  Initializare servicii...: 20ms
+  Preîncărcare date...: 889ms
+  Sincronizare servicii...: 25ms
+  Optimizare cache...: 0ms
+  Finalizare...: 0ms
+🔍 Checking for updates...
+🔍 Checking for updates... (attempt 1/5)
+🔍 Latest version found: 0.1.4
+🔍 Current version: 0.1.3
+📝 Release description found: 1. Formular imbuntatit.
+
+2. Conectare la telefon rezolvata.
+
+3. Recomandare imbuntatita.
+
+4. Rezolva...
+✅ Update available!
+✅ Update found | Current: 0.1.3 | Latest: 0.1.4
+🔄 SORT: Starting sort for 0 clients
+🔄 SORT: After sorting:
+🔵 CLIENT_SERVICE: No client focused after update (no previous focus)
+🔄 SORT: Starting sort for 0 clients
+🔄 SORT: After sorting:
+🔵 CLIENT_SERVICE: No client focused after update (no previous focus)
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+🔄 SORT: Starting sort for 0 clients
+🔄 SORT: After sorting:
+🔄 SORT: Starting sort for 0 clients
+🔄 SORT: After sorting:
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+🔍 CLIENTS_PANE: _onClientServiceChanged triggered
+🔄 SORT: Starting sort for 0 clients
+🔄 SORT: After sorting:
+🔵 CLIENT_SERVICE: No client focused after update (no previous focus)
+🔍 CLIENTS_PANE: _onClientServiceChanged - newClients count: 0
+🔍 CLIENTS_PANE: _onClientServiceChanged - hasChanged: false, cachedClients: 0, newClients: 0
+🔍 CLIENTS_PANE: _onClientServiceChanged - updating UI with new clients
+🔍 CLIENTS_PANE: _onClientServiceChanged triggered
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+🔍 CLIENTS_PANE: _onClientServiceChanged - newClients count: 0
+🔍 CLIENTS_PANE: _onClientServiceChanged - hasChanged: false, cachedClients: 0, newClients: 0
+🔍 CLIENTS_PANE: _onClientServiceChanged - updating UI with new clients
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+🔵 MAIN_SCREEN: No client selected by default at popup open
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+🔵 CLIENTS_POPUP: Popup opened, focus in pane is not affected
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+🔵 POPUP: Starting client creation
+🔵 TEMP_CLIENT: Creating temporary client
+🔵 TEMP_CLIENT: Created temp client with ID: temp_1753381258057, updatedAt: null
+🔵 TEMP_CLIENT: Added temp client to main list, total clients: 1
+🔵 TEMP_CLIENT: About to sort clients list
+🔵 TEMP_CLIENT: Sort skipped for temp client, total clients: 1
+🔍 CLIENTS_PANE: _onClientServiceChanged triggered
+POPUP: Scheduling setState for _openEditClient cu client:  [33m [1m [0m [39mnou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+🔍 CLIENTS_PANE: _onClientServiceChanged - newClients count: 1
+🔍 CLIENTS_PANE: New client [0] - Client nou () - category: ClientCategory.apeluri - isTemp: true
+🔍 CLIENTS_PANE: _onClientServiceChanged - hasChanged: true, cachedClients: 0, newClients: 1
+🔍 CLIENTS_PANE: _onClientServiceChanged - updating UI with new clients
+POPUP: Executing setState in _openEditClient pentru client: nou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+🔄 FORM: Client changed - Previous: none, Current:
+⚡ FORM: Processing client change - Previous: none, Current:
+⚡ FORM: Clearing controllers for client change
+⚡ FORM: Skipping form data load for temporary client
+⚡ FORM: Total client selection time: 0ms
+🔵 POPUP: Starting client creation
+🔵 TEMP_CLIENT: Creating temporary client
+🔵 TEMP_CLIENT: Created temp client with ID: temp_1753381258870, updatedAt: null
+🔵 TEMP_CLIENT: Added temp client to main list, total clients: 2
+🔵 TEMP_CLIENT: About to sort clients list
+🔵 TEMP_CLIENT: Sort skipped for temp client, total clients: 2
+🔍 CLIENTS_PANE: _onClientServiceChanged triggered
+POPUP: Scheduling setState for _openEditClient cu client:  [33m [1m [0m [39mnou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+🔍 CLIENTS_PANE: _onClientServiceChanged - newClients count: 2
+🔍 CLIENTS_PANE: New client [0] - Client nou () - category: ClientCategory.apeluri - isTemp: true
+🔍 CLIENTS_PANE: New client [1] - Client nou () - category: ClientCategory.apeluri - isTemp: true
+🔍 CLIENTS_PANE: _onClientServiceChanged - hasChanged: true, cachedClients: 1, newClients: 2
+🔍 CLIENTS_PANE: _onClientServiceChanged - updating UI with new clients
+POPUP: Executing setState in _openEditClient pentru client: nou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+🔵 POPUP: Starting client creation
+🔵 TEMP_CLIENT: Creating temporary client
+🔵 TEMP_CLIENT: Created temp client with ID: temp_1753381259614, updatedAt: null
+🔵 TEMP_CLIENT: Added temp client to main list, total clients: 3
+🔵 TEMP_CLIENT: About to sort clients list
+🔵 TEMP_CLIENT: Sort skipped for temp client, total clients: 3
+🔍 CLIENTS_PANE: _onClientServiceChanged triggered
+POPUP: Scheduling setState for _openEditClient cu client:  [33m [1m [0m [39mnou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+🔍 CLIENTS_PANE: _onClientServiceChanged - newClients count: 3
+🔍 CLIENTS_PANE: New client [0] - Client nou () - category: ClientCategory.apeluri - isTemp: true
+🔍 CLIENTS_PANE: New client [1] - Client nou () - category: ClientCategory.apeluri - isTemp: true
+🔍 CLIENTS_PANE: New client [2] - Client nou () - category: ClientCategory.apeluri - isTemp: true
+🔍 CLIENTS_PANE: _onClientServiceChanged - hasChanged: true, cachedClients: 2, newClients: 3
+🔍 CLIENTS_PANE: _onClientServiceChanged - updating UI with new clients
+POPUP: Executing setState in _openEditClient pentru client: nou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: false
+🔵 CLIENTS_POPUP: Client item selected in popup: Client nou ()
+POPUP: Scheduling setState for _openEditClient cu client:  [33m [1m [0m [39mClient nou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: true
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: true
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: true
+POPUP: Executing setState in _openEditClient pentru client: Client nou
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: true
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: true
+ORDER: clientsWithTemporary - ordinea clientilor (creare):
+ORDER: [0] Client nou () - createdAt: 2025-07-24 21:20:58.057731
+ORDER: [1] Client nou () - createdAt: 2025-07-24 21:20:58.870407
+ORDER: [2] Client nou () - createdAt: 2025-07-24 21:20:59.614294
+🔵 CLIENTS_POPUP: Building client item Client nou () - isSelected: true
+❌ CONNECTION_SERVICE: Max reconnection attempts reached

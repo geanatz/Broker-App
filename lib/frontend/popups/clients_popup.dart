@@ -84,7 +84,7 @@ class ClientsPopup extends StatefulWidget {
   final Function(Client)? onSaveClient;
 
   /// Callback when a client is deleted
-  final VoidCallback? onDeleteClient;
+  final void Function(Client client)? onDeleteClient;
 
   /// Currently selected client
   final Client? selectedClient;
@@ -150,12 +150,22 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Incepe procesul de creare client cu client temporar
   void _startClientCreation() {
-    debugPrint('🔵 POPUP: Starting client creation');
+    debugPrint('POPUP: Starting client creation');
     
     // Creeaza clientul temporar in service
     final clientService = SplashService().clientUIService;
     clientService.createTemporaryClient();
     
+    // Gaseste clientul temporar creat
+    final tempClient = clientService.clientsWithTemporary.firstWhere(
+      (c) => c.id.startsWith('temp_'),
+      orElse: () => clientService.clientsWithTemporary.first,
+    );
+    setState(() {
+      _selectedClientPhoneInPopup = tempClient.phoneNumber1;
+    });
+    debugPrint('POPUP: Focused temporary client in popup: ${tempClient.name} (${tempClient.phoneNumber1})');
+      
     // Deschide formularul de editare pentru clientul temporar
     _openEditClient(null); // null pentru client nou
   }
@@ -1162,11 +1172,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
           }
           _closeEditClient();
         },
-        onDeleteClient: () {
-          // Handle delete logic here
-          widget.onDeleteClient?.call();
-          _closeEditClient();
-        },
+        onDeleteClient: widget.onDeleteClient,
       );
   }
 
@@ -1282,7 +1288,7 @@ class ClientsPopup2 extends StatefulWidget {
   final Function(Client)? onSaveClient;
 
   /// Callback when "Delete Client" button is tapped
-  final VoidCallback? onDeleteClient;
+  final void Function(Client client)? onDeleteClient;
 
   const ClientsPopup2({
     super.key,
@@ -1359,7 +1365,9 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
     clientService.cancelTemporaryClient();
     
     // Close the edit widget instead of trying to pop the dialog
-    widget.onDeleteClient?.call();
+    if (widget.editingClient != null && widget.onDeleteClient != null) {
+      widget.onDeleteClient!(widget.editingClient!);
+    }
   }
 
   @override
@@ -1446,7 +1454,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         primaryButtonIconPath: "assets/saveIcon.svg",
         onPrimaryButtonTap: _saveClient,
         trailingIconPath: "assets/deleteIcon.svg",
-        onTrailingIconTap: widget.onDeleteClient,
+        onTrailingIconTap: widget.editingClient != null && widget.onDeleteClient != null ? () => widget.onDeleteClient!(widget.editingClient!) : null,
         spacing: AppTheme.smallGap,
         borderRadius: AppTheme.borderRadiusMedium,
         buttonHeight: 48.0,
