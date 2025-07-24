@@ -18,22 +18,14 @@ class ClientModel {
   final String? coDebitorName;
   final ClientStatus status;
   final ClientCategory category;
-  
-  // Datele formularului pentru acest client
-  Map<String, dynamic> formData;
-  
-  // Statusul discutiei cu clientul
-  final String? discussionStatus; // 'Acceptat', 'Amanat', 'Refuzat'
-  
-  // Data si ora pentru amanare sau intalnire
+  final Map<String, dynamic> formData;
+  final String? discussionStatus;
   final DateTime? scheduledDateTime;
-  
-  // Informatii aditionale despre discutie
   final String? additionalInfo;
-  
-  // Flag pentru a marca daca formularul a fost contorizat
   final bool isCompleted;
-
+  final DateTime? updatedAt;
+  final DateTime? createdAt; // <-- nou
+  
   ClientModel({
     required this.id,
     required this.name,
@@ -42,12 +34,14 @@ class ClientModel {
     this.coDebitorName,
     required this.status,
     required this.category,
-    Map<String, dynamic>? formData,
+    required this.formData,
     this.discussionStatus,
     this.scheduledDateTime,
     this.additionalInfo,
-    this.isCompleted = false, // Valoare default
-  }) : formData = formData ?? {};
+    this.isCompleted = false,
+    this.updatedAt,
+    this.createdAt, // <-- nou
+  });
 
   /// Pentru compatibilitate cu codul existent
   String get phoneNumber => phoneNumber1;
@@ -66,6 +60,8 @@ class ClientModel {
     DateTime? scheduledDateTime,
     String? additionalInfo,
     bool? isCompleted,
+    DateTime? updatedAt,
+    DateTime? createdAt, // <-- nou
   }) {
     return ClientModel(
       id: id ?? this.id,
@@ -80,6 +76,8 @@ class ClientModel {
       scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
       additionalInfo: additionalInfo ?? this.additionalInfo,
       isCompleted: isCompleted ?? this.isCompleted,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdAt: createdAt ?? this.createdAt, // <-- nou
     );
   }
   
@@ -108,6 +106,8 @@ class ClientModel {
       'scheduledDateTime': scheduledDateTime?.millisecondsSinceEpoch,
       'additionalInfo': additionalInfo,
       'isCompleted': isCompleted,
+      'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      'createdAt': createdAt?.millisecondsSinceEpoch, // <-- nou
     };
   }
 
@@ -130,6 +130,16 @@ class ClientModel {
           : null,
       additionalInfo: map['additionalInfo'],
       isCompleted: map['isCompleted'] ?? false,
+      updatedAt: map['updatedAt'] != null 
+          ? (map['updatedAt'] is Timestamp 
+              ? (map['updatedAt'] as Timestamp).toDate()
+              : DateTime.fromMillisecondsSinceEpoch(map['updatedAt']))
+          : null,
+      createdAt: map['createdAt'] != null
+          ? (map['createdAt'] is Timestamp
+              ? (map['createdAt'] as Timestamp).toDate()
+              : DateTime.fromMillisecondsSinceEpoch(map['createdAt']))
+          : null, // <-- nou
     );
   }
 
@@ -967,27 +977,106 @@ class ClientUIService extends ChangeNotifier {
   
   /// Obtine clientii inclusiv cel temporar pentru afisare
   List<ClientModel> get clientsWithTemporary {
-    // Clientul temporar este acum in lista principala, deci returnam direct lista
-    return List.unmodifiable(_clients);
+    // Sorteaza dupa createdAt crescator (prima data cel mai vechi)
+    final creationOrderClients = List<ClientModel>.from(_clients);
+    creationOrderClients.sort((a, b) {
+      final aTime = a.createdAt;
+      final bTime = b.createdAt;
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return aTime.compareTo(bTime); // crescator
+    });
+    debugPrint('ORDER: clientsWithTemporary - ordinea clientilor (creare):');
+    for (int i = 0; i < creationOrderClients.length; i++) {
+      final c = creationOrderClients[i];
+      debugPrint('ORDER: [$i] ${c.name} (${c.phoneNumber}) - createdAt: [36m${c.createdAt}[0m');
+    }
+    return List.unmodifiable(creationOrderClients);
+  }
+  
+  /// Helper pentru sortarea clientilor dupa ultima modificare
+  void _sortClientsByUpdatedAt(List<ClientModel> clients) {
+    debugPrint('🔄 SORT: Starting sort for ${clients.length} clients');
+    
+    // Log client details before sorting
+    for (int i = 0; i < clients.length; i++) {
+      final client = clients[i];
+      debugPrint('🔄 SORT: Before sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt} - isTemp: ${client.id.startsWith('temp_')}');
+    }
+    
+    clients.sort((a, b) {
+      final aTime = a.updatedAt;
+      final bTime = b.updatedAt;
+      
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      
+      return bTime.compareTo(aTime); // descending
+    });
+    
+    // Log client details after sorting
+    debugPrint('🔄 SORT: After sorting:');
+    for (int i = 0; i < clients.length; i++) {
+      final client = clients[i];
+      debugPrint('🔄 SORT: After sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt} - isTemp: ${client.id.startsWith('temp_')}');
+    }
   }
   
   /// Obtine clientii dintr-o anumita categorie inclusiv cel temporar
-  /// FIX: Sorteaza clientii dupa nume pentru a preveni shuffling-ul in UI
+  /// FIX: Sorteaza clientii dupa ultima modificare pentru a preveni shuffling-ul in UI
   List<ClientModel> getClientsByCategoryWithTemporary(ClientCategory category) {
     final categoryClients = _clients.where((client) => client.category == category).toList();
-    // FIX: Sorteaza dupa nume pentru ordine consistenta
-    categoryClients.sort((a, b) => a.name.compareTo(b.name));
+    // FIX: Sorteaza dupa ultima modificare pentru ordine consistenta
+    categoryClients.sort((a, b) {
+      final aTime = a.updatedAt;
+      final bTime = b.updatedAt;
+      
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      
+      return bTime.compareTo(aTime); // descending
+    });
     return categoryClients;
   }
   
   /// Obtine clientii dintr-o anumita categorie fara cel temporar (pentru clients-pane)
-  /// FIX: Sorteaza clientii dupa nume pentru a preveni shuffling-ul in UI
+  /// FIX: Sorteaza clientii dupa ultima modificare pentru a preveni shuffling-ul in UI
   List<ClientModel> getClientsByCategoryWithoutTemporary(ClientCategory category) {
+    debugPrint('🔍 GET_CATEGORY: Getting clients for category: $category');
+    
     // Exclude clientii temporari (cu ID care incepe cu 'temp_')
     final categoryClients = _clients.where((client) => 
         client.category == category && !client.id.startsWith('temp_')).toList();
-    // FIX: Sorteaza dupa nume pentru ordine consistenta
-    categoryClients.sort((a, b) => a.name.compareTo(b.name));
+    
+    debugPrint('🔍 GET_CATEGORY: Found ${categoryClients.length} clients for category $category (excluding temp)');
+    
+    // Log clients before sorting
+    for (int i = 0; i < categoryClients.length; i++) {
+      final client = categoryClients[i];
+      debugPrint('🔍 GET_CATEGORY: Before sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt}');
+    }
+    
+    // FIX: Sorteaza dupa ultima modificare pentru ordine consistenta
+    categoryClients.sort((a, b) {
+      final aTime = a.updatedAt;
+      final bTime = b.updatedAt;
+      
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      
+      return bTime.compareTo(aTime); // descending
+    });
+    
+    // Log clients after sorting
+    debugPrint('🔍 GET_CATEGORY: After sorting:');
+    for (int i = 0; i < categoryClients.length; i++) {
+      final client = categoryClients[i];
+      debugPrint('🔍 GET_CATEGORY: After sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt}');
+    }
     
     return categoryClients;
   }
@@ -1047,8 +1136,8 @@ class ClientUIService extends ChangeNotifier {
     // Replace the clients list with cached clients
     _clients = List.from(cachedClients);
     
-    // FIX: Sorteaza clientii dupa nume pentru ordine consistenta
-    _clients.sort((a, b) => a.name.compareTo(b.name));
+    // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
+    _sortClientsByUpdatedAt(_clients);
     
     // FIX: Restore focus to the previously focused client if it still exists
     if (currentFocusedPhone != null) {
@@ -1126,6 +1215,9 @@ class ClientUIService extends ChangeNotifier {
       _focusedClient = null;
 
     }
+    
+    // FIX: Sorteaza lista dupa cleanup pentru ordine consistenta
+    _sortClientsByUpdatedAt(_clients);
   }
 
   /// OPTIMIZAT: Incarca clientii din Firebase pentru consultantul curent cu caching și debouncing
@@ -1170,8 +1262,8 @@ class ClientUIService extends ChangeNotifier {
         // FIX: Preserve current focused client before updating
         final currentFocusedPhone = _focusedClient?.phoneNumber;
         
-        // FIX: Sorteaza clientii dupa nume pentru ordine consistenta
-        newClients.sort((a, b) => a.name.compareTo(b.name));
+        // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
+        _sortClientsByUpdatedAt(newClients);
         
         // Actualizează lista de clienți
         _clients = newClients;
@@ -1186,27 +1278,18 @@ class ClientUIService extends ChangeNotifier {
                 _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
               }
             }
-            
             // Restore focus to the previously focused client
             _clients[focusedIndex] = _clients[focusedIndex].copyWith(status: ClientStatus.focused);
             _focusedClient = _clients[focusedIndex];
           } else {
-            // Previously focused client no longer exists, focus first available
-            if (_clients.isNotEmpty) {
-              _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
-              _focusedClient = _clients[0];
-            } else {
-              _focusedClient = null;
-            }
+            // Previously focused client no longer exists, do not focus any client
+            _focusedClient = null;
+            debugPrint('🔵 CLIENT_SERVICE: No client focused after update (no previous focus found)');
           }
         } else {
-          // No previously focused client, focus first available
-          if (_clients.isNotEmpty) {
-            _focusedClient = _clients.first;
-            _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
-          } else {
-            _focusedClient = null;
-          }
+          // No previously focused client, do not focus any client
+          _focusedClient = null;
+          debugPrint('🔵 CLIENT_SERVICE: No client focused after update (no previous focus)');
         }
         
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1301,7 +1384,7 @@ class ClientUIService extends ChangeNotifier {
         _focusedClient = null;
       }
       // FIX: Sorteaza lista dupa defocus pentru ordine consistenta
-      _clients.sort((a, b) => a.name.compareTo(b.name));
+      _sortClientsByUpdatedAt(_clients);
       notifyListeners();
     }
   }
@@ -1320,7 +1403,7 @@ class ClientUIService extends ChangeNotifier {
       }
       _focusedClient = focusedClients.first;
       // FIX: Sorteaza lista dupa focus operations pentru ordine consistenta
-      _clients.sort((a, b) => a.name.compareTo(b.name));
+      _sortClientsByUpdatedAt(_clients);
       notifyListeners();
     } else if (focusedClients.length == 1) {
       _focusedClient = focusedClients.first;
@@ -1331,7 +1414,7 @@ class ClientUIService extends ChangeNotifier {
 
 
   
-  /// Creeaza un client temporar pentru crearea in timp real
+  /// Creeaza un client temporar pentru popup-ul de clienti
   void createTemporaryClient() {
     debugPrint('🔵 TEMP_CLIENT: Creating temporary client');
     
@@ -1344,18 +1427,26 @@ class ClientUIService extends ChangeNotifier {
       status: ClientStatus.focused,
       category: ClientCategory.apeluri,
       formData: {},
+      createdAt: DateTime.now(), // <-- nou
     );
+    
+    debugPrint('🔵 TEMP_CLIENT: Created temp client with ID: $tempId, updatedAt: ${tempClient.updatedAt}');
     
     // Adauga direct in lista principala (nu separat)
     _clients.add(tempClient);
     
+    debugPrint('🔵 TEMP_CLIENT: Added temp client to main list, total clients: ${_clients.length}');
+    
     // Focuseaza clientul temporar
     _focusedClient = tempClient;
     
-    // Sorteaza lista
-    _clients.sort((a, b) => a.name.compareTo(b.name));
+    debugPrint('🔵 TEMP_CLIENT: About to sort clients list');
     
-    debugPrint('🔵 TEMP_CLIENT: Added temp client to main list, total clients: ${_clients.length}');
+    // FIX: Nu sorta lista principala când se adaugă un client temporar
+    // Sortarea se va face doar când clientul devine real
+    // _sortClientsByUpdatedAt(_clients);
+    
+    debugPrint('🔵 TEMP_CLIENT: Sort skipped for temp client, total clients: ${_clients.length}');
     notifyListeners();
   }
 
@@ -1460,8 +1551,8 @@ class ClientUIService extends ChangeNotifier {
         // CRITICAL FIX: Preserve focused client during real-time updates
         final currentlyFocusedPhone = _focusedClient?.phoneNumber;
         
-        // FIX: Sorteaza clientii dupa nume pentru ordine consistenta
-        updatedClients.sort((a, b) => a.name.compareTo(b.name));
+        // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
+        _sortClientsByUpdatedAt(updatedClients);
         
         // Actualizează lista de clienți, păstrând clienții temporari
         _clients = [...updatedClients, ...temporaryClients];
@@ -1474,22 +1565,14 @@ class ClientUIService extends ChangeNotifier {
             _clients[focusedIndex] = _clients[focusedIndex].copyWith(status: ClientStatus.focused);
             _focusedClient = _clients[focusedIndex];
           } else {
-            // Focused client was deleted, focus first available client
-            if (_clients.isNotEmpty) {
-              _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
-              _focusedClient = _clients[0];
-            } else {
-              _focusedClient = null;
-            }
+            // Focused client was deleted, do not focus any client
+            _focusedClient = null;
+            debugPrint('🔵 CLIENT_SERVICE: No client focused after real-time update (previous focus deleted)');
           }
         } else {
-          // No client was focused before, focus first available
-          if (_clients.isNotEmpty) {
-            _focusedClient = _clients.first;
-            _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
-          } else {
-            _focusedClient = null;
-          }
+          // No client was focused before, do not focus any client
+          _focusedClient = null;
+          debugPrint('🔵 CLIENT_SERVICE: No client focused after real-time update (no previous focus)');
         }
         
         // FIX: Ensure proper notification to all listeners
@@ -1586,6 +1669,10 @@ class ClientUIService extends ChangeNotifier {
     // Update focused client reference
     _focusedClient = _clients[tempIndex];
     
+    // FIX: Nu sorta lista când se actualizează clientul temporar
+    // Sortarea se va face doar când clientul devine real
+    // _sortClientsByUpdatedAt(_clients);
+    
     notifyListeners();
   }
   
@@ -1626,6 +1713,7 @@ class ClientUIService extends ChangeNotifier {
         // Transforma clientul temporar in client real (in-place)
         final realClient = tempClient.copyWith(
           id: tempClient.phoneNumber1.trim(), // ID real
+          updatedAt: DateTime.now(), // <-- fix shuffle: seteaza mereu updatedAt
         );
         
         // Inlocuieste clientul temporar cu cel real in aceeasi pozitie
@@ -1635,7 +1723,7 @@ class ClientUIService extends ChangeNotifier {
         _focusedClient = realClient;
         
         // Sorteaza lista
-        _clients.sort((a, b) => a.name.compareTo(b.name));
+        _sortClientsByUpdatedAt(_clients);
         
         debugPrint('🔵 TEMP_CLIENT: Client finalized successfully');
         
@@ -1673,6 +1761,9 @@ class ClientUIService extends ChangeNotifier {
       _focusedClient = null;
     }
     
+    // FIX: Sorteaza lista dupa anularea clientului temporar
+    _sortClientsByUpdatedAt(_clients);
+    
     debugPrint('🔵 TEMP_CLIENT: Temporary client canceled');
     notifyListeners();
   }
@@ -1690,7 +1781,7 @@ class ClientUIService extends ChangeNotifier {
       
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // FIX: Sorteaza lista dupa actualizarea formularului
-        _clients.sort((a, b) => a.name.compareTo(b.name));
+        _sortClientsByUpdatedAt(_clients);
         notifyListeners();
       });
     }
@@ -1706,6 +1797,9 @@ class ClientUIService extends ChangeNotifier {
       if (clientIndex != -1) {
         _clients[clientIndex] = _focusedClient!;
       }
+      
+      // FIX: Sorteaza lista dupa actualizarea formularului (silent)
+      _sortClientsByUpdatedAt(_clients);
     }
   }
   
@@ -1717,14 +1811,17 @@ class ClientUIService extends ChangeNotifier {
   /// CRITICAL FIX: Adauga un client nou cu optimistic updates pentru sincronizare instantanee
   Future<void> addClient(ClientModel client) async {
     try {
-      // Creeaza un client cu phoneNumber ca ID
-      final clientWithPhoneId = client.copyWith(id: client.phoneNumber);
+      // Creeaza un client cu phoneNumber ca ID si updatedAt mereu setat
+      final clientWithPhoneId = client.copyWith(
+        id: client.phoneNumber,
+        updatedAt: client.updatedAt ?? DateTime.now(), // <-- fix shuffle: seteaza mereu updatedAt
+      );
       
       // OPTIMISTIC UPDATE: Adauga imediat in lista locala pentru UI instant
       _clients.add(clientWithPhoneId);
       
       // FIX: Sorteaza lista dupa adaugarea noului client
-      _clients.sort((a, b) => a.name.compareTo(b.name));
+      _sortClientsByUpdatedAt(_clients);
       
       // Focuseaza primul client daca este primul client adaugat
       if (_clients.length == 1) {
@@ -1804,7 +1901,7 @@ class ClientUIService extends ChangeNotifier {
         // Rollback dacă ștergerea a eșuat
         _clients.add(clientToRemove);
         // FIX: Sorteaza lista dupa rollback
-        _clients.sort((a, b) => a.name.compareTo(b.name));
+        _sortClientsByUpdatedAt(_clients);
         
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _ensureSingleFocus();
@@ -1861,7 +1958,7 @@ class ClientUIService extends ChangeNotifier {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _ensureSingleFocus();
           // FIX: Sorteaza lista dupa stergerea clientilor
-          _clients.sort((a, b) => a.name.compareTo(b.name));
+          _sortClientsByUpdatedAt(_clients);
           notifyListeners();
         });
       } else {
@@ -1895,6 +1992,9 @@ class ClientUIService extends ChangeNotifier {
         _focusedClient = clientWithPhoneId;
       }
       
+      // FIX: Sorteaza lista dupa actualizarea clientului
+      _sortClientsByUpdatedAt(_clients);
+      
       // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
       final splashService = SplashService();
       await splashService.invalidateClientsCacheAndRefresh();
@@ -1921,7 +2021,7 @@ class ClientUIService extends ChangeNotifier {
         }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           // FIX: Sorteaza lista dupa rollback
-          _clients.sort((a, b) => a.name.compareTo(b.name));
+          _sortClientsByUpdatedAt(_clients);
           notifyListeners();
         });
       }
@@ -1972,7 +2072,7 @@ class ClientUIService extends ChangeNotifier {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             // FIX: Sorteaza lista dupa mutarea clientului
-            _clients.sort((a, b) => a.name.compareTo(b.name));
+            _sortClientsByUpdatedAt(_clients);
             notifyListeners();
           });
         }
@@ -2024,7 +2124,7 @@ class ClientUIService extends ChangeNotifier {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             // FIX: Sorteaza lista dupa mutarea clientului
-            _clients.sort((a, b) => a.name.compareTo(b.name));
+            _sortClientsByUpdatedAt(_clients);
             notifyListeners();
           });
         }
@@ -2074,7 +2174,7 @@ class ClientUIService extends ChangeNotifier {
           _focusedClient = null;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             // FIX: Sorteaza lista dupa mutarea clientului
-            _clients.sort((a, b) => a.name.compareTo(b.name));
+            _sortClientsByUpdatedAt(_clients);
             notifyListeners();
           });
         }
@@ -2321,6 +2421,18 @@ class ClientUIService extends ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Defocuseaza toti clientii (seteaza status normal si _focusedClient la null)
+  void defocusAllClients() {
+    for (int i = 0; i < _clients.length; i++) {
+      if (_clients[i].status == ClientStatus.focused) {
+        _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
+      }
+    }
+    _focusedClient = null;
+    debugPrint('🔵 CLIENT_SERVICE: All clients defocused (no client focused)');
+    notifyListeners();
   }
 
 }

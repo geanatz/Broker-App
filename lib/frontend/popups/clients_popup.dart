@@ -120,12 +120,17 @@ class _ClientsPopupState extends State<ClientsPopup> {
   
   // Service pentru a asculta schimbările
   late final ClientUIService _clientService;
+  // --- FOCUS LOCAL ---
+  String? _selectedClientPhoneInPopup;
 
   @override
   void initState() {
     super.initState();
     _clientService = SplashService().clientUIService;
     _clientService.addListener(_onClientServiceChanged);
+    // Nu mai defocusam toti clientii la deschiderea popup-ului!
+    // Focusul din pane ramane neatins.
+    debugPrint('🔵 CLIENTS_POPUP: Popup opened, focus in pane is not affected');
   }
 
   @override
@@ -668,6 +673,10 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Deschide widgetul de editare/creare client
   void _openEditClient([Client? client]) {
+    debugPrint('POPUP: Scheduling setState for _openEditClient cu client:  [33m [1m [0m [39m${client?.name ?? "nou"}');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      debugPrint('POPUP: Executing setState in _openEditClient pentru client: ${client?.name ?? "nou"}');
     setState(() {
       _editingClient = client;
       if (_selectedImages.isNotEmpty) {
@@ -675,6 +684,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       } else {
         _currentState = PopupState.clientsWithEdit;
       }
+      });
     });
   }
 
@@ -700,7 +710,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
   /// Construieste widgetul de extragere OCR
   Widget _buildOcrWidget(double width) {
     // Determina daca acest widget este ultimul (cel mai din dreapta)
-    final bool isLast = _currentState == PopupState.ocrOnly;
     
     return Container(
       width: width,
@@ -709,12 +718,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(32),
-            bottomLeft: const Radius.circular(32),
-            topRight: Radius.circular(isLast ? 32 : 16),
-            bottomRight: Radius.circular(isLast ? 32 : 16),
-          ),
+          borderRadius: BorderRadius.all(Radius.circular(32)),
         ),
       ),
       child: Column(
@@ -1053,102 +1057,82 @@ class _ClientsPopupState extends State<ClientsPopup> {
   /// Construieste widgetul cu lista de clienti
   Widget _buildClientsWidget(double width) {
     // Determina pozitia acestui widget in layout
-    final bool isFirst = _currentState == PopupState.clientsOnly || _currentState == PopupState.clientsWithEdit;
-    final bool isLast = _currentState == PopupState.clientsOnly || _currentState == PopupState.ocrWithClients;
-    
+
     return Container(
       width: width,
-        height: 432,
-        padding: const EdgeInsets.all(AppTheme.smallGap),
-        decoration: ShapeDecoration(
-          color: AppTheme.popupBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(isFirst ? 32 : 16),
-              bottomLeft: Radius.circular(isFirst ? 32 : 16),
-              topRight: Radius.circular(isLast ? 32 : 16),
-              bottomRight: Radius.circular(isLast ? 32 : 16),
-            ),
+      height: 432,
+      padding: const EdgeInsets.all(AppTheme.smallGap),
+      decoration: ShapeDecoration(
+        color: AppTheme.popupBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            bottomLeft: Radius.circular(32),
+            topRight: Radius.circular(32),
+            bottomRight: Radius.circular(32),
           ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Expanded content area
-            Expanded(
-              child: SizedBox(
-                width: double.infinity,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    const WidgetHeader1(title: "Lista clienti"),
-                    
-                    const SizedBox(height: AppTheme.smallGap),
-                    
-                    // Client list
-                    Expanded(
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: _getClientsToDisplay().isEmpty
-                            ? Center(
-                                child: Text(
-                                  _selectedOcrImagePath != null 
-                                      ? 'Nu au fost gasiti clienti in aceasta imagine'
-                                      : 'Nu exista clienti in lista',
-                                  style: TextStyle(
-                                    color: AppTheme.elementColor1,
-                                    fontSize: AppTheme.fontSizeMedium,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              )
-                            : ListView.separated(
-                                itemCount: _getClientsToDisplay().length,
-                                separatorBuilder: (context, index) => 
-                                    const SizedBox(height: AppTheme.smallGap),
-                                itemBuilder: (context, index) {
-                                  final client = _getClientsToDisplay()[index];
-                                  
-                                  // Determina focus-ul din service în loc de widget.selectedClient
-                                  final focusedClient = _clientService.focusedClient;
-                  final isSelected = focusedClient != null && 
-                      focusedClient.phoneNumber1 == client.phoneNumber1 &&
-                      focusedClient.name == client.name;
-                                  
-                                  if (isSelected) {
-                                    return DarkItem3(
-                                      title: client.name,
-                                      description: client.phoneNumber,
-                                    onTap: () => _openEditClient(client),
-                                    );
-                                  } else {
-                                    return LightItem3(
-                                      title: client.name,
-                                      description: client.phoneNumber,
-                                      onTap: () {
-                                        widget.onClientSelected?.call(client);
-                                      _openEditClient(client);
-                                      },
-                                    );
-                                  }
-                                },
-                              ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header (daca exista)
+          const WidgetHeader1(title: "Lista clienti"),
+          const SizedBox(height: AppTheme.smallGap),
+          // Lista de clienti
+          Expanded(
+            child: SizedBox(
+              width: double.infinity,
+              child: _getClientsToDisplay().isEmpty
+                  ? Center(
+                      child: Text(
+                        _selectedOcrImagePath != null 
+                            ? 'Nu au fost gasiti clienti in aceasta imagine'
+                            : 'Nu exista clienti in lista',
+                        style: TextStyle(
+                          color: AppTheme.elementColor1,
+                          fontSize: AppTheme.fontSizeMedium,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
+                    )
+                  : ListView.separated(
+                      itemCount: _getClientsToDisplay().length,
+                      separatorBuilder: (context, index) => 
+                          const SizedBox(height: AppTheme.smallGap),
+                      itemBuilder: (context, index) {
+                        final client = _getClientsToDisplay()[index];
+                        // --- FOCUS LOCAL ---
+                        final isSelected = _selectedClientPhoneInPopup == client.phoneNumber1;
+                        debugPrint('🔵 CLIENTS_POPUP: Building client item ${client.name} (${client.phoneNumber1}) - isSelected: $isSelected');
+                        if (isSelected) {
+                          return DarkItem3(
+                            title: client.name,
+                            description: client.phoneNumber,
+                            onTap: () => _openEditClient(client),
+                          );
+                        } else {
+                          return LightItem3(
+                            title: client.name,
+                            description: client.phoneNumber,
+                            onTap: () {
+                              debugPrint('🔵 CLIENTS_POPUP: Client item selected in popup: ${client.name} (${client.phoneNumber1})');
+                              setState(() {
+                                _selectedClientPhoneInPopup = client.phoneNumber1;
+                              });
+                              _openEditClient(client);
+                            },
+                          );
+                        }
+                      },
                     ),
-                  ],
-                ),
-              ),
             ),
-            
-            const SizedBox(height: AppTheme.smallGap),
-            
-            // Bottom buttons
-            _buildBottomButtonsRow(),
+          ),
+          const SizedBox(height: AppTheme.smallGap),
+          // Butoane de jos
+          _buildBottomButtonsRow(),
         ],
       ),
     );
@@ -1198,13 +1182,13 @@ class _ClientsPopupState extends State<ClientsPopup> {
         totalWidth = 296; // Widget OCR
         break;
       case PopupState.clientsWithEdit:
-        totalWidth = 360 + 296 + 8; // Lista + Editare
+        totalWidth = 360 + 296 + 16; // Lista + Editare + gap 16px
         break;
       case PopupState.ocrWithClients:
-        totalWidth = 296 + 360 + 8; // OCR + Lista
+        totalWidth = 296 + 360 + 16; // OCR + Lista + gap 16px
         break;
       case PopupState.ocrWithClientsAndEdit:
-        totalWidth = 296 + 360 + 296 + 2 * 8; // OCR + Lista + Editare
+        totalWidth = 296 + 360 + 296 + 2 * 16; // OCR + Lista + Editare + 2 gaps
         break;
     }
 
@@ -1215,12 +1199,8 @@ class _ClientsPopupState extends State<ClientsPopup> {
       child: Container(
         width: totalWidth,
         height: 432,
-        decoration: ShapeDecoration(
-          color: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
-          ),
-        ),
+        // Elimin border radius-ul de la containerul principal
+        color: Colors.transparent,
         child: Row(
           children: [
             // OCR Widget (if active)
@@ -1229,7 +1209,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
                 _currentState == PopupState.ocrWithClientsAndEdit) ...[
               _buildOcrWidget(_ocrWidgetWidth),
               if (_currentState != PopupState.ocrOnly)
-                const SizedBox(width: 8),
+                const SizedBox(width: 16),
             ],
             
             // Clients List Widget (if visible)
@@ -1243,7 +1223,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
             // Edit Client Widget (if active)
             if (_currentState == PopupState.clientsWithEdit || 
                 _currentState == PopupState.ocrWithClientsAndEdit) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 16),
               _buildEditClientWidget(_editWidgetWidth),
             ],
           ],
@@ -1501,12 +1481,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         decoration: ShapeDecoration(
           color: AppTheme.popupBackground,
           shape: RoundedRectangleBorder(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              bottomLeft: Radius.circular(16),
-              topRight: Radius.circular(32),
-              bottomRight: Radius.circular(32),
-            ),
+            borderRadius: BorderRadius.all(Radius.circular(32)),
           ),
         ),
         child: Column(

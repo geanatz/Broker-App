@@ -1,0 +1,99 @@
+Restarted application in 671ms.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/12ccbc06-ab68-4a19-8a54-2278b9320830' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+✅ Download validation successful | Size: 19.29MB | Files: 85
+✅ Found ready update: C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/broker_app_update.zip
+📦 SPLASH_SCREEN: Found ready update, will show notification in main screen
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/e3e758e8-c10d-4040-8c32-75d013ffbd97' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+🔄 SORT: Starting sort for 3 clients
+🔄 SORT: Before sort [0] - Wtf (0777999222) - updatedAt: 2025-07-24 15:38:31.680 - isTemp: false
+🔄 SORT: Before sort [1] - Catalin (0777888222) - updatedAt: 2025-07-24 15:38:27.571 - isTemp: false
+🔄 SORT: Before sort [2] - Daniel (0721333222) - updatedAt: 2025-07-24 15:32:18.561 - isTemp: false
+🔄 SORT: After sorting:
+🔄 SORT: After sort [0] - Wtf (0777999222) - updatedAt: 2025-07-24 15:38:31.680 - isTemp: false
+🔄 SORT: After sort [1] - Catalin (0777888222) - updatedAt: 2025-07-24 15:38:27.571 - isTemp: false
+🔄 SORT: After sort [2] - Daniel (0721333222) - updatedAt: 2025-07-24 15:32:18.561 - isTemp: false
+🔵 CLIENT_SERVICE: No client focused after update (no previous focus)
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/742043b5-8fd9-4e51-87db-3688949cd6bc' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/2f2773fc-493a-4cb4-9cc6-82dd775d3574' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+➕ CLIENT: added - 0721333222 → Daniel
+➕ CLIENT: added - 0777888222 → Catalin
+➕ CLIENT: added - 0777999222 → Wtf
+🚀 FORM_SERVICE: Advanced form loading started for client 0777999222
+🚀 FORM_SERVICE: Advanced form data load started for client 0777999222
+✅ GOOGLE_DRIVE_SERVICE: Token is still valid, no refresh needed
+✅ [FIREBASE_SUCCESS] getClient found matching client
+🚀 FORM_SERVICE: Firebase load completed in 197ms
+🚀 FORM_SERVICE: Starting advanced data processing
+🚀 FORM_SERVICE: Advanced data processing completed in 0ms
+🚀 FORM_SERVICE: Cache update completed in 0ms
+🚀 FORM_SERVICE: Advanced form data load completed in 198ms
+🚀 FORM_SERVICE: Advanced form loading completed in 198ms
+📊 SPLASH_SERVICE: Performance Metrics:
+  Initializare servicii...: 8ms
+  Preîncărcare date...: 929ms
+  Sincronizare servicii...: 20ms
+  Optimizare cache...: 1ms
+  Finalizare...: 0ms
+🔍 Checking for updates...
+🔍 Checking for updates... (attempt 1/5)
+🔍 Latest version found: 0.1.4
+🔍 Current version: 0.1.3
+📝 Release description found: 1. Formular imbuntatit.
+
+2. Conectare la telefon rezolvata.
+
+3. Recomandare imbuntatita.
+
+4. Rezolva...
+✅ Update available!
+✅ Update found | Current: 0.1.3 | Latest: 0.1.4
+🔄 SORT: Starting sort for 3 clients
+🔄 SORT: Before sort [0] - Wtf (0777999222) - updatedAt: 2025-07-24 15:38:31.680 - isTemp: false
+🔄 SORT: Before sort [1] - Catalin (0777888222) - updatedAt: 2025-07-24 15:38:27.571 - isTemp: false
+🔄 SORT: Before sort [2] - Daniel (0721333222) - updatedAt: 2025-07-24 15:32:18.561 - isTemp: false
+🔄 SORT: After sorting:
+🔄 SORT: After sort [0] - Wtf (0777999222) - updatedAt: 2025-07-24 15:38:31.680 - isTemp: false
+🔄 SORT: After sort [1] - Catalin (0777888222) - updatedAt: 2025-07-24 15:38:27.571 - isTemp: false
+🔄 SORT: After sort [2] - Daniel (0721333222) - updatedAt: 2025-07-24 15:32:18.561 - isTemp: false
+🔄 SORT: Starting sort for 3 clients
+🔄 SORT: Before sort [0] - Wtf (0777999222) - updatedAt: 2025-07-24 15:38:31.680 - isTemp: false
+🔄 SORT: Before sort [1] - Catalin (0777888222) - updatedAt: 2025-07-24 15:38:27.571 - isTemp: false
+🔄 SORT: Before sort [2] - Daniel (0721333222) - updatedAt: 2025-07-24 15:32:18.561 - isTemp: false
+🔄 SORT: After sorting:
+🔄 SORT: After sort [0] - Wtf (0777999222) - updatedAt: 2025-07-24 15:38:31.680 - isTemp: false
+🔄 SORT: After sort [1] - Catalin (0777888222) - updatedAt: 2025-07-24 15:38:27.571 - isTemp: false
+🔄 SORT: After sort [2] - Daniel (0721333222) - updatedAt: 2025-07-24 15:32:18.561 - isTemp: false
+🔵 CLIENT_SERVICE: No client focused after update (no previous focus)
+INPUT_FIELD1: Suma enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: true) [0m
+INPUT_FIELD1: Dobanda enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: true) [0m
+INPUT_FIELD1: Ani enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Luni enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+🚀 FORM_SERVICE: Advanced form loading started for client 0777999222
+🚀 FORM_SERVICE: Using cached data for client 0777999222
+🚀 FORM_SERVICE: Cache data loading completed in 0ms
+INPUT_FIELD1: Sold enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Suma enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: true) [0m
+INPUT_FIELD1: Dobanda enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: true) [0m
+INPUT_FIELD1: Ani enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Luni enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Sold enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Sold enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Sold enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Sold enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Sold enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Sold focus changed:  [33mtrue [0m
+INPUT_FIELD1: Sold focus changed:  [33mfalse [0m
+INPUT_FIELD1: Rata focus changed:  [33mtrue [0m
+INPUT_FIELD1: Sold enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata enabled: true, inputFormatters:  [33m[Instance of 'FilteringTextInputFormatter'] [0m, keyboardType:  [33mTextInputType(name: TextInputType.number, signed: false, decimal: false) [0m
+INPUT_FIELD1: Rata focus changed:  [33mfalse [0m
