@@ -194,6 +194,7 @@ class _LightItem7State extends State<LightItem7> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
       child: widget.onTap != null
           ? Material(
               color: Colors.transparent,

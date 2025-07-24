@@ -485,8 +485,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       _syncPopupWithService();
       _isShowingClientListPopup = true;
-      // Seteaza primul client ca selectat implicit
-      _selectedPopupClient = _popupClients.isNotEmpty ? _popupClients.first : null;
+      // Nu selecta niciun client implicit la deschiderea popup-ului
+      _selectedPopupClient = null;
+      debugPrint('🔵 MAIN_SCREEN: No client selected by default at popup open');
     });
   }
 
@@ -632,6 +633,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         coDebitorName: client.coDebitorName,
         status: ClientStatus.normal,
         category: ClientCategory.apeluri, // New clients go to "Clienti"
+        formData: {}, // <-- required argument
       );
       
       await _clientService.addClient(newClientModel);

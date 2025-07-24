@@ -221,6 +221,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
               phoneNumber1: '',
               category: ClientCategory.apeluri,
               status: ClientStatus.normal,
+              formData: {}, // <-- required argument
             ),
           );
           

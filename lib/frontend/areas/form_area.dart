@@ -162,11 +162,16 @@ class _FormAreaState extends State<FormArea> {
       
       _clientChangeTimer = Timer(const Duration(milliseconds: 10), () {
         // OPTIMIZATION: Only process if client actually changed
-        if (_previousClient?.phoneNumber != currentClient?.phoneNumber) {
-          debugPrint('🔄 FORM: Client actually changed - Previous: ${_previousClient?.phoneNumber ?? 'none'}, Current: ${currentClient?.phoneNumber ?? 'none'}');
+        // FIX: Ignore temporary client updates (when phone number changes during editing)
+        final isTemporaryClientUpdate = currentClient?.id.startsWith('temp_') == true && 
+                                       _previousClient?.id.startsWith('temp_') == true &&
+                                       _previousClient?.phoneNumber != currentClient?.phoneNumber;
+        
+        if (_previousClient?.phoneNumber != currentClient?.phoneNumber && !isTemporaryClientUpdate) {
+          debugPrint('🔄 FORM: Client changed - Previous: ${_previousClient?.phoneNumber ?? 'none'}, Current: ${currentClient?.phoneNumber ?? 'none'}');
           _performClientChange(currentClient);
-        } else {
-          debugPrint('🔄 FORM: Client unchanged - Skipping redundant operation');
+        } else if (isTemporaryClientUpdate) {
+          debugPrint('🔄 FORM: Temporary client update - ignoring form reset');
         }
       });
     } catch (e) {
@@ -190,7 +195,6 @@ class _FormAreaState extends State<FormArea> {
       
       // OPTIMIZATION: Start precision timing
       _clientSelectionStartTime = DateTime.now();
-      debugPrint('⚡ FORM: Client selection started at ${_clientSelectionStartTime!.millisecondsSinceEpoch}');
       debugPrint('⚡ FORM: Processing client change - Previous: ${_previousClient?.phoneNumber ?? 'none'}, Current: ${currentClient?.phoneNumber ?? 'none'}');
       
       // OPTIMIZATION: Set loading state immediately for instant feedback
