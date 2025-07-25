@@ -590,46 +590,13 @@ class MatcherService extends ChangeNotifier {
       BankCriteria(
         bankName: 'BCR',
         minIncome: 2500,
-        minAgeMale: 21,
-        minAgeFemale: 21,
+        minAgeMale: 22,
+        minAgeFemale: 22,
         maxAgeMale: 60,
         maxAgeFemale: 58,
         minFicoScore: 600,
         maxLoanAmount: 200000,
-        minEmploymentDuration: 6,
-      ),
-      BankCriteria(
-        bankName: 'BRD',
-        minIncome: 2000,
-        minAgeMale: 21,
-        minAgeFemale: 21,
-        maxAgeMale: 60,
-        maxAgeFemale: 58,
-        minFicoScore: 0,
-        maxLoanAmount: 250000,
         minEmploymentDuration: 12,
-      ),
-      BankCriteria(
-        bankName: 'Raiffeisen',
-        minIncome: 1500,
-        minAgeMale: 21,
-        minAgeFemale: 21,
-        maxAgeMale: 60,
-        maxAgeFemale: 58,
-        minFicoScore: 600,
-        maxLoanAmount: 250000,
-        minEmploymentDuration: 6,
-      ),
-      BankCriteria(
-        bankName: 'CEC Bank',
-        minIncome: 2500,
-        minAgeMale: 21,
-        minAgeFemale: 21,
-        maxAgeMale: 62,
-        maxAgeFemale: 59,
-        minFicoScore: 540,
-        maxLoanAmount: 200000,
-        minEmploymentDuration: 18,
       ),
       BankCriteria(
         bankName: 'ING',
@@ -644,14 +611,47 @@ class MatcherService extends ChangeNotifier {
       ),
       BankCriteria(
         bankName: 'Garanti',
-        minIncome: 2500,
-        minAgeMale: 21,
-        minAgeFemale: 21,
+        minIncome: 0,
+        minAgeMale: 24,
+        minAgeFemale: 24,
         maxAgeMale: 63,
         maxAgeFemale: 60,
-        minFicoScore: 420,
+        minFicoScore: 0,
         maxLoanAmount: 200000,
-        minEmploymentDuration: 6,
+        minEmploymentDuration: 7,
+      ),
+      BankCriteria(
+        bankName: 'CEC Bank',
+        minIncome: 0,
+        minAgeMale: 22,
+        minAgeFemale: 22,
+        maxAgeMale: 62,
+        maxAgeFemale: 59,
+        minFicoScore: 540,
+        maxLoanAmount: 200000,
+        minEmploymentDuration: 8,
+      ),
+      BankCriteria(
+        bankName: 'Raiffeisen',
+        minIncome: 0,
+        minAgeMale: 24,
+        minAgeFemale: 24,
+        maxAgeMale: 60,
+        maxAgeFemale: 58,
+        minFicoScore: 600,
+        maxLoanAmount: 250000,
+        minEmploymentDuration: 12,
+      ),
+      BankCriteria(
+        bankName: 'BRD',
+        minIncome: 2000,
+        minAgeMale: 0,
+        minAgeFemale: 0,
+        maxAgeMale: 60,
+        maxAgeFemale: 58,
+        minFicoScore: 0,
+        maxLoanAmount: 250000,
+        minEmploymentDuration: 7,
       ),
     ];
   }
@@ -984,7 +984,7 @@ class MatcherService extends ChangeNotifier {
 
 
   /// Factor de imprumut pentru 8% dobanda, 72 luni (conform documentatiei)
-  static const double _LOAN_FACTOR = 50.5; // Factor fix pentru 8% dobanda, 72 luni
+  static const double _loanFactor = 50.5; // Factor fix pentru 8% dobanda, 72 luni
 
   /// Normalizeaza numele bancilor pentru comparare
   String _normalizeBankName(String bankName) {
@@ -1103,7 +1103,7 @@ class MatcherService extends ChangeNotifier {
     if (availableForNew <= 0) return 0;
     
     // Fresh = Disponibil_pentru_nou * Factor
-    final result = availableForNew * _LOAN_FACTOR;
+    final result = availableForNew * _loanFactor;
     
     // Nu depaseste suma maxima a bancii
     final criteria = getBankCriteria(bankName);
@@ -1132,7 +1132,7 @@ class MatcherService extends ChangeNotifier {
     }
     
     // Calculeaza valoarea maxima refinantabila
-    final maxRefin = availableBudget * _LOAN_FACTOR;
+    final maxRefin = availableBudget * _loanFactor;
     
     // Calculeaza cashback
     final cashback = maxRefin - totalNpBalance;
@@ -1182,7 +1182,7 @@ class MatcherService extends ChangeNotifier {
     if (!hasCreditAtTargetBank) return 0;
     
     // Calculeaza valoarea maxima OP acordabila
-    final maxOp = availableBudget * _LOAN_FACTOR;
+    final maxOp = availableBudget * _loanFactor;
     
     // Calculeaza OP net acordabil
     final opNet = maxOp - targetBankNpBalance;

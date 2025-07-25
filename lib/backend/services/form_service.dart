@@ -563,7 +563,6 @@ class FormService extends ChangeNotifier {
       _isLoadingFormData = true;
       _currentlyLoadingClientId = clientId;
       
-      final loadStartTime = DateTime.now();
       
       // OPTIMIZATION: Ultra-aggressive cache check with extended validity
       if (_formDataCache.containsKey(clientId)) {
@@ -572,7 +571,6 @@ class FormService extends ChangeNotifier {
         
         // OPTIMIZATION: Extended cache validity to 5 minutes for ultra-fast response
         if (cacheTime != null && DateTime.now().difference(cacheTime).inMinutes < 5) {
-          final cacheStartTime = DateTime.now();
           
           _clientCreditForms[clientId] = List.from(cachedData['clientCreditForms']);
           _coborrowerCreditForms[clientId] = List.from(cachedData['coborrowerCreditForms']);
@@ -587,7 +585,6 @@ class FormService extends ChangeNotifier {
           });
           PerformanceMonitor.endTimer('loadFormData');
           
-          final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
           return;
         }
       }
@@ -612,15 +609,11 @@ class FormService extends ChangeNotifier {
   /// FIX: Advanced form data loading execution with detailed profiling
   Future<void> _performFormDataLoad(String clientId, String phoneNumber) async {
     try {
-      final startTime = DateTime.now();
       
-      final firebaseStartTime = DateTime.now();
       final formData = await _firebaseFormService.loadAllFormData(phoneNumber);
       
-      final firebaseTime = DateTime.now().difference(firebaseStartTime).inMilliseconds;
       
       if (formData != null) {
-        final processStartTime = DateTime.now();
         
         // Load credit forms with enhanced error handling
         final creditForms = formData['creditForms'];
@@ -695,10 +688,8 @@ class FormService extends ChangeNotifier {
         _showingClientLoanForm[clientId] = formData['showingClientLoanForm'] ?? true;
         _showingClientIncomeForm[clientId] = formData['showingClientIncomeForm'] ?? true;
         
-        final processTime = DateTime.now().difference(processStartTime).inMilliseconds;
         
         // Cache form data with strategic timing
-        final cacheStartTime = DateTime.now();
         _formDataCache[clientId] = {
           'clientCreditForms': List.from(_clientCreditForms[clientId] ?? []),
           'coborrowerCreditForms': List.from(_coborrowerCreditForms[clientId] ?? []),
@@ -709,7 +700,6 @@ class FormService extends ChangeNotifier {
           'cacheTime': DateTime.now(),
         };
         
-        final cacheTime = DateTime.now().difference(cacheStartTime).inMilliseconds;
         
         // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
         Future.microtask(() {
@@ -719,7 +709,6 @@ class FormService extends ChangeNotifier {
         
       } else {
         // FIX: Initialize with empty forms if no data exists
-        final initStartTime = DateTime.now();
         
         _clientCreditForms[clientId] = [CreditFormModel()];
         _coborrowerCreditForms[clientId] = [CreditFormModel()];
@@ -728,7 +717,6 @@ class FormService extends ChangeNotifier {
         _showingClientLoanForm[clientId] = true;
         _showingClientIncomeForm[clientId] = true;
         
-        final initTime = DateTime.now().difference(initStartTime).inMilliseconds;
         
         // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
         Future.microtask(() {

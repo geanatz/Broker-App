@@ -182,7 +182,7 @@ class ConsultantPopup extends StatelessWidget {
       await prefs.remove('main_screen_current_area');
       await prefs.remove('main_screen_current_pane');
     } catch (e) {
-      
+      // intentionally ignored
     }
     
     // Navigare directa si imediata - eliminam toate rutele si navigam la AuthWrapper
@@ -192,13 +192,13 @@ class ConsultantPopup extends StatelessWidget {
         (route) => false,
       );
     } catch (e) {
-      
+      // intentionally ignored
       // Fallback - incearcam sa resetam aplicatia
       try {
         // Restart app prin navigare la root si refresh
         navigator.pushNamedAndRemoveUntil('/', (route) => false);
       } catch (e2) {
-        
+        // intentionally ignored
       }
     }
   }

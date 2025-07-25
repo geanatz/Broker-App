@@ -70,32 +70,17 @@ class _LightItem7State extends State<LightItem7> {
 
   @override
   Widget build(BuildContext context) {
-    // Apply hover transformations: containerColor1->containerColor2, elementColor1->elementColor2, elementColor2->elementColor3
-    final Color effectiveBackgroundColor = widget.backgroundColor ?? 
-        (_isHovered ? AppTheme.containerColor2 : AppTheme.containerColor1);
-    final Color effectiveTitleColor = widget.titleColor ?? 
-        (_isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2);
-    final Color effectiveDescriptionColor = widget.descriptionColor ?? 
-        (_isHovered ? AppTheme.elementColor2 : AppTheme.elementColor1);
-    // Set icon color based on hover state and icon type
-    Color effectiveIconColor;
-    if (widget.iconColor != null) {
-      effectiveIconColor = widget.iconColor!;
-    } else if (widget.svgAsset == 'assets/userIcon.svg') {
-      // Special handling for userIcon: elementColor2 when not hovered, elementColor3 when hovered
-      effectiveIconColor = _isHovered ? AppTheme.elementColor3 : AppTheme.elementColor2;
-    } else {
-      // Default behavior for other icons
-      effectiveIconColor = AppTheme.elementColor3;
-    }
+    // Nu mai schimb culoarea la hover, doar iconita
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor2;
+    final Color effectiveDescriptionColor = widget.descriptionColor ?? AppTheme.elementColor1;
+    final Color effectiveIconColor = AppTheme.elementColor2;
 
     final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
     final double itemHeight = 64.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;
-
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
-
     final TextStyle titleStyle = AppTheme.safeOutfit(
       color: effectiveTitleColor,
       fontSize: AppTheme.fontSizeMedium,
@@ -107,19 +92,12 @@ class _LightItem7State extends State<LightItem7> {
       fontWeight: FontWeight.w500,
     );
 
-    // Determine if we should show an icon (either SVG or IconData)
-    // userIcon should always be visible, other icons only on hover
-    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) && 
+    // Iconita: userIcon mereu vizibila, restul doar la hover
+    final bool hasIcon = (widget.svgAsset != null || widget.icon != null) &&
         (widget.svgAsset == 'assets/userIcon.svg' || _isHovered);
-    
-    // Determine which icon to show: userIcon when not hovered, logoutIcon when hovered
     String? effectiveSvgAsset;
     if (widget.svgAsset != null) {
-      if (widget.svgAsset == 'assets/userIcon.svg') {
-        effectiveSvgAsset = _isHovered ? 'assets/logoutIcon.svg' : 'assets/userIcon.svg';
-      } else {
-        effectiveSvgAsset = widget.svgAsset;
-      }
+      effectiveSvgAsset = widget.svgAsset;
     }
 
     Widget iconButton = hasIcon ? Container(
@@ -135,9 +113,7 @@ class _LightItem7State extends State<LightItem7> {
                   effectiveSvgAsset,
                   width: 24.0,
                   height: 24.0,
-                  colorFilter: widget.iconColor == Colors.transparent 
-                      ? null 
-                      : ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
+                  colorFilter: ColorFilter.mode(effectiveIconColor, BlendMode.srcIn),
                   fit: BoxFit.contain,
                 )
               : widget.icon != null

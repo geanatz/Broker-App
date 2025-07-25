@@ -988,7 +988,6 @@ class ClientUIService extends ChangeNotifier {
       return aTime.compareTo(bTime); // crescator
     });
     for (int i = 0; i < creationOrderClients.length; i++) {
-      final c = creationOrderClients[i];
     }
     return List.unmodifiable(creationOrderClients);
   }

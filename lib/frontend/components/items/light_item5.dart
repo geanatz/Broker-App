@@ -2,10 +2,11 @@
 // lib/components/items/light_item5.dart
 
 import 'package:flutter/material.dart';
+import 'package:broker_app/app_theme.dart';
 
 /// A customizable light-themed item component with a primary title on the left
 /// and an optional icon on the right.
-class LightItem5 extends StatelessWidget {
+class LightItem5 extends StatefulWidget {
   /// The primary title text displayed on the left.
   final String title;
 
@@ -48,15 +49,22 @@ class LightItem5 extends StatelessWidget {
   });
 
   @override
+  State<LightItem5> createState() => _LightItem5State();
+}
+
+class _LightItem5State extends State<LightItem5> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF666699); // AppTheme.elementColor2 (consistent with title)
-    final double effectiveBorderRadius = borderRadius ?? 24.0; // AppTheme.borderRadiusLarge
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
+    final Color effectiveTitleColor = widget.titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
+    final Color effectiveIconColor = AppTheme.elementColor2;
+    final double effectiveBorderRadius = widget.borderRadius ?? 24.0; // AppTheme.borderRadiusLarge
     final double itemHeight = 48.0; // AppTheme.itemHeightMedium
     final double horizontalPadding = 16.0; // AppTheme.paddingMedium
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
+    final double effectiveIconSize = widget.iconSize ?? 24.0; // AppTheme.iconSizeSmall
     final double internalSpacing = 16.0; // AppTheme.mediumGap
 
     final TextStyle titleStyle = TextStyle(
@@ -83,20 +91,20 @@ class LightItem5 extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: titleStyle,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          if (icon != null) ...[
+          if (widget.icon != null && _isHovered) ...[
             SizedBox(width: internalSpacing),
             SizedBox(
               width: effectiveIconSize,
               height: effectiveIconSize,
               child: Icon(
-                icon,
+                widget.icon,
                 size: effectiveIconSize,
                 color: effectiveIconColor,
               ),
@@ -106,16 +114,22 @@ class LightItem5 extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
+    Widget result = MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: content,
+    );
+
+    if (widget.onTap != null) {
       return Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
           borderRadius: BorderRadius.circular(effectiveBorderRadius),
-          child: content,
+          child: result,
         ),
       );
     }
-    return content;
+    return result;
   }
 }

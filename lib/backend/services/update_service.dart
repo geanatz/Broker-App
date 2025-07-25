@@ -323,7 +323,7 @@ class UpdateService {
         }).asFuture();
         
         await sink.close();
-        final sizeMB = (_downloadedBytes / 1024 / 1024).toStringAsFixed(2);
+        (_downloadedBytes / 1024 / 1024).toStringAsFixed(2);
         
         // Valideaza fisierul descarcat
         return await _validateDownload(_updateFilePath!);

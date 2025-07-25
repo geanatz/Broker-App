@@ -2,10 +2,11 @@
 // lib/components/items/light_item6.dart
 
 import 'package:flutter/material.dart';
+import 'package:broker_app/app_theme.dart';
 
 /// A customizable light-themed item component with a primary title on the left
 /// and an optional icon on the right, housed within a differently colored padded square container.
-class LightItem6 extends StatelessWidget {
+class LightItem6 extends StatefulWidget {
   /// The primary title text.
   final String title;
 
@@ -48,15 +49,22 @@ class LightItem6 extends StatelessWidget {
   });
 
   @override
+  State<LightItem6> createState() => _LightItem6State();
+}
+
+class _LightItem6State extends State<LightItem6> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     // --- Placeholder Values / Hardcoded Defaults ---
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
-    final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
-    final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3 (for contrast)
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? const Color(0xFFC4C4D4); // AppTheme.containerColor1
+    final Color effectiveTitleColor = widget.titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
+    final Color effectiveIconColor = AppTheme.elementColor2;
 
-    final double effectiveMainBorderRadius = mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
+    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? 24.0; // AppTheme.borderRadiusLarge
     final double itemHeight = 64.0; // AppTheme.itemHeightLarge
-    final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
+    final double effectiveIconSize = widget.iconSize ?? 24.0; // AppTheme.iconSizeSmall
     final double internalSpacing = 16.0; // AppTheme.mediumGap
 
     final EdgeInsetsGeometry mainPadding = const EdgeInsets.only(top: 8, left: 16, right: 8, bottom: 8);
@@ -89,7 +97,7 @@ class LightItem6 extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    widget.title,
                     style: titleStyle,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -97,7 +105,7 @@ class LightItem6 extends StatelessWidget {
               ),
             ),
           ),
-          if (icon != null) ...[
+          if (widget.icon != null && _isHovered) ...[
             SizedBox(width: internalSpacing),
             Container(
               width: 48.0,
@@ -105,7 +113,7 @@ class LightItem6 extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Center(
                 child: Icon(
-                  icon,
+                  widget.icon,
                   size: effectiveIconSize,
                   color: effectiveIconColor,
                 ),
@@ -116,16 +124,22 @@ class LightItem6 extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
+    Widget result = MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: content,
+    );
+
+    if (widget.onTap != null) {
       return Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
           borderRadius: BorderRadius.circular(effectiveMainBorderRadius),
-          child: content,
+          child: result,
         ),
       );
     }
-    return content;
+    return result;
   }
 }
