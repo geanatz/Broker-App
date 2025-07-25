@@ -386,10 +386,10 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isApeluri = category == ClientCategory.apeluri;
     // Padding logic: collapsed = 8 vertical/horizontal, expanded = all 8
     final EdgeInsets sectionPadding = isCollapsed && !isApeluri
-        ? const EdgeInsets.symmetric(vertical: 8, horizontal: 8)
+        ? const EdgeInsets.symmetric(vertical: 5, horizontal: 8)
         : const EdgeInsets.all(8);
     final EdgeInsets headerPadding = isCollapsed && !isApeluri
-        ? const EdgeInsets.symmetric(vertical: 8, horizontal: 16)
+        ? const EdgeInsets.symmetric(vertical: 0, horizontal: 16)
         : const EdgeInsets.symmetric(horizontal: 16);
     final double headerHeight = isCollapsed && !isApeluri ? 32.0 : 24.0;
     return Container(
@@ -434,7 +434,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                   titleContainerHeight: headerHeight,
                 ),
                 AnimatedSize(
-                  duration: const Duration(milliseconds: 180),
+                  duration: const Duration(milliseconds: 240),
                   curve: Curves.easeInOut,
                   child: isCollapsed
                       ? const SizedBox.shrink()
