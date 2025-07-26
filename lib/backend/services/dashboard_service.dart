@@ -465,7 +465,7 @@ class DashboardService extends ChangeNotifier {
       final consultantToken = consultantData?['token'];
       if (consultantToken == null) return;
 
-      final stats = await _calculateConsultantStatsOptimized(consultantToken);
+      final stats = await calculateConsultantStatsOptimized(consultantToken);
       
       _consultantStats = ConsultantStats(
         formsCompletedToday: 0, // Placeholder
@@ -481,7 +481,7 @@ class DashboardService extends ChangeNotifier {
   }
 
   /// Calculeaza statisticile agregate pentru un consultant (FIX: robust cu casting corect)
-  Future<Map<String, int>> _calculateConsultantStatsOptimized(String consultantToken) async {
+  Future<Map<String, int>> calculateConsultantStatsOptimized(String consultantToken) async {
     try {
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonthConsultants);
       

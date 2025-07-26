@@ -11,6 +11,7 @@ import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/firebase_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
 import 'package:broker_app/backend/services/connection_service.dart';
+import 'package:broker_app/backend/services/llm_service.dart';
 
 /// Service pentru gestionarea încărcărilor de pe splash screen și cache-ul aplicației
 /// OPTIMIZAT: Implementare avansată cu preloading paralel și cache inteligent
@@ -35,6 +36,7 @@ class SplashService extends ChangeNotifier {
   MatcherService? _matcherService;
   GoogleDriveService? _googleDriveService;
   ConnectionService? _connectionService;
+  LLMService? _llmService;
   
   // OPTIMIZARE: Cache avansat pentru meetings cu timestamp și validare
   List<ClientActivity> _cachedMeetings = [];
@@ -81,6 +83,7 @@ class SplashService extends ChangeNotifier {
   MatcherService get matcherService => _matcherService ?? MatcherService();
   GoogleDriveService get googleDriveService => _googleDriveService ?? GoogleDriveService();
   ConnectionService get connectionService => _connectionService ?? ConnectionService();
+  LLMService get llmService => _llmService ?? LLMService();
 
   /// OPTIMIZAT: Resetează cache-ul când consultantul se schimbă cu preloading anticipat
   Future<void> resetForNewConsultant() async {

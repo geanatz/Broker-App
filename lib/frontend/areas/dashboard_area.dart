@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../components/headers/widget_header6.dart';
+import '../components/chatbot_widget.dart';
 
 
 /// Area pentru dashboard care afiseaza statistici si clasamente pentru consultanti.
@@ -64,7 +65,15 @@ class _DashboardAreaState extends State<DashboardArea> {
         // Coloana dreapta - Widget-uri informative
         Expanded(
           flex: 1,
-          child: _buildCombinedMeetingsAndStatsWidget(),
+          child: Column(
+            children: [
+              // Widget statistici - hug la inaltime
+              _buildCombinedMeetingsAndStatsWidget(),
+              const SizedBox(height: AppTheme.mediumGap),
+              // Chatbot AI - fill pe inaltime
+              Expanded(child: const ChatbotWidget()),
+            ],
+          ),
         ),
       ],
     );
@@ -182,7 +191,6 @@ class _DashboardAreaState extends State<DashboardArea> {
 
   /// Widget combinat pentru intalniri si statistici (design din widgetStatistics.md)
   Widget _buildCombinedMeetingsAndStatsWidget() {
-    final meetings = _dashboardService.upcomingMeetings.take(5).toList(); // Maximum 5 meetings
     final stats = _dashboardService.consultantStats;
     
     return Container(
@@ -291,55 +299,6 @@ class _DashboardAreaState extends State<DashboardArea> {
               ],
             ),
           ),
-          
-          // 3. A TREIA POZIȚIE: Meetings list (daca exista)
-          if (meetings.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Column(
-              spacing: 8, // Folosesc spacing în loc de marginBottom
-              children: meetings.map((meeting) => Container(
-                width: double.infinity,
-                height: 52,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: ShapeDecoration(
-                  color: AppTheme.containerColor1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        meeting.clientName,
-                        style: AppTheme.safeOutfit(
-                          color: AppTheme.elementColor2,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 104,
-                      child: Text(
-                        _extractPhoneFromMeeting(meeting),
-                        textAlign: TextAlign.right,
-                        style: AppTheme.safeOutfit(
-                          color: AppTheme.elementColor1,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
-            ),
-          ],
         ],
       ),
     );
@@ -394,15 +353,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Extrage numarul de telefon din meeting
-  String _extractPhoneFromMeeting(UpcomingMeeting meeting) {
-    // Incearca sa extraga numarul de telefon din location sau alte surse
-    if (meeting.location.contains('Telefon:')) {
-      return meeting.location.replaceAll('Telefon: ', '');
-    }
-    // Pentru moment returneaza un placeholder
-    return meeting.id.length > 10 ? meeting.id.substring(0, 10) : meeting.id;
-  }
+
 
   /// Construieste header-ul pentru tabele
   Widget _buildTableHeader(List<String> headers, List<int> flexValues) {
