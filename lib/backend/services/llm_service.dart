@@ -9,7 +9,7 @@ import 'firebase_service.dart'; // pentru NewFirebaseService
 import 'consultant_service.dart'; // pentru ConsultantService
 import 'package:cloud_firestore/cloud_firestore.dart'; // pentru Timestamp
 
-/// Model pentru un mesaj în conversația cu chatbot-ul
+/// Model pentru un mesaj in conversatia cu chatbot-ul
 class ChatMessage {
   final String content;
   final bool isUser;
@@ -38,7 +38,7 @@ class ChatMessage {
   }
 }
 
-/// Serviciu pentru gestionarea comunicării cu LLM-ul
+/// Serviciu pentru gestionarea comunicarii cu LLM-ul
 class LLMService extends ChangeNotifier {
   // Singleton pattern
   static final LLMService _instance = LLMService._internal();
@@ -50,8 +50,8 @@ class LLMService extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   
-  // API Key hardcodat pentru toți consultanții
-  static const String _apiKey = 'AIzaSyDCDWgHEEoqj85vRMO84-oJ37KyNR-72FI'; // Înlocuiește cu cheia ta reală
+  // API Key hardcodat pentru toti consultantii
+  static const String _apiKey = 'AIzaSyDCDWgHEEoqj85vRMO84-oJ37KyNR-72FI'; // Inlocuieste cu cheia ta reala
 
   // Getters
   List<ChatMessage> get messages => List.unmodifiable(_messages);
@@ -60,18 +60,18 @@ class LLMService extends ChangeNotifier {
   bool get hasApiKey => _apiKey.isNotEmpty;
 
   void initState() {
-    // Nu mai este nevoie să încărcăm API key-ul din SharedPreferences
+    // Nu mai este nevoie sa incarcam API key-ul din SharedPreferences
     notifyListeners();
   }
 
 
   /// Nu mai este necesar - API key-ul este hardcodat
   Future<void> setApiKey(String apiKey) async {
-    // Metoda păstrată pentru compatibilitate, dar nu face nimic
+    // Metoda pastrata pentru compatibilitate, dar nu face nimic
     debugPrint('⚠️ LLM_SERVICE: API key is now hardcoded, this method is deprecated');
   }
 
-  /// Adaugă un mesaj de la utilizator
+  /// Adauga un mesaj de la utilizator
   void addUserMessage(String content) {
     if (content.trim().isEmpty) return;
     
@@ -85,11 +85,11 @@ class LLMService extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     
-    // Trimite mesajul către LLM
+    // Trimite mesajul catre LLM
     _sendMessageToLLM(content.trim());
   }
 
-  /// Trimite mesajul către Google Gemini API
+  /// Trimite mesajul catre Google Gemini API
   Future<void> _sendMessageToLLM(String userMessage) async {
     if (!hasApiKey) {
       _errorMessage = 'Cheia API nu este configurata';
@@ -106,22 +106,22 @@ class LLMService extends ChangeNotifier {
       debugPrint('🤖 AI_DEBUG: Construire prompt cu context...');
       final extendedPrompt = await buildPromptWithContext(userMessage);
       
-      // Construiește contextul pentru LLM
+      // Construieste contextul pentru LLM
       final systemPrompt = _buildSystemPrompt();
       final conversationHistory = _buildConversationHistory();
       
       debugPrint('🤖 AI_DEBUG: Istoric conversatie: ${conversationHistory.length} mesaje');
       
-      // Construiește mesajele pentru Gemini API
+      // Construieste mesajele pentru Gemini API
       final messages = <Map<String, dynamic>>[];
       
-      // Adaugă prompt-ul de sistem ca primul mesaj
+      // Adauga prompt-ul de sistem ca primul mesaj
       messages.add({
         'role': 'user',
         'parts': [{'text': systemPrompt}],
       });
       
-      // Adaugă istoricul conversației
+      // Adauga istoricul conversatiei
       for (final msg in conversationHistory) {
         messages.add({
           'role': msg['role'] == 'user' ? 'user' : 'model',
@@ -129,7 +129,7 @@ class LLMService extends ChangeNotifier {
         });
       }
       
-      // Adaugă mesajul curent al utilizatorului cu context live
+      // Adauga mesajul curent al utilizatorului cu context live
       messages.add({
         'role': 'user',
         'parts': [{'text': extendedPrompt}],
@@ -179,25 +179,25 @@ class LLMService extends ChangeNotifier {
     }
   }
 
-  /// Construiește prompt-ul de sistem pentru LLM
+  /// Construieste prompt-ul de sistem pentru LLM
   String _buildSystemPrompt() {
     return AIInstructions.systemPrompt;
   }
 
-  /// Obține mesajul de bun venit
+  /// Obtine mesajul de bun venit
   String getWelcomeMessage() {
     return AIInstructions.welcomeMessage;
   }
 
-  /// Obține mesajul de eroare personalizat
+  /// Obtine mesajul de eroare personalizat
   String getErrorMessage(String errorType) {
     return AIInstructions.errorMessages[errorType] ?? 'Eroare necunoscuta';
   }
 
-  /// Construiește istoricul conversației pentru context
+  /// Construieste istoricul conversatiei pentru context
   List<Map<String, String>> _buildConversationHistory() {
     return _messages
-        .take(_messages.length - 1) // Exclude ultimul mesaj (cel care tocmai a fost adăugat)
+        .take(_messages.length - 1) // Exclude ultimul mesaj (cel care tocmai a fost adaugat)
         .map((message) => {
               'role': message.isUser ? 'user' : 'assistant',
               'content': message.content,
@@ -205,14 +205,14 @@ class LLMService extends ChangeNotifier {
         .toList();
   }
 
-  /// Șterge toate mesajele
+  /// Sterge toate mesajele
   void clearMessages() {
     _messages.clear();
     _errorMessage = null;
     notifyListeners();
   }
 
-  /// Șterge ultimul mesaj
+  /// Sterge ultimul mesaj
   void removeLastMessage() {
     if (_messages.isNotEmpty) {
       _messages.removeLast();
@@ -220,13 +220,13 @@ class LLMService extends ChangeNotifier {
     }
   }
 
-  /// Retrimite ultimul mesaj al utilizatorului fără să-l adauge din nou
+  /// Retrimite ultimul mesaj al utilizatorului fara sa-l adauge din nou
   void retryLastUserMessage() {
     if (_messages.isNotEmpty) {
-      // Găsește ultimul mesaj al utilizatorului
+      // Gaseste ultimul mesaj al utilizatorului
       for (int i = _messages.length - 1; i >= 0; i--) {
         if (_messages[i].isUser) {
-          // Trimite din nou mesajul către AI fără să-l adauge în listă
+          // Trimite din nou mesajul catre AI fara sa-l adauge in lista
           _sendMessageToLLM(_messages[i].content);
           break;
         }
@@ -234,13 +234,13 @@ class LLMService extends ChangeNotifier {
     }
   }
 
-  /// Setează starea de loading
+  /// Seteaza starea de loading
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
-  /// Salvează conversația în SharedPreferences
+  /// Salveaza conversatia in SharedPreferences
   Future<void> saveConversation() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -251,7 +251,7 @@ class LLMService extends ChangeNotifier {
     }
   }
 
-  /// Încarcă conversația din SharedPreferences
+  /// Incarca conversatia din SharedPreferences
   Future<void> loadConversation() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -340,12 +340,12 @@ class LLMService extends ChangeNotifier {
     final currentMonth = now.month;
     final currentYear = now.year;
     
-    // Calculează luna trecută pentru ghidarea AI-ului
+    // Calculeaza luna trecuta pentru ghidarea AI-ului
     final lastMonth = now.month == 1 ? 12 : now.month - 1;
     final lastMonthYear = now.month == 1 ? now.year - 1 : now.year;
     final lastMonthName = _getMonthName(lastMonth);
     
-    // Calculează săptămâna curentă și viitoare
+    // Calculeaza saptamana curenta si viitoare
     final currentWeekStart = now.subtract(Duration(days: now.weekday - 1));
     final nextWeekStart = currentWeekStart.add(const Duration(days: 7));
     
@@ -389,7 +389,7 @@ class LLMService extends ChangeNotifier {
       
       // Formateaza intalnirile viitoare
       meetingsSummary = futureMeetings
-          .take(15) // Mărit de la 10 la 15 pentru mai multe date
+          .take(15) // Marit de la 10 la 15 pentru mai multe date
           .map((m) {
             final dt = m['dateTime'];
             DateTime meetingDate;
@@ -407,7 +407,7 @@ class LLMService extends ChangeNotifier {
       
       // Formateaza intalnirile din trecut
       pastMeetingsSummary = pastMeetings
-          .take(15) // Mărit de la 10 la 15 pentru mai multe date
+          .take(15) // Marit de la 10 la 15 pentru mai multe date
           .map((m) {
             final dt = m['dateTime'];
             DateTime meetingDate;
@@ -423,7 +423,7 @@ class LLMService extends ChangeNotifier {
           })
           .join('\n');
       
-      // Informații detaliate pentru analiză
+      // Informatii detaliate pentru analiza
       detailedMeetingsInfo = '''
 INFORMATII DETALIATE PENTRU ANALIZA:
 - Total intalniri: ${allMeetings.length}
@@ -492,7 +492,7 @@ Intrebare utilizator: $userMessage
     return prompt;
   }
 
-  /// Helper pentru a obține numele lunii
+  /// Helper pentru a obtine numele lunii
   String _getMonthName(int month) {
     const monthNames = [
       'Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',

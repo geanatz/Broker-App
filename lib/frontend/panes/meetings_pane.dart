@@ -11,7 +11,7 @@ import '../../backend/services/splash_service.dart';
 import '../../backend/services/firebase_service.dart';
 
 /// Widget pentru panoul de intalniri
-/// OPTIMIZAT: Implementare avansată cu cache inteligent și loading instant
+/// OPTIMIZAT: Implementare avansata cu cache inteligent si loading instant
 class MeetingsPane extends StatefulWidget {
   final Function? onClose;
   final Function(String)? onNavigateToMeeting;
@@ -30,7 +30,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
   // Firebase reference
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
-  // FIX: Adăugat SplashService pentru listener automat
+  // FIX: Adaugat SplashService pentru listener automat
   final SplashService _splashService = SplashService();
   
   // Formatter pentru date
@@ -43,7 +43,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
   bool _isLoading = true;
   Timer? _refreshTimer;
   
-  // OPTIMIZARE: Debouncing îmbunătățit pentru load meetings
+  // OPTIMIZARE: Debouncing imbunatatit pentru load meetings
   Timer? _loadDebounceTimer;
   bool _isLoadingMeetings = false;
   DateTime? _lastLoadTime;
@@ -51,13 +51,13 @@ class MeetingsPaneState extends State<MeetingsPane> {
   @override
   void initState() {
     super.initState();
-    // FIX: Adaugă listener pentru actualizare automată când se modifică datele în SplashService
+    // FIX: Adauga listener pentru actualizare automata cand se modifica datele in SplashService
     _splashService.addListener(_onSplashServiceChanged);
     
     // Foloseste serviciul pre-incarcat din splash - accesez firebaseService din ClientUIService
     _initializeFormatters();
     
-    // OPTIMIZARE: Încarcă imediat din cache pentru loading instant și sincronizare completă
+    // OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
     _loadFromCacheInstantly();
   }
   
@@ -70,33 +70,33 @@ class MeetingsPaneState extends State<MeetingsPane> {
     super.dispose();
   }
 
-  /// OPTIMIZARE: Încarcă imediat din cache pentru loading instant și sincronizare completă
+  /// OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
   Future<void> _loadFromCacheInstantly() async {
     try {
-      // Încarcă întâlnirile din cache instant
+      // Incarca intalnirile din cache instant
       final allMeetings = await _splashService.getCachedMeetings();
       final now = DateTime.now();
       
-      // Filtrează întâlnirile viitoare ale consultantului curent  
+      // Filtreaza intalnirile viitoare ale consultantului curent  
       final List<ClientActivity> futureAppointments = [];
       final currentConsultantToken = await _getCurrentConsultantToken();
       
       for (final meeting in allMeetings) {
-        // Verifică dacă întâlnirea este în viitor
+        // Verifica daca intalnirea este in viitor
         if (!meeting.dateTime.isAfter(now)) {
           continue;
         }
         
-        // Verifică dacă întâlnirea aparține consultantului curent
+        // Verifica daca intalnirea apartine consultantului curent
         final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
         
-        // FIX: Pentru întâlnirile noi, folosește consultantId
+        // FIX: Pentru intalnirile noi, foloseste consultantId
         if (meetingConsultantId != null) {
           if (meetingConsultantId != _auth.currentUser?.uid) {
             continue;
           }
         } else {
-          // FIX: Pentru întâlnirile existente (fără consultantId), folosește consultantToken
+          // FIX: Pentru intalnirile existente (fara consultantId), foloseste consultantToken
           final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
           if (meetingConsultantToken == null) {
             continue;
@@ -110,7 +110,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         futureAppointments.add(meeting);
       }
 
-      // Sortează după data
+      // Sorteaza dupa data
       futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
       if (mounted) {
@@ -121,7 +121,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         });
       }
       
-      // OPTIMIZARE: Log redus pentru performanță
+      // OPTIMIZARE: Log redus pentru performanta
       // debugPrint('✅ MEETINGS_PANE: Loaded ${_allAppointments.length} upcoming meetings instantly from cache');
     } catch (e) {
       debugPrint('❌ MEETINGS_PANE: Error loading from cache: $e');
@@ -130,7 +130,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
     }
   }
 
-  /// FIX: Callback pentru refresh automat când se schimbă datele în SplashService
+  /// FIX: Callback pentru refresh automat cand se schimba datele in SplashService
   void _onSplashServiceChanged() {
     if (mounted) {
   
@@ -163,20 +163,20 @@ class MeetingsPaneState extends State<MeetingsPane> {
     }
   }
 
-  /// OPTIMIZAT: Incarca intalnirile viitoare cu debouncing îmbunătățit
+  /// OPTIMIZAT: Incarca intalnirile viitoare cu debouncing imbunatatit
   Future<void> _loadUpcomingMeetings() async {
-    // OPTIMIZARE: Verifică dacă cache-ul este recent (sub 3 secunde - redus de la 5)
+    // OPTIMIZARE: Verifica daca cache-ul este recent (sub 3 secunde - redus de la 5)
     if (_lastLoadTime != null && 
         DateTime.now().difference(_lastLoadTime!).inSeconds < 3) {
-      // OPTIMIZARE: Log redus pentru performanță
+      // OPTIMIZARE: Log redus pentru performanta
       // debugPrint('⏭️ MEETINGS_PANE: Skipping load - cache is recent');
       return;
     }
     
-    // Anulează loading-ul anterior dacă există unul pending
+    // Anuleaza loading-ul anterior daca exista unul pending
     _loadDebounceTimer?.cancel();
     
-    // Dacă deja se încarcă, nu mai face alt request
+    // Daca deja se incarca, nu mai face alt request
     if (_isLoadingMeetings) return;
     
     // CRITICAL FIX: Near-instant debouncing for immediate sync
@@ -185,7 +185,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
     });
   }
 
-  /// OPTIMIZAT: Execută încărcarea efectivă a întâlnirilor
+  /// OPTIMIZAT: Executa incarcarea efectiva a intalnirilor
   Future<void> _performLoadUpcomingMeetings() async {
     if (_isLoadingMeetings) return;
     final currentUserId = _auth.currentUser?.uid;
@@ -204,30 +204,30 @@ class MeetingsPaneState extends State<MeetingsPane> {
     try {
       _isLoadingMeetings = true;
       
-      // OPTIMIZARE: Folosește cache-ul din SplashService pentru performanță și sincronizare
+      // OPTIMIZARE: Foloseste cache-ul din SplashService pentru performanta si sincronizare
       final allMeetings = await _splashService.getCachedMeetings();
       final now = DateTime.now();
       
-      // Filtrează întâlnirile viitoare ale consultantului curent  
+      // Filtreaza intalnirile viitoare ale consultantului curent  
       final List<ClientActivity> futureAppointments = [];
       final currentConsultantToken = await _getCurrentConsultantToken();
       
       for (final meeting in allMeetings) {
-        // Verifică dacă întâlnirea este în viitor
+        // Verifica daca intalnirea este in viitor
         if (!meeting.dateTime.isAfter(now)) {
           continue;
         }
         
-        // Verifică dacă întâlnirea aparține consultantului curent
+        // Verifica daca intalnirea apartine consultantului curent
         final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
         
-        // FIX: Pentru întâlnirile noi, folosește consultantId
+        // FIX: Pentru intalnirile noi, foloseste consultantId
         if (meetingConsultantId != null) {
           if (meetingConsultantId != currentUserId) {
             continue;
           }
         } else {
-          // FIX: Pentru întâlnirile existente (fără consultantId), folosește consultantToken
+          // FIX: Pentru intalnirile existente (fara consultantId), foloseste consultantToken
           final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
           if (meetingConsultantToken == null) {
             continue;
@@ -241,7 +241,7 @@ class MeetingsPaneState extends State<MeetingsPane> {
         futureAppointments.add(meeting);
       }
 
-      // Sortează după data
+      // Sorteaza dupa data
       futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
       // OPTIMIZARE: Single state update with all data
@@ -315,10 +315,10 @@ class MeetingsPaneState extends State<MeetingsPane> {
     debugPrint('Mark meeting as done: $meetingId');
   }
   
-  /// FIX: Obține consultantToken-ul curent pentru comparația cu întâlnirile existente
+  /// FIX: Obtine consultantToken-ul curent pentru comparatia cu intalnirile existente
   Future<String?> _getCurrentConsultantToken() async {
     try {
-      // Folosește NewFirebaseService pentru a obține consultantToken-ul curent
+      // Foloseste NewFirebaseService pentru a obtine consultantToken-ul curent
       final firebaseService = NewFirebaseService();
       return await firebaseService.getCurrentConsultantToken();
     } catch (e) {

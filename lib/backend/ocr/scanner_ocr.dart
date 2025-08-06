@@ -3,14 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image/image.dart' as img;
 
-/// Service pentru scanarea și selecția imaginilor pentru OCR
+/// Service pentru scanarea si selectia imaginilor pentru OCR
 class ScannerOCR {
   static final ScannerOCR _instance = ScannerOCR._internal();
   factory ScannerOCR() => _instance;
   ScannerOCR._internal();
 
-  /// Selectează imagini pentru procesare OCR
-  /// Compatibil cu web și desktop/mobile
+  /// Selecteaza imagini pentru procesare OCR
+  /// Compatibil cu web si desktop/mobile
   Future<List<ImageFile>> selectImages() async {
     try {
       FilePickerResult? result;
@@ -60,10 +60,10 @@ class ScannerOCR {
     }
   }
 
-  /// Procesează un fișier selectat și creează ImageFile
+  /// Proceseaza un fisier selectat si creeaza ImageFile
   Future<ImageFile?> _processSelectedFile(PlatformFile file) async {
     try {
-      // Validează extensia fișierului
+      // Valideaza extensia fisierului
       if (!_isValidImageExtension(file.name)) {
         debugPrint('⚠️ SCANNER_OCR: Fisier ignorat (extensie invalida): ${file.name}');
         return null;
@@ -89,7 +89,7 @@ class ScannerOCR {
         bytes = await File(path).readAsBytes();
       }
       
-      // Validează că imaginea poate fi decodată
+      // Valideaza ca imaginea poate fi decodata
       final image = img.decodeImage(bytes);
       if (image == null) {
         debugPrint('❌ SCANNER_OCR: Nu se poate decoda imaginea ${file.name}');
@@ -114,14 +114,14 @@ class ScannerOCR {
     }
   }
 
-  /// Verifică dacă extensia fișierului este validă pentru imagini
+  /// Verifica daca extensia fisierului este valida pentru imagini
   bool _isValidImageExtension(String fileName) {
     final extension = fileName.toLowerCase().split('.').last;
     const validExtensions = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'webp'];
     return validExtensions.contains(extension);
   }
 
-  /// Redimensionează o imagine pentru a optimiza procesarea OCR
+  /// Redimensioneaza o imagine pentru a optimiza procesarea OCR
   Future<Uint8List> resizeImageForOCR(Uint8List imageBytes, {int maxWidth = 2048, int maxHeight = 2048}) async {
     try {
       final image = img.decodeImage(imageBytes);
@@ -129,7 +129,7 @@ class ScannerOCR {
         throw Exception('Nu se poate decoda imaginea');
       }
       
-      // Calculează dimensiunile noi păstrând aspect ratio
+      // Calculeaza dimensiunile noi pastrand aspect ratio
       int newWidth = image.width;
       int newHeight = image.height;
       
@@ -145,7 +145,7 @@ class ScannerOCR {
         }
       }
       
-      // Redimensionează imaginea doar dacă este necesar
+      // Redimensioneaza imaginea doar daca este necesar
       if (newWidth != image.width || newHeight != image.height) {
         final resized = img.copyResize(image, width: newWidth, height: newHeight);
         final resizedBytes = Uint8List.fromList(img.encodeJpg(resized, quality: 85));
@@ -158,11 +158,11 @@ class ScannerOCR {
       
     } catch (e) {
       debugPrint('❌ SCANNER_OCR: Eroare la redimensionarea imaginii: $e');
-      return imageBytes; // Returnează imaginea originală în caz de eroare
+      return imageBytes; // Returneaza imaginea originala in caz de eroare
     }
   }
 
-  /// Îmbunătățește calitatea imaginii pentru OCR
+  /// Imbunatateste calitatea imaginii pentru OCR
   Future<Uint8List> enhanceImageForOCR(Uint8List imageBytes) async {
     try {
       final image = img.decodeImage(imageBytes);
@@ -170,20 +170,20 @@ class ScannerOCR {
         throw Exception('Nu se poate decoda imaginea');
       }
       
-      // Aplică îmbunătățiri pentru OCR
+      // Aplica imbunatatiri pentru OCR
       var enhanced = image;
       
-      // Crește contrastul
+      // Creste contrastul
       enhanced = img.contrast(enhanced, contrast: 110);
       
-      // Aplică sharpening
+      // Aplica sharpening
       enhanced = img.convolution(enhanced, filter: [
         0, -1, 0,
         -1, 5, -1,
         0, -1, 0
       ]);
       
-      // Convertește la grayscale pentru OCR mai bun
+      // Converteste la grayscale pentru OCR mai bun
       enhanced = img.grayscale(enhanced);
       
       final enhancedBytes = Uint8List.fromList(img.encodeJpg(enhanced, quality: 90));
@@ -193,12 +193,12 @@ class ScannerOCR {
       
     } catch (e) {
       debugPrint('❌ SCANNER_OCR: Eroare la imbunatatirea imaginii: $e');
-      return imageBytes; // Returnează imaginea originală în caz de eroare
+      return imageBytes; // Returneaza imaginea originala in caz de eroare
     }
   }
 }
 
-/// Clasa pentru reprezentarea unui fișier imagine
+/// Clasa pentru reprezentarea unui fisier imagine
 class ImageFile {
   final String name;
   final String? path; // null pe web
@@ -220,7 +220,7 @@ class ImageFile {
   String toString() => 'ImageFile(name: $name, size: $size, dimensions: ${width}x$height)';
 }
 
-/// Excepție pentru erori de scanare
+/// Exceptie pentru erori de scanare
 class ScannerException implements Exception {
   final String message;
   

@@ -123,7 +123,7 @@ class _BankPopupState extends State<BankPopup> {
     super.dispose();
   }
 
-  // FIX: Eliminată metoda _saveChanges - popup-ul este doar pentru vizualizare
+  // FIX: Eliminata metoda _saveChanges - popup-ul este doar pentru vizualizare
 
   @override
   Widget build(BuildContext context) {

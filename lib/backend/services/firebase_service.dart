@@ -389,7 +389,7 @@ class FirebaseThreadHandler {
   }
 }
 
-/// Serviciu pentru gestionarea formularelor în Firebase Firestore
+/// Serviciu pentru gestionarea formularelor in Firebase Firestore
 class FirebaseFormService {
   static final FirebaseFormService _instance = FirebaseFormService._internal();
   factory FirebaseFormService() => _instance;
@@ -398,7 +398,7 @@ class FirebaseFormService {
   final ClientsFirebaseService _clientService = ClientsFirebaseService();
   final FirebaseThreadHandler _threadHandler = FirebaseThreadHandler.instance;
 
-  /// Salvează datele formularului pentru un client
+  /// Salveaza datele formularului pentru un client
   Future<bool> saveClientFormData({
     required String phoneNumber,
     required String clientName,
@@ -406,15 +406,15 @@ class FirebaseFormService {
   }) async {
     try {
       await _threadHandler.executeOnPlatformThread(() async {
-        // Verifică dacă clientul există, dacă nu îl creează
+        // Verifica daca clientul exista, daca nu il creeaza
         final existingClient = await _clientService.getClient(phoneNumber);
         if (existingClient == null) {
-          // FIX: Nu crea automat clientul dacă nu există - lasă aplicația să gestioneze crearea
+          // FIX: Nu crea automat clientul daca nu exista - lasa aplicatia sa gestioneze crearea
           FirebaseLogger.warning('Skipping automatic client creation for: $phoneNumber');
           return;
         }
 
-        // Salvează datele formularului direct în noua structură
+        // Salveaza datele formularului direct in noua structura
         await _clientService.saveClientForm(
           phoneNumber: phoneNumber,
           formType: 'unified_form',
@@ -428,16 +428,16 @@ class FirebaseFormService {
     }
   }
 
-  /// OPTIMIZAT: Încarcă datele formularului pentru un client din noua structură cu cache
+  /// OPTIMIZAT: Incarca datele formularului pentru un client din noua structura cu cache
   Future<Map<String, dynamic>?> loadClientFormData(String phoneNumber) async {
     try {
       return await _threadHandler.executeOnPlatformThread(() async {
-        // OPTIMIZARE: Folosește NewFirebaseService pentru cache
+        // OPTIMIZARE: Foloseste NewFirebaseService pentru cache
         final newFirebaseService = NewFirebaseService();
         final client = await newFirebaseService.getClient(phoneNumber);
         
         if (client != null) {
-          // OPTIMIZARE: Folosește cache-ul pentru form data
+          // OPTIMIZARE: Foloseste cache-ul pentru form data
           final forms = await newFirebaseService.getClientForms(phoneNumber);
           final formData = forms.isNotEmpty ? forms.first['data'] ?? {} : {};
           
@@ -456,7 +456,7 @@ class FirebaseFormService {
     }
   }
 
-  /// Șterge datele formularului pentru un client din noua structură
+  /// Sterge datele formularului pentru un client din noua structura
   Future<bool> deleteClientFormData(String phoneNumber) async {
     try {
       await _threadHandler.executeOnPlatformThread(() async {
@@ -476,7 +476,7 @@ class FirebaseFormService {
     }
   }
 
-  /// Salvează formularele de credit pentru un client
+  /// Salveaza formularele de credit pentru un client
   Future<bool> saveCreditForms({
     required String phoneNumber,
     required String clientName,
@@ -497,7 +497,7 @@ class FirebaseFormService {
     );
   }
 
-  /// Salvează formularele de venit pentru un client
+  /// Salveaza formularele de venit pentru un client
   Future<bool> saveIncomeForms({
     required String phoneNumber,
     required String clientName,
@@ -518,7 +518,7 @@ class FirebaseFormService {
     );
   }
 
-  /// Salvează toate datele formularului pentru un client
+  /// Salveaza toate datele formularului pentru un client
   Future<bool> saveAllFormData({
     required String phoneNumber,
     required String clientName,
@@ -549,7 +549,7 @@ class FirebaseFormService {
     );
   }
 
-  /// Încarcă toate datele formularului pentru un client
+  /// Incarca toate datele formularului pentru un client
   Future<Map<String, dynamic>?> loadAllFormData(String phoneNumber) async {
     try {
       final data = await loadClientFormData(phoneNumber);
@@ -570,7 +570,7 @@ class FirebaseFormService {
     }
   }
 
-  /// Obține toate documentele din colecția forms (pentru debug/admin)
+  /// Obtine toate documentele din colectia forms (pentru debug/admin)
   Future<List<Map<String, dynamic>>> getAllForms() async {
     try {
       return await _threadHandler.executeOnPlatformThread(() async {
@@ -598,9 +598,9 @@ class FirebaseFormService {
     }
   }
 
-  /// Stream pentru a asculta schimbările în timp real pentru un client
+  /// Stream pentru a asculta schimbarile in timp real pentru un client
   Stream<Map<String, dynamic>?> streamClientFormData(String phoneNumber) {
-    // Pentru compatibilitate, returnăm un stream care emite periodic datele clientului
+    // Pentru compatibilitate, returnam un stream care emite periodic datele clientului
     return Stream.periodic(const Duration(seconds: 5)).asyncMap((_) async {
       final data = await loadClientFormData(phoneNumber);
       return data;
@@ -1100,7 +1100,7 @@ class NewFirebaseService {
         final data = doc.data();
         final clientConsultantToken = data['consultantToken'] as String?;
         
-        // Verificare explicită pentru siguranță
+        // Verificare explicita pentru siguranta
         if (clientConsultantToken == consultantToken) {
           clientsList.add({
             'id': doc.id,
@@ -1298,7 +1298,7 @@ class NewFirebaseService {
 
   // =================== MEETING OPERATIONS ===================
 
-  /// OPTIMIZAT: Creeaza o intalnire pentru un client cu performanță îmbunătățită
+  /// OPTIMIZAT: Creeaza o intalnire pentru un client cu performanta imbunatatita
   Future<bool> createMeeting({
     required String phoneNumber,
     required DateTime dateTime,
@@ -1316,13 +1316,13 @@ class NewFirebaseService {
     }
 
     try {
-      // OPTIMIZARE: Operații paralele pentru crearea clientului și întâlnirii
+      // OPTIMIZARE: Operatii paralele pentru crearea clientului si intalnirii
   
       
       final results = await Future.wait([
-        // Operația 1: Verifică/crează clientul
+        // Operatia 1: Verifica/creaza clientul
         _ensureClientExists(phoneNumber, additionalData, consultantToken),
-        // Operația 2: Creează întâlnirea
+        // Operatia 2: Creeaza intalnirea
         _createMeetingDocument(phoneNumber, dateTime, type, description, additionalData, consultantToken),
       ]);
       
@@ -1344,7 +1344,7 @@ class NewFirebaseService {
     }
   }
 
-  /// OPTIMIZARE: Asigură că clientul există
+  /// OPTIMIZARE: Asigura ca clientul exista
   Future<bool> _ensureClientExists(String phoneNumber, Map<String, dynamic>? additionalData, String consultantToken) async {
     try {
   
@@ -1383,7 +1383,7 @@ class NewFirebaseService {
     }
   }
 
-  /// OPTIMIZARE: Creează documentul întâlnirii
+  /// OPTIMIZARE: Creeaza documentul intalnirii
   Future<bool> _createMeetingDocument(String phoneNumber, DateTime dateTime, String type, String? description, Map<String, dynamic>? additionalData, String consultantToken) async {
     try {
   
@@ -1409,7 +1409,7 @@ class NewFirebaseService {
       );
   
 
-      // OPTIMIZARE: Actualizează timestamp-ul clientului în background
+      // OPTIMIZARE: Actualizeaza timestamp-ul clientului in background
       _updateClientTimestampInBackground(phoneNumber);
       
       return true;
@@ -1419,7 +1419,7 @@ class NewFirebaseService {
     }
   }
 
-  /// OPTIMIZARE: Actualizează timestamp-ul clientului în background
+  /// OPTIMIZARE: Actualizeaza timestamp-ul clientului in background
   void _updateClientTimestampInBackground(String phoneNumber) {
     Future.microtask(() async {
       try {
@@ -1440,13 +1440,13 @@ class NewFirebaseService {
     }
 
     try {
-      final clients = await getAllClients(); // Folosește getAllClients care deja filtrează corect
+      final clients = await getAllClients(); // Foloseste getAllClients care deja filtreaza corect
       final List<Map<String, dynamic>> allMeetings = [];
 
       for (final client in clients) {
         final phoneNumber = client['phoneNumber'] as String;
         
-        // Verificare suplimentară pentru siguranță
+        // Verificare suplimentara pentru siguranta
         if (client['consultantToken'] != consultantToken) {
           continue;
         }
@@ -1460,7 +1460,7 @@ class NewFirebaseService {
         );
 
         for (final doc in meetingsSnapshot.docs) {
-          // FIX: Asigură-te că consultantToken este disponibil pentru identificare
+          // FIX: Asigura-te ca consultantToken este disponibil pentru identificare
           final meetingData = doc.data();
           final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
           
@@ -1468,11 +1468,11 @@ class NewFirebaseService {
             'id': doc.id,
             'clientPhoneNumber': phoneNumber,
             'clientName': client['name'],
-            'consultantToken': consultantToken, // FIX: asigură-te că este setat corect
+            'consultantToken': consultantToken, // FIX: asigura-te ca este setat corect
             ...meetingData,
             'additionalData': {
               ...additionalData,
-              'consultantToken': consultantToken, // FIX: Folosește token-ul pentru identificare
+              'consultantToken': consultantToken, // FIX: Foloseste token-ul pentru identificare
             },
           });
         }
@@ -1519,7 +1519,7 @@ class NewFirebaseService {
           final phoneNumber = clientDoc.id;
           final clientData = clientDoc.data();
           
-          // FIX: verificare suplimentară pentru siguranță
+          // FIX: verificare suplimentara pentru siguranta
           if (clientData['consultantToken'] != token) {
             continue;
           }
@@ -1533,7 +1533,7 @@ class NewFirebaseService {
           );
 
           for (final meetingDoc in meetingsSnapshot.docs) {
-            // FIX: Asigură-te că consultantToken este disponibil pentru identificare
+            // FIX: Asigura-te ca consultantToken este disponibil pentru identificare
             final meetingData = meetingDoc.data();
             final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
             
@@ -1541,11 +1541,11 @@ class NewFirebaseService {
               'id': meetingDoc.id,
               'clientPhoneNumber': phoneNumber,
               'clientName': clientData['name'],
-              'consultantToken': token, // FIX: asigură-te că este setat corect
+              'consultantToken': token, // FIX: asigura-te ca este setat corect
               ...meetingData,
               'additionalData': {
                 ...additionalData,
-                'consultantToken': token, // FIX: Folosește token-ul pentru identificare în calendar
+                'consultantToken': token, // FIX: Foloseste token-ul pentru identificare in calendar
               },
             });
           }
@@ -1793,7 +1793,7 @@ class MigrationService {
       FirebaseLogger.error('Error during migration: $e');
       return {
         'success': false,
-        'message': 'Eroare în timpul migrării: $e',
+        'message': 'Eroare in timpul migrarii: $e',
       };
     }
   }

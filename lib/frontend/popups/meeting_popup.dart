@@ -283,11 +283,11 @@ class _MeetingPopupState extends State<MeetingPopup> {
         int.parse(timeParts[1]),
       );
 
-      // OPTIMIZARE: Obține datele consultantului în paralel cu alte operații
+      // OPTIMIZARE: Obtine datele consultantului in paralel cu alte operatii
       final authService = AuthService();
       final firebaseService = NewFirebaseService();
       
-      // OPTIMIZARE: Operații paralele pentru obținerea datelor consultantului
+      // OPTIMIZARE: Operatii paralele pentru obtinerea datelor consultantului
       final consultantResults = await Future.wait([
         authService.getCurrentConsultantData(),
         firebaseService.getCurrentConsultantToken(),
@@ -326,7 +326,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
       if (result['success']) {
         
-        // OPTIMIZARE: Închide popup-ul imediat pentru feedback instant
+        // OPTIMIZARE: Inchide popup-ul imediat pentru feedback instant
         if (mounted) {
           Navigator.of(context).pop();
           if (widget.onSaved != null) {
@@ -336,7 +336,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
           _showSuccess(successMessage);
         }
         
-        // OPTIMIZARE: Invalidare cache în background pentru actualizare rapidă
+        // OPTIMIZARE: Invalidare cache in background pentru actualizare rapida
         _invalidateCacheInBackground();
       } else {
         final errorMessage = result['message'] ?? 'Eroare necunoscuta la salvarea intalnirii';
@@ -355,9 +355,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
   }
 
-  /// OPTIMIZARE: Invalidare cache în background pentru performanță
+  /// OPTIMIZARE: Invalidare cache in background pentru performanta
   void _invalidateCacheInBackground() {
-    // OPTIMIZARE: Execută în background pentru a nu bloca UI-ul
+    // OPTIMIZARE: Executa in background pentru a nu bloca UI-ul
     Future.microtask(() async {
       try {
         await _splashService.invalidateAllMeetingCaches();
@@ -403,7 +403,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
       final result = await _meetingService.deleteMeeting(widget.meetingId!, phoneNumber);
       
       if (result['success']) {
-        // OPTIMIZARE: Folosește invalidarea optimizată cu debouncing
+        // OPTIMIZARE: Foloseste invalidarea optimizata cu debouncing
         _splashService.invalidateAllMeetingCaches();
         
         if (mounted) {

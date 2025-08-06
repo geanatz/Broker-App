@@ -13,7 +13,7 @@ import '../popups/status_popup.dart';
 import '../../backend/services/firebase_service.dart';
 
 /// ClientsPane - Interfata pentru gestionarea clientilor
-/// OPTIMIZAT: Implementare avansată cu cache inteligent și loading instant
+/// OPTIMIZAT: Implementare avansata cu cache inteligent si loading instant
 /// 
 /// Aceasta interfata este impartita in 3 sectiuni:
 /// 1. Clienti - toti clientii activi (FILL - nu se poate collapse)
@@ -52,7 +52,7 @@ class _ClientsPaneState extends State<ClientsPane> {
   final ScrollController _reveniriScrollController = ScrollController();
   final ScrollController _recenteScrollController = ScrollController();
   
-  // OPTIMIZARE: Cache pentru clienți cu timestamp
+  // OPTIMIZARE: Cache pentru clienti cu timestamp
   List<ClientModel> _cachedClients = [];
 
   // OPTIMIZARE: Debouncing pentru client switching pentru a preveni UI freezing
@@ -84,23 +84,23 @@ class _ClientsPaneState extends State<ClientsPane> {
     _clientService = SplashService().clientUIService;
     _splashService = SplashService();
     
-    // FIX: Ascultă la schimbări în SplashService pentru refresh automat
+    // FIX: Asculta la schimbari in SplashService pentru refresh automat
     _splashService.addListener(_onSplashServiceChanged);
     
     // Initializeaza datele demo daca nu exista clienti
     _initializeClients();
     _clientService.addListener(_onClientServiceChanged);
     
-    // OPTIMIZARE: Încarcă imediat din cache pentru loading instant
+    // OPTIMIZARE: Incarca imediat din cache pentru loading instant
     _loadFromCacheInstantly();
     
     PerformanceMonitor.endTimer('clientsPaneInit');
   }
 
-  /// OPTIMIZARE: Încarcă imediat din cache pentru loading instant
+  /// OPTIMIZARE: Incarca imediat din cache pentru loading instant
   Future<void> _loadFromCacheInstantly() async {
     try {
-      // Încarcă clienții din cache instant
+      // Incarca clientii din cache instant
       final cachedClients = await _splashService.getCachedClients();
       
       // FIX: Cleanup focus state when loading from cache
@@ -160,10 +160,10 @@ class _ClientsPaneState extends State<ClientsPane> {
     try {
       _isRefreshing = true;
       
-      // FIX: Forțează reîncărcarea din Firebase pentru a sincroniza cu starea reală
+      // FIX: Forteaza reincarcarea din Firebase pentru a sincroniza cu starea reala
       await _clientService.loadClientsFromFirebase();
       
-      // Încarcă din cache actualizat
+      // Incarca din cache actualizat
       final cachedClients = await _splashService.getCachedClients();
       
       if (mounted) {
@@ -194,7 +194,7 @@ class _ClientsPaneState extends State<ClientsPane> {
     super.dispose();
   }
 
-  /// OPTIMIZAT: Callback pentru refresh automat când se schimbă datele în SplashService
+  /// OPTIMIZAT: Callback pentru refresh automat cand se schimba datele in SplashService
   void _onSplashServiceChanged() {
     if (mounted && !_isRefreshing) {
       // FIX: Force refresh to ensure we get the latest data

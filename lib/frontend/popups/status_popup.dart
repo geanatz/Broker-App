@@ -125,7 +125,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         if (_selectedStatus == 'Acceptat') {
           _selectedTimeSlot = DateFormat('HH:mm').format(widget.client.scheduledDateTime!);
           
-          // IMPORTANT: Adaugă ora existentă în lista disponibilă IMEDIAT pentru a fi afișată în UI
+          // IMPORTANT: Adauga ora existenta in lista disponibila IMEDIAT pentru a fi afisata in UI
           if (_selectedTimeSlot != null && !_availableTimeSlots.contains(_selectedTimeSlot!)) {
             _availableTimeSlots.add(_selectedTimeSlot!);
             _availableTimeSlots.sort();
@@ -426,7 +426,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         
         debugPrint('✅ STATUS_POPUP: Meeting saved successfully | ${widget.client.name} | $finalDateTime');
         
-        // IMPORTANT: Invalidează cache-ul pentru a afișa imediat întâlnirea în calendar
+        // IMPORTANT: Invalideaza cache-ul pentru a afisa imediat intalnirea in calendar
         try {
           final splashService = SplashService();
           await splashService.invalidateMeetingsCacheAndRefresh();
@@ -435,11 +435,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           debugPrint('❌ STATUS_POPUP: Error invalidating cache: $e');
         }
         
-        // IMPORTANT: Nu mai apelează moveClientToRecente dacă întâlnirea a fost creată cu succes
-        // MeetingService deja gestionează mutarea clientului și incrementarea statisticilor
+        // IMPORTANT: Nu mai apeleaza moveClientToRecente daca intalnirea a fost creata cu succes
+        // MeetingService deja gestioneaza mutarea clientului si incrementarea statisticilor
         debugPrint('✅ STATUS_POPUP: Meeting creation handled by MeetingService, skipping duplicate client move');
       } else {
-        // Doar dacă nu s-a creat întâlnire (ex: Acceptat fără dată programată), mută clientul manual
+        // Doar daca nu s-a creat intalnire (ex: Acceptat fara data programata), muta clientul manual
         switch (_selectedStatus) {
           case 'Acceptat':
             await _clientService.moveClientToRecente(
@@ -510,7 +510,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       } catch (e) {
         debugPrint('❌ STATUS_POPUP: Exception during Google Sheets save: $e');
         debugPrint('❌ STATUS_POPUP: Stack trace: ${StackTrace.current}');
-        // Nu afișa eroare utilizatorului - salvarea în Firebase a reușit
+        // Nu afisa eroare utilizatorului - salvarea in Firebase a reusit
       }
       
       debugPrint('🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE END ==========');

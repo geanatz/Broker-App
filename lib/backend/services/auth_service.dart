@@ -364,8 +364,8 @@ class AuthService {
       final consultantData = consultantDoc.data();
       final consultantName = consultantData['name'] as String?;
 
-      debugPrint('🔧 AUTH_SERVICE: Token valid găsit pentru consultant: $consultantName');
-      debugPrint('🔧 AUTH_SERVICE: Token-ul este permanent și reutilizabil');
+      debugPrint('🔧 AUTH_SERVICE: Token valid gasit pentru consultant: $consultantName');
+      debugPrint('🔧 AUTH_SERVICE: Token-ul este permanent si reutilizabil');
 
       return {
         'success': true,
@@ -396,7 +396,7 @@ class AuthService {
     if (newPassword.length < 6) {
       return {
         'success': false,
-        'message': 'Parola nouă trebuie să aibă minim 6 caractere',
+        'message': 'Parola noua trebuie sa aiba minim 6 caractere',
       };
     }
 
@@ -426,15 +426,15 @@ class AuthService {
         };
       }
 
-      debugPrint('🔧 AUTH_SERVICE: Începem schimbarea parolei pentru: $email');
+      debugPrint('🔧 AUTH_SERVICE: Incepem schimbarea parolei pentru: $email');
 
-      // Salvează utilizatorul curent dacă există
+      // Salveaza utilizatorul curent daca exista
       final previousUser = _auth.currentUser;
       final previousUserEmail = previousUser?.email;
 
       try {
-        // Autentifică-te temporar cu parola veche
-        debugPrint('🔧 AUTH_SERVICE: Autentificare temporară cu parola actuală');
+        // Autentifica-te temporar cu parola veche
+        debugPrint('🔧 AUTH_SERVICE: Autentificare temporara cu parola actuala');
         final userCredential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: currentPassword,
@@ -443,39 +443,39 @@ class AuthService {
         if (userCredential.user == null) {
           return {
             'success': false,
-            'message': 'Eroare la autentificare cu parola actuală',
+            'message': 'Eroare la autentificare cu parola actuala',
           };
         }
 
-        debugPrint('🔧 AUTH_SERVICE: Autentificare temporară reușită, schimbăm parola');
+        debugPrint('🔧 AUTH_SERVICE: Autentificare temporara reusita, schimbam parola');
         
-        // Schimbă parola
+        // Schimba parola
         await userCredential.user!.updatePassword(newPassword);
 
-        debugPrint('✅ AUTH_SERVICE: Parola schimbată cu succes în Firebase Auth');
+        debugPrint('✅ AUTH_SERVICE: Parola schimbata cu succes in Firebase Auth');
 
-        // Deconectare după schimbarea parolei
+        // Deconectare dupa schimbarea parolei
         await _auth.signOut();
-        debugPrint('🔧 AUTH_SERVICE: Deconectare după schimbarea parolei');
+        debugPrint('🔧 AUTH_SERVICE: Deconectare dupa schimbarea parolei');
 
-        // Reautentifică utilizatorul anterior dacă exista
+        // Reautentifica utilizatorul anterior daca exista
         if (previousUserEmail != null && previousUserEmail != email) {
-          debugPrint('🔧 AUTH_SERVICE: Încercăm să reautentificăm utilizatorul anterior: $previousUserEmail');
-          // Nu putem reautentifica fără parolă, așa că rămânem deconectați
+          debugPrint('🔧 AUTH_SERVICE: Incercam sa reautentificam utilizatorul anterior: $previousUserEmail');
+          // Nu putem reautentifica fara parola, asa ca ramanem deconectati
         }
 
         return {
           'success': true,
-          'message': 'Parola a fost schimbată cu succes! Te poți autentifica cu noua parolă.',
+          'message': 'Parola a fost schimbata cu succes! Te poti autentifica cu noua parola.',
         };
 
       } on FirebaseAuthException catch (e) {
         debugPrint('🔴 AUTH_SERVICE: FirebaseAuthException la schimbarea parolei: ${e.code} - ${e.message}');
         
-        // Reautentifică utilizatorul anterior dacă exista și schimbarea a eșuat
+        // Reautentifica utilizatorul anterior daca exista si schimbarea a esuat
         if (previousUser != null && _auth.currentUser?.uid != previousUser.uid) {
           try {
-            await _auth.signOut(); // Asigură-te că suntem deconectați
+            await _auth.signOut(); // Asigura-te ca suntem deconectati
           } catch (e) {
             debugPrint('🔴 AUTH_SERVICE: Eroare la cleanup signOut: $e');
           }
@@ -484,13 +484,13 @@ class AuthService {
         String message;
         switch (e.code) {
           case 'wrong-password':
-            message = 'Parola actuală este incorectă';
+            message = 'Parola actuala este incorecta';
             break;
           case 'weak-password':
-            message = 'Parola nouă este prea slabă';
+            message = 'Parola noua este prea slaba';
             break;
           case 'requires-recent-login':
-            message = 'Este nevoie de o autentificare recentă pentru a schimba parola';
+            message = 'Este nevoie de o autentificare recenta pentru a schimba parola';
             break;
           default:
             message = 'Eroare la schimbarea parolei: ${e.message}';
@@ -503,7 +503,7 @@ class AuthService {
       }
 
     } catch (e) {
-      debugPrint('🔴 AUTH_SERVICE: Eroare generală la schimbarea parolei: $e');
+      debugPrint('🔴 AUTH_SERVICE: Eroare generala la schimbarea parolei: $e');
       return {
         'success': false,
         'message': 'Eroare la schimbarea parolei: $e',
@@ -550,22 +550,22 @@ class AuthService {
         };
       }
 
-      // MODIFICAT: Implementăm schimbarea efectivă a parolei în Firebase Auth
-      // Token-ul rămâne permanent și reutilizabil
-      debugPrint('🔧 AUTH_SERVICE: Procedura de schimbare parolă începe pentru: $email');
+      // MODIFICAT: Implementam schimbarea efectiva a parolei in Firebase Auth
+      // Token-ul ramane permanent si reutilizabil
+      debugPrint('🔧 AUTH_SERVICE: Procedura de schimbare parola incepe pentru: $email');
       
-      // Problema: Pentru a schimba parola, avem nevoie de parola actuală
-      // Soluție temporară: Folosim Firebase Admin SDK prin Cloud Functions
-      // sau implementăm un flux prin email reset
+      // Problema: Pentru a schimba parola, avem nevoie de parola actuala
+      // Solutie temporara: Folosim Firebase Admin SDK prin Cloud Functions
+      // sau implementam un flux prin email reset
       
-      // IMPORTANT: Această implementare necesită îmbunătățire pentru producție
-      debugPrint('🔧 AUTH_SERVICE: Token-ul rămâne permanent pentru resetări viitoare');
-      debugPrint('⚠️  AUTH_SERVICE: Parola nu poate fi schimbată direct din aplicația client');
-      debugPrint('⚠️  AUTH_SERVICE: Necesită implementare backend/Cloud Functions pentru schimbarea parolei');
+      // IMPORTANT: Aceasta implementare necesita imbunatatire pentru productie
+      debugPrint('🔧 AUTH_SERVICE: Token-ul ramane permanent pentru resetari viitoare');
+      debugPrint('⚠️  AUTH_SERVICE: Parola nu poate fi schimbata direct din aplicatia client');
+      debugPrint('⚠️  AUTH_SERVICE: Necesita implementare backend/Cloud Functions pentru schimbarea parolei');
 
       return {
         'success': true,
-        'message': 'Token valid și permanent. ATENȚIE: Schimbarea parolei necesită implementare backend. Parola actuală rămâne neschimbată.',
+        'message': 'Token valid si permanent. ATENTIE: Schimbarea parolei necesita implementare backend. Parola actuala ramane neschimbata.',
       };
     } catch (e) {
       return {

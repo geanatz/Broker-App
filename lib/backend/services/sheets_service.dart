@@ -14,13 +14,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_service.dart'; // Pentru getCurrentConsultantToken
 
-/// Service pentru integrarea cu Google Drive și Google Sheets pentru salvarea datelor clienților
+/// Service pentru integrarea cu Google Drive si Google Sheets pentru salvarea datelor clientilor
 class GoogleDriveService extends ChangeNotifier {
   static final GoogleDriveService _instance = GoogleDriveService._internal();
   factory GoogleDriveService() => _instance;
   GoogleDriveService._internal();
 
-  // Instanță Firebase pentru a obține consultantToken
+  // Instanta Firebase pentru a obtine consultantToken
   final NewFirebaseService _firebaseService = NewFirebaseService();
 
   // Google Sign In configuration (pentru mobile)
@@ -60,52 +60,52 @@ class GoogleDriveService extends ChangeNotifier {
   String? get userName => _userName;
   String? get sheetName => 'clienti'; // Numele fix al spreadsheet-ului
 
-  /// Verifică dacă platforma este suportată pentru Google Sign In
+  /// Verifica daca platforma este suportata pentru Google Sign In
   bool _isPlatformSupported() {
     return !kIsWeb && (Platform.isAndroid || Platform.isIOS);
   }
 
-  /// Verifică dacă este platformă desktop
+  /// Verifica daca este platforma desktop
   bool _isDesktopPlatform() {
     return !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
   }
 
-  /// Generează cheia pentru SharedPreferences pe baza consultantToken
+  /// Genereaza cheia pentru SharedPreferences pe baza consultantToken
   String _getTokenKey(String consultantToken, String suffix) {
     return 'google_${suffix}_$consultantToken';
   }
 
-  /// Inițializează serviciul Google Drive și Sheets
+  /// Initializeaza serviciul Google Drive si Sheets
   Future<void> initialize() async {
     try {
-      // Obține consultantToken-ul curent
+      // Obtine consultantToken-ul curent
       _currentConsultantToken = await _firebaseService.getCurrentConsultantToken();
       
       if (_currentConsultantToken == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: No consultant token available - cannot proceed with initialization');
-        _lastError = 'Nu s-a găsit consultantul curent';
+        _lastError = 'Nu s-a gasit consultantul curent';
         return;
       }
       
       if (_isPlatformSupported()) {
-        // Mobile platforms - folosește Google Sign In
+        // Mobile platforms - foloseste Google Sign In
         _googleSignIn = GoogleSignIn.instance;
         await _googleSignIn!.initialize();
         
-        // Verifică dacă există o sesiune salvată pentru consultantul curent
+        // Verifica daca exista o sesiune salvata pentru consultantul curent
         await _checkSavedAuthentication();
         
       } else if (_isDesktopPlatform()) {
-        // Desktop platforms - verifică token salvat pentru consultantul curent
+        // Desktop platforms - verifica token salvat pentru consultantul curent
         await _checkSavedDesktopToken();
         
       } else {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Unsupported platform detected');
-        _lastError = 'Google Drive nu este suportat pe această platformă';
+        _lastError = 'Google Drive nu este suportat pe aceasta platforma';
         return;
       }
       
-      // Pornește timer-ul pentru refresh-ul în background (la fiecare 20 minute)
+      // Porneste timer-ul pentru refresh-ul in background (la fiecare 20 minute)
       _backgroundRefreshTimer?.cancel();
       _backgroundRefreshTimer = Timer.periodic(Duration(minutes: 20), (timer) {
         refreshTokenInBackground();
@@ -113,17 +113,17 @@ class GoogleDriveService extends ChangeNotifier {
       
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error initializing: $e');
-      _lastError = 'Eroare la inițializare: ${e.toString()}';
+      _lastError = 'Eroare la initializare: ${e.toString()}';
     }
   }
 
-  /// Verifică dacă există o autentificare salvată (mobile) pentru consultantul curent
+  /// Verifica daca exista o autentificare salvata (mobile) pentru consultantul curent
   Future<void> _checkSavedAuthentication() async {
     try {
       // Check for existing lightweight authentication
       final account = await _googleSignIn?.attemptLightweightAuthentication();
       if (account != null && _currentConsultantToken != null) {
-        // Verifică dacă token-ul salvat este pentru consultantul curent
+        // Verifica daca token-ul salvat este pentru consultantul curent
         final prefs = await SharedPreferences.getInstance();
         final savedConsultantForThisEmail = prefs.getString('mobile_consultant_${account.email}');
         
@@ -136,7 +136,7 @@ class GoogleDriveService extends ChangeNotifier {
           debugPrint('✅ GOOGLE_DRIVE_SERVICE: Restored saved authentication for ${account.email} (consultant: ${_currentConsultantToken?.substring(0, 8)})');
           notifyListeners();
         } else {
-          // Token-ul este pentru alt consultant, deconectează
+          // Token-ul este pentru alt consultant, deconecteaza
           await _googleSignIn?.signOut();
           debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Signed out previous consultant\'s account');
         }
@@ -146,7 +146,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Verifică dacă există un token desktop salvat pentru consultantul curent
+  /// Verifica daca exista un token desktop salvat pentru consultantul curent
   Future<void> _checkSavedDesktopToken() async {
     try {
       if (_currentConsultantToken == null) {
@@ -188,7 +188,7 @@ class GoogleDriveService extends ChangeNotifier {
           final now = DateTime.now().toUtc();
           final isExpired = _tokenExpiration != null && now.isAfter(_tokenExpiration!);
           
-          // Verifică dacă token-ul a expirat și încearcă să-l refresh
+          // Verifica daca token-ul a expirat si incearca sa-l refresh
           if (isExpired) {
             if (_refreshToken != null) {
               final refreshSuccess = await _refreshAccessToken();
@@ -221,7 +221,7 @@ class GoogleDriveService extends ChangeNotifier {
     } catch (e, stackTrace) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error checking saved desktop token: $e');
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: $stackTrace');
-      // În caz de eroare, șterge token-urile corupte
+      // In caz de eroare, sterge token-urile corupte
       debugPrint('🧹 GOOGLE_DRIVE_SERVICE: Clearing potentially corrupted tokens...');
       await _clearSavedDesktopToken();
     }
@@ -252,11 +252,11 @@ class GoogleDriveService extends ChangeNotifier {
         final data = json.decode(response.body);
         _accessToken = data['access_token'];
         
-        // Calculează noul timp de expirare
-        final expiresIn = data['expires_in'] ?? 3600; // Default 1 oră
+        // Calculeaza noul timp de expirare
+        final expiresIn = data['expires_in'] ?? 3600; // Default 1 ora
         _tokenExpiration = DateTime.now().toUtc().add(Duration(seconds: expiresIn));
         
-        // Salvează noile token-uri
+        // Salveaza noile token-uri
         await _saveDesktopTokens(_accessToken!, _refreshToken, _userEmail!, _userName);
         
         return true;
@@ -264,7 +264,7 @@ class GoogleDriveService extends ChangeNotifier {
         // Refresh token invalid sau expirat
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Refresh token invalid or expired');
         
-        // Șterge refresh token-ul invalid
+        // Sterge refresh token-ul invalid
         _refreshToken = null;
         await _clearSavedDesktopToken();
         
@@ -276,18 +276,18 @@ class GoogleDriveService extends ChangeNotifier {
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error refreshing access token: $e');
       
-      // Verifică dacă este o eroare temporară (network, timeout)
+      // Verifica daca este o eroare temporara (network, timeout)
       if (e.toString().contains('TimeoutException') || 
           e.toString().contains('SocketException') ||
           e.toString().contains('HttpException')) {
-        return false; // Poate fi reîncercat
+        return false; // Poate fi reincercat
       }
       
       return false;
     }
   }
 
-  /// Șterge token-urile desktop salvate
+  /// Sterge token-urile desktop salvate
   Future<void> _clearSavedDesktopToken() async {
     if (_currentConsultantToken == null) {
       return;
@@ -319,10 +319,10 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Verifică și refresh token-ul în background pentru a preveni expirarea
+  /// Verifica si refresh token-ul in background pentru a preveni expirarea
   Future<void> refreshTokenInBackground() async {
     if (!_isAuthenticated || _isDesktopPlatform() == false) {
-      return; // Nu este necesară verificarea pentru mobile sau dacă nu este autentificat
+      return; // Nu este necesara verificarea pentru mobile sau daca nu este autentificat
     }
     
     if (_tokenExpiration != null && DateTime.now().toUtc().isAfter(_tokenExpiration!.subtract(Duration(minutes: 30)))) {
@@ -337,19 +337,19 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Schimbă consultantul și încarcă token-urile corespunzătoare
+  /// Schimba consultantul si incarca token-urile corespunzatoare
   Future<void> switchConsultant(String newConsultantToken) async {
     if (_currentConsultantToken == newConsultantToken) {
-      return; // Același consultant
+      return; // Acelasi consultant
     }
     
-    // Resetează starea curentă
+    // Reseteaza starea curenta
     await _resetAuthenticationState();
     
-    // Schimbă la noul consultant
+    // Schimba la noul consultant
     _currentConsultantToken = newConsultantToken;
     
-    // Încarcă autentificarea pentru noul consultant
+    // Incarca autentificarea pentru noul consultant
     if (_isPlatformSupported()) {
       await _checkSavedAuthentication();
     } else if (_isDesktopPlatform()) {
@@ -359,7 +359,7 @@ class GoogleDriveService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Resetează starea de autentificare fără a șterge token-urile salvate
+  /// Reseteaza starea de autentificare fara a sterge token-urile salvate
   Future<void> _resetAuthenticationState() async {
     _isAuthenticated = false;
     _accessToken = null;
@@ -372,12 +372,12 @@ class GoogleDriveService extends ChangeNotifier {
     _sheetsApi = null;
     _lastError = null;
     
-    // Oprește timer-ul de background refresh
+    // Opreste timer-ul de background refresh
     _backgroundRefreshTimer?.cancel();
     _backgroundRefreshTimer = null;
   }
 
-  /// Verifică și refresh token-ul înainte de utilizare
+  /// Verifica si refresh token-ul inainte de utilizare
   Future<bool> _ensureValidToken() async {
     if (!_isAuthenticated) {
       debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: Not authenticated');
@@ -389,11 +389,11 @@ class GoogleDriveService extends ChangeNotifier {
       return true;
     }
 
-    // Pentru desktop, verifică dacă token-ul a expirat
+    // Pentru desktop, verifica daca token-ul a expirat
     if (_tokenExpiration != null && DateTime.now().toUtc().isAfter(_tokenExpiration!.subtract(Duration(minutes: 15)))) {
       debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Token expires soon, refreshing...');
       if (_refreshToken != null) {
-        // Încerca refresh de 3 ori cu delay între încercări
+        // Incerca refresh de 3 ori cu delay intre incercari
         bool refreshSuccess = false;
         for (int attempt = 1; attempt <= 3; attempt++) {
           debugPrint('🔄 GOOGLE_DRIVE_SERVICE: Refresh attempt $attempt/3');
@@ -408,23 +408,23 @@ class GoogleDriveService extends ChangeNotifier {
         }
         
         if (refreshSuccess) {
-          // Actualizează API clients cu noul token
+          // Actualizeaza API clients cu noul token
           await _setupApiClientsWithToken(_accessToken!, _refreshToken, _userEmail!, _userName);
           return true;
         } else {
           debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to refresh token after 3 attempts');
-          // NU resetăm starea complet - doar marcăm că nu este autentificat
-          // Utilizatorul va fi rugat să se reconecteze doar când încearcă să salveze
+          // NU resetam starea complet - doar marcam ca nu este autentificat
+          // Utilizatorul va fi rugat sa se reconecteze doar cand incearca sa salveze
           _isAuthenticated = false;
-          _lastError = 'Token-ul a expirat. Reconectați-vă la Google Drive din Setări.';
+          _lastError = 'Token-ul a expirat. Reconectati-va la Google Drive din Setari.';
           notifyListeners();
           return false;
         }
       } else {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: No refresh token, user needs to reauthenticate');
-        // NU resetăm starea complet - doar marcăm că nu este autentificat
+        // NU resetam starea complet - doar marcam ca nu este autentificat
         _isAuthenticated = false;
-        _lastError = 'Sesiunea a expirat. Reconectați-vă la Google Drive din Setări.';
+        _lastError = 'Sesiunea a expirat. Reconectati-va la Google Drive din Setari.';
         notifyListeners();
         return false;
       }
@@ -433,7 +433,7 @@ class GoogleDriveService extends ChangeNotifier {
     return true;
   }
 
-  /// Conectează-te la Google Drive
+  /// Conecteaza-te la Google Drive
   Future<bool> connect() async {
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: connect() called');
     _isConnecting = true;
@@ -453,7 +453,7 @@ class GoogleDriveService extends ChangeNotifier {
         await _handleDesktopWebviewAuth();
       } else {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Platform not supported');
-        _lastError = 'Platforma nu este suportată';
+        _lastError = 'Platforma nu este suportata';
         return false;
       }
       
@@ -470,7 +470,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Gestionează autentificarea prin Google Sign In (mobile)
+  /// Gestioneaza autentificarea prin Google Sign In (mobile)
   Future<void> _handleGoogleSignIn() async {
     try {
       final account = await _googleSignIn!.authenticate();
@@ -481,21 +481,21 @@ class GoogleDriveService extends ChangeNotifier {
         _userEmail = account.email;
         _userName = account.displayName;
         
-        // Salvează asocierea consultantului cu email-ul Google
+        // Salveaza asocierea consultantului cu email-ul Google
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('mobile_consultant_${account.email}', _currentConsultantToken!);
         
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Google Sign In successful for ${account.email} (consultant: ${_currentConsultantToken?.substring(0, 8)})');
       } else {
-        _lastError = 'Autentificarea a fost anulată';
+        _lastError = 'Autentificarea a fost anulata';
       }
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Google Sign In failed: $e');
-      _lastError = 'Autentificarea Google a eșuat: ${e.toString()}';
+      _lastError = 'Autentificarea Google a esuat: ${e.toString()}';
     }
   }
 
-  /// Gestionează autentificarea prin OAuth2 cu browser (desktop)
+  /// Gestioneaza autentificarea prin OAuth2 cu browser (desktop)
   Future<void> _handleDesktopWebviewAuth() async {
     try {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Starting OAuth2 browser auth...');
@@ -504,7 +504,7 @@ class GoogleDriveService extends ChangeNotifier {
       final authorizationEndpoint = Uri.parse('https://accounts.google.com/o/oauth2/v2/auth');
       final tokenEndpoint = Uri.parse('https://oauth2.googleapis.com/token');
       
-      // Generează un redirect URI local
+      // Genereaza un redirect URI local
       final redirectUri = Uri.parse('http://localhost:8080');
       
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: OAuth2 config:');
@@ -513,11 +513,11 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: - authEndpoint: $authorizationEndpoint');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: - tokenEndpoint: $tokenEndpoint');
       
-      // Pornește serverul HTTP local pentru a prinde redirect-ul
+      // Porneste serverul HTTP local pentru a prinde redirect-ul
       final server = await HttpServer.bind('localhost', 8080);
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Local HTTP server started on localhost:8080');
       
-             // Creează grant-ul OAuth2
+             // Creeaza grant-ul OAuth2
        final grant = oauth2.AuthorizationCodeGrant(
          _clientId,
          authorizationEndpoint,
@@ -525,7 +525,7 @@ class GoogleDriveService extends ChangeNotifier {
          secret: _clientSecret,
        );
       
-      // Generează URL-ul de autorizare cu access_type=offline pentru refresh token
+      // Genereaza URL-ul de autorizare cu access_type=offline pentru refresh token
       final authorizationUrl = grant.getAuthorizationUrl(
         redirectUri,
         scopes: [
@@ -536,13 +536,13 @@ class GoogleDriveService extends ChangeNotifier {
         ],
       );
       
-      // Adaugă parametri pentru offline access (refresh token)
+      // Adauga parametri pentru offline access (refresh token)
       final authUrlWithOfflineAccess = Uri.parse('$authorizationUrl&access_type=offline&prompt=consent');
       
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Authorization URL generated with offline access');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Opening browser for authentication...');
       
-      // Deschide URL-ul în browser
+      // Deschide URL-ul in browser
       if (await canLaunchUrl(authUrlWithOfflineAccess)) {
         await launchUrl(authUrlWithOfflineAccess, mode: LaunchMode.externalApplication);
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Browser opened successfully');
@@ -550,7 +550,7 @@ class GoogleDriveService extends ChangeNotifier {
         throw Exception('Nu s-a putut deschide browser-ul');
       }
       
-      // Așteaptă redirect-ul pe serverul local
+      // Asteapta redirect-ul pe serverul local
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Waiting for redirect on local server...');
       final request = await server.first;
       
@@ -568,8 +568,8 @@ class GoogleDriveService extends ChangeNotifier {
       
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Authorization code received');
       
-             // Răspunde la browser că s-a terminat cu succes
-       final htmlResponse = '<html><body><h1>✅ Autentificare reușită!</h1><p>Poți închide această fereastră și să te întorci la aplicație.</p><script>window.close();</script></body></html>';
+             // Raspunde la browser ca s-a terminat cu succes
+       final htmlResponse = '<html><body><h1>✅ Autentificare reusita!</h1><p>Poti inchide aceasta fereastra si sa te intorci la aplicatie.</p><script>window.close();</script></body></html>';
        request.response
          ..statusCode = 200
          ..headers.set('content-type', 'text/html; charset=utf-8')
@@ -579,12 +579,12 @@ class GoogleDriveService extends ChangeNotifier {
       
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Exchanging authorization code for access token...');
       
-      // Schimbă codul de autorizare cu token-ul de acces
+      // Schimba codul de autorizare cu token-ul de acces
       final client = await grant.handleAuthorizationResponse(queryParams);
       _accessToken = client.credentials.accessToken;
       _refreshToken = client.credentials.refreshToken;
       
-      // Calculează timpul de expirare
+      // Calculeaza timpul de expirare
       _tokenExpiration = client.credentials.expiration ?? DateTime.now().toUtc().add(Duration(hours: 1));
       
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Access token received');
@@ -592,17 +592,17 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Refresh token available: ${_refreshToken != null}');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Token expires at: $_tokenExpiration (UTC: ${_tokenExpiration!.isUtc})');
       
-      // Configurează API clients cu OAuth2 client
+      // Configureaza API clients cu OAuth2 client
       await _setupApiClientsWithOAuth2Client(client);
       
-      // Obține informațiile utilizatorului
+      // Obtine informatiile utilizatorului
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Getting user info from Google...');
       final userInfo = await _getUserInfoFromGoogle(_accessToken!);
       _userEmail = userInfo['email'];
       _userName = userInfo['name'];
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: User info - email: $_userEmail, name: $_userName');
       
-      // Salvează token-urile pentru utilizare viitoare
+      // Salveaza token-urile pentru utilizare viitoare
       await _saveDesktopTokens(_accessToken!, _refreshToken, _userEmail!, _userName);
       
       _isAuthenticated = true;
@@ -612,14 +612,14 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: OAuth2 auth failed: $e');
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error type: ${e.runtimeType}');
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
-      _lastError = 'Autentificarea OAuth2 a eșuat: ${e.toString()}';
+      _lastError = 'Autentificarea OAuth2 a esuat: ${e.toString()}';
     }
   }
 
-  /// Configurează API clients cu access token
+  /// Configureaza API clients cu access token
   Future<void> _setupApiClientsWithToken(String accessToken, String? refreshToken, String email, String? name) async {
     try {
-      // Salvează token-urile desktop cu refresh token
+      // Salveaza token-urile desktop cu refresh token
       await _saveDesktopTokens(accessToken, refreshToken, email, name);
       
       // IMPORTANT: Convert to UTC if not already UTC
@@ -646,7 +646,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Configurează API clients cu Google Sign In
+  /// Configureaza API clients cu Google Sign In
   Future<void> _setupApiClients() async {
     try {
       // Get authorization headers using the new API
@@ -664,7 +664,7 @@ class GoogleDriveService extends ChangeNotifier {
         
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: API clients configured with Google Sign In');
       } else {
-        throw Exception('Nu s-au putut obține headerele de autorizare');
+        throw Exception('Nu s-au putut obtine headerele de autorizare');
       }
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to setup API clients: $e');
@@ -672,7 +672,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Configurează API clients cu OAuth2 client
+  /// Configureaza API clients cu OAuth2 client
   Future<void> _setupApiClientsWithOAuth2Client(oauth2.Client oauthClient) async {
     try {
       _driveApi = drive.DriveApi(oauthClient);
@@ -685,7 +685,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Obține informațiile utilizatorului de la Google
+  /// Obtine informatiile utilizatorului de la Google
   Future<Map<String, String?>> _getUserInfoFromGoogle(String accessToken) async {
     try {
       final response = await http.get(
@@ -708,7 +708,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Salvează token-urile desktop cu refresh token
+  /// Salveaza token-urile desktop cu refresh token
   Future<void> _saveDesktopTokens(String accessToken, String? refreshToken, String email, String? name) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -736,7 +736,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Deconectează consultantul curent
+  /// Deconecteaza consultantul curent
   Future<void> disconnect() async {
     try {
       if (_currentConsultantToken == null) {
@@ -745,7 +745,7 @@ class GoogleDriveService extends ChangeNotifier {
       }
 
       if (_isPlatformSupported() && _googleSignIn != null) {
-        // Pe mobile, șterge doar asocierea consultantului cu email-ul
+        // Pe mobile, sterge doar asocierea consultantului cu email-ul
         if (_userEmail != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('mobile_consultant_$_userEmail');
@@ -765,7 +765,7 @@ class GoogleDriveService extends ChangeNotifier {
       _userName = null;
       _lastError = null;
       
-      // Oprește timer-ul de background refresh
+      // Opreste timer-ul de background refresh
       _backgroundRefreshTimer?.cancel();
       _backgroundRefreshTimer = null;
       
@@ -778,7 +778,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Verifică dacă serviciul Google Sheets este complet inițializat
+  /// Verifica daca serviciul Google Sheets este complet initializat
   bool _isServiceReady() {
     return _isAuthenticated && _driveApi != null && _sheetsApi != null;
   }
@@ -810,7 +810,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Validează datele clientului înainte de salvare
+  /// Valideaza datele clientului inainte de salvare
   bool _validateClientData(dynamic client) {
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _validateClientData START');
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client type: ${client.runtimeType}');
@@ -862,21 +862,21 @@ class GoogleDriveService extends ChangeNotifier {
       final tokenValid = await _ensureValidToken();
       if (!tokenValid) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Token validation failed');
-        return 'Token expirat. Reconectați-vă la Google Drive din Setări';
+        return 'Token expirat. Reconectati-va la Google Drive din Setari';
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Token validation successful');
       
       // Step 2: Check authentication
       if (!_isAuthenticated) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Not authenticated');
-        return 'Pentru a salva datele, conectați-vă la Google Drive din Setări';
+        return 'Pentru a salva datele, conectati-va la Google Drive din Setari';
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Authentication check passed');
   
       // Step 3: Check service readiness
       if (!_isServiceReady()) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Service not ready');
-        return 'Eroare: Serviciul Google Sheets nu este complet inițializat. Încercați să vă reconectați din Setări.';
+        return 'Eroare: Serviciul Google Sheets nu este complet initializat. Incercati sa va reconectati din Setari.';
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Service readiness check passed');
   
@@ -885,7 +885,7 @@ class GoogleDriveService extends ChangeNotifier {
       final spreadsheetId = await _findOrCreateSpreadsheet('clienti');
       if (spreadsheetId == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create spreadsheet');
-        return _lastError ?? 'Eroare la găsirea sau crearea fișierului Google Sheets.';
+        return _lastError ?? 'Eroare la gasirea sau crearea fisierului Google Sheets.';
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Spreadsheet ID: $spreadsheetId');
   
@@ -894,7 +894,7 @@ class GoogleDriveService extends ChangeNotifier {
       final sheetTitle = await _findOrCreateSheet(spreadsheetId);
       if (sheetTitle == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create sheet');
-        return _lastError ?? 'Eroare la găsirea sau crearea foii de calcul pentru luna curentă.';
+        return _lastError ?? 'Eroare la gasirea sau crearea foii de calcul pentru luna curenta.';
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet title: $sheetTitle');
 
@@ -933,7 +933,7 @@ class GoogleDriveService extends ChangeNotifier {
             debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (SUCCESS) ==========');
             return null; // Success
           } else {
-            lastError = _lastError ?? 'Eroare necunoscută la salvarea datelor.';
+            lastError = _lastError ?? 'Eroare necunoscuta la salvarea datelor.';
             debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to save on attempt $attempt: $lastError');
             
             if (attempt < maxRetries) {
@@ -942,7 +942,7 @@ class GoogleDriveService extends ChangeNotifier {
             }
           }
         } catch (e) {
-          lastError = 'Eroare la încercarea $attempt: ${e.toString()}';
+          lastError = 'Eroare la incercarea $attempt: ${e.toString()}';
           debugPrint('❌ GOOGLE_DRIVE_SERVICE: Exception on attempt $attempt: $e');
           
           if (attempt < maxRetries) {
@@ -955,7 +955,7 @@ class GoogleDriveService extends ChangeNotifier {
       // All retries failed
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: All $maxRetries attempts failed. Last error: $lastError');
       debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (FAILED) ==========');
-      return 'Eroare la salvarea în Google Sheets după $maxRetries încercări: $lastError';
+      return 'Eroare la salvarea in Google Sheets dupa $maxRetries incercari: $lastError';
       
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error saving client: $e');
@@ -1028,7 +1028,7 @@ class GoogleDriveService extends ChangeNotifier {
       
       if (_driveApi == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Drive API is null');
-        _lastError = 'Drive API nu este inițializat';
+        _lastError = 'Drive API nu este initializat';
         return null;
       }
       
@@ -1055,8 +1055,8 @@ class GoogleDriveService extends ChangeNotifier {
         return fileId;
       }
     } catch (e) {
-      _lastError = 'Eroare la căutarea sau crearea fișierului: $e';
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _findOrCreateSpreadsheet: $_lastError');
+      _lastError = 'Eroare la cautarea sau crearea fisierului: $e';
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _findOrCreateSpreadsheet: $_lastError');
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       return null;
     }
@@ -1069,7 +1069,7 @@ class GoogleDriveService extends ChangeNotifier {
       
       if (_sheetsApi == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Sheets API is null');
-        _lastError = 'Sheets API nu este inițializat';
+        _lastError = 'Sheets API nu este initializat';
         return null;
       }
       
@@ -1111,14 +1111,14 @@ class GoogleDriveService extends ChangeNotifier {
         return sheetTitle;
       }
     } catch (e) {
-      _lastError = 'Eroare la căutarea sau crearea foii de calcul: $e';
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _findOrCreateSheet: $_lastError');
+      _lastError = 'Eroare la cautarea sau crearea foii de calcul: $e';
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _findOrCreateSheet: $_lastError');
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       return null;
     }
   }
 
-  /// Adaugă header-ul în sheet-ul specificat
+  /// Adauga header-ul in sheet-ul specificat
   Future<void> _addHeaderToSheet(String spreadsheetId, String sheetTitle) async {
     try {
       final headers = _getHeaders();
@@ -1132,8 +1132,8 @@ class GoogleDriveService extends ChangeNotifier {
         valueInputOption: 'USER_ENTERED',
       );
     } catch (e) {
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _addHeaderToSheet: $e');
-      rethrow; // Re-aruncă eroarea pentru ca funcția apelantă să o poată gestiona
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _addHeaderToSheet: $e');
+      rethrow; // Re-arunca eroarea pentru ca functia apelanta sa o poata gestiona
     }
   }
   
@@ -1147,28 +1147,28 @@ class GoogleDriveService extends ChangeNotifier {
       
       if (_sheetsApi == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Sheets API is null');
-        _lastError = 'Sheets API nu este inițializat';
+        _lastError = 'Sheets API nu este initializat';
         return false;
       }
       
-      // Construiește range-ul pentru ultimul rând
+      // Construieste range-ul pentru ultimul rand
       final range = "'$sheetTitle'!A:Z";
       
-      // Obține datele existente pentru a găsi ultimul rând
+      // Obtine datele existente pentru a gasi ultimul rand
       final response = await _sheetsApi!.spreadsheets.values.get(spreadsheetId, range);
       final existingRows = response.values ?? [];
       
-      // Calculează următorul rând (ultimul rând + 1)
+      // Calculeaza urmatorul rand (ultimul rand + 1)
       final nextRow = existingRows.length + 1;
       final appendRange = "'$sheetTitle'!A$nextRow";
       
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Next row: $nextRow');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Append range: $appendRange');
       
-      // Creează ValueRange pentru datele noi
+      // Creeaza ValueRange pentru datele noi
       final valueRange = sheets.ValueRange()..values = [rowData];
       
-      // Adaugă rândul nou
+      // Adauga randul nou
       final updateResponse = await _sheetsApi!.spreadsheets.values.update(
         valueRange,
         spreadsheetId,
@@ -1183,13 +1183,13 @@ class GoogleDriveService extends ChangeNotifier {
         return true;
       } else {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: No cells were updated');
-        _lastError = 'Nu s-au actualizat celule în Google Sheets';
+        _lastError = 'Nu s-au actualizat celule in Google Sheets';
         return false;
       }
       
     } catch (e) {
-      _lastError = 'Eroare la adăugarea rândului: $e';
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE în _appendRowToSheet: $_lastError');
+      _lastError = 'Eroare la adaugarea randului: $e';
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _appendRowToSheet: $_lastError');
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Stack trace: ${StackTrace.current}');
       return false;
     }
@@ -1233,7 +1233,7 @@ class GoogleDriveService extends ChangeNotifier {
     ];
   }
 
-  /// Pregătește datele clientului conform noii structuri
+  /// Pregateste datele clientului conform noii structuri
   Future<List<dynamic>> _prepareClientRowData(dynamic client) async {
     try {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _prepareClientRowData START');
@@ -1270,7 +1270,7 @@ class GoogleDriveService extends ChangeNotifier {
       
       final clientCredits = _extractCredits(formData, 'client');
       final clientIncomes = _extractIncomes(formData, 'client');
-      // Încearcă "coborrower" primul (numele corect din Firebase)
+      // Incearca "coborrower" primul (numele corect din Firebase)
       final coDebitorCredits = _extractCredits(formData, 'coborrower');
       final coDebitorIncomes = _extractIncomes(formData, 'coborrower');
       
@@ -1304,7 +1304,7 @@ class GoogleDriveService extends ChangeNotifier {
   String _extractCredits(Map<String, dynamic> formData, String type) {
     List<String> credits = [];
     
-    // Caută în structura creditForms
+    // Cauta in structura creditForms
     if (formData.containsKey('creditForms') && formData['creditForms'] is Map<String, dynamic>) {
       final creditForms = formData['creditForms'] as Map<String, dynamic>;
       
@@ -1347,7 +1347,7 @@ class GoogleDriveService extends ChangeNotifier {
     
     List<String> incomes = [];
     
-    // Caută în structura incomeForms
+    // Cauta in structura incomeForms
     if (formData.containsKey('incomeForms')) {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Found incomeForms key');
       
@@ -1430,7 +1430,7 @@ class GoogleDriveService extends ChangeNotifier {
     return result;
   }
 
-  /// Formatează un venit în formatul special cerut (conform how_to_save_data.md)
+  /// Formateaza un venit in formatul special cerut (conform how_to_save_data.md)
   String _formatIncomeSpecial(Map<String, dynamic> incomeData) {
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _formatIncomeSpecial START - Data: $incomeData');
     
@@ -1443,7 +1443,7 @@ class GoogleDriveService extends ChangeNotifier {
     
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Extracted values - Bank: $bank, Type: $incomeType, Amount: $amount, Period: $period');
     
-    // Verifică dacă banca și tipul de venit sunt valide (nu "Selectează")
+    // Verifica daca banca si tipul de venit sunt valide (nu "Selecteaza")
     if (_isSelectValue(bank)) {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Bank is select value - skipping');
       return '';
@@ -1454,7 +1454,7 @@ class GoogleDriveService extends ChangeNotifier {
       return '';
     }
     
-    // Formatează suma cu k pentru mii
+    // Formateaza suma cu k pentru mii
     String amountFormatted = '';
     if (amount.isNotEmpty) {
       final amountNum = double.tryParse(amount);
@@ -1469,23 +1469,23 @@ class GoogleDriveService extends ChangeNotifier {
     
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Amount formatted: $amountFormatted');
     
-    // Dacă suma este goală, nu salvăm venitul
+    // Daca suma este goala, nu salvam venitul
     if (amountFormatted.isEmpty) {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Amount is empty - skipping');
       return '';
     }
     
-    // Formatează banca și tipul de venit
+    // Formateaza banca si tipul de venit
     final bankFormatted = _formatBankName(bank);
     final incomeTypeFormatted = _formatIncomeTypeCode(incomeType);
     
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted - Bank: $bankFormatted, Type: $incomeTypeFormatted');
     
-    // Construiește rezultatul final
+    // Construieste rezultatul final
     String result = '$bankFormatted-$incomeTypeFormatted: $amountFormatted';
     
-    // Adaugă perioada dacă există
-    if (period.isNotEmpty && period != 'Selectează') {
+    // Adauga perioada daca exista
+    if (period.isNotEmpty && period != 'Selecteaza') {
       result += '($period)';
     }
     
@@ -1493,7 +1493,7 @@ class GoogleDriveService extends ChangeNotifier {
     return result;
   }
 
-  /// Formatează tipul de venit în cod scurt
+  /// Formateaza tipul de venit in cod scurt
   String _formatIncomeTypeCode(String incomeType) {
     switch (incomeType.toLowerCase()) {
       case 'salariu':
@@ -1509,7 +1509,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Formatează un credit în formatul special cerut (conform how_to_save_data.md)
+  /// Formateaza un credit in formatul special cerut (conform how_to_save_data.md)
   String _formatCreditSpecial(Map<String, dynamic> creditData) {
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _formatCreditSpecial cu date: $creditData');
     
@@ -1521,39 +1521,39 @@ class GoogleDriveService extends ChangeNotifier {
     final rateType = creditData['rateType']?.toString() ?? '';
     final perioada = creditData['perioada']?.toString() ?? '';
     
-    // Verifică dacă banca și tipul de credit sunt valide (nu "Selectează")
+    // Verifica daca banca si tipul de credit sunt valide (nu "Selecteaza")
     if (_isSelectValue(bank)) {
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit incomplet - selectează banca');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit incomplet - selecteaza banca');
       return '';
     }
     
     if (_isSelectValue(creditType)) {
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit incomplet - selectează tipul');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit incomplet - selecteaza tipul');
       return '';
     }
     
-    // Formatează banca folosind aceeași logică ca la venituri
+    // Formateaza banca folosind aceeasi logica ca la venituri
     final bankFormatted = _formatBankName(bank);
     
-    // Formatează tipul de credit
+    // Formateaza tipul de credit
     final creditTypeFormatted = _formatCreditType(creditType);
     
-    // Formatează sumele (sold/consumat și rata)
+    // Formateaza sumele (sold/consumat si rata)
     final amountsPart = _formatCreditAmounts(sold, consumat, rata);
     
-    // Dacă nu există nicio sumă, nu salvăm creditul
+    // Daca nu exista nicio suma, nu salvam creditul
     if (amountsPart.isEmpty) {
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit fără sume - ignorat');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit fara sume - ignorat');
       return '';
     }
     
-    // Formatează detaliile (rateType și perioada)
+    // Formateaza detaliile (rateType si perioada)
     final detailsPart = _formatCreditDetails(rateType, perioada, creditType);
     
-    // Construiește formatul final: "bancă-tip: sume(detalii)"
+    // Construieste formatul final: "banca-tip: sume(detalii)"
     String result = '$bankFormatted-$creditTypeFormatted: $amountsPart';
     
-    // Adaugă detaliile doar dacă există și nu sunt goale
+    // Adauga detaliile doar daca exista si nu sunt goale
     if (detailsPart.isNotEmpty && !_isSelectValue(detailsPart)) {
       result += '($detailsPart)';
     }
@@ -1562,7 +1562,7 @@ class GoogleDriveService extends ChangeNotifier {
     return result;
   }
 
-  /// Formatează numele băncii (conform how_to_save_data.md)
+  /// Formateaza numele bancii (conform how_to_save_data.md)
   String _formatBankName(String bank) {
     switch (bank.toLowerCase()) {
       case 'alpha bank':
@@ -1662,12 +1662,12 @@ class GoogleDriveService extends ChangeNotifier {
       case 'volksbank':
         return 'VOLKS';
       default:
-        // Pentru băncile necunoscute, returnează primele 3-4 caractere
+        // Pentru bancile necunoscute, returneaza primele 3-4 caractere
         return bank.length > 6 ? bank.substring(0, 6) : bank;
     }
   }
 
-  /// Formatează tipul de credit
+  /// Formateaza tipul de credit
   String _formatCreditType(String creditType) {
     switch (creditType.toLowerCase()) {
       case 'card cumparaturi':
@@ -1686,16 +1686,16 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Formatează sumele creditului (sold/consumat și rata)
+  /// Formateaza sumele creditului (sold/consumat si rata)
   String _formatCreditAmounts(String sold, String consumat, String rata) {
     final soldFormatted = _formatAmountWithK(sold);
     final consumatFormatted = _formatAmountWithK(consumat);
     final rataFormatted = _formatAmountWithK(rata);
     
-    // Construiește partea cu sumele folosind cratimă în loc de slash
+    // Construieste partea cu sumele folosind cratima in loc de slash
     String amounts = '';
     if (soldFormatted.isNotEmpty || consumatFormatted.isNotEmpty) {
-      // Tratează cazurile când una dintre sume lipsește
+      // Trateaza cazurile cand una dintre sume lipseste
       if (soldFormatted.isNotEmpty && consumatFormatted.isNotEmpty) {
         amounts = '$soldFormatted-$consumatFormatted';
       } else if (soldFormatted.isNotEmpty) {
@@ -1716,19 +1716,19 @@ class GoogleDriveService extends ChangeNotifier {
     return amounts;
   }
 
-  /// Formatează detaliile creditului (rateType și perioada)
+  /// Formateaza detaliile creditului (rateType si perioada)
   String _formatCreditDetails(String rateType, String perioada, String creditType) {
     final details = <String>[];
     
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit details - rateType: "$rateType", perioada: "$perioada"');
     
-    // Adaugă tipul ratei dacă există și nu este "Selectează"
+    // Adauga tipul ratei daca exista si nu este "Selecteaza"
     if (rateType.isNotEmpty && !_isSelectValue(rateType)) {
       details.add(rateType);
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adăugat rateType: $rateType');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adaugat rateType: $rateType');
     }
     
-    // Adaugă perioada dacă există
+    // Adauga perioada daca exista
     if (perioada.isNotEmpty && !_isSelectValue(perioada)) {
       final period = _formatPeriod(perioada);
       if (period.isNotEmpty) {
@@ -1736,16 +1736,16 @@ class GoogleDriveService extends ChangeNotifier {
       }
     }
     
-    // Pentru anumite tipuri de credit, nu afișa paranteze goale
+    // Pentru anumite tipuri de credit, nu afisa paranteze goale
     if (details.isEmpty) {
       final creditTypeLower = creditType.toLowerCase();
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Nu există detalii pentru $creditTypeLower');
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Nu exista detalii pentru $creditTypeLower');
       
-      // Pentru carduri, overdraft și nevoi personale, nu e nevoie de detalii suplimentare
+      // Pentru carduri, overdraft si nevoi personale, nu e nevoie de detalii suplimentare
       if (creditTypeLower.contains('card') || 
           creditTypeLower.contains('overdraft') || 
           creditTypeLower.contains('nevoi personale')) {
-        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Tip de credit care nu necesită detalii');
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Tip de credit care nu necesita detalii');
         return '';
       }
     }
@@ -1756,19 +1756,19 @@ class GoogleDriveService extends ChangeNotifier {
     return result;
   }
 
-  /// Formatează o sumă cu "k" pentru mii (5500 -> 5,5k)
+  /// Formateaza o suma cu "k" pentru mii (5500 -> 5,5k)
   String _formatAmountWithK(String amount) {
     if (amount.isEmpty || amount == '0') return '';
     
     try {
-      // Elimină virgulele existente
+      // Elimina virgulele existente
       final cleanAmount = amount.replaceAll(',', '');
       final numericValue = double.tryParse(cleanAmount);
       
       if (numericValue != null && numericValue > 0) {
         if (numericValue >= 1000) {
           final kValue = numericValue / 1000;
-          // Formatează cu o zecimală dacă nu e număr întreg
+          // Formateaza cu o zecimala daca nu e numar intreg
           if (kValue == kValue.roundToDouble()) {
             return '${kValue.round()}k';
           } else {
@@ -1785,16 +1785,16 @@ class GoogleDriveService extends ChangeNotifier {
     return amount;
   }
 
-  /// Formatează perioada (ani/luni format)
+  /// Formateaza perioada (ani/luni format)
   String _formatPeriod(String perioada) {
     if (perioada.isEmpty) return '';
     
-    // Dacă perioada conține deja formatul ani/luni (ex: "2/3"), returnează așa cum e
+    // Daca perioada contine deja formatul ani/luni (ex: "2/3"), returneaza asa cum e
     if (perioada.contains('/')) {
       return perioada;
     }
     
-    // Încearcă să parseze ca numărul de luni
+    // Incearca sa parseze ca numarul de luni
     final months = int.tryParse(perioada);
     if (months != null) {
       final years = months ~/ 12;
@@ -1813,10 +1813,10 @@ class GoogleDriveService extends ChangeNotifier {
   }
 
 
-  /// Verifică dacă o valoare este "Selectează" în diverse variante
+  /// Verifica daca o valoare este "Selecteaza" in diverse variante
   bool _isSelectValue(String value) {
     final lowerValue = value.toLowerCase().trim();
-    return lowerValue == 'selectează' || 
+    return lowerValue == 'selecteaza' || 
            lowerValue == 'selecteaza' || 
            lowerValue == 'selecteaza banca' ||
            lowerValue == 'selecteaza tipul' ||

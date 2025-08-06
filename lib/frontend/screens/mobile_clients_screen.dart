@@ -260,7 +260,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Toți clienții au fost șterși'),
+          content: Text('Toti clientii au fost stersi'),
           backgroundColor: Color(0xFFC17099),
           duration: const Duration(seconds: 3),
         ),

@@ -89,7 +89,7 @@ class MeetingData {
 }
 
 /// Service optimizat pentru gestionarea intalnirilor
-/// OPTIMIZAT: Implementare avansată cu cache inteligent și operații paralele
+/// OPTIMIZAT: Implementare avansata cu cache inteligent si operatii paralele
 class MeetingService {
   static final MeetingService _instance = MeetingService._internal();
   factory MeetingService() => _instance;
@@ -97,26 +97,26 @@ class MeetingService {
 
   final NewFirebaseService _firebaseService = NewFirebaseService();
   
-  // OPTIMIZARE: Cache avansat pentru clienți recent căutați
+  // OPTIMIZARE: Cache avansat pentru clienti recent cautati
   final Map<String, dynamic> _clientCache = {};
   Timer? _clientCacheTimer;
   
-  // OPTIMIZARE: Debouncing îmbunătățit pentru notificări
+  // OPTIMIZARE: Debouncing imbunatatit pentru notificari
   Timer? _notificationDebounceTimer;
   final Set<String> _pendingNotifications = {};
   
-  // OPTIMIZARE: Cache pentru verificări de disponibilitate
+  // OPTIMIZARE: Cache pentru verificari de disponibilitate
   final Map<String, bool> _availabilityCache = {};
   Timer? _availabilityCacheTimer;
 
-  /// OPTIMIZAT: Notifica dashboard-ul cu debouncing îmbunătățit
+  /// OPTIMIZAT: Notifica dashboard-ul cu debouncing imbunatatit
   Future<void> _notifyMeetingCreated(String clientPhoneNumber) async {
     try {
       final consultantToken = await _firebaseService.getCurrentConsultantToken();
       debugPrint('🔔 MEETING_SERVICE: Notifying meeting created for consultant: ${consultantToken?.substring(0, 8) ?? 'NULL'} for client: $clientPhoneNumber');
       
       if (consultantToken != null) {
-        // OPTIMIZARE: Debouncing îmbunătățit pentru notificări
+        // OPTIMIZARE: Debouncing imbunatatit pentru notificari
         if (_pendingNotifications.contains('meeting_created')) return;
         _pendingNotifications.add('meeting_created');
         
@@ -127,7 +127,7 @@ class MeetingService {
             await dashboardService.onMeetingCreated(consultantToken, clientPhoneNumber);
             debugPrint('✅ MEETING_SERVICE: Dashboard notified successfully');
             
-            // OPTIMIZARE: Refresh singur în loc de multiple
+            // OPTIMIZARE: Refresh singur in loc de multiple
             dashboardService.refreshData();
             _pendingNotifications.remove('meeting_created');
           } catch (e) {
@@ -143,24 +143,24 @@ class MeetingService {
     }
   }
 
-  /// OPTIMIZAT: Notifica clientul despre intalnirea creata cu performanță îmbunătățită
+  /// OPTIMIZAT: Notifica clientul despre intalnirea creata cu performanta imbunatatita
   Future<void> _notifyClientMeetingCreated(String phoneNumber, DateTime dateTime) async {
     try {
       final clientService = SplashService().clientUIService;
 
-      // OPTIMIZARE: Verificare rapidă din cache în loc de reload complet
+      // OPTIMIZARE: Verificare rapida din cache in loc de reload complet
       var client = _clientCache[phoneNumber];
       
       if (client == null) {
-        // OPTIMIZARE: Caută în lista existentă înainte de a reîncărca
+        // OPTIMIZARE: Cauta in lista existenta inainte de a reincarca
         final clientsWithPhone = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
         if (clientsWithPhone.isNotEmpty) {
           client = clientsWithPhone.first;
-          // OPTIMIZARE: Salvează în cache pentru viitor
+          // OPTIMIZARE: Salveaza in cache pentru viitor
           _clientCache[phoneNumber] = client;
           _resetClientCache();
         } else {
-          // OPTIMIZARE: Doar dacă nu e în lista existentă, reîncarcă
+          // OPTIMIZARE: Doar daca nu e in lista existenta, reincarca
           debugPrint('🔄 MEETING_SERVICE: Client not in current list, refreshing...');
           await clientService.loadClientsFromFirebase();
           
@@ -173,7 +173,7 @@ class MeetingService {
         }
       }
       
-      // Verifică dacă clientul a fost găsit înainte de a-l folosi
+      // Verifica daca clientul a fost gasit inainte de a-l folosi
       if (client != null) {
         debugPrint('📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: ${client.name}');
         
@@ -181,14 +181,14 @@ class MeetingService {
         if (!client.isCompleted) {
           debugPrint('📱 MEETING_SERVICE: Client not completed, proceeding with move and statistics increment');
           
-          // OPTIMIZARE: Operație paralelă pentru mutarea clientului cu delay redus
+          // OPTIMIZARE: Operatie paralela pentru mutarea clientului cu delay redus
           await Future.wait([
             clientService.moveClientToRecente(
               phoneNumber,
               scheduledDateTime: dateTime,
               additionalInfo: 'Intalnire programata din calendar',
             ),
-            // OPTIMIZARE: Invalidează cache-ul în paralel cu delay redus
+            // OPTIMIZARE: Invalideaza cache-ul in paralel cu delay redus
             _invalidateCacheWithDelay(),
           ]);
           
@@ -207,11 +207,11 @@ class MeetingService {
     }
   }
 
-  /// OPTIMIZARE: Invalidare cache cu delay redus pentru performanță
+  /// OPTIMIZARE: Invalidare cache cu delay redus pentru performanta
   Future<void> _invalidateCacheWithDelay() async {
     try {
       final splashService = SplashService();
-      // OPTIMIZARE: Delay redus pentru răspuns mai rapid
+      // OPTIMIZARE: Delay redus pentru raspuns mai rapid
       await Future.delayed(const Duration(milliseconds: 50));
       await splashService.invalidateMeetingsCacheAndRefresh();
     } catch (e) {
@@ -219,7 +219,7 @@ class MeetingService {
     }
   }
 
-  /// OPTIMIZARE: Resetează cache-ul de clienți după 30 secunde
+  /// OPTIMIZARE: Reseteaza cache-ul de clienti dupa 30 secunde
   void _resetClientCache() {
     _clientCacheTimer?.cancel();
     _clientCacheTimer = Timer(const Duration(seconds: 30), () {
@@ -228,7 +228,7 @@ class MeetingService {
     });
   }
 
-  /// OPTIMIZARE: Resetează cache-ul de disponibilitate după 10 minute
+  /// OPTIMIZARE: Reseteaza cache-ul de disponibilitate dupa 10 minute
   void _resetAvailabilityCache() {
     _availabilityCacheTimer?.cancel();
     _availabilityCacheTimer = Timer(const Duration(minutes: 10), () {
@@ -242,17 +242,17 @@ class MeetingService {
     try {
       debugPrint('📉 Meeting deleted - dashboard notified');
       // DashboardService nu are metoda onMeetingDeleted implementata
-      // În viitor, ar putea fi adăugată
+      // In viitor, ar putea fi adaugata
     } catch (e) {
       debugPrint('❌ Error notifying meeting deleted: $e');
     }
   }
 
-  /// OPTIMIZAT: Verifică disponibilitatea slot-ului cu cache
+  /// OPTIMIZAT: Verifica disponibilitatea slot-ului cu cache
   Future<bool> _isTimeSlotAvailable(DateTime dateTime) async {
     final timeKey = DateFormat('yyyy-MM-dd-HH-mm').format(dateTime);
     
-    // OPTIMIZARE: Verifică cache-ul mai întâi
+    // OPTIMIZARE: Verifica cache-ul mai intai
     if (_availabilityCache.containsKey(timeKey)) {
       return _availabilityCache[timeKey]!;
     }
@@ -261,7 +261,7 @@ class MeetingService {
       final splashService = SplashService();
       final allMeetings = await splashService.getCachedMeetings();
       
-      // Verifică dacă există întâlniri în același slot
+      // Verifica daca exista intalniri in acelasi slot
       final hasConflict = allMeetings.any((meeting) {
         final meetingDate = meeting.dateTime;
         return meetingDate.year == dateTime.year &&
@@ -273,7 +273,7 @@ class MeetingService {
       
       final isAvailable = !hasConflict;
       
-      // OPTIMIZARE: Salvează în cache
+      // OPTIMIZARE: Salveaza in cache
       _availabilityCache[timeKey] = isAvailable;
       _resetAvailabilityCache();
       
@@ -284,12 +284,12 @@ class MeetingService {
     }
   }
 
-  /// OPTIMIZAT: Creeaza o noua intalnire cu performanță îmbunătățită și feedback instant
+  /// OPTIMIZAT: Creeaza o noua intalnire cu performanta imbunatatita si feedback instant
   Future<Map<String, dynamic>> createMeeting(MeetingData meetingData) async {
     debugPrint('🔍 MEETING_SERVICE: Starting createMeeting | Client: ${meetingData.clientName} | Date: ${meetingData.dateTime} | Type: ${meetingData.type}');
     
     try {
-      // OPTIMIZARE: Verificare rapidă de disponibilitate din cache
+      // OPTIMIZARE: Verificare rapida de disponibilitate din cache
       final isAvailable = await _isTimeSlotAvailable(meetingData.dateTime);
       if (!isAvailable) {
         debugPrint('❌ MEETING_SERVICE: Time slot not available');
@@ -301,9 +301,9 @@ class MeetingService {
 
       debugPrint('🔍 MEETING_SERVICE: Starting optimized parallel operations');
       
-      // OPTIMIZARE: Operații paralele optimizate cu feedback instant
+      // OPTIMIZARE: Operatii paralele optimizate cu feedback instant
       final results = await Future.wait([
-        // Operația principală - crearea întâlnirii
+        // Operatia principala - crearea intalnirii
         _firebaseService.createMeeting(
           phoneNumber: meetingData.phoneNumber,
           dateTime: meetingData.dateTime,
@@ -316,7 +316,7 @@ class MeetingService {
             'consultantId': FirebaseAuth.instance.currentUser?.uid,
           },
         ),
-        // OPTIMIZARE: Operații secundare în paralel pentru performanță
+        // OPTIMIZARE: Operatii secundare in paralel pentru performanta
         _notifyMeetingCreated(meetingData.phoneNumber),
       ]);
 
@@ -325,7 +325,7 @@ class MeetingService {
       if (meetingCreated) {
         debugPrint('✅ MEETING_SERVICE: Meeting created successfully | Client: ${meetingData.clientName} | Date: ${meetingData.dateTime}');
         
-        // OPTIMIZARE: Notificare optimizată pentru client cu delay redus
+        // OPTIMIZARE: Notificare optimizata pentru client cu delay redus
         _notifyClientMeetingCreated(meetingData.phoneNumber, meetingData.dateTime);
         
         return {
@@ -352,7 +352,7 @@ class MeetingService {
   /// OPTIMIZAT: Editeaza o intalnire existenta
   Future<Map<String, dynamic>> editMeeting(String meetingId, MeetingData meetingData) async {
     try {
-      // OPTIMIZARE: Verifică disponibilitatea doar dacă timpul s-a schimbat
+      // OPTIMIZARE: Verifica disponibilitatea doar daca timpul s-a schimbat
       final isAvailable = await _isTimeSlotAvailable(meetingData.dateTime);
       if (!isAvailable) {
         return {
@@ -361,7 +361,7 @@ class MeetingService {
         };
       }
 
-      // OPTIMIZARE: Operații paralele pentru editarea întâlnirii
+      // OPTIMIZARE: Operatii paralele pentru editarea intalnirii
       await Future.wait([
         _firebaseService.updateMeeting(
           phoneNumber: meetingData.phoneNumber,
@@ -426,7 +426,7 @@ class MeetingService {
   /// OPTIMIZAT: Obtine slot-urile de timp disponibile pentru o data specifica
   Future<List<String>> getAvailableTimeSlots(DateTime date, {String? excludeId}) async {
     try {
-      // OPTIMIZARE: Folosește SplashService pentru cache
+      // OPTIMIZARE: Foloseste SplashService pentru cache
       final splashService = SplashService();
       return await splashService.getAvailableTimeSlots(date, excludeId: excludeId);
     } catch (e) {

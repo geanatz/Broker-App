@@ -58,7 +58,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
     // Adauga observer pentru lifecycle
     WidgetsBinding.instance.addObserver(this);
     
-    // Service-ul este deja initializat in splash, doar sincronizăm datele
+    // Service-ul este deja initializat in splash, doar sincronizam datele
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshData();
     });
@@ -92,7 +92,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
   /// Callback pentru schimbarile din MatcherService
   void _onMatcherServiceChanged() {
     if (mounted) {
-      // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita setState în timpul build
+      // OPTIMIZARE: Foloseste addPostFrameCallback pentru a evita setState in timpul build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {});
@@ -103,7 +103,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
 
   /// Afiseaza popup-ul cu detaliile unei banci
   void _showBankDetailsPopup(BankCriteria bankCriteria) {
-    // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita setState în timpul build
+    // OPTIMIZARE: Foloseste addPostFrameCallback pentru a evita setState in timpul build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {

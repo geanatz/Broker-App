@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-/// Service pentru monitorizarea stării conexiunii și gestionarea sincronizării
-/// CRITICAL FIX: Implementare avansată pentru gestionarea reconnects și sync failures
+/// Service pentru monitorizarea starii conexiunii si gestionarea sincronizarii
+/// CRITICAL FIX: Implementare avansata pentru gestionarea reconnects si sync failures
 class ConnectionService extends ChangeNotifier {
   static final ConnectionService _instance = ConnectionService._internal();
   factory ConnectionService() => _instance;
@@ -41,13 +41,13 @@ class ConnectionService extends ChangeNotifier {
   DateTime? get lastConnectionLoss => _lastConnectionLoss;
   DateTime? get lastSuccessfulSync => _lastSuccessfulSync;
   
-  /// Inițializează monitorizarea conexiunii
+  /// Initializeaza monitorizarea conexiunii
   Future<void> initialize() async {
     try {
-      // Monitorizează conectivitatea la internet
+      // Monitorizeaza conectivitatea la internet
       _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
         (List<ConnectivityResult> results) {
-          // Folosește primul rezultat pentru compatibilitate
+          // Foloseste primul rezultat pentru compatibilitate
           final result = results.isNotEmpty ? results.first : ConnectivityResult.none;
           _handleConnectivityChange(result);
         },
@@ -56,17 +56,17 @@ class ConnectionService extends ChangeNotifier {
         },
       );
       
-      // Monitorizează conexiunea Firebase
+      // Monitorizeaza conexiunea Firebase
       _monitorFirebaseConnection();
       
-      // Pornește procesarea cozii de sincronizare
+      // Porneste procesarea cozii de sincronizare
       _startSyncQueueProcessing();
     } catch (e) {
       debugPrint('❌ CONNECTION_SERVICE: Error initializing connection monitoring: $e');
     }
   }
   
-  /// Gestionează schimbările de conectivitate
+  /// Gestioneaza schimbarile de conectivitate
   void _handleConnectivityChange(ConnectivityResult result) {
     final wasConnected = _isConnected;
     _isConnected = result != ConnectivityResult.none;
@@ -82,7 +82,7 @@ class ConnectionService extends ChangeNotifier {
     notifyListeners();
   }
   
-  /// Monitorizează conexiunea Firebase
+  /// Monitorizeaza conexiunea Firebase
   void _monitorFirebaseConnection() {
     try {
       // FIX: Monitor Firebase connection status
@@ -119,7 +119,7 @@ class ConnectionService extends ChangeNotifier {
     }
   }
 
-  /// Gestionează pierderea conexiunii Firebase
+  /// Gestioneaza pierderea conexiunii Firebase
   void _handleFirebaseConnectionLoss() {
     _lastConnectionLoss = DateTime.now();
     _isReconnecting = true;
@@ -130,7 +130,7 @@ class ConnectionService extends ChangeNotifier {
     _attemptFirebaseReconnection();
   }
 
-  /// Gestionează restabilirea conexiunii Firebase
+  /// Gestioneaza restabilirea conexiunii Firebase
   void _handleFirebaseConnectionRestored() {
     _isReconnecting = false;
     _lastSuccessfulSync = DateTime.now();
@@ -163,29 +163,29 @@ class ConnectionService extends ChangeNotifier {
     }
   }
   
-  /// Gestionează pierderea conexiunii
+  /// Gestioneaza pierderea conexiunii
   void _handleConnectionLoss() {
     _lastConnectionLoss = DateTime.now();
 
     
-    // Oprește sincronizarea activă
+    // Opreste sincronizarea activa
     _isSyncing = false;
     
-    // Salvează starea curentă pentru recovery
+    // Salveaza starea curenta pentru recovery
     _saveOfflineState();
   }
   
-  /// Gestionează restabilirea conexiunii
+  /// Gestioneaza restabilirea conexiunii
   void _handleConnectionRestored() {
 
     
-    // Pornește reconnection process
+    // Porneste reconnection process
     _startReconnection();
   }
   
   
   
-  /// Pornește procesul de reconectare
+  /// Porneste procesul de reconectare
   Future<void> _startReconnection() async {
     if (_isReconnecting) return;
     
@@ -195,10 +195,10 @@ class ConnectionService extends ChangeNotifier {
     try {
 
       
-      // Așteaptă puțin înainte de a încerca reconectarea
+      // Asteapta putin inainte de a incerca reconectarea
       await Future.delayed(const Duration(seconds: 2));
       
-      // Verifică din nou conectivitatea
+      // Verifica din nou conectivitatea
       final connectivityResults = await Connectivity().checkConnectivity();
       final connectivityResult = connectivityResults.isNotEmpty ? connectivityResults.first : ConnectivityResult.none;
       if (connectivityResult == ConnectivityResult.none) {
@@ -206,7 +206,7 @@ class ConnectionService extends ChangeNotifier {
         return;
       }
       
-      // Testează conexiunea Firebase
+      // Testeaza conexiunea Firebase
       await FirebaseFirestore.instance
           .collection('_health')
           .doc('connection_test')
@@ -218,7 +218,7 @@ class ConnectionService extends ChangeNotifier {
       
 
       
-      // Procesează coada de sincronizare
+      // Proceseaza coada de sincronizare
       _processSyncQueue();
       
     } catch (e) {
@@ -229,18 +229,18 @@ class ConnectionService extends ChangeNotifier {
     }
   }
   
-  /// Salvează starea pentru recovery offline
+  /// Salveaza starea pentru recovery offline
   void _saveOfflineState() {
-    // Implementare pentru salvarea stării curente
+    // Implementare pentru salvarea starii curente
   }
   
-  /// Adaugă o operație în coada de sincronizare
+  /// Adauga o operatie in coada de sincronizare
   void addToSyncQueue(String operation, Map<String, dynamic> data) {
     if (_isConnected && _isFirebaseConnected) {
-      // Dacă suntem conectați, execută imediat
+      // Daca suntem conectati, executa imediat
       _executeSyncOperation(operation, data);
     } else {
-      // Altfel, adaugă în coadă
+      // Altfel, adauga in coada
       _syncQueue.add({
         'operation': operation,
         'data': data,
@@ -252,7 +252,7 @@ class ConnectionService extends ChangeNotifier {
     }
   }
   
-  /// Pornește procesarea cozii de sincronizare
+  /// Porneste procesarea cozii de sincronizare
   void _startSyncQueueProcessing() {
     _syncQueueTimer?.cancel();
     _syncQueueTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
@@ -262,7 +262,7 @@ class ConnectionService extends ChangeNotifier {
     });
   }
   
-  /// Procesează coada de sincronizare
+  /// Proceseaza coada de sincronizare
   Future<void> _processSyncQueue() async {
     if (_syncQueue.isEmpty || _isSyncing) return;
     
@@ -286,7 +286,7 @@ class ConnectionService extends ChangeNotifier {
         } catch (e) {
           debugPrint('❌ CONNECTION_SERVICE: Failed to sync operation: ${item['operation']} - $e');
           
-          // Re-adaugă în coadă pentru retry
+          // Re-adauga in coada pentru retry
           _syncQueue.add(item);
         }
       }
@@ -302,9 +302,9 @@ class ConnectionService extends ChangeNotifier {
     }
   }
   
-  /// Execută o operație de sincronizare
+  /// Executa o operatie de sincronizare
   Future<void> _executeSyncOperation(String operation, Map<String, dynamic> data) async {
-    // Implementare pentru diferite tipuri de operații
+    // Implementare pentru diferite tipuri de operatii
     switch (operation) {
       case 'create_client':
         // Implementare pentru crearea clientului
@@ -313,17 +313,17 @@ class ConnectionService extends ChangeNotifier {
         // Implementare pentru actualizarea clientului
         break;
       case 'delete_client':
-        // Implementare pentru ștergerea clientului
+        // Implementare pentru stergerea clientului
         break;
       case 'create_meeting':
-        // Implementare pentru crearea întâlnirii
+        // Implementare pentru crearea intalnirii
         break;
       default:
 
     }
   }
   
-  /// Forțează sincronizarea imediată
+  /// Forteaza sincronizarea imediata
   Future<void> forceSync() async {
     if (!_isConnected || !_isFirebaseConnected) {
       debugPrint('❌ CONNECTION_SERVICE: Cannot force sync - not connected');
@@ -333,7 +333,7 @@ class ConnectionService extends ChangeNotifier {
     await _processSyncQueue();
   }
   
-  /// Verifică dacă aplicația poate sincroniza
+  /// Verifica daca aplicatia poate sincroniza
   bool get canSync => _isConnected && _isFirebaseConnected && !_isSyncing;
   
   /// Obtine status-ul conexiunii pentru UI

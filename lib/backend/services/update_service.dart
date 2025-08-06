@@ -160,7 +160,7 @@ class UpdateService {
       return success;
     } catch (e) {
       debugPrint('❌ Error during update download: $e');
-      _onError?.call('Eroare neașteptată la download: $e');
+      _onError?.call('Eroare neasteptata la download: $e');
       return false;
     } finally {
       _isDownloading = false;
@@ -202,7 +202,7 @@ class UpdateService {
       return success;
     } catch (e) {
       debugPrint('❌ Error during update installation: $e');
-      _onError?.call('Eroare neașteptată la instalare: $e');
+      _onError?.call('Eroare neasteptata la instalare: $e');
       return false;
     } finally {
       _isInstalling = false;
@@ -828,7 +828,7 @@ class UpdateService {
     }
   }
   
-  /// Verifica periodic daca există update-uri în background (Discord-style)
+  /// Verifica periodic daca exista update-uri in background (Discord-style)
   void startBackgroundUpdateCheck() {
     if (kIsWeb || !Platform.isWindows || !UpdateConfig.isBackgroundDownloadEnabled()) return;
     

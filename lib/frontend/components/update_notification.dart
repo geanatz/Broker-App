@@ -27,7 +27,7 @@ class _UpdateNotificationState extends State<UpdateNotification> {
   }
 }
 
-/// Widget helper pentru integrarea facilă în main screen
+/// Widget helper pentru integrarea facila in main screen
 class UpdateNotificationWrapper extends StatefulWidget {
   final Widget child;
   final UpdateService updateService;
@@ -166,7 +166,7 @@ class _UpdateNotificationWrapperState extends State<UpdateNotificationWrapper> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Aplicația se va reporni automat pentru a finaliza actualizarea.',
+              'Aplicatia se va reporni automat pentru a finaliza actualizarea.',
               style: GoogleFonts.outfit(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
@@ -221,7 +221,7 @@ class _UpdateNotificationWrapperState extends State<UpdateNotificationWrapper> {
     }
     
     // Fallback to default description
-    return '• Îmbunătățiri de performanță\n• Corectări de bug-uri\n• Funcționalități noi\n• Securitate îmbunătățită';
+    return '• Imbunatatiri de performanta\n• Corectari de bug-uri\n• Functionalitati noi\n• Securitate imbunatatita';
   }
 
   void _startCompleteUpdate() async {

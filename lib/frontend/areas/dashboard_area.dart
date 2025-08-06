@@ -25,7 +25,7 @@ class _DashboardAreaState extends State<DashboardArea> {
   void initState() {
     super.initState();
     _dashboardService = SplashService().dashboardService;
-    // Nu mai facem _initializeDashboard() pentru că datele sunt deja încărcate în splash
+    // Nu mai facem _initializeDashboard() pentru ca datele sunt deja incarcate in splash
   }
 
   @override
@@ -51,9 +51,9 @@ class _DashboardAreaState extends State<DashboardArea> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Coloana stanga - Chatbot AI - lățime mai mare
+        // Coloana stanga - Chatbot AI - latime mai mare
         Expanded(
-          flex: 1, // Lățime mai mare pentru chatbot
+          flex: 1, // Latime mai mare pentru chatbot
           child: const ChatbotWidget(),
         ),
         const SizedBox(width: AppTheme.mediumGap),
@@ -229,11 +229,11 @@ class _DashboardAreaState extends State<DashboardArea> {
 
   /// Obtine consultanti pentru o echipa specifica
   List<ConsultantRanking> _getConsultantsForTeam(String teamName, List<ConsultantRanking> allConsultants) {
-    // Debug: afișează toți consultanții pentru debugging
+    // Debug: afiseaza toti consultantii pentru debugging
     debugPrint('🔍 DASHBOARD: Caut consultanti pentru echipa: $teamName');
     debugPrint('🔍 DASHBOARD: Total consultanti disponibili: ${allConsultants.length}');
     
-    // Acum folosim câmpul team din ConsultantRanking
+    // Acum folosim campul team din ConsultantRanking
     final teamConsultants = allConsultants.where((consultant) => 
       consultant.team.toLowerCase() == teamName.toLowerCase()
     ).toList();
@@ -378,7 +378,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          // Prima coloană cu lățime fixă de 80px
+          // Prima coloana cu latime fixa de 80px
           Container(
             width: 80,
             height: 21,
@@ -418,7 +418,7 @@ class _DashboardAreaState extends State<DashboardArea> {
   /// Construieste o celula de tabel
   Widget _buildTableCell(String text, {int flex = 1, bool isName = false, bool isFirstColumn = false, bool isSubItem = false}) {
     if (isFirstColumn) {
-      // Prima coloană cu lățime fixă de 80px
+      // Prima coloana cu latime fixa de 80px
       return Container(
         width: 80,
         height: 21,

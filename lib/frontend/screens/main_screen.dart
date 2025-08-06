@@ -59,10 +59,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final GlobalKey<MeetingsPaneState> _meetingsPaneKey = GlobalKey<MeetingsPaneState>();
   final GlobalKey<MatcherPaneState> _matcherPaneKey = GlobalKey<MatcherPaneState>();
   
-  // Splash service pentru servicii pre-încărcate
+  // Splash service pentru servicii pre-incarcate
   final SplashService _splashService = SplashService();
   
-  // Client service pentru gestionarea popup-urilor (folosește cache-ul din splash)
+  // Client service pentru gestionarea popup-urilor (foloseste cache-ul din splash)
   late final ClientUIService _clientService;
   
 
@@ -96,8 +96,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
     
-    // Foloseste serviciile pre-încărcate din splash
-    // Verifică dacă serviciile sunt disponibile
+    // Foloseste serviciile pre-incarcate din splash
+    // Verifica daca serviciile sunt disponibile
     if (_splashService.areServicesReady) {
       _clientService = _splashService.clientUIService;
     } else {
@@ -105,7 +105,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _clientService = ClientUIService();
     }
     
-    // FIX: Resetează cache-ul pentru consultant curent la început
+    // FIX: Reseteaza cache-ul pentru consultant curent la inceput
     _initializeForCurrentConsultant();
     
     // Initializeaza sidebar service
@@ -134,10 +134,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   }
 
-  /// FIX: Inițializează aplicația pentru consultantul curent
+  /// FIX: Initializeaza aplicatia pentru consultantul curent
   Future<void> _initializeForCurrentConsultant() async {
     try {
-      // Resetează cache-ul pentru consultant/echipa curentă
+      // Reseteaza cache-ul pentru consultant/echipa curenta
       await _splashService.resetForNewConsultant();
       
 
@@ -226,7 +226,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         _sidebarService.syncPane(_currentPane);
     
       } else {
-        // Nu există preferințe salvate - folosim default-ul (clients)  
+        // Nu exista preferinte salvate - folosim default-ul (clients)  
         _currentPane = PaneType.clients;
         _sidebarService.syncPane(_currentPane);
     
@@ -242,7 +242,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       }
     } catch (e) {
       // Error restoring navigation state
-      // În caz de eroare, folosim default-urile
+      // In caz de eroare, folosim default-urile
       _currentArea = AreaType.dashboard;
       _currentPane = PaneType.clients;
       _sidebarService.syncArea(_currentArea);

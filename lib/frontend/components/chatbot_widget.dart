@@ -6,7 +6,7 @@ import 'package:broker_app/backend/services/llm_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'headers/widget_header2.dart';
 
-/// Widget pentru chatbot AI integrat în dashboard
+/// Widget pentru chatbot AI integrat in dashboard
 class ChatbotWidget extends StatefulWidget {
   const ChatbotWidget({super.key});
 
@@ -38,7 +38,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     return ListenableBuilder(
       listenable: _llmService,
       builder: (context, _) {
-        // Afișează eroarea dacă există
+        // Afiseaza eroarea daca exista
         if (_llmService.errorMessage != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showError();
@@ -73,7 +73,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     );
   }
 
-  /// Construiește header-ul chatbot-ului
+  /// Construieste header-ul chatbot-ului
   Widget _buildHeader() {
     return WidgetHeader2(
       title: 'Asistent AI',
@@ -82,7 +82,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     );
   }
 
-  /// Construiește zona de mesaje
+  /// Construieste zona de mesaje
   Widget _buildMessagesArea() {
     if (_llmService.messages.isEmpty) {
       return _buildWelcomeMessage();
@@ -98,7 +98,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     );
   }
 
-  /// Construiește mesajul de bun venit
+  /// Construieste mesajul de bun venit
   Widget _buildWelcomeMessage() {
     return SizedBox(
       width: double.infinity,
@@ -125,14 +125,14 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
             textAlign: TextAlign.center,
           ),
                       const SizedBox(height: 16),
-          // Acțiuni rapide
+          // Actiuni rapide
           _buildQuickActions(),
         ],
       ),
     );
   }
 
-  /// Construiește acțiunile rapide
+  /// Construieste actiunile rapide
   Widget _buildQuickActions() {
     final quickActions = [
       'Ce intalniri am astazi?',
@@ -149,7 +149,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     );
   }
 
-  /// Construiește un buton pentru acțiune rapidă
+  /// Construieste un buton pentru actiune rapida
   Widget _buildQuickActionButton(String text) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -174,7 +174,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     );
   }
 
-  /// Construiește o bule de mesaj
+  /// Construieste o bule de mesaj
   Widget _buildMessageBubble(ChatMessage message) {
     final timeString = '${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}';
     
@@ -184,7 +184,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
         crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
                       if (message.isUser) ...[
-              // Mesaj utilizator - bule cu border radius 4 în colțul din dreapta sus
+              // Mesaj utilizator - bule cu border radius 4 in coltul din dreapta sus
               Align(
                 alignment: Alignment.centerRight,
                 child: IntrinsicWidth(
@@ -252,7 +252,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                 ),
               ),
             ],
-          // Ora și butoane sub mesaj
+          // Ora si butoane sub mesaj
           Padding(
             padding: EdgeInsets.only(
               top: 4, 
@@ -294,7 +294,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                   ),
                 ),
                 if (!message.isUser) ...[
-                  // Buton copy pentru răspunsurile AI
+                  // Buton copy pentru raspunsurile AI
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
@@ -324,7 +324,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     );
   }
 
-  /// Construiește zona de input
+  /// Construieste zona de input
   Widget _buildInputArea() {
     return Container(
       width: double.infinity,
@@ -395,12 +395,12 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     );
   }
 
-  /// Creează un chat nou
+  /// Creeaza un chat nou
   void _createNewChat() {
     _llmService.clearMessages();
     _messageController.clear();
     
-    // Scroll la început
+    // Scroll la inceput
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -420,7 +420,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     _messageController.clear();
     _llmService.addUserMessage(text);
     
-    // Scroll la sfârșit după un scurt delay
+    // Scroll la sfarsit dupa un scurt delay
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -434,16 +434,16 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
 
   /// Retrimite mesajul utilizatorului
   void _retryMessage(ChatMessage userMessage) {
-    // Șterge ultimul răspuns AI dacă există
+    // Sterge ultimul raspuns AI daca exista
     final messages = _llmService.messages;
     if (messages.isNotEmpty && !messages.last.isUser) {
       _llmService.removeLastMessage();
     }
     
-    // Forțează AI-ul să răspundă din nou la ultimul mesaj al utilizatorului
+    // Forteaza AI-ul sa raspunda din nou la ultimul mesaj al utilizatorului
     _llmService.retryLastUserMessage();
     
-    // Scroll la sfârșit
+    // Scroll la sfarsit
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -455,12 +455,12 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     });
   }
 
-  /// Copiază răspunsul AI în clipboard
+  /// Copiaza raspunsul AI in clipboard
   void _copyMessage(ChatMessage message) {
     if (!message.isUser) {
       Clipboard.setData(ClipboardData(text: message.content));
       
-      // Afișează un feedback vizual
+      // Afiseaza un feedback vizual
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Raspuns copiat in clipboard'),
@@ -471,7 +471,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     }
   }
 
-  /// Afișează eroarea dacă există
+  /// Afiseaza eroarea daca exista
   void _showError() {
     if (_llmService.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(

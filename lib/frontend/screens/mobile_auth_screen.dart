@@ -40,7 +40,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
 
       if (mounted) {
         if (result['success']) {
-          // Autentificarea reușită - AuthWrapper va detecta schimbarea și va naviga la MainScreen
+          // Autentificarea reusita - AuthWrapper va detecta schimbarea si va naviga la MainScreen
           debugPrint('🟢 MOBILE: Login successful');
         } else {
           setState(() {
@@ -70,7 +70,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // Header cu logo și nume
+              // Header cu logo si nume
               Container(
                 width: double.infinity,
                 height: 80,
@@ -133,7 +133,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                         
                         const SizedBox(height: 32),
                         
-                        // Câmp nume consultant
+                        // Camp nume consultant
                         TextFormField(
                           controller: _consultantNameController,
                           decoration: InputDecoration(
@@ -154,7 +154,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                         
                         const SizedBox(height: 16),
                         
-                        // Câmp parolă
+                        // Camp parola
                         TextFormField(
                           controller: _passwordController,
                           obscureText: true,

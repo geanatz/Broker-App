@@ -13,8 +13,8 @@ import 'package:broker_app/backend/services/sheets_service.dart';
 import 'package:broker_app/backend/services/connection_service.dart';
 import 'package:broker_app/backend/services/llm_service.dart';
 
-/// Service pentru gestionarea încărcărilor de pe splash screen și cache-ul aplicației
-/// OPTIMIZAT: Implementare avansată cu preloading paralel și cache inteligent
+/// Service pentru gestionarea incarcarilor de pe splash screen si cache-ul aplicatiei
+/// OPTIMIZAT: Implementare avansata cu preloading paralel si cache inteligent
 class SplashService extends ChangeNotifier {
   // Singleton pattern
   static final SplashService _instance = SplashService._internal();
@@ -38,26 +38,26 @@ class SplashService extends ChangeNotifier {
   ConnectionService? _connectionService;
   LLMService? _llmService;
   
-  // OPTIMIZARE: Cache avansat pentru meetings cu timestamp și validare
+  // OPTIMIZARE: Cache avansat pentru meetings cu timestamp si validare
   List<ClientActivity> _cachedMeetings = [];
   DateTime? _meetingsCacheTime;
   Map<String, List<String>> _cachedTimeSlots = {};
   DateTime? _timeSlotsLastUpdate;
   
-  // OPTIMIZARE: Cache pentru clienți cu timestamp
+  // OPTIMIZARE: Cache pentru clienti cu timestamp
   List<ClientModel> _cachedClients = [];
   DateTime? _clientsCacheTime;
   
   // OPTIMIZARE: Cache pentru dashboard data
   Map<String, dynamic> _cachedDashboardData = {};
 
-  // FIX: Cache pentru separarea datelor per consultant/echipă
+  // FIX: Cache pentru separarea datelor per consultant/echipa
   String? _currentConsultantToken;
   String? _currentTeam;
   final Map<String, List<ClientActivity>> _teamMeetingsCache = {};
   final Map<String, List<ClientModel>> _teamClientsCache = {};
   
-  // OPTIMIZARE: Debouncing pentru invalidări de cache cu timeout
+  // OPTIMIZARE: Debouncing pentru invalidari de cache cu timeout
   Timer? _cacheInvalidationTimer;
   bool _hasPendingInvalidation = false;
   
@@ -85,7 +85,7 @@ class SplashService extends ChangeNotifier {
   ConnectionService get connectionService => _connectionService ?? ConnectionService();
   LLMService get llmService => _llmService ?? LLMService();
 
-  /// OPTIMIZAT: Resetează cache-ul când consultantul se schimbă cu preloading anticipat
+  /// OPTIMIZAT: Reseteaza cache-ul cand consultantul se schimba cu preloading anticipat
   Future<void> resetForNewConsultant() async {
     PerformanceMonitor.startTimer('resetForNewConsultant');
     
@@ -99,7 +99,7 @@ class SplashService extends ChangeNotifier {
       if (newConsultantToken != _currentConsultantToken || newTeam != _currentTeam) {
     
         
-        // Salvează în cache datele pentru echipa anterioară
+        // Salveaza in cache datele pentru echipa anterioara
         if (_currentTeam != null && _cachedMeetings.isNotEmpty) {
           _teamMeetingsCache[_currentTeam!] = List.from(_cachedMeetings);
         }
@@ -110,7 +110,7 @@ class SplashService extends ChangeNotifier {
         _currentConsultantToken = newConsultantToken;
         _currentTeam = newTeam;
         
-        // OPTIMIZARE: Preload în paralel pentru echipa nouă cu timeout
+        // OPTIMIZARE: Preload in paralel pentru echipa noua cu timeout
         await Future.wait([
           _loadMeetingsForNewTeam(),
           _loadClientsForNewTeam(),
@@ -122,7 +122,7 @@ class SplashService extends ChangeNotifier {
           },
         );
         
-        // OPTIMIZARE: Operații non-blocking pentru dashboard și Google Drive
+        // OPTIMIZARE: Operatii non-blocking pentru dashboard si Google Drive
         _performNonBlockingReset(newConsultantToken);
         
 
@@ -134,23 +134,23 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZARE: Operații non-blocking pentru reset
+  /// OPTIMIZARE: Operatii non-blocking pentru reset
   void _performNonBlockingReset(String? newConsultantToken) {
-    // Notifică dashboard-ul pentru refresh (non-blocking)
+    // Notifica dashboard-ul pentru refresh (non-blocking)
     if (_dashboardService != null) {
       _dashboardService!.resetForNewConsultant().catchError((e) {
         debugPrint('⚠️ SPLASH_SERVICE: Dashboard reset error: $e');
       });
     }
     
-    // FIX: Resetează cache-ul de clienți pentru separarea datelor (non-blocking)
+    // FIX: Reseteaza cache-ul de clienti pentru separarea datelor (non-blocking)
     if (_clientUIService != null) {
       _clientUIService!.resetForNewConsultant().catchError((e) {
         debugPrint('⚠️ SPLASH_SERVICE: Client UI reset error: $e');
       });
     }
     
-    // FIX: Schimbă consultantul în Google Drive Service pentru token-urile corecte (non-blocking)
+    // FIX: Schimba consultantul in Google Drive Service pentru token-urile corecte (non-blocking)
     if (_googleDriveService != null && newConsultantToken != null) {
       _googleDriveService!.switchConsultant(newConsultantToken).catchError((e) {
         debugPrint('⚠️ SPLASH_SERVICE: Google Drive switch error: $e');
@@ -158,44 +158,44 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Încarcă întâlnirile pentru noua echipă cu cache inteligent
+  /// OPTIMIZAT: Incarca intalnirile pentru noua echipa cu cache inteligent
   Future<void> _loadMeetingsForNewTeam() async {
     if (_currentTeam == null) return;
     
-    // Verifică cache-ul echipei mai întâi
+    // Verifica cache-ul echipei mai intai
     if (_teamMeetingsCache.containsKey(_currentTeam!)) {
       _cachedMeetings = List.from(_teamMeetingsCache[_currentTeam!]!);
       _meetingsCacheTime = DateTime.now();
       notifyListeners();
   
     } else {
-      // Încarcă din Firebase cu timeout
+      // Incarca din Firebase cu timeout
       await _refreshMeetingsCache();
     }
   }
 
-  /// OPTIMIZAT: Încarcă clienții pentru noua echipă cu cache inteligent
+  /// OPTIMIZAT: Incarca clientii pentru noua echipa cu cache inteligent
   Future<void> _loadClientsForNewTeam() async {
     if (_currentTeam == null) return;
     
-    // Verifică cache-ul echipei mai întâi
+    // Verifica cache-ul echipei mai intai
     if (_teamClientsCache.containsKey(_currentTeam!)) {
       _cachedClients = List.from(_teamClientsCache[_currentTeam!]!);
       _clientsCacheTime = DateTime.now();
       notifyListeners();
   
     } else {
-      // Încarcă din Firebase
+      // Incarca din Firebase
       await _refreshClientsCache();
     }
   }
 
-  /// OPTIMIZAT: Obtine toate intalnirile din cache cu validare avansată
+  /// OPTIMIZAT: Obtine toate intalnirile din cache cu validare avansata
   Future<List<ClientActivity>> getCachedMeetings() async {
-    // OPTIMIZARE: Verifică consultantul doar dacă cache-ul este invalid
+    // OPTIMIZARE: Verifica consultantul doar daca cache-ul este invalid
     if (_meetingsCacheTime == null || 
         DateTime.now().difference(_meetingsCacheTime!).inSeconds > 60) {
-      // FIX: Verifică dacă consultantul s-a schimbat doar când este necesar
+      // FIX: Verifica daca consultantul s-a schimbat doar cand este necesar
       await resetForNewConsultant();
       await _refreshMeetingsCache();
     }
@@ -203,12 +203,12 @@ class SplashService extends ChangeNotifier {
     return _cachedMeetings;
   }
 
-  /// OPTIMIZAT: Obtine toți clienții din cache cu validare avansată
+  /// OPTIMIZAT: Obtine toti clientii din cache cu validare avansata
   Future<List<ClientModel>> getCachedClients() async {
-    // OPTIMIZARE: Verifică consultantul doar dacă cache-ul este invalid
+    // OPTIMIZARE: Verifica consultantul doar daca cache-ul este invalid
     if (_clientsCacheTime == null || 
         DateTime.now().difference(_clientsCacheTime!).inSeconds > 60) {
-      // Verifică dacă consultantul s-a schimbat doar când este necesar
+      // Verifica daca consultantul s-a schimbat doar cand este necesar
       await resetForNewConsultant();
       await _refreshClientsCache();
     }
@@ -216,7 +216,7 @@ class SplashService extends ChangeNotifier {
     return _cachedClients;
   }
 
-  /// OPTIMIZAT: Refresh cache-ul de meetings cu timeout și retry
+  /// OPTIMIZAT: Refresh cache-ul de meetings cu timeout si retry
   Future<void> _refreshMeetingsCache() async {
     try {
       final firebaseService = _clientUIService?.firebaseService;
@@ -225,7 +225,7 @@ class SplashService extends ChangeNotifier {
         return;
       }
 
-      // OPTIMIZARE: Timeout pentru operațiunea de refresh
+      // OPTIMIZARE: Timeout pentru operatiunea de refresh
       final meetingsData = await firebaseService.getTeamMeetings()
           .timeout(const Duration(seconds: 10));
       
@@ -242,7 +242,7 @@ class SplashService extends ChangeNotifier {
       _cachedMeetings = meetings;
       _meetingsCacheTime = DateTime.now();
       
-      // Salvează în cache pentru echipa curentă
+      // Salveaza in cache pentru echipa curenta
       if (_currentTeam != null) {
         _teamMeetingsCache[_currentTeam!] = List.from(meetings);
       }
@@ -254,7 +254,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Refresh cache-ul de clienți cu timeout și retry
+  /// OPTIMIZAT: Refresh cache-ul de clienti cu timeout si retry
   Future<void> _refreshClientsCache() async {
     try {
       final clientService = _clientUIService;
@@ -263,14 +263,14 @@ class SplashService extends ChangeNotifier {
         return;
       }
 
-      // OPTIMIZARE: Timeout pentru operațiunea de refresh
+      // OPTIMIZARE: Timeout pentru operatiunea de refresh
       await clientService.loadClientsFromFirebase()
           .timeout(const Duration(seconds: 10));
       
       _cachedClients = List.from(clientService.clients);
       _clientsCacheTime = DateTime.now();
       
-      // Salvează în cache pentru echipa curentă
+      // Salveaza in cache pentru echipa curenta
       if (_currentTeam != null) {
         _teamClientsCache[_currentTeam!] = List.from(_cachedClients);
       }
@@ -288,9 +288,9 @@ class SplashService extends ChangeNotifier {
     _timeSlotsLastUpdate = null;
   }
 
-  /// OPTIMIZAT: Invalidează și reîncarcă imediat cache-ul de meetings cu debouncing îmbunătățit
+  /// OPTIMIZAT: Invalideaza si reincarca imediat cache-ul de meetings cu debouncing imbunatatit
   Future<void> invalidateMeetingsCacheAndRefresh() async {
-    // OPTIMIZARE: Debouncing redus pentru răspuns mai rapid
+    // OPTIMIZARE: Debouncing redus pentru raspuns mai rapid
     if (_hasPendingInvalidation) return;
     _hasPendingInvalidation = true;
     
@@ -301,13 +301,13 @@ class SplashService extends ChangeNotifier {
         _cachedMeetings = [];
         _meetingsCacheTime = null;
         
-        // OPTIMIZARE: Reîncarcă imediat cache-ul nou pentru actualizare instantanee
+        // OPTIMIZARE: Reincarca imediat cache-ul nou pentru actualizare instantanee
         await _refreshMeetingsCache();
         notifyListeners();
         
-        // OPTIMIZARE: Notificare optimizată pentru ClientUIService cu delay redus
+        // OPTIMIZARE: Notificare optimizata pentru ClientUIService cu delay redus
         if (_clientUIService != null && _clientUIService!.clients.isNotEmpty) {
-          // OPTIMIZARE: Execută în background pentru a nu bloca UI-ul
+          // OPTIMIZARE: Executa in background pentru a nu bloca UI-ul
           Future.microtask(() async {
             try {
               await _clientUIService!.loadClientsFromFirebase();
@@ -327,18 +327,18 @@ class SplashService extends ChangeNotifier {
     });
   }
 
-  /// Invalidează cache-ul de meetings (să fie apelat când se adaugă/modifică/șterge meeting)
+  /// Invalideaza cache-ul de meetings (sa fie apelat cand se adauga/modifica/sterge meeting)
   void invalidateMeetingsCache() {
-    // OPTIMIZARE: Nu face nimic dacă cache-ul este deja invalid
+    // OPTIMIZARE: Nu face nimic daca cache-ul este deja invalid
     if (_meetingsCacheTime == null) return;
     
     _cachedMeetings = [];
     _meetingsCacheTime = null;
   }
 
-  /// OPTIMIZAT: Invalidează toate cache-urile legate de meetings cu debouncing îmbunătățit
+  /// OPTIMIZAT: Invalideaza toate cache-urile legate de meetings cu debouncing imbunatatit
   Future<void> invalidateAllMeetingCaches() async {
-    // OPTIMIZARE: Evită apelurile multiple folosind debouncing
+    // OPTIMIZARE: Evita apelurile multiple folosind debouncing
     await invalidateMeetingsCacheAndRefresh();
     
     // OPTIMIZARE: Invalidarea time slots se face lazy
@@ -353,7 +353,7 @@ class SplashService extends ChangeNotifier {
     final dateKey = DateFormat('yyyy-MM-dd').format(date);
     
     // Verifica daca avem cache valid
-    const timeSlotsCacheValidity = Duration(minutes: 5); // Mărit de la 2 la 5 minute
+    const timeSlotsCacheValidity = Duration(minutes: 5); // Marit de la 2 la 5 minute
     if (_cachedTimeSlots.isNotEmpty && 
         _timeSlotsLastUpdate != null &&
         DateTime.now().difference(_timeSlotsLastUpdate!) < timeSlotsCacheValidity &&
@@ -414,14 +414,14 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Convertește `Map<String, dynamic>` în ClientActivity (FIX: păstrează consultantName și consultantId)
+  /// Converteste `Map<String, dynamic>` in ClientActivity (FIX: pastreaza consultantName si consultantId)
   ClientActivity _convertMapToClientActivity(Map<String, dynamic> meetingMap) {
-    // Convertește timestamp-ul la DateTime
+    // Converteste timestamp-ul la DateTime
     final dateTime = meetingMap['dateTime'] is Timestamp 
         ? (meetingMap['dateTime'] as Timestamp).toDate()
         : DateTime.fromMillisecondsSinceEpoch(meetingMap['dateTime'] ?? 0);
     
-    // Determină tipul de activitate
+    // Determina tipul de activitate
     final type = meetingMap['type'] == 'bureauDelete' 
         ? ClientActivityType.bureauDelete 
         : ClientActivityType.meeting;
@@ -434,31 +434,31 @@ class SplashService extends ChangeNotifier {
       dateTime: dateTime,
       description: meetingMap['description'],
       additionalData: {
-        // FIX: Păstrează toate datele importante pentru afișare în calendar
+        // FIX: Pastreaza toate datele importante pentru afisare in calendar
         ...additionalData,
         'phoneNumber': meetingMap['clientPhoneNumber'] ?? '',
         'clientName': additionalData['clientName'] ?? meetingMap['clientName'] ?? '',
         'consultantName': meetingMap['consultantName'] ?? additionalData['consultantName'] ?? '',
         'consultantToken': meetingMap['consultantToken'] ?? '',
-        // FIX: Propagă consultantId din additionalData pentru ownership verification
+        // FIX: Propaga consultantId din additionalData pentru ownership verification
         'consultantId': additionalData['consultantId'],
-        // Asigură-te că alte date importante sunt păstrate
+        // Asigura-te ca alte date importante sunt pastrate
         'type': meetingMap['type'] ?? 'meeting',
       },
       createdAt: DateTime.now(), // Folosim timpul curent pentru createdAt
     );
   }
 
-  // OPTIMIZARE: Loading steps configuration cu timing și parallel loading
+  // OPTIMIZARE: Loading steps configuration cu timing si parallel loading
   final List<Map<String, dynamic>> _loadingSteps = [
     {'name': 'Initializare servicii...', 'weight': 0.15, 'function': '_initializeCoreServices', 'parallel': true},
-    {'name': 'Preîncărcare date...', 'weight': 0.25, 'function': '_preloadData', 'parallel': true},
+    {'name': 'Preincarcare date...', 'weight': 0.25, 'function': '_preloadData', 'parallel': true},
     {'name': 'Sincronizare servicii...', 'weight': 0.20, 'function': '_syncServices', 'parallel': false},
     {'name': 'Optimizare cache...', 'weight': 0.15, 'function': '_optimizeCache', 'parallel': false},
     {'name': 'Finalizare...', 'weight': 0.25, 'function': '_finalize', 'parallel': false},
   ];
 
-  /// OPTIMIZAT: Pornește procesul de pre-încărcare cu parallel loading
+  /// OPTIMIZAT: Porneste procesul de pre-incarcare cu parallel loading
   Future<bool> startPreloading() async {
     if (_isInitialized) {
       return true;
@@ -470,13 +470,13 @@ class SplashService extends ChangeNotifier {
       
       double currentProgress = 0.0;
       
-      // OPTIMIZARE: Grupează task-urile paralele
+      // OPTIMIZARE: Grupeaza task-urile paralele
       final parallelTasks = _loadingSteps.where((step) => step['parallel'] == true).toList();
       final sequentialTasks = _loadingSteps.where((step) => step['parallel'] == false).toList();
       
-      // Execută task-urile paralele
+      // Executa task-urile paralele
       if (parallelTasks.isNotEmpty) {
-        _updateTask('Încărcare paralelă servicii...');
+        _updateTask('Incarcare paralela servicii...');
         
         final parallelFutures = parallelTasks.map((step) async {
           final startTime = DateTime.now();
@@ -494,7 +494,7 @@ class SplashService extends ChangeNotifier {
         await Future.wait(parallelFutures);
       }
       
-      // Execută task-urile secvențiale
+      // Executa task-urile secventiale
       for (final step in sequentialTasks) {
         _updateTask(step['name']);
         
@@ -513,7 +513,7 @@ class SplashService extends ChangeNotifier {
         await Future.delayed(const Duration(milliseconds: 100));
       }
       
-      // Marchează ca complet
+      // Marcheaza ca complet
       _markComplete();
       _isInitialized = true;
       
@@ -531,7 +531,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Execută un pas specific de încărcare cu timeout
+  /// OPTIMIZAT: Executa un pas specific de incarcare cu timeout
   Future<void> _executeLoadingStep(int stepIndex) async {
     switch (stepIndex) {
       case 0: // Core services
@@ -552,10 +552,10 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Inițializează serviciile de bază în paralel
+  /// OPTIMIZAT: Initializeaza serviciile de baza in paralel
   Future<void> _initializeCoreServices() async {
     try {
-      // OPTIMIZARE: Inițializează serviciile în paralel
+      // OPTIMIZARE: Initializeaza serviciile in paralel
       await Future.wait([
         _initializeCalendarService(),
         _initializeClientServices(),
@@ -569,15 +569,15 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Preîncarcă datele în paralel
+  /// OPTIMIZAT: Preincarca datele in paralel
   Future<void> _preloadData() async {
     try {
-      // OPTIMIZARE: Preîncarcă datele în paralel
+      // OPTIMIZARE: Preincarca datele in paralel
       await Future.wait([
         _preloadMeetings(),
         _preloadClients(),
         _preloadDashboardData(),
-        _preloadFormData(), // OPTIMIZARE: Preîncarcă și datele de formular
+        _preloadFormData(), // OPTIMIZARE: Preincarca si datele de formular
       ]);
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error preloading data: $e');
@@ -585,10 +585,10 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Sincronizează serviciile
+  /// OPTIMIZAT: Sincronizeaza serviciile
   Future<void> _syncServices() async {
     try {
-      // OPTIMIZARE: Sincronizează serviciile în paralel
+      // OPTIMIZARE: Sincronizeaza serviciile in paralel
       await Future.wait([
         _initializeGoogleDriveService(),
         _syncData(),
@@ -599,10 +599,10 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Optimizează cache-ul
+  /// OPTIMIZAT: Optimizeaza cache-ul
   Future<void> _optimizeCache() async {
     try {
-      // OPTIMIZARE: Optimizează cache-ul pentru performanță
+      // OPTIMIZARE: Optimizeaza cache-ul pentru performanta
       await _optimizeMeetingsCache();
       await _optimizeClientsCache();
     } catch (e) {
@@ -611,7 +611,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Inițializează și cache-ează CalendarService
+  /// Initializeaza si cache-eaza CalendarService
   Future<void> _initializeCalendarService() async {
     try {
       _calendarService = CalendarService();
@@ -624,7 +624,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Inițializează și cache-ează ClientUIService
+  /// Initializeaza si cache-eaza ClientUIService
   Future<void> _initializeClientServices() async {
     try {
       _clientUIService = ClientUIService();
@@ -632,7 +632,7 @@ class SplashService extends ChangeNotifier {
       // Pre-load clients data
       await _clientUIService!.loadClientsFromFirebase();
       
-      // OPTIMIZARE: Pornește real-time listeners pentru sincronizare automată
+      // OPTIMIZARE: Porneste real-time listeners pentru sincronizare automata
       await _clientUIService!.startRealTimeListeners();
       
   
@@ -642,7 +642,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Preîncarcă toate meetings în cache
+  /// Preincarca toate meetings in cache
   Future<void> _preloadMeetings() async {
     try {
       await _refreshMeetingsCache();
@@ -652,7 +652,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Preîncarcă toți clienții în cache
+  /// Preincarca toti clientii in cache
   Future<void> _preloadClients() async {
     try {
       await _refreshClientsCache();
@@ -662,18 +662,18 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZARE: Preîncarcă datele de formular pentru clienții existenți
+  /// OPTIMIZARE: Preincarca datele de formular pentru clientii existenti
   Future<void> _preloadFormData() async {
     try {
-      // OPTIMIZARE: Preîncarcă datele de formular pentru primii 2 clienți pentru acces rapid (redus de la 3)
+      // OPTIMIZARE: Preincarca datele de formular pentru primii 2 clienti pentru acces rapid (redus de la 3)
       if (_clientUIService != null && _clientUIService!.clients.isNotEmpty) {
         final clientsToPreload = _clientUIService!.clients.take(2).toList();
         
-        // OPTIMIZARE: Operații paralele pentru preîncărcare rapidă cu timeout redus
+        // OPTIMIZARE: Operatii paralele pentru preincarcare rapida cu timeout redus
         await Future.wait(
           clientsToPreload.map((client) async {
             try {
-              // OPTIMIZARE: Timeout redus pentru preîncărcare mai rapidă
+              // OPTIMIZARE: Timeout redus pentru preincarcare mai rapida
               await _formService?.loadFormDataForClient(
                 client.phoneNumber1,
                 client.phoneNumber1,
@@ -698,7 +698,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// OPTIMIZAT: Preîncarcă datele formularului pentru clientul focusat
+  /// OPTIMIZAT: Preincarca datele formularului pentru clientul focusat
   Future<void> preloadFormDataForFocusedClient() async {
     try {
       final clientService = _clientUIService;
@@ -717,7 +717,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Preîncarcă datele dashboard-ului
+  /// Preincarca datele dashboard-ului
   Future<void> _preloadDashboardData() async {
     try {
       _dashboardService = DashboardService();
@@ -737,7 +737,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Inițializează și cache-ează FormService
+  /// Initializeaza si cache-eaza FormService
   Future<void> _initializeFormService() async {
     try {
       _formService = FormService();
@@ -748,7 +748,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Inițializează și cache-ează MatcherService
+  /// Initializeaza si cache-eaza MatcherService
   Future<void> _initializeMatcherService() async {
     try {
       _matcherService = MatcherService();
@@ -759,7 +759,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Inițializează și cache-ează ConnectionService
+  /// Initializeaza si cache-eaza ConnectionService
   Future<void> _initializeConnectionService() async {
     try {
       _connectionService = ConnectionService();
@@ -771,9 +771,9 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Inițializează și cache-ează GoogleDriveService
+  /// Initializeaza si cache-eaza GoogleDriveService
   Future<void> _initializeGoogleDriveService() async {
-    // OPTIMIZARE: Log redus pentru performanță
+    // OPTIMIZARE: Log redus pentru performanta
     // debugPrint('🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService START ==========');
     
     try {
@@ -785,7 +785,7 @@ class SplashService extends ChangeNotifier {
       await _googleDriveService!.initialize();
       // debugPrint('✅ SPLASH_SERVICE: GoogleDriveService.initialize() completed');
       
-      // OPTIMIZARE: Log redus pentru performanță
+      // OPTIMIZARE: Log redus pentru performanta
       // debugPrint('🚀 SPLASH_SERVICE: Final state - isAuthenticated: ${_googleDriveService!.isAuthenticated}');
       // debugPrint('🚀 SPLASH_SERVICE: Final state - userEmail: ${_googleDriveService!.userEmail}');
       // debugPrint('🚀 SPLASH_SERVICE: Final state - lastError: ${_googleDriveService!.lastError}');
@@ -799,7 +799,7 @@ class SplashService extends ChangeNotifier {
     // debugPrint('🚀 SPLASH_SERVICE: ========== _initializeGoogleDriveService END ==========');
   }
 
-  /// Sincronizează datele între servicii
+  /// Sincronizeaza datele intre servicii
   Future<void> _syncData() async {
     try {
       // Pre-load focused client data if any
@@ -814,13 +814,13 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Optimizează cache-ul de meetings
+  /// Optimizeaza cache-ul de meetings
   Future<void> _optimizeMeetingsCache() async {
     try {
-      // OPTIMIZARE: Sortează meetings după dată pentru căutare rapidă
+      // OPTIMIZARE: Sorteaza meetings dupa data pentru cautare rapida
       _cachedMeetings.sort((a, b) => a.dateTime.compareTo(b.dateTime));
       
-      // OPTIMIZARE: Indexează meetings după dată pentru căutare rapidă
+      // OPTIMIZARE: Indexeaza meetings dupa data pentru cautare rapida
       final Map<String, List<ClientActivity>> meetingsByDate = {};
       for (final meeting in _cachedMeetings) {
         final dateKey = DateFormat('yyyy-MM-dd').format(meeting.dateTime);
@@ -833,10 +833,10 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Optimizează cache-ul de clienți
+  /// Optimizeaza cache-ul de clienti
   Future<void> _optimizeClientsCache() async {
     try {
-      // OPTIMIZARE: Sortează clienții după nume pentru căutare rapidă
+      // OPTIMIZARE: Sorteaza clientii dupa nume pentru cautare rapida
       _cachedClients.sort((a, b) => a.name.compareTo(b.name));
       
   
@@ -845,7 +845,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Finalizează încărcarea
+  /// Finalizeaza incarcarea
   Future<void> _finalize() async {
     try {
       // OPTIMIZARE: Cleanup pentru task-uri paralele
@@ -867,7 +867,7 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Resetează progresul
+  /// Reseteaza progresul
   void _resetProgress() {
     _progress = 0.0;
     _currentTask = 'Initializare aplicatie...';
@@ -875,19 +875,19 @@ class SplashService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Actualizează task-ul curent
+  /// Actualizeaza task-ul curent
   void _updateTask(String task) {
     _currentTask = task;
     notifyListeners();
   }
 
-  /// Actualizează progresul
+  /// Actualizeaza progresul
   void _updateProgress(double progress) {
     _progress = progress;
     notifyListeners();
   }
 
-  /// Marchează încărcarea ca fiind completă
+  /// Marcheaza incarcarea ca fiind completa
   void _markComplete() {
     _isInitialized = true;
     _currentTask = 'Gata!';
@@ -897,11 +897,11 @@ class SplashService extends ChangeNotifier {
 
   /// Obtine token-ul consultantului curent sincron din cache (pentru UI rapid)
   String? getCurrentConsultantTokenSync() {
-    // Încearcă să obții token-ul din cache dacă este disponibil
+    // Incearca sa obtii token-ul din cache daca este disponibil
     return _currentConsultantToken;
   }
 
-  /// Verifică dacă toate serviciile sunt disponibile și funcționale
+  /// Verifica daca toate serviciile sunt disponibile si functionale
   bool get areServicesReady {
     return _calendarService != null &&
            _clientUIService != null &&
@@ -912,7 +912,7 @@ class SplashService extends ChangeNotifier {
            _isInitialized;
   }
 
-  /// Forțează re-inițializarea (pentru debug sau refresh)
+  /// Forteaza re-initializarea (pentru debug sau refresh)
   void forceReinitialize() {
     _isInitialized = false;
     _calendarService = null;
@@ -927,7 +927,7 @@ class SplashService extends ChangeNotifier {
   /// Cleanup pentru disposal
   @override
   void dispose() {
-    // OPTIMIZARE: Oprește real-time listeners
+    // OPTIMIZARE: Opreste real-time listeners
     _clientUIService?.stopRealTimeListeners();
     
     _timeSlotsLastUpdate = null;
@@ -945,9 +945,9 @@ class SplashService extends ChangeNotifier {
     super.dispose();
   }
 
-  /// OPTIMIZAT: Invalidează cache-ul de clienți și îl reîncarcă
+  /// OPTIMIZAT: Invalideaza cache-ul de clienti si il reincarca
   Future<void> invalidateClientsCacheAndRefresh() async {
-    // OPTIMIZARE: Evită apelurile multiple folosind debouncing
+    // OPTIMIZARE: Evita apelurile multiple folosind debouncing
     if (_hasPendingInvalidation) return;
     _hasPendingInvalidation = true;
     
@@ -958,10 +958,10 @@ class SplashService extends ChangeNotifier {
         _cachedClients = [];
         _clientsCacheTime = null;
         
-        // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
+        // Reincarca imediat cache-ul nou pentru actualizare instantanee
         await _refreshClientsCache();
         
-        // FIX: Notifică și ClientUIService pentru sincronizare completă
+        // FIX: Notifica si ClientUIService pentru sincronizare completa
         if (_clientUIService != null) {
           await _clientUIService!.loadClientsFromFirebase();
         }
@@ -977,7 +977,7 @@ class SplashService extends ChangeNotifier {
     });
   }
 
-  /// OPTIMIZAT: Invalidează cache-ul de clienți pentru schimbări de categorie (imediat)
+  /// OPTIMIZAT: Invalideaza cache-ul de clienti pentru schimbari de categorie (imediat)
   Future<void> invalidateClientsCacheForCategoryChange() async {
     try {
   
@@ -985,13 +985,13 @@ class SplashService extends ChangeNotifier {
       _cachedClients = [];
       _clientsCacheTime = null;
       
-      // FIX: Notifică imediat pentru UI instant
+      // FIX: Notifica imediat pentru UI instant
       notifyListeners();
       
-      // Reîncarcă imediat cache-ul nou pentru actualizare instantanee
+      // Reincarca imediat cache-ul nou pentru actualizare instantanee
       await _refreshClientsCache();
       
-      // FIX: Notifică și ClientUIService pentru sincronizare completă
+      // FIX: Notifica si ClientUIService pentru sincronizare completa
       if (_clientUIService != null) {
         await _clientUIService!.loadClientsFromFirebase();
         _clientUIService!.notifyListeners();
@@ -1003,9 +1003,9 @@ class SplashService extends ChangeNotifier {
     }
   }
 
-  /// Invalidează cache-ul de clienți (să fie apelat când se adaugă/modifică/șterge client)
+  /// Invalideaza cache-ul de clienti (sa fie apelat cand se adauga/modifica/sterge client)
   void invalidateClientsCache() {
-    // OPTIMIZARE: Nu face nimic dacă cache-ul este deja invalid
+    // OPTIMIZARE: Nu face nimic daca cache-ul este deja invalid
     if (_clientsCacheTime == null) return;
     
     _cachedClients = [];

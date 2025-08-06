@@ -209,12 +209,12 @@ class MatcherService extends ChangeNotifier {
       
       await _loadClientData();
       
-      // OPTIMIZARE: Configurează curățarea automată a cache-ului de venituri
+      // OPTIMIZARE: Configureaza curatarea automata a cache-ului de venituri
       _setupIncomeCacheCleanup();
       
 
       
-      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
       Future.microtask(() {
         notifyListeners();
       });
@@ -222,14 +222,14 @@ class MatcherService extends ChangeNotifier {
       debugPrint('Error initializing MatcherService: $e');
       // In cazul unei erori, folosim criteriile implicite
       _setDefaultCriteria();
-      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+      // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
       Future.microtask(() {
         notifyListeners();
       });
     }
   }
 
-  /// OPTIMIZARE: Configurează curățarea automată a cache-ului
+  /// OPTIMIZARE: Configureaza curatarea automata a cache-ului
   void _setupIncomeCacheCleanup() {
     _incomeCacheCleanupTimer?.cancel();
     _incomeCacheCleanupTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
@@ -255,18 +255,18 @@ class MatcherService extends ChangeNotifier {
 
   /// OPTIMIZAT: Callback pentru schimbarile din servicii cu debouncing
   void _onFormServiceChanged() {
-    // OPTIMIZARE: Invalidează cache-ul de venituri când formularele se schimbă
+    // OPTIMIZARE: Invalideaza cache-ul de venituri cand formularele se schimba
     _incomeCache.clear();
     _incomeCacheTime.clear();
-    // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita notifyListeners în timpul build
+    // OPTIMIZARE: Foloseste addPostFrameCallback pentru a evita notifyListeners in timpul build
     Future.microtask(() => _loadClientData());
   }
 
   void _onClientServiceChanged() {
-    // OPTIMIZARE: Invalidează cache-ul când clientul se schimbă
+    // OPTIMIZARE: Invalideaza cache-ul cand clientul se schimba
     _incomeCache.clear();
     _incomeCacheTime.clear();
-    // OPTIMIZARE: Folosește addPostFrameCallback pentru a evita notifyListeners în timpul build
+    // OPTIMIZARE: Foloseste addPostFrameCallback pentru a evita notifyListeners in timpul build
     Future.microtask(() => _loadClientData());
   }
 
@@ -284,12 +284,12 @@ class MatcherService extends ChangeNotifier {
         return;
       }
 
-      // OPTIMIZARE: Verifică cache-ul pentru calculul veniturilor
+      // OPTIMIZARE: Verifica cache-ul pentru calculul veniturilor
       final cacheKey = currentClient.phoneNumber;
       final cachedIncome = _incomeCache[cacheKey];
       final cacheTime = _incomeCacheTime[cacheKey];
       
-      // OPTIMIZARE: Folosește cache-ul dacă e valid (mai nou de 2 minute)
+      // OPTIMIZARE: Foloseste cache-ul daca e valid (mai nou de 2 minute)
       if (cachedIncome != null && cacheTime != null && 
           DateTime.now().difference(cacheTime).inMinutes < 2) {
         
@@ -304,7 +304,7 @@ class MatcherService extends ChangeNotifier {
         return;
       }
 
-      // OPTIMIZARE: Calculează venitul doar dacă nu e în cache
+      // OPTIMIZARE: Calculeaza venitul doar daca nu e in cache
       final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
       final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
       
@@ -328,7 +328,7 @@ class MatcherService extends ChangeNotifier {
         }
       }
 
-      // OPTIMIZARE: Salvează în cache
+      // OPTIMIZARE: Salveaza in cache
       _incomeCache[cacheKey] = totalIncome;
       _incomeCacheTime[cacheKey] = DateTime.now();
 
@@ -465,7 +465,7 @@ class MatcherService extends ChangeNotifier {
       isLoading: isLoading,
     );
     
-    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
     Future.microtask(() {
       notifyListeners();
     });
@@ -494,19 +494,19 @@ class MatcherService extends ChangeNotifier {
 
   /// Forteaza actualizarea datelor clientului cu debouncing pentru evitarea apelurilor multiple
   Future<void> refreshClientData() async {
-    // Anulează refresh-ul anterior dacă există unul pending
+    // Anuleaza refresh-ul anterior daca exista unul pending
     _refreshDebounceTimer?.cancel();
     
-    // Dacă deja se reîmprospătează, nu mai face alt request
+    // Daca deja se reimprospateaza, nu mai face alt request
     if (_isRefreshing) return;
     
-    // Debouncing: așteaptă 300ms înainte de a executa
+    // Debouncing: asteapta 300ms inainte de a executa
     _refreshDebounceTimer = Timer(const Duration(milliseconds: 300), () async {
       await _performRefreshClientData();
     });
   }
 
-  /// Execută refresh-ul efectiv al datelor clientului
+  /// Executa refresh-ul efectiv al datelor clientului
   Future<void> _performRefreshClientData() async {
     if (_isRefreshing) return;
     
@@ -553,11 +553,11 @@ class MatcherService extends ChangeNotifier {
               .map((criteria) => BankCriteria.fromMap(criteria))
               .toList();
           
-          // FIX: Verifică dacă criteriile încărcate sunt din versiunea veche (cu valori mici pentru maxLoanAmount sau fără minAge)
+          // FIX: Verifica daca criteriile incarcate sunt din versiunea veche (cu valori mici pentru maxLoanAmount sau fara minAge)
           bool hasOldCriteria = false;
           for (final criteria in loadedCriteria) {
-            if (criteria.maxLoanAmount < 100000 || // Dacă maxLoanAmount e sub 100.000, sunt criterii vechi
-                !_hasMinAgeFields(criteria)) { // Sau dacă nu au câmpurile minAge
+            if (criteria.maxLoanAmount < 100000 || // Daca maxLoanAmount e sub 100.000, sunt criterii vechi
+                !_hasMinAgeFields(criteria)) { // Sau daca nu au campurile minAge
               hasOldCriteria = true;
               break;
             }
@@ -566,7 +566,7 @@ class MatcherService extends ChangeNotifier {
           if (hasOldCriteria) {
         
             _setDefaultCriteria();
-            await _saveBankCriteria(); // Salvează noile criterii
+            await _saveBankCriteria(); // Salveaza noile criterii
           } else {
             _bankCriteriaList = loadedCriteria;
         
@@ -700,10 +700,10 @@ class MatcherService extends ChangeNotifier {
     }
   }
 
-  /// Verifica daca criteriile au câmpurile minAge (pentru migrarea de la versiunea veche)
+  /// Verifica daca criteriile au campurile minAge (pentru migrarea de la versiunea veche)
   bool _hasMinAgeFields(BankCriteria criteria) {
-    // Verifică dacă criteriile au câmpurile minAge setate la valori valide
-    // Dacă sunt 0 sau null, înseamnă că sunt din versiunea veche
+    // Verifica daca criteriile au campurile minAge setate la valori valide
+    // Daca sunt 0 sau null, inseamna ca sunt din versiunea veche
     try {
       return criteria.minAgeMale > 0 && criteria.minAgeFemale > 0;
     } catch (e) {
@@ -846,7 +846,7 @@ class MatcherService extends ChangeNotifier {
 
   }
   
-  /// FIX: Forțează actualizarea la criteriile noi pentru toate consultantii
+  /// FIX: Forteaza actualizarea la criteriile noi pentru toate consultantii
   Future<void> forceUpdateToNewCriteria() async {
 
     _setDefaultCriteria();
@@ -1122,7 +1122,7 @@ class MatcherService extends ChangeNotifier {
     final allLoans = _extractAllLoans();
     final availableBudget = _calculateAvailableBudget(salary, allLoans);
     
-    // Calculeaza total datorie de refinanțat (doar credite de nevoi personale)
+    // Calculeaza total datorie de refinantat (doar credite de nevoi personale)
     double totalNpBalance = 0;
     for (final loan in allLoans) {
       final type = loan['type'] as String;
@@ -1137,7 +1137,7 @@ class MatcherService extends ChangeNotifier {
     // Calculeaza cashback
     final cashback = maxRefin - totalNpBalance;
     
-    // Daca cashback < 0, refinanțarea nu este posibilă
+    // Daca cashback < 0, refinantarea nu este posibila
     if (cashback < 0) return 0;
     
     // Nu depaseste suma maxima a bancii

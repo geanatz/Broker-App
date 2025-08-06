@@ -44,7 +44,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
     // Validare manuala
     bool isValid = true;
     
-    // Validare parola actuală
+    // Validare parola actuala
     if (_currentPasswordController.text.isEmpty) {
       setState(() {
         _isCurrentPasswordInvalid = true;
@@ -207,12 +207,12 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
           children: [
             _buildPasswordField(
               controller: _currentPasswordController,
-              title: "Parola actuală",
-              hintText: "Introdu parola actuală",
+              title: "Parola actuala",
+              hintText: "Introdu parola actuala",
               obscureText: _obscureCurrentPassword,
               onToggleObscure: () => setState(() => _obscureCurrentPassword = !_obscureCurrentPassword),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Introdu parola actuală';
+                if (value == null || value.isEmpty) return 'Introdu parola actuala';
                 return null;
               },
               isInvalid: _isCurrentPasswordInvalid,
@@ -220,8 +220,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
             SizedBox(height: AppTheme.smallGap),
             _buildPasswordField(
               controller: _newPasswordController,
-              title: "Parola nouă",
-              hintText: "Introdu parola nouă",
+              title: "Parola noua",
+              hintText: "Introdu parola noua",
               obscureText: _obscureNewPassword,
               onToggleObscure: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
               validator: (value) {
@@ -234,8 +234,8 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
             SizedBox(height: AppTheme.smallGap),
             _buildPasswordField(
               controller: _confirmPasswordController,
-              title: "Confirmă parola nouă",
-              hintText: "Introdu parola nouă din nou",
+              title: "Confirma parola noua",
+              hintText: "Introdu parola noua din nou",
               obscureText: _obscureConfirmPassword,
               onToggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
               validator: (value) {

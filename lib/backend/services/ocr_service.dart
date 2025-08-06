@@ -6,7 +6,7 @@ import 'package:broker_app/backend/ocr/parser_ocr.dart';
 import 'package:broker_app/backend/ocr/transformer_ocr.dart';
 import 'package:broker_app/backend/ocr/ocr_logger.dart';
 
-/// Service principal pentru procesarea OCR completă
+/// Service principal pentru procesarea OCR completa
 class OcrService {
   static final OcrService _instance = OcrService._internal();
   factory OcrService() => _instance;
@@ -18,14 +18,14 @@ class OcrService {
   final _transformer = TransformerOCR();
   final _logger = OCRLogger();
 
-  /// Procesează multiple imagini și returnează un rezultat consolidat
+  /// Proceseaza multiple imagini si returneaza un rezultat consolidat
   Future<OcrBatchResult> processMultipleImages(
     List<dynamic> imageFiles, {
     Function(int current, int total)? onProgress,
     EnhancementLevel enhancementLevel = EnhancementLevel.medium,
   }) async {
     try {
-      _logger.info('BATCH_PROCESSING', 'Începe procesarea batch pentru ${imageFiles.length} imagini');
+      _logger.info('BATCH_PROCESSING', 'Incepe procesarea batch pentru ${imageFiles.length} imagini');
       
       final results = <OcrResult>[];
       final allContacts = <UnifiedClientModel>[];
@@ -44,7 +44,7 @@ class OcrService {
         } catch (e) {
           _logger.error('BATCH_PROCESSING', 'Eroare la procesarea imaginii ${i + 1}: $e');
           
-          // Adaugă rezultat cu eroare
+          // Adauga rezultat cu eroare
           results.add(OcrResult(
             imagePath: 'image_${i + 1}',
             success: false,
@@ -67,7 +67,7 @@ class OcrService {
       return batchResult;
       
     } catch (e) {
-      _logger.error('BATCH_PROCESSING', 'Eroare critică în procesarea batch: $e');
+      _logger.error('BATCH_PROCESSING', 'Eroare critica in procesarea batch: $e');
       return OcrBatchResult(
         individualResults: [],
         totalImages: imageFiles.length,
@@ -79,13 +79,13 @@ class OcrService {
     }
   }
 
-  /// Procesează o singură imagine
+  /// Proceseaza o singura imagine
   Future<OcrResult> _processImage(dynamic imageInput, EnhancementLevel enhancementLevel) async {
     final stopwatch = Stopwatch()..start();
     String imagePath = 'unknown';
     
     try {
-      // Determinează tipul de input și obține bytes
+      // Determineaza tipul de input si obtine bytes
       Uint8List imageBytes;
       
       if (imageInput is ImageFile) {
@@ -96,23 +96,23 @@ class OcrService {
         throw UnsupportedError('Tip de imagine nesuportat: ${imageInput.runtimeType}');
       }
       
-      // 1. Îmbunătățirea imaginii
-      _logger.debug('IMAGE_ENHANCEMENT', 'Începe îmbunătățirea imaginii: $imagePath');
+      // 1. Imbunatatirea imaginii
+      _logger.debug('IMAGE_ENHANCEMENT', 'Incepe imbunatatirea imaginii: $imagePath');
       final enhancedBytes = await _enhancer.enhanceImage(imageBytes, level: enhancementLevel);
-      _logger.logImageEnhancement(imagePath, 'Îmbunătățită cu nivel $enhancementLevel');
+      _logger.logImageEnhancement(imagePath, 'Imbunatatita cu nivel $enhancementLevel');
       
-      // 2. Extragerea textului (simulat - în realitate ar trebui să folosești Google Vision sau Tesseract)
-      _logger.debug('TEXT_EXTRACTION', 'Începe extragerea textului din: $imagePath');
+      // 2. Extragerea textului (simulat - in realitate ar trebui sa folosesti Google Vision sau Tesseract)
+      _logger.debug('TEXT_EXTRACTION', 'Incepe extragerea textului din: $imagePath');
       final extractedText = await _simulateTextExtraction(enhancedBytes, imagePath);
       _logger.logTextExtraction(imagePath, extractedText.length, 0.85); // Confidence simulat
       
       // 3. Transformarea textului
-      _logger.debug('TEXT_TRANSFORMATION', 'Începe transformarea textului pentru: $imagePath');
+      _logger.debug('TEXT_TRANSFORMATION', 'Incepe transformarea textului pentru: $imagePath');
       final transformResult = await _transformer.transformText(extractedText);
       _logger.logTextTransformation(extractedText.length.toString(), transformResult.cleanedText.length.toString(), transformResult.improvements.length);
       
       // 4. Parsarea contactelor
-      _logger.debug('CONTACT_PARSING', 'Începe parsarea contactelor din: $imagePath');
+      _logger.debug('CONTACT_PARSING', 'Incepe parsarea contactelor din: $imagePath');
       final extractedContacts = await _parser.extractContacts(transformResult.cleanedText);
       _logger.logContactsDetected(imagePath, extractedContacts.length, extractedContacts.map((c) => c.basicInfo.name).toList());
       
@@ -149,25 +149,25 @@ class OcrService {
     }
   }
 
-  /// Simulează extragerea textului (în realitate ar trebui să folosești Google Vision API sau Tesseract)
+  /// Simuleaza extragerea textului (in realitate ar trebui sa folosesti Google Vision API sau Tesseract)
   Future<String> _simulateTextExtraction(Uint8List imageBytes, [String? imageName]) async {
-    // Aceasta este o simulare - în implementarea reală ar trebui să folosești:
+    // Aceasta este o simulare - in implementarea reala ar trebui sa folosesti:
     // - Google Vision API
     // - Tesseract OCR
     // - Sau alt engine OCR
     
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulează procesarea
+    await Future.delayed(const Duration(milliseconds: 500)); // Simuleaza procesarea
     
-    // Simulează conținut diferit bazat pe numele fișierului
+    // Simuleaza continut diferit bazat pe numele fisierului
     debugPrint('🔍 OCR_SERVICE: Simulez OCR pentru imagine: ${imageName ?? 'necunoscut'} (${imageBytes.length} bytes)');
     
-    // Detectez tipul imaginii după nume
+    // Detectez tipul imaginii dupa nume
     final fileName = (imageName ?? '').toLowerCase();
     final isMainImage = fileName.contains('main-image') || fileName.contains('main_image');
     
     if (isMainImage) {
-      debugPrint('🔍 OCR_SERVICE: Detectat main-image.png - returnez lista principală cu 27 contacte');
-      // Simulează main-image.png cu lista de contacte conform specificației
+      debugPrint('🔍 OCR_SERVICE: Detectat main-image.png - returnez lista principala cu 27 contacte');
+      // Simuleaza main-image.png cu lista de contacte conform specificatiei
       return '''
 TAT FLORIAN 0258812138
 RENER ADRIAN 0257280261
@@ -198,8 +198,8 @@ CASALEAN MARIUS 0232733841
 IOSIF ADRIAN 0250735840
 ''';
     } else {
-      debugPrint('🔍 OCR_SERVICE: Detectat $fileName - returnez lista alternativă cu 5 contacte');
-      // Alt conținut pentru imaginea 7.jpg sau alte imagini
+      debugPrint('🔍 OCR_SERVICE: Detectat $fileName - returnez lista alternativa cu 5 contacte');
+      // Alt continut pentru imaginea 7.jpg sau alte imagini
       return '''
 LISTA CLIENTI BANCA
 POPESCU MARIA ANDREEA 0723456789
@@ -213,15 +213,15 @@ Total clienti: 5
     }
   }
 
-  /// Selectează și procesează imagini
+  /// Selecteaza si proceseaza imagini
   Future<OcrBatchResult> selectAndProcessImages({
     Function(int current, int total)? onProgress,
     EnhancementLevel enhancementLevel = EnhancementLevel.medium,
   }) async {
     try {
-      _logger.info('FILE_SELECTION', 'Începe selecția imaginilor');
+      _logger.info('FILE_SELECTION', 'Incepe selectia imaginilor');
       
-      // Selectează imaginile
+      // Selecteaza imaginile
       final imageFiles = await _scanner.selectImages();
       if (imageFiles.isEmpty) {
         _logger.warning('FILE_SELECTION', 'Nu au fost selectate imagini');
@@ -236,11 +236,11 @@ Total clienti: 5
       
       _logger.info('FILE_SELECTION', 'Selectate ${imageFiles.length} imagini pentru procesare');
       
-      // Procesează imaginile
+      // Proceseaza imaginile
       return await processMultipleImages(imageFiles, onProgress: onProgress, enhancementLevel: enhancementLevel);
       
     } catch (e) {
-      _logger.error('FILE_SELECTION', 'Eroare la selecția și procesarea imaginilor: $e');
+      _logger.error('FILE_SELECTION', 'Eroare la selectia si procesarea imaginilor: $e');
       return OcrBatchResult(
         individualResults: [],
         totalImages: 0,
@@ -252,7 +252,7 @@ Total clienti: 5
     }
   }
 
-  /// Obține statistici despre procesarea OCR
+  /// Obtine statistici despre procesarea OCR
   OcrStatistics getStatistics() {
     final logStats = _logger.getStatistics();
     
@@ -265,14 +265,14 @@ Total clienti: 5
     );
   }
 
-  /// Curăță cache-ul și log-urile
+  /// Curata cache-ul si log-urile
   void cleanup() {
     _logger.clearOldLogs();
     _logger.info('MAINTENANCE', 'OCR Service cleanup completat');
   }
 }
 
-/// Rezultatul procesării unei singure imagini
+/// Rezultatul procesarii unei singure imagini
 class OcrResult {
   final String imagePath;
   final bool success;
@@ -324,7 +324,7 @@ class OcrResult {
   String toString() => 'OcrResult(path: $imagePath, success: $success, contacts: ${extractedClients?.length ?? 0})';
 }
 
-/// Rezultatul procesării multiple imagini
+/// Rezultatul procesarii multiple imagini
 class OcrBatchResult {
   final List<OcrResult> individualResults;
   final int totalImages;

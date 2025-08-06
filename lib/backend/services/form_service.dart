@@ -356,7 +356,7 @@ class FormService extends ChangeNotifier {
 
   /// Gestioneaza schimbarea clientului
   void _onClientChanged() {
-    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
     Future.microtask(() {
       notifyListeners();
     });
@@ -597,7 +597,7 @@ class FormService extends ChangeNotifier {
           _showingClientLoanForm[clientId] = cachedData['showingClientLoanForm'];
           _showingClientIncomeForm[clientId] = cachedData['showingClientIncomeForm'];
           
-          // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+          // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
           Future.microtask(() {
             notifyListeners();
           });
@@ -719,7 +719,7 @@ class FormService extends ChangeNotifier {
         };
         
         
-        // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+        // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
         Future.microtask(() {
           notifyListeners();
         });
@@ -736,7 +736,7 @@ class FormService extends ChangeNotifier {
         _showingClientIncomeForm[clientId] = true;
         
         
-        // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+        // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
         Future.microtask(() {
           notifyListeners();
         });
@@ -802,7 +802,7 @@ class FormService extends ChangeNotifier {
     // OPTIMIZARE: Clear cache pentru client
     _formDataCache.remove(clientId);
     
-    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
     Future.microtask(() {
       notifyListeners();
     });
@@ -849,7 +849,7 @@ class FormService extends ChangeNotifier {
   void clearFormDataCacheForClient(String clientId) {
     _formDataCache.remove(clientId);
     debugPrint('🔧 FORM_SERVICE: Cleared form data cache for client $clientId');
-    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
     Future.microtask(() {
       notifyListeners();
     });
@@ -1028,7 +1028,7 @@ class FormService extends ChangeNotifier {
     _showingClientLoanForm[clientId] = true;
     _showingClientIncomeForm[clientId] = true;
     
-    // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
+    // OPTIMIZARE: Foloseste microtask pentru a evita notifyListeners in timpul build
     Future.microtask(() {
       notifyListeners();
     });

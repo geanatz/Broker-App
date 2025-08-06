@@ -65,7 +65,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
     
     _formService.addListener(_calculateIncomePercentage);
     
-    // Folosește addPostFrameCallback pentru a evita setState în timpul build
+    // Foloseste addPostFrameCallback pentru a evita setState in timpul build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateIncomePercentage();
     });

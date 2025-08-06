@@ -110,7 +110,7 @@ class ClientsPopup extends StatefulWidget {
 class _ClientsPopupState extends State<ClientsPopup> {
   PopupState _currentState = PopupState.clientsOnly;
   List<File> _selectedImages = [];
-  List<PlatformFile>? _webFiles; // Pentru fișierele selectate pe web
+  List<PlatformFile>? _webFiles; // Pentru fisierele selectate pe web
   Map<String, OcrResult>? _ocrResults;
   String? _selectedOcrImagePath;
   bool _isOcrProcessing = false;
@@ -119,7 +119,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
   String? _ocrError;
   Client? _editingClient;
   
-  // Service pentru a asculta schimbările
+  // Service pentru a asculta schimbarile
   late final ClientUIService _clientService;
   // --- FOCUS LOCAL ---
   String? _selectedClientPhoneInPopup;
@@ -143,7 +143,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     super.dispose();
   }
 
-  /// Callback pentru schimbările în servicea
+  /// Callback pentru schimbarile in servicea
   void _onClientServiceChanged() {
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -207,7 +207,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
           dialogTitle: 'Selecteaza imaginile pentru extragerea contactelor',
         );
       } else {
-        // Pe desktop/mobile folosim FileType.image fără extensii
+        // Pe desktop/mobile folosim FileType.image fara extensii
         result = await FilePicker.platform.pickFiles(
           type: FileType.image,
           allowMultiple: true,
@@ -267,10 +267,10 @@ class _ClientsPopupState extends State<ClientsPopup> {
     try {
       final ocrService = OcrService();
       
-      // Creează lista de imagini pentru procesare
+      // Creeaza lista de imagini pentru procesare
       List<dynamic> imagesToProcess = [];
       if (kIsWeb && _webFiles != null) {
-        // Pe web procesăm imaginile asincron pentru a nu bloca UI-ul
+        // Pe web procesam imaginile asincron pentru a nu bloca UI-ul
         setState(() {
           _ocrMessage = 'Se prepara imaginile pentru procesare...';
           _ocrProgress = 0.0;
@@ -284,7 +284,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
               _ocrProgress = (i + 1) / _webFiles!.length * 0.3; // 30% pentru preparare
             });
             
-            // Procesează fiecare imagine asincron cu delay pentru a nu bloca UI-ul
+            // Proceseaza fiecare imagine asincron cu delay pentru a nu bloca UI-ul
             await Future.delayed(const Duration(milliseconds: 50));
             
             try {
@@ -314,7 +314,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         
     
         
-        // Pe web limitez numărul de imagini pentru a evita blocarea
+        // Pe web limitez numarul de imagini pentru a evita blocarea
         if (imagesToProcess.length > 5) {
       
           imagesToProcess = imagesToProcess.take(5).toList();
@@ -330,7 +330,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
           }
         }
       } else {
-        // Pe desktop folosim fișierele direct
+        // Pe desktop folosim fisierele direct
         imagesToProcess = _selectedImages;
     
       }
@@ -340,7 +340,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         onProgress: (current, total) {
           setState(() {
             _ocrMessage = 'Se proceseaza imaginea $current din $total...';
-            // Pe web începem de la 30% (după preparare), pe desktop de la 0%
+            // Pe web incepem de la 30% (dupa preparare), pe desktop de la 0%
             final baseProgress = kIsWeb ? 0.3 : 0.0;
             final progressRange = kIsWeb ? 0.7 : 1.0;
             _ocrProgress = baseProgress + (total > 0 ? (current / total * progressRange) : 0.0);

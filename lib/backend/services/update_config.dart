@@ -26,8 +26,8 @@ class UpdateConfig {
   // Download Settings
   static const int downloadChunkSize = 8192; // Chunk size pentru download (8KB)
   static const Duration progressUpdateInterval = Duration(milliseconds: 500); // Cat de des sa updateze progresul
-  static const bool compressUpdates = true; // Comprima fișierele de update
-  static const bool validateChecksums = true; // Valideaza checksum-urile fișierelor
+  static const bool compressUpdates = true; // Comprima fisierele de update
+  static const bool validateChecksums = true; // Valideaza checksum-urile fisierelor
   
   // Backup Settings
   static const bool createBackup = true; // Creaza backup inainte de update

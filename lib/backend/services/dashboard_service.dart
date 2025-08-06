@@ -129,19 +129,19 @@ class DashboardService extends ChangeNotifier {
 
   User? get _currentUser => _auth.currentUser;
 
-  // Backwards compatibility - păstrăm pentru compatibilitate
+  // Backwards compatibility - pastram pentru compatibilitate
   DateTime get selectedMonthConsultants => _selectedMonth;
   DateTime get selectedMonthTeams => _selectedMonth;
 
 
-  /// FIX: Resetează cache-ul și forțează refresh pentru un nou consultant
+  /// FIX: Reseteaza cache-ul si forteaza refresh pentru un nou consultant
   Future<void> resetForNewConsultant() async {
     try {
       final consultantData = await _consultantService.getCurrentConsultantData();
       final newConsultantToken = consultantData?['token'];
       
       if (newConsultantToken != _currentConsultantToken) {
-        // Salvează datele consultantului anterior în cache
+        // Salveaza datele consultantului anterior in cache
         if (_currentConsultantToken != null) {
           _consultantsRankingCache[_currentConsultantToken!] = _consultantsRanking;
           _teamsRankingCache[_currentConsultantToken!] = _teamsRanking;
@@ -151,7 +151,7 @@ class DashboardService extends ChangeNotifier {
         
         _currentConsultantToken = newConsultantToken;
         
-        // Încarcă datele pentru noul consultant din cache sau Firebase
+        // Incarca datele pentru noul consultant din cache sau Firebase
         await _loadDataForCurrentConsultant();
       }
     } catch (e) {
@@ -159,11 +159,11 @@ class DashboardService extends ChangeNotifier {
     }
   }
 
-  /// FIX: Încarcă datele pentru consultantul curent din cache sau Firebase
+  /// FIX: Incarca datele pentru consultantul curent din cache sau Firebase
   Future<void> _loadDataForCurrentConsultant() async {
     if (_currentConsultantToken == null) return;
 
-    // Verifică cache-ul mai întâi
+    // Verifica cache-ul mai intai
     final cacheKey = _currentConsultantToken!;
     if (_consultantsRankingCache.containsKey(cacheKey)) {
       _consultantsRanking = _consultantsRankingCache[cacheKey]!;
@@ -172,7 +172,7 @@ class DashboardService extends ChangeNotifier {
       _consultantStats = _consultantStatsCache[cacheKey];
       notifyListeners();
     } else {
-      // Încarcă din Firebase
+      // Incarca din Firebase
       await loadDashboardData();
     }
   }
@@ -220,14 +220,14 @@ class DashboardService extends ChangeNotifier {
   Future<void> _refreshConsultantsRankingForSelectedMonth() async {
     try {
       await _loadConsultantsRanking();
-      notifyListeners(); // Adăugat notifyListeners după încărcare
+      notifyListeners(); // Adaugat notifyListeners dupa incarcare
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error refreshing consultants ranking: $e');
     }
   }
 
 
-  /// Incarca toate datele dashboard-ului (FIX: verifică consultant înainte de încărcare)
+  /// Incarca toate datele dashboard-ului (FIX: verifica consultant inainte de incarcare)
   Future<void> loadDashboardData() async {
     if (_currentUser == null) {
       debugPrint('❌ DASHBOARD_SERVICE: User not authenticated');
@@ -236,7 +236,7 @@ class DashboardService extends ChangeNotifier {
       return;
     }
 
-    // FIX: Verifică și resetează dacă consultantul s-a schimbat
+    // FIX: Verifica si reseteaza daca consultantul s-a schimbat
     await resetForNewConsultant();
 
     _setLoading(true);
@@ -267,9 +267,9 @@ class DashboardService extends ChangeNotifier {
     await loadDashboardData();
   }
 
-  /// Forțează reîncărcarea agentului de serviciu (pentru debug)
+  /// Forteaza reincarcarea agentului de serviciu (pentru debug)
   Future<void> forceReloadDutyAgent() async {
-    // Șterge cache-ul pentru ziua curentă
+    // Sterge cache-ul pentru ziua curenta
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     _dutyAgentCache.remove(today);
     
@@ -277,10 +277,10 @@ class DashboardService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Incarca clasamentul consultantilor din Firebase (FIX: folosește consultantToken pentru stats)
+  /// Incarca clasamentul consultantilor din Firebase (FIX: foloseste consultantToken pentru stats)
   Future<void> _loadConsultantsRanking() async {
     try {
-      // FIX: Obține toate consultanții cu token-urile lor
+      // FIX: Obtine toate consultantii cu token-urile lor
       final consultantsSnapshot = await _firestore.collection('consultants').get();
       if (consultantsSnapshot.docs.isEmpty) {
         _consultantsRanking = [];
@@ -308,14 +308,14 @@ class DashboardService extends ChangeNotifier {
           return null;
         }
 
-        // FIX: Folosește consultantToken pentru a găsi statisticile
+        // FIX: Foloseste consultantToken pentru a gasi statisticile
         final stats = statsMap[consultantToken] ?? {};
         final forms = (stats['formsCompleted'] ?? 0) as num;
         final meetings = (stats['meetingsHeld'] ?? 0) as num;
         final score = (forms.toInt() * 10) + (meetings.toInt() * 5);
 
         return ConsultantRanking(
-          id: consultantDoc.id, // Păstrăm UID-ul pentru identificare
+          id: consultantDoc.id, // Pastram UID-ul pentru identificare
           name: consultantName,
           team: consultantTeam,
           score: score,
@@ -333,7 +333,7 @@ class DashboardService extends ChangeNotifier {
     }
   }
 
-  /// Incarca clasamentul echipelor din Firebase (FIX: folosește consultantToken pentru stats)
+  /// Incarca clasamentul echipelor din Firebase (FIX: foloseste consultantToken pentru stats)
   Future<void> _loadTeamsRanking() async {
     try {
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
@@ -347,7 +347,7 @@ class DashboardService extends ChangeNotifier {
           
       final statsMap = { for (var doc in monthlyStatsSnapshot.docs) doc.id : doc.data() };
 
-      // FIX: Obține toți consultanții cu token-urile lor
+      // FIX: Obtine toti consultantii cu token-urile lor
       final consultantsSnapshot = await _firestore.collection('consultants').get();
       final Map<String, Map<String, int>> teamStats = {};
 
@@ -360,7 +360,7 @@ class DashboardService extends ChangeNotifier {
           continue;
         }
         
-        // FIX: Folosește consultantToken pentru a găsi statisticile
+        // FIX: Foloseste consultantToken pentru a gasi statisticile
         final stats = statsMap[consultantToken] ?? {};
         final forms = (stats['formsCompleted'] ?? 0) as num;
         final meetings = (stats['meetingsHeld'] ?? 0) as num;
@@ -527,7 +527,7 @@ class DashboardService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Dispose resources (FIX: curăță cache-ul)
+  /// Dispose resources (FIX: curata cache-ul)
   @override
   void dispose() {
     _consultantsRankingCache.clear();
@@ -539,18 +539,18 @@ class DashboardService extends ChangeNotifier {
     debugPrint('🗑️ DASHBOARD_SERVICE: Disposed with cache cleanup');
   }
 
-  /// Incarca agentul de serviciu din consultanții reali
+  /// Incarca agentul de serviciu din consultantii reali
   Future<void> _loadDutyAgent() async {
     try {
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       
-      // Verifică cache-ul pentru ziua curentă
+      // Verifica cache-ul pentru ziua curenta
       if (_dutyAgentCache.containsKey(today)) {
         _dutyAgent = _dutyAgentCache[today];
         return;
       }
       
-      // Obține toți consultanții din Firebase
+      // Obtine toti consultantii din Firebase
       final consultantsSnapshot = await _firestore.collection('consultants').get();
       if (consultantsSnapshot.docs.isEmpty) {
         _dutyAgent = null;
@@ -558,7 +558,7 @@ class DashboardService extends ChangeNotifier {
         return;
       }
 
-      // Calculează rotația pe baza zilei curente din lună
+      // Calculeaza rotatia pe baza zilei curente din luna
       final dayOfMonth = DateTime.now().day;
       final consultantIndex = (dayOfMonth - 1) % consultantsSnapshot.docs.length;
       
@@ -566,7 +566,7 @@ class DashboardService extends ChangeNotifier {
       final consultantData = selectedConsultant.data();
       _dutyAgent = consultantData['name'] as String? ?? 'Necunoscut';
       
-      // Salvează în cache pentru ziua curentă
+      // Salveaza in cache pentru ziua curenta
       _dutyAgentCache[today] = _dutyAgent;
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading duty agent: $e');
@@ -601,7 +601,7 @@ class DashboardService extends ChangeNotifier {
         return;
       }
       
-      // IMPORTANT: Adaugă clientul la listă înainte de increment pentru a preveni race conditions
+      // IMPORTANT: Adauga clientul la lista inainte de increment pentru a preveni race conditions
       completedClientsForMeetings.add(clientPhoneNumber);
       
       await monthlyDocRef.set({
@@ -635,16 +635,16 @@ class DashboardService extends ChangeNotifier {
       
       debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in $yearMonth for client $clientPhoneNumber');
       
-      // FIX: Invalidează cache-ul pentru acest consultant și refresh complet
+      // FIX: Invalideaza cache-ul pentru acest consultant si refresh complet
       _consultantsRankingCache.remove(consultantToken);
       _teamsRankingCache.remove(consultantToken);  
       _consultantStatsCache.remove(consultantToken);
       
-      // IMPORTANT: Reîncarcă clasamentele și notifică UI-ul pentru actualizare instantanee
+      // IMPORTANT: Reincarca clasamentele si notifica UI-ul pentru actualizare instantanee
       debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after meeting creation...');
       await _refreshConsultantsRankingForSelectedMonth();
-      await _loadConsultantStats(); // Reîncarcă și statisticile consultantului
-      notifyListeners(); // Notifică UI-ul să se actualizeze
+      await _loadConsultantStats(); // Reincarca si statisticile consultantului
+      notifyListeners(); // Notifica UI-ul sa se actualizeze
       debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onMeetingCreated: $e');
@@ -678,7 +678,7 @@ class DashboardService extends ChangeNotifier {
         return;
       }
       
-      // IMPORTANT: Adaugă clientul la listă înainte de increment pentru a preveni race conditions
+      // IMPORTANT: Adauga clientul la lista inainte de increment pentru a preveni race conditions
       completedClientsForForms.add(clientPhoneNumber);
       
       await monthlyDocRef.set({
@@ -712,16 +712,16 @@ class DashboardService extends ChangeNotifier {
       
       debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in $yearMonth for client $clientPhoneNumber');
       
-      // FIX: Invalidează cache-ul pentru acest consultant și refresh complet
+      // FIX: Invalideaza cache-ul pentru acest consultant si refresh complet
       _consultantsRankingCache.remove(consultantToken);
       _teamsRankingCache.remove(consultantToken);
       _consultantStatsCache.remove(consultantToken);
       
-      // IMPORTANT: Reîncarcă clasamentele și notifică UI-ul pentru actualizare instantanee
+      // IMPORTANT: Reincarca clasamentele si notifica UI-ul pentru actualizare instantanee
       debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after form completion...');
       await _refreshConsultantsRankingForSelectedMonth();
-      await _loadConsultantStats(); // Reîncarcă și statisticile consultantului
-      notifyListeners(); // Notifică UI-ul să se actualizeze
+      await _loadConsultantStats(); // Reincarca si statisticile consultantului
+      notifyListeners(); // Notifica UI-ul sa se actualizeze
       debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified after form completion');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onFormCompleted: $e');

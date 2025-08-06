@@ -8,8 +8,8 @@ import 'package:broker_app/backend/services/update_service.dart';
 import 'package:broker_app/frontend/screens/main_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// Splash screen care pre-încarcă toate serviciile aplicației pentru o experiență fluidă
-/// OPTIMIZAT: Interfață îmbunătățită cu loading indicators avansate
+/// Splash screen care pre-incarca toate serviciile aplicatiei pentru o experienta fluida
+/// OPTIMIZAT: Interfata imbunatatita cu loading indicators avansate
 class SplashScreen extends StatefulWidget {
   final Map<String, dynamic> consultantData;
   
@@ -146,7 +146,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
 
-  /// OPTIMIZARE: Actualizează stările de loading pentru componente specifice
+  /// OPTIMIZARE: Actualizeaza starile de loading pentru componente specifice
   void _updateLoadingStates() {
     final progress = _splashService.progress;
     
@@ -476,7 +476,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
     
     // Fallback to default description
-    return '• Îmbunătățiri de performanță\n• Corectări de bug-uri\n• Funcționalități noi\n• Securitate îmbunătățită';
+    return '• Imbunatatiri de performanta\n• Corectari de bug-uri\n• Functionalitati noi\n• Securitate imbunatatita';
   }
 
   void _startCompleteUpdate() async {
@@ -543,7 +543,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
   
   Future<void> _navigateToMainScreen() async {
-    // FIX: Resetează cache-ul pentru noul consultant înainte de navigare
+    // FIX: Reseteaza cache-ul pentru noul consultant inainte de navigare
     try {
       await _splashService.resetForNewConsultant();
     } catch (e) {
@@ -676,7 +676,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  /// OPTIMIZARE: Construiește indicatorii de loading pentru componente specifice
+  /// OPTIMIZARE: Construieste indicatorii de loading pentru componente specifice
   Widget _buildComponentLoadingIndicators() {
     return Container(
       width: 300,
@@ -715,7 +715,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  /// Construiește un indicator de loading pentru o componentă specifică
+  /// Construieste un indicator de loading pentru o componenta specifica
   Widget _buildLoadingIndicator(String label, bool isLoaded, IconData icon) {
     return Row(
       children: [

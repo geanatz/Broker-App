@@ -438,7 +438,7 @@ class ClientsService {
   void _notifyClientCreated() {
     try {
       // DashboardService nu are metoda onClientCreated, folosim onFormCompleted
-      // În viitor, ar putea fi adăugată o metodă specifică
+      // In viitor, ar putea fi adaugata o metoda specifica
     } catch (e) {
       // Log error but don't try to access UI service properties
     }
@@ -459,7 +459,7 @@ class ClientsService {
       final consultantToken = await _firebaseService.getCurrentConsultantToken();
       if (consultantToken != null) {
         // Pentru moment, folosim token-ul ca identificator
-        // În viitor, ar putea fi nevoie de o conversie token -> uid
+        // In viitor, ar putea fi nevoie de o conversie token -> uid
         await dashboard.DashboardService().onMeetingCreated(consultantToken, clientPhoneNumber);
       }
     } catch (e) {
@@ -932,7 +932,7 @@ class ClientUIService extends ChangeNotifier {
   factory ClientUIService() => _instance;
   ClientUIService._internal();
 
-  // Timer pentru actualizarea automată
+  // Timer pentru actualizarea automata
   Timer? _autoRefreshTimer;
   
   // Debouncing pentru evitarea apelurilor multiple rapide
@@ -1054,7 +1054,7 @@ class ClientUIService extends ChangeNotifier {
       if (currentUser != null) {
         // Incarca clientii din Firebase pentru consultantul curent
         await loadClientsFromFirebase();
-        // Pornește actualizarea automată
+        // Porneste actualizarea automata
         _startAutoRefresh();
       } else {
         // Daca nu este autentificat, initializeaza cu lista goala
@@ -1071,7 +1071,7 @@ class ClientUIService extends ChangeNotifier {
     });
   }
 
-  /// Pornește actualizarea automată a clientilor din Firebase cu delay pentru evitarea apelurilor redundante
+  /// Porneste actualizarea automata a clientilor din Firebase cu delay pentru evitarea apelurilor redundante
   void _startAutoRefresh() {
     _autoRefreshTimer?.cancel();
     _autoRefreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
@@ -1080,7 +1080,7 @@ class ClientUIService extends ChangeNotifier {
     });
   }
 
-  /// Oprește actualizarea automată
+  /// Opreste actualizarea automata
   void _stopAutoRefresh() {
     _autoRefreshTimer?.cancel();
     _autoRefreshTimer = null;
@@ -1199,19 +1199,19 @@ class ClientUIService extends ChangeNotifier {
     _sortClientsByUpdatedAt(_clients);
   }
 
-  /// OPTIMIZAT: Incarca clientii din Firebase pentru consultantul curent cu caching și debouncing
+  /// OPTIMIZAT: Incarca clientii din Firebase pentru consultantul curent cu caching si debouncing
   Future<void> loadClientsFromFirebase() async {
-    // OPTIMIZARE: Verifică cache-ul mai întâi
+    // OPTIMIZARE: Verifica cache-ul mai intai
     if (_lastLoadTime != null && 
         DateTime.now().difference(_lastLoadTime!).inMinutes < _cacheValidityMinutes &&
         _clients.isNotEmpty) {
       return;
     }
     
-    // Anulează request-ul anterior dacă există unul pending
+    // Anuleaza request-ul anterior daca exista unul pending
     _loadDebounceTimer?.cancel();
     
-    // Dacă deja se încarcă, nu mai face alt request
+    // Daca deja se incarca, nu mai face alt request
     if (_isLoading) return;
     
     // CRITICAL FIX: Near-instant debouncing for immediate sync
@@ -1220,7 +1220,7 @@ class ClientUIService extends ChangeNotifier {
     });
   }
 
-  /// OPTIMIZAT: Execută încărcarea efectivă a clienților cu caching
+  /// OPTIMIZAT: Executa incarcarea efectiva a clientilor cu caching
   Future<void> _performLoadClients() async {
     if (_isLoading) return;
     
@@ -1244,7 +1244,7 @@ class ClientUIService extends ChangeNotifier {
         // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
         _sortClientsByUpdatedAt(newClients);
         
-        // Actualizează lista de clienți
+        // Actualizeaza lista de clienti
         _clients = newClients;
         
         // FIX: Restore focus to the previously focused client if it still exists
@@ -1428,7 +1428,7 @@ class ClientUIService extends ChangeNotifier {
   StreamSubscription<List<Map<String, dynamic>>>? _realTimeSubscription;
   StreamSubscription<Map<String, dynamic>>? _operationsSubscription;
 
-  /// Pornește real-time listeners pentru sincronizare automată
+  /// Porneste real-time listeners pentru sincronizare automata
   Future<void> startRealTimeListeners() async {
     try {
       // FIX: Stop any existing listeners first
@@ -1436,7 +1436,7 @@ class ClientUIService extends ChangeNotifier {
       
       final firebaseService = NewFirebaseService();
       
-      // 1. Stream pentru toți clienții
+      // 1. Stream pentru toti clientii
       _realTimeSubscription = firebaseService.getClientsRealTimeStream().listen(
         (List<Map<String, dynamic>> clientsData) {
           _handleRealTimeUpdate(clientsData);
@@ -1447,7 +1447,7 @@ class ClientUIService extends ChangeNotifier {
         },
       );
 
-      // 2. Stream pentru operațiuni
+      // 2. Stream pentru operatiuni
       _operationsSubscription = firebaseService.getClientsOperationsRealTimeStream().listen(
         (Map<String, dynamic> operations) {
           _handleOperationsUpdate(operations);
@@ -1485,7 +1485,7 @@ class ClientUIService extends ChangeNotifier {
     }
   }
 
-  /// Oprește real-time listeners
+  /// Opreste real-time listeners
   void stopRealTimeListeners() {
     _realTimeSubscription?.cancel();
     _operationsSubscription?.cancel();
@@ -1493,7 +1493,7 @@ class ClientUIService extends ChangeNotifier {
     _operationsSubscription = null;
   }
 
-  /// Gestionează actualizările în timp real pentru clienți
+  /// Gestioneaza actualizarile in timp real pentru clienti
   void _handleRealTimeUpdate(List<Map<String, dynamic>> clientsData) {
     try {
       final List<ClientModel> updatedClients = [];
@@ -1526,7 +1526,7 @@ class ClientUIService extends ChangeNotifier {
         // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
         _sortClientsByUpdatedAt(updatedClients);
         
-        // Actualizează lista de clienți, păstrând clienții temporari
+        // Actualizeaza lista de clienti, pastrand clientii temporari
         _clients = [...updatedClients, ...temporaryClients];
         
         // FIX: Preserve focus on the same client if it still exists
@@ -1557,7 +1557,7 @@ class ClientUIService extends ChangeNotifier {
     }
   }
 
-  /// Gestionează actualizările în timp real pentru operațiuni
+  /// Gestioneaza actualizarile in timp real pentru operatiuni
   void _handleOperationsUpdate(Map<String, dynamic> operations) {
     try {
       final List<Map<String, dynamic>> changes = operations['changes'] ?? [];
@@ -1804,7 +1804,7 @@ class ClientUIService extends ChangeNotifier {
       final splashService = SplashService();
       await splashService.invalidateClientsCacheAndRefresh();
       
-      // Salveaza in Firebase în background (optimistic update)
+      // Salveaza in Firebase in background (optimistic update)
       final success = await _firebaseService.createClient(
         phoneNumber: clientWithPhoneId.phoneNumber,
         name: clientWithPhoneId.name,
@@ -1815,14 +1815,14 @@ class ClientUIService extends ChangeNotifier {
       );
       
       if (!success) {
-        // Rollback dacă salvarea a eșuat
+        // Rollback daca salvarea a esuat
         _clients.removeWhere((c) => c.phoneNumber == clientWithPhoneId.phoneNumber);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
         });
       }
     } catch (e) {
-      // Rollback în caz de eroare
+      // Rollback in caz de eroare
       _clients.removeWhere((c) => c.phoneNumber == client.phoneNumber);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         notifyListeners();
@@ -1854,7 +1854,7 @@ class ClientUIService extends ChangeNotifier {
       final splashService = SplashService();
       await splashService.invalidateClientsCacheAndRefresh();
 
-      // Sterge din Firebase în background (optimistic update)
+      // Sterge din Firebase in background (optimistic update)
       final success = await _firebaseService.deleteClient(clientPhoneNumber);
 
       if (success) {
@@ -1864,7 +1864,7 @@ class ClientUIService extends ChangeNotifier {
           notifyListeners();
         });
       } else {
-        // Rollback dacă ștergerea a eșuat
+        // Rollback daca stergerea a esuat
         _clients.add(clientToRemove);
         // FIX: Sorteaza lista dupa rollback
         _sortClientsByUpdatedAt(_clients);
@@ -1942,7 +1942,7 @@ class ClientUIService extends ChangeNotifier {
       // Asigura-te ca ID-ul este phoneNumber
       final clientWithPhoneId = updatedClient.copyWith(id: updatedClient.phoneNumber);
       
-      // Salveaza starea anterioară pentru rollback
+      // Salveaza starea anterioara pentru rollback
       final clientIndex = _clients.indexWhere((client) => client.phoneNumber == updatedClient.phoneNumber);
       if (clientIndex == -1) {
         return;
@@ -1965,7 +1965,7 @@ class ClientUIService extends ChangeNotifier {
       final splashService = SplashService();
       await splashService.invalidateClientsCacheAndRefresh();
       
-      // Actualizeaza in Firebase în background (optimistic update)
+      // Actualizeaza in Firebase in background (optimistic update)
       final success = await _firebaseService.updateClient(
         clientWithPhoneId.phoneNumber,
         name: clientWithPhoneId.name,
@@ -1980,7 +1980,7 @@ class ClientUIService extends ChangeNotifier {
       );
       
       if (!success) {
-        // Rollback dacă actualizarea a eșuat
+        // Rollback daca actualizarea a esuat
         _clients[clientIndex] = previousClient;
         if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
           _focusedClient = previousClient;
@@ -2022,7 +2022,7 @@ class ClientUIService extends ChangeNotifier {
         category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: 'Acceptat',
-        scheduledDateTime: scheduledDateTime, // IMPORTANT: Salvează data și ora întâlnirii
+        scheduledDateTime: scheduledDateTime, // IMPORTANT: Salveaza data si ora intalnirii
         additionalInfo: additionalInfo,
         isCompleted: true, // Marcheaza ca si contorizat
       );
@@ -2201,20 +2201,20 @@ class ClientUIService extends ChangeNotifier {
     }
   }
 
-  /// FIX: Resetează serviciul pentru un consultant nou (separarea datelor per consultant)
+  /// FIX: Reseteaza serviciul pentru un consultant nou (separarea datelor per consultant)
   Future<void> resetForNewConsultant() async {
     try {
-      // Oprește actualizarea automată
+      // Opreste actualizarea automata
       _stopAutoRefresh();
       
-      // Șterge cache-ul local
+      // Sterge cache-ul local
       _clients.clear();
       _focusedClient = null;
       
-      // Încarcă datele pentru noul consultant (fără auto-refresh pentru a evita apelurile multiple)
+      // Incarca datele pentru noul consultant (fara auto-refresh pentru a evita apelurile multiple)
       await loadClientsFromFirebase();
       
-      // Pornește auto-refresh cu delay pentru a evita conflictele
+      // Porneste auto-refresh cu delay pentru a evita conflictele
       Timer(const Duration(seconds: 5), () {
         _startAutoRefresh();
       });
