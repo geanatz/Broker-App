@@ -411,6 +411,10 @@ class FormService extends ChangeNotifier {
     
     _showingClientLoanForm[clientId] = !isShowingClientLoanForm(clientId);
     
+    // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
+    _formDataCache.remove(clientId);
+    debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after toggling loan form type');
+    
     // Automatically save UI state to Firebase
     _autoSaveToFirebaseForClient(clientId);
   }
@@ -419,6 +423,10 @@ class FormService extends ChangeNotifier {
   void toggleIncomeFormType(String clientId) {
     
     _showingClientIncomeForm[clientId] = !isShowingClientIncomeForm(clientId);
+    
+    // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
+    _formDataCache.remove(clientId);
+    debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after toggling income form type');
     
     // Automatically save UI state to Firebase
     _autoSaveToFirebaseForClient(clientId);
@@ -436,10 +444,12 @@ class FormService extends ChangeNotifier {
         forms.add(CreditFormModel());
       }
       
-      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
-      Future.microtask(() {
-        notifyListeners();
-      });
+      // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
+      _formDataCache.remove(clientId);
+      debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after updating credit form at index $index');
+      
+      // FIX: Debounce notifyListeners to prevent excessive rebuilds
+      _debounceNotifyListeners();
       
       // Automatically save to Firebase after updating form
       _autoSaveToFirebaseForClient(clientId);
@@ -458,10 +468,12 @@ class FormService extends ChangeNotifier {
         forms.add(IncomeFormModel());
       }
       
-      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
-      Future.microtask(() {
-        notifyListeners();
-      });
+      // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
+      _formDataCache.remove(clientId);
+      debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after updating income form at index $index');
+      
+      // FIX: Debounce notifyListeners to prevent excessive rebuilds
+      _debounceNotifyListeners();
       
       // Automatically save to Firebase after updating form
       _autoSaveToFirebaseForClient(clientId);
@@ -480,15 +492,18 @@ class FormService extends ChangeNotifier {
     if (index < forms.length) {
       forms.removeAt(index);
       
-      // Asigura-te ca exista intotdeauna un formular gol la sfarsit
+      // FIX: Ensure there's always at least one empty form at the end
       if (forms.isEmpty || !forms.last.isEmpty) {
         forms.add(CreditFormModel());
       }
       
-      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
-      Future.microtask(() {
-        notifyListeners();
-      });
+      // FIX: Clear cache to prevent data persistence issues
+      _formDataCache.remove(clientId);
+      
+      debugPrint('🔧 FORM_SERVICE: Removed credit form at index $index for client $clientId, remaining forms: ${forms.length}');
+      
+      // FIX: Debounce notifyListeners to prevent excessive rebuilds
+      _debounceNotifyListeners();
       
       // Automatically save to Firebase after removing form
       _autoSaveToFirebaseForClient(clientId);
@@ -507,15 +522,18 @@ class FormService extends ChangeNotifier {
     if (index < forms.length) {
       forms.removeAt(index);
       
-      // Asigura-te ca exista intotdeauna un formular gol la sfarsit
+      // FIX: Ensure there's always at least one empty form at the end
       if (forms.isEmpty || !forms.last.isEmpty) {
         forms.add(IncomeFormModel());
       }
       
-      // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
-      Future.microtask(() {
-        notifyListeners();
-      });
+      // FIX: Clear cache to prevent data persistence issues
+      _formDataCache.remove(clientId);
+      
+      debugPrint('🔧 FORM_SERVICE: Removed income form at index $index for client $clientId, remaining forms: ${forms.length}');
+      
+      // FIX: Debounce notifyListeners to prevent excessive rebuilds
+      _debounceNotifyListeners();
       
       // Automatically save to Firebase after removing form
       _autoSaveToFirebaseForClient(clientId);
@@ -790,6 +808,27 @@ class FormService extends ChangeNotifier {
     });
   }
 
+  /// FIX: Clear all form data for a client from memory to prevent data persistence
+  void clearAllFormDataForClient(String clientId) {
+    // Clear all form data from memory
+    _clientCreditForms.remove(clientId);
+    _coborrowerCreditForms.remove(clientId);
+    _clientIncomeForms.remove(clientId);
+    _coborrowerIncomeForms.remove(clientId);
+    
+    // Clear cache
+    _formDataCache.remove(clientId);
+    
+    // Clear UI state
+    _showingClientLoanForm.remove(clientId);
+    _showingClientIncomeForm.remove(clientId);
+    
+    debugPrint('🔧 FORM_SERVICE: Cleared ALL form data for client $clientId from memory');
+    
+    // FIX: Debounce notifyListeners to prevent excessive rebuilds
+    _debounceNotifyListeners();
+  }
+
   /// OPTIMIZARE: Curata cache-ul de form data
   void clearFormDataCache() {
     _formDataCache.clear();
@@ -809,10 +848,72 @@ class FormService extends ChangeNotifier {
   /// FIX: Clear form data cache for a specific client
   void clearFormDataCacheForClient(String clientId) {
     _formDataCache.remove(clientId);
+    debugPrint('🔧 FORM_SERVICE: Cleared form data cache for client $clientId');
     // OPTIMIZARE: Folosește microtask pentru a evita notifyListeners în timpul build
     Future.microtask(() {
       notifyListeners();
     });
+  }
+
+  // FIX: Debounce timer for notifyListeners to prevent excessive rebuilds
+  Timer? _notifyListenersTimer;
+
+  /// FIX: Debounce notifyListeners to prevent excessive rebuilds during typing
+  void _debounceNotifyListeners() {
+    _notifyListenersTimer?.cancel();
+    _notifyListenersTimer = Timer(Duration(milliseconds: 100), () {
+      notifyListeners();
+    });
+  }
+
+  /// FIX: Create a new credit form while preserving existing forms
+  void createNewCreditForm(String clientId, CreditFormModel newForm, {bool isClient = true}) {
+    // Get existing forms
+    final forms = isClient ? getClientCreditForms(clientId) : getCoborrowerCreditForms(clientId);
+    
+    // Remove the last empty form if it exists
+    if (forms.isNotEmpty && forms.last.isEmpty) {
+      forms.removeLast();
+    }
+    
+    // Add the new form
+    forms.add(newForm);
+    
+    // Add an empty form at the end for the next creation
+    forms.add(CreditFormModel());
+    
+    debugPrint('🔧 FORM_SERVICE: Added new credit form while preserving existing forms for client $clientId');
+    
+    // FIX: Debounce notifyListeners to prevent excessive rebuilds
+    _debounceNotifyListeners();
+    
+    // Automatically save to Firebase
+    _autoSaveToFirebaseForClient(clientId);
+  }
+
+  /// FIX: Create a new income form while preserving existing forms
+  void createNewIncomeForm(String clientId, IncomeFormModel newForm, {bool isClient = true}) {
+    // Get existing forms
+    final forms = isClient ? getClientIncomeForms(clientId) : getCoborrowerIncomeForms(clientId);
+    
+    // Remove the last empty form if it exists
+    if (forms.isNotEmpty && forms.last.isEmpty) {
+      forms.removeLast();
+    }
+    
+    // Add the new form
+    forms.add(newForm);
+    
+    // Add an empty form at the end for the next creation
+    forms.add(IncomeFormModel());
+    
+    debugPrint('🔧 FORM_SERVICE: Added new income form while preserving existing forms for client $clientId');
+    
+    // FIX: Debounce notifyListeners to prevent excessive rebuilds
+    _debounceNotifyListeners();
+    
+    // Automatically save to Firebase
+    _autoSaveToFirebaseForClient(clientId);
   }
 
   /// Pregateste datele pentru export

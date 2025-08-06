@@ -100,6 +100,9 @@ class _ClientsPaneState extends State<ClientsPane> {
       // FIX: Cleanup focus state when loading from cache
       _clientService.cleanupFocusStateFromCache(cachedClients);
       
+      // FIX: Force notification to ensure form_area receives the focus update
+      _clientService.notifyListeners();
+      
       if (mounted) {
         setState(() {
           _cachedClients = cachedClients;
@@ -269,6 +272,11 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// Construieste un item de client cu focus management
   Widget _buildClientItem(ClientModel client) {
     final bool isFocused = _clientService.focusedClient?.phoneNumber == client.phoneNumber;
+    
+    // FIX: Debug focus state for troubleshooting
+    if (isFocused) {
+      debugPrint('🎯 CLIENTS: Client ${client.phoneNumber} is focused in UI');
+    }
     
     // FIX: Previne focus loss la editare prin verificarea daca clientul este temporar
     final bool isTemporary = client.id.startsWith('temp_');

@@ -61,7 +61,6 @@ class WidgetHeader2 extends StatelessWidget {
     final Color effectiveAltTextColor = altTextColor ?? AppTheme.elementColor1;
     final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
     final double effectiveSpacing = spacing ?? AppTheme.mediumGap;
-    final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
 
     final TextStyle defaultTitleStyle = AppTheme.safeOutfit(
       color: effectiveTitleColor,
@@ -94,24 +93,15 @@ class WidgetHeader2 extends StatelessWidget {
       width: double.infinity,
       padding: effectivePadding,
       child: Row(
-        // mainAxisSize: MainAxisSize.min, // Not needed due to Expanded
         mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           Expanded(
-            child: SizedBox(
-              height: effectiveTitleContainerHeight,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: effectiveTitleStyle,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+            child: Text(
+              title,
+              style: effectiveTitleStyle,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           SizedBox(width: effectiveSpacing),

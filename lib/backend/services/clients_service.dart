@@ -994,14 +994,6 @@ class ClientUIService extends ChangeNotifier {
   
   /// Helper pentru sortarea clientilor dupa ultima modificare
   void _sortClientsByUpdatedAt(List<ClientModel> clients) {
-    debugPrint('🔄 SORT: Starting sort for ${clients.length} clients');
-    
-    // Log client details before sorting
-    for (int i = 0; i < clients.length; i++) {
-      final client = clients[i];
-      debugPrint('🔄 SORT: Before sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt} - isTemp: ${client.id.startsWith('temp_')}');
-    }
-    
     clients.sort((a, b) {
       final aTime = a.updatedAt;
       final bTime = b.updatedAt;
@@ -1012,13 +1004,6 @@ class ClientUIService extends ChangeNotifier {
       
       return bTime.compareTo(aTime); // descending
     });
-    
-    // Log client details after sorting
-    debugPrint('🔄 SORT: After sorting:');
-    for (int i = 0; i < clients.length; i++) {
-      final client = clients[i];
-      debugPrint('🔄 SORT: After sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt} - isTemp: ${client.id.startsWith('temp_')}');
-    }
   }
   
   /// Obtine clientii dintr-o anumita categorie inclusiv cel temporar
@@ -1042,19 +1027,9 @@ class ClientUIService extends ChangeNotifier {
   /// Obtine clientii dintr-o anumita categorie fara cel temporar (pentru clients-pane)
   /// FIX: Sorteaza clientii dupa ultima modificare pentru a preveni shuffling-ul in UI
   List<ClientModel> getClientsByCategoryWithoutTemporary(ClientCategory category) {
-    debugPrint('🔍 GET_CATEGORY: Getting clients for category: $category');
-    
     // Exclude clientii temporari (cu ID care incepe cu 'temp_')
     final categoryClients = _clients.where((client) => 
         client.category == category && !client.id.startsWith('temp_')).toList();
-    
-    debugPrint('🔍 GET_CATEGORY: Found ${categoryClients.length} clients for category $category (excluding temp)');
-    
-    // Log clients before sorting
-    for (int i = 0; i < categoryClients.length; i++) {
-      final client = categoryClients[i];
-      debugPrint('🔍 GET_CATEGORY: Before sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt}');
-    }
     
     // FIX: Sorteaza dupa ultima modificare pentru ordine consistenta
     categoryClients.sort((a, b) {
@@ -1067,13 +1042,6 @@ class ClientUIService extends ChangeNotifier {
       
       return bTime.compareTo(aTime); // descending
     });
-    
-    // Log clients after sorting
-    debugPrint('🔍 GET_CATEGORY: After sorting:');
-    for (int i = 0; i < categoryClients.length; i++) {
-      final client = categoryClients[i];
-      debugPrint('🔍 GET_CATEGORY: After sort [$i] - ${client.name} (${client.phoneNumber}) - updatedAt: ${client.updatedAt}');
-    }
     
     return categoryClients;
   }
@@ -1151,11 +1119,19 @@ class ClientUIService extends ChangeNotifier {
         _clients[focusedIndex] = _clients[focusedIndex].copyWith(status: ClientStatus.focused);
         _focusedClient = _clients[focusedIndex];
 
+        // FIX: Notify listeners to sync form_area with restored focus
+        debugPrint('🔄 CLIENT_SERVICE: Restored focus from cache to ${_focusedClient?.phoneNumber}');
+        notifyListeners();
+
       } else {
         // Previously focused client no longer exists, focus first available
         if (_clients.isNotEmpty) {
           _clients[0] = _clients[0].copyWith(status: ClientStatus.focused);
           _focusedClient = _clients[0];
+
+          // FIX: Notify listeners to sync form_area with new focus
+          debugPrint('🔄 CLIENT_SERVICE: Focused first client from cache: ${_focusedClient?.phoneNumber}');
+          notifyListeners();
 
         } else {
           _focusedClient = null;
@@ -1165,6 +1141,12 @@ class ClientUIService extends ChangeNotifier {
     } else {
       // No previously focused client, run normal cleanup
       _cleanupFocusStateOnStartup();
+      
+      // FIX: Notify listeners after cleanup to sync form_area
+      if (_focusedClient != null) {
+        debugPrint('🔄 CLIENT_SERVICE: Focused client after cleanup: ${_focusedClient?.phoneNumber}');
+        notifyListeners();
+      }
     }
     
 
@@ -1435,10 +1417,8 @@ class ClientUIService extends ChangeNotifier {
     debugPrint('TEMP_CLIENT: Added temp client to main list, total clients: ${_clients.length}');
     // Focuseaza clientul temporar
     _focusedClient = tempClient;
-    debugPrint('TEMP_CLIENT: About to sort clients list');
     // FIX: Nu sorta lista principala cand se adauga un client temporar
     // Sortarea se va face doar cand clientul devine real
-    debugPrint('TEMP_CLIENT: Sort skipped for temp client, total clients: ${_clients.length}');
     notifyListeners();
   }
 

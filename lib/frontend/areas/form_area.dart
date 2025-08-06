@@ -99,10 +99,13 @@ class _FormAreaState extends State<FormArea> {
     _clientService.addListener(_onClientServiceChanged);
     _previousClient = _clientService.focusedClient;
     
-    // Incarca datele pentru clientul curent daca exista
+    // FIX: Check if there's already a focused client at initialization
     final currentClient = _clientService.focusedClient;
     if (currentClient != null) {
+      debugPrint('🔄 FORM: Found focused client at initialization: ${currentClient.phoneNumber}');
       await _loadFormDataForCurrentClient();
+    } else {
+      debugPrint('🔄 FORM: No focused client at initialization');
     }
   }
 
@@ -128,6 +131,18 @@ class _FormAreaState extends State<FormArea> {
       _textControllers[key]?.dispose();
       _textControllers.remove(key);
     }
+    
+    // FIX: Also clear typing state for these controllers
+    _typingControllers.removeWhere((key) => key.startsWith('${clientPhone}_${clientType}_${formType}_'));
+    _typingTimers.removeWhere((key, timer) {
+      if (key.startsWith('${clientPhone}_${clientType}_${formType}_')) {
+        timer.cancel();
+        return true;
+      }
+      return false;
+    });
+    
+    debugPrint('🔧 FORM_AREA: Cleared ${keysToRemove.length} controllers for $clientPhone $clientType $formType');
   }
 
   /// Callback pentru schimbarile din FormService
@@ -167,8 +182,14 @@ class _FormAreaState extends State<FormArea> {
                                        _previousClient?.id.startsWith('temp_') == true &&
                                        _previousClient?.phoneNumber != currentClient?.phoneNumber;
         
+        // FIX: Detect focus restoration from cache (when previous is null but current is not)
+        final isFocusRestorationFromCache = _previousClient == null && currentClient != null;
+        
         if (_previousClient?.phoneNumber != currentClient?.phoneNumber && !isTemporaryClientUpdate) {
           debugPrint('🔄 FORM: Client changed - Previous: ${_previousClient?.phoneNumber ?? 'none'}, Current: ${currentClient?.phoneNumber ?? 'none'}');
+          _performClientChange(currentClient);
+        } else if (isFocusRestorationFromCache) {
+          debugPrint('🔄 FORM: Focus restored from cache - Current: ${currentClient.phoneNumber}');
           _performClientChange(currentClient);
         } else if (isTemporaryClientUpdate) {
           debugPrint('🔄 FORM: Temporary client update - ignoring form reset');
@@ -225,6 +246,19 @@ class _FormAreaState extends State<FormArea> {
       if (_previousClient?.phoneNumber != currentClient?.phoneNumber) {
         debugPrint('⚡ FORM: Clearing controllers for client change');
         _disposeControllers();
+        
+        // FIX: Clear form data cache for previous client to prevent data persistence
+        if (_previousClient != null) {
+          _formService.clearFormDataCacheForClient(_previousClient!.phoneNumber);
+          debugPrint('🔧 FORM_AREA: Cleared form data cache for previous client ${_previousClient!.phoneNumber}');
+        }
+        
+        // FIX: Also clear typing state and timers for all controllers
+        _typingControllers.clear();
+        _typingTimers.forEach((key, timer) {
+          timer.cancel();
+        });
+        _typingTimers.clear();
       }
       
       // OPTIMIZATION: Only load form data if client changed and is not temporary
@@ -390,6 +424,28 @@ class _FormAreaState extends State<FormArea> {
     if (result == 'delete') {
       final currentClient = _clientService.focusedClient;
       if (currentClient != null) {
+        // FIX: Clear controllers for the deleted form to prevent data persistence
+        final clientType = isClient ? 'client' : 'coborrower';
+        final formType = isCreditForm ? 'credit' : 'income';
+        
+        // FIX: Clear all controllers for this client and form type to prevent data persistence
+        _clearControllersForClientType(currentClient.phoneNumber, clientType, formType);
+        
+        // FIX: Also clear any remaining controllers that might have old data
+        final keysToRemove = <String>[];
+        _textControllers.forEach((key, controller) {
+          if (key.contains('${currentClient.phoneNumber}_${clientType}_$formType')) {
+            keysToRemove.add(key);
+          }
+        });
+        
+        for (final key in keysToRemove) {
+          _textControllers[key]?.dispose();
+          _textControllers.remove(key);
+        }
+        
+        debugPrint('🔧 FORM_AREA: Cleared controllers for client ${currentClient.phoneNumber}, type $clientType, form $formType after deletion');
+        
         if (isCreditForm) {
           _formService.removeCreditForm(currentClient.phoneNumber, index, isClient: isClient);
         } else {
@@ -455,6 +511,13 @@ class _FormAreaState extends State<FormArea> {
     final parts = key.split('_');
     final fieldType = parts.length >= 5 ? parts[4] : '';
     final cleanValue = _extractNumericValue(modelValue, fieldType);
+    
+    // FIX: Clear controller if it has old data and model value is empty
+    // But only if user is not currently typing to prevent interference
+    if (controller.text.isNotEmpty && cleanValue.isEmpty && !_typingControllers.contains(key)) {
+      controller.clear();
+      debugPrint('🔧 FORM_AREA: Cleared controller $key with old data');
+    }
     
     // TYPING GUARD: Don't update controller if user is currently typing
     if (_typingControllers.contains(key)) {
@@ -1035,6 +1098,7 @@ class _FormAreaState extends State<FormArea> {
 
   /// Construieste lista de formulare de credit folosind componentele specificate
   Widget _buildCreditFormsList(ClientModel client, List<CreditFormModel> forms, bool isClient) {
+    
     // Filtreaza doar formularele care au date (nu sunt goale)
     final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
     
@@ -1119,6 +1183,7 @@ class _FormAreaState extends State<FormArea> {
 
   /// Construieste lista de formulare de venit folosind componentele specificate
   Widget _buildIncomeFormsList(ClientModel client, List<IncomeFormModel> forms, bool isClient) {
+    
     // Filtreaza doar formularele care au date (nu sunt goale)
     final nonEmptyForms = forms.where((form) => !form.isEmpty).toList();
     
@@ -1407,6 +1472,13 @@ class _FormAreaState extends State<FormArea> {
         debugPrint('DEBUG: Credit selections reset to null');
       });
     }
+    
+    // FIX: Also clear any remaining controllers that might have old data
+    final currentClient = _clientService.focusedClient;
+    if (currentClient != null) {
+      _clearControllersForClientType(currentClient.phoneNumber, 'client', 'credit');
+      _clearControllersForClientType(currentClient.phoneNumber, 'coborrower', 'credit');
+    }
   }
 
   /// Reset income form selections
@@ -1418,6 +1490,13 @@ class _FormAreaState extends State<FormArea> {
         _newIncomeFormSelectedType = null;
         debugPrint('DEBUG: Income selections reset to null');
       });
+    }
+    
+    // FIX: Also clear any remaining controllers that might have old data
+    final currentClient = _clientService.focusedClient;
+    if (currentClient != null) {
+      _clearControllersForClientType(currentClient.phoneNumber, 'client', 'income');
+      _clearControllersForClientType(currentClient.phoneNumber, 'coborrower', 'income');
     }
   }
 
@@ -1481,31 +1560,10 @@ class _FormAreaState extends State<FormArea> {
       creditType: creditType,
     );
     
-    // Obtine lista de formulare si gaseste ultimul formular gol
-    final forms = isClient 
-        ? _formService.getClientCreditForms(client.phoneNumber)
-        : _formService.getCoborrowerCreditForms(client.phoneNumber);
+    // FIX: Create a completely new form list with only the new form
+    _formService.createNewCreditForm(client.phoneNumber, newForm, isClient: isClient);
     
-    debugPrint('DEBUG: Current forms count: ${forms.length}');
-    
-    // Gaseste ultimul formular gol pentru a-l actualiza
-    int lastEmptyIndex = forms.length - 1;
-    for (int i = forms.length - 1; i >= 0; i--) {
-      if (forms[i].isEmpty) {
-        lastEmptyIndex = i;
-        break;
-      }
-    }
-    
-    debugPrint('DEBUG: Updating form at index: $lastEmptyIndex');
-    
-    // Actualizeaza ultimul formular gol cu datele noi
-    _formService.updateCreditForm(
-      client.phoneNumber, 
-      lastEmptyIndex, 
-      newForm, 
-      isClient: isClient
-    );
+    debugPrint('DEBUG: Created new credit form with clean state');
     
     // Automatically save to Firebase after creating new form
     _autoSaveToFirebase(client);
@@ -1525,31 +1583,10 @@ class _FormAreaState extends State<FormArea> {
       incomeType: incomeType,
     );
     
-    // Obtine lista de formulare si gaseste ultimul formular gol
-    final forms = isClient 
-        ? _formService.getClientIncomeForms(client.phoneNumber)
-        : _formService.getCoborrowerIncomeForms(client.phoneNumber);
+    // FIX: Create a completely new form list with only the new form
+    _formService.createNewIncomeForm(client.phoneNumber, newForm, isClient: isClient);
     
-    debugPrint('DEBUG: Current forms count: ${forms.length}');
-    
-    // Gaseste ultimul formular gol pentru a-l actualiza
-    int lastEmptyIndex = forms.length - 1;
-    for (int i = forms.length - 1; i >= 0; i--) {
-      if (forms[i].isEmpty) {
-        lastEmptyIndex = i;
-        break;
-      }
-    }
-    
-    debugPrint('DEBUG: Updating form at index: $lastEmptyIndex');
-    
-    // Actualizeaza ultimul formular gol cu datele noi
-    _formService.updateIncomeForm(
-      client.phoneNumber, 
-      lastEmptyIndex, 
-      newForm, 
-      isClient: isClient
-    );
+    debugPrint('DEBUG: Created new income form with clean state');
     
     // Automatically save to Firebase after creating new form
     _autoSaveToFirebase(client);
