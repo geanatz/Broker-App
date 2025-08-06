@@ -134,26 +134,29 @@ class InputField3 extends StatelessWidget {
           ),
           if (trailingIconPath != null || trailingIcon != null) ...[
             SizedBox(width: AppTheme.mediumGap),
-            GestureDetector(
-              onTap: onIconTap,
-              child: SizedBox(
-                width: effectiveIconSize,
-                height: effectiveIconSize,
-                child: trailingIconPath != null
-                    ? SvgPicture.asset(
-                        trailingIconPath!,
-                        width: effectiveIconSize,
-                        height: effectiveIconSize,
-                        colorFilter: ColorFilter.mode(
-                          effectiveIconColor,
-                          BlendMode.srcIn,
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: onIconTap,
+                child: SizedBox(
+                  width: effectiveIconSize,
+                  height: effectiveIconSize,
+                  child: trailingIconPath != null
+                      ? SvgPicture.asset(
+                          trailingIconPath!,
+                          width: effectiveIconSize,
+                          height: effectiveIconSize,
+                          colorFilter: ColorFilter.mode(
+                            effectiveIconColor,
+                            BlendMode.srcIn,
+                          ),
+                        )
+                      : Icon(
+                          trailingIcon,
+                          color: effectiveIconColor,
+                          size: effectiveIconSize,
                         ),
-                      )
-                    : Icon(
-                        trailingIcon,
-                        color: effectiveIconColor,
-                        size: effectiveIconSize,
-                      ),
+                ),
               ),
             ),
           ],

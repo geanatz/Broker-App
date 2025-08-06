@@ -2,7 +2,6 @@ import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/sheets_service.dart';
 import 'package:broker_app/backend/services/update_service.dart';
 import 'package:broker_app/backend/services/llm_service.dart';
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
@@ -19,7 +18,6 @@ class SettingsArea extends StatefulWidget {
 
 class _SettingsAreaState extends State<SettingsArea> {
   late final MatcherService _matcherService;
-  late final GoogleDriveService _googleDriveService;
   final UpdateService _updateService = UpdateService();
   late final LLMService _llmService;
 
@@ -28,12 +26,10 @@ class _SettingsAreaState extends State<SettingsArea> {
     super.initState();
     // Foloseste serviciile pre-incarcate din splash
     _matcherService = SplashService().matcherService;
-    _googleDriveService = SplashService().googleDriveService;
     _llmService = SplashService().llmService;
     
     // Asculta schimbarile de la servicii pentru actualizari in timp real
     _matcherService.addListener(_onMatcherServiceChanged);
-    _googleDriveService.addListener(_onGoogleDriveServiceChanged);
     _llmService.addListener(_onLLMServiceChanged);
     
     // Incarca cheia API existenta
@@ -43,22 +39,12 @@ class _SettingsAreaState extends State<SettingsArea> {
   @override
   void dispose() {
     _matcherService.removeListener(_onMatcherServiceChanged);
-    _googleDriveService.removeListener(_onGoogleDriveServiceChanged);
     _llmService.removeListener(_onLLMServiceChanged);
     super.dispose();
   }
 
   /// Callback pentru schimbarile din MatcherService
   void _onMatcherServiceChanged() {
-    if (mounted) {
-      setState(() {
-        // UI-ul se va actualiza automat datorita setState
-      });
-    }
-  }
-
-  /// Callback pentru schimbarile din GoogleDriveService
-  void _onGoogleDriveServiceChanged() {
     if (mounted) {
       setState(() {
         // UI-ul se va actualiza automat datorita setState
@@ -105,11 +91,6 @@ class _SettingsAreaState extends State<SettingsArea> {
           
           const SizedBox(height: AppTheme.smallGap),
           
-          // Sectiunea pentru Google Drive
-          _buildGoogleDriveSection(),
-
-          const SizedBox(height: AppTheme.largeGap),
-          
           // Sectiunea pentru AI Chatbot
           _buildAIChatbotSection(),
 
@@ -128,87 +109,7 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 
-  /// Construiește secțiunea pentru Google Drive
-  Widget _buildGoogleDriveSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.smallGap),
-      clipBehavior: Clip.antiAlias,
-      decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Field Header pentru Google Drive
-          FieldHeader1(title: 'Google Drive'),
-          
-          const SizedBox(height: AppTheme.smallGap),
-          
-          // Status Google Drive
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppTheme.smallGap),
-            decoration: BoxDecoration(
-              color: AppTheme.containerColor2,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Status: ${_googleDriveService.isAuthenticated ? 'Conectat' : 'Deconectat'}',
-                  style: AppTheme.smallTextStyle,
-                ),
-                if (_googleDriveService.isAuthenticated) ...[
-                  const SizedBox(height: AppTheme.tinyGap),
-                  Text(
-                    'Email: ${_googleDriveService.userEmail ?? 'Necunoscut'}',
-                    style: AppTheme.tinyTextStyle,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: AppTheme.smallGap),
-          
-          // Buton pentru conectare/deconectare
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                if (_googleDriveService.isAuthenticated) {
-                  _googleDriveService.disconnect();
-                } else {
-                  _googleDriveService.connect();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.elementColor2,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: AppTheme.smallGap),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-                ),
-              ),
-                             child: Text(
-                 _googleDriveService.isAuthenticated ? 'Deconectare' : 'Conectare',
-                 style: AppTheme.smallTextStyle.copyWith(color: Colors.white),
-               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Construiește secțiunea pentru AI Chatbot
+  /// Construieste sectiunea pentru AI Chatbot
   Widget _buildAIChatbotSection() {
     return Container(
       width: double.infinity,
@@ -247,7 +148,7 @@ class _SettingsAreaState extends State<SettingsArea> {
                 ),
                 const SizedBox(height: AppTheme.tinyGap),
                 Text(
-                  'Asistentul AI este activ si disponibil pentru toți consultanții',
+                  'Asistentul AI este activ si disponibil pentru toti consultantii',
                   style: AppTheme.tinyTextStyle,
                 ),
               ],

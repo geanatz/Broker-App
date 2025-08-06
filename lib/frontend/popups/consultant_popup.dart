@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../components/headers/widget_header1.dart';
 import '../components/buttons/flex_buttons1.dart';
+import '../components/fields/input_field3.dart';
 import 'dart:async';
 import '../../main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../backend/services/splash_service.dart';
+import '../../backend/services/sheets_service.dart';
 
 /// Popup pentru afisarea detaliilor consultantului si optiunii de deconectare
-class ConsultantPopup extends StatelessWidget {
+class ConsultantPopup extends StatefulWidget {
   /// Numele consultantului
   final String consultantName;
   
@@ -21,19 +24,49 @@ class ConsultantPopup extends StatelessWidget {
     required this.teamName,
   });
 
+  @override
+  State<ConsultantPopup> createState() => _ConsultantPopupState();
+}
+
+class _ConsultantPopupState extends State<ConsultantPopup> {
+  late final GoogleDriveService _googleDriveService;
+
+  @override
+  void initState() {
+    super.initState();
+    _googleDriveService = SplashService().googleDriveService;
+    _googleDriveService.addListener(_onGoogleDriveServiceChanged);
+  }
+
+  @override
+  void dispose() {
+    _googleDriveService.removeListener(_onGoogleDriveServiceChanged);
+    super.dispose();
+  }
+
+  /// Callback pentru schimbarile din GoogleDriveService
+  void _onGoogleDriveServiceChanged() {
+    if (mounted) {
+      setState(() {
+        // UI-ul se va actualiza automat datorita setState
+      });
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     // Dimensiuni exacte conform specificatiilor din consultantPopup.md
     const double popupWidth = 320.0;
-    const double popupHeight = 272.0; // Ajustat pentru a evita overflow
 
     return Center(
       child: Material(
         color: Colors.transparent,
         child: Container(
           width: popupWidth,
-          height: popupHeight,
+          constraints: const BoxConstraints(
+            maxHeight: 500.0, // Limita maxima pentru a evita overflow pe ecrane mici
+          ),
           padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
           decoration: AppTheme.popupDecoration,
           child: Column(
@@ -74,13 +107,15 @@ class ConsultantPopup extends StatelessWidget {
         children: [
           _buildDetailField(
             title: "Consultant",
-            value: consultantName,
+            value: widget.consultantName,
           ),
           const SizedBox(height: AppTheme.smallGap), // 8px gap
           _buildDetailField(
             title: "Echipa",
-            value: teamName,
+            value: widget.teamName,
           ),
+          const SizedBox(height: AppTheme.smallGap), // 8px gap
+          _buildGoogleDriveField(),
         ],
       ),
     );
@@ -125,46 +160,73 @@ class ConsultantPopup extends StatelessWidget {
     );
   }
 
+  /// Construieste field-ul pentru Google Drive cu email si iconita
+  Widget _buildGoogleDriveField() {
+    return InputField3(
+      title: "Google Drive",
+      inputText: _googleDriveService.isAuthenticated 
+        ? (_googleDriveService.userEmail ?? 'Necunoscut')
+        : 'Conecteaza-te',
+      trailingIconPath: _googleDriveService.isAuthenticated 
+        ? "assets/logoutIcon.svg"
+        : null,
+      trailingIcon: _googleDriveService.isAuthenticated 
+        ? null
+        : Icons.open_in_new, // Iconita pentru deschidere in browser
+      onIconTap: () {
+        if (_googleDriveService.isAuthenticated) {
+          _googleDriveService.disconnect();
+        } else {
+          _googleDriveService.connect();
+        }
+      },
+      iconColor: AppTheme.elementColor2, // Culoare pentru iconite
+    );
+  }
+
   /// Construieste butonul de deconectare
   Widget _buildLogoutButton(BuildContext context) {
     return SizedBox(
       height: 48,
-      child: FlexButtonSingle(
-        onTap: () async {
-          
-          try {
-            // Salvam referinta la navigator INAINTE de pop
-            final navigator = Navigator.of(context);
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: FlexButtonSingle(
+          onTap: () async {
             
-            // Close popup first
-            navigator.pop();
-            
-            // Sign out from Firebase
-            await FirebaseAuth.instance.signOut();
-            
-            // Abordare directă - forțăm navigația imediată către AuthScreen
-            await _forceLogoutNavigation(navigator);
-            
-          } catch (e) {
-            
-            // In caz de eroare, incearca sa închida popup-ul oricum
-            if (context.mounted) {
-              Navigator.of(context).pop();
+            try {
+              // Salvam referinta la navigator INAINTE de pop
+              final navigator = Navigator.of(context);
+              
+              // Close popup first
+              navigator.pop();
+              
+              // Sign out from Firebase
+              await FirebaseAuth.instance.signOut();
+              
+              // Abordare directa - fortam navigatia imediata catre AuthScreen
+              await _forceLogoutNavigation(navigator);
+              
+            } catch (e) {
+              
+              // In caz de eroare, incearca sa inchida popup-ul oricum
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
             }
-          }
-        },
-        text: "Deconectare",
-        iconPath: "assets/logoutIcon.svg",
-        textStyle: AppTheme.safeOutfit(
-          fontSize: AppTheme.fontSizeMedium, // 17px
-          fontWeight: FontWeight.w500, // medium
-          color: AppTheme.elementColor2, // #886699
+          },
+          text: "Deconectare",
+          iconPath: "assets/logoutIcon.svg",
+          textStyle: AppTheme.safeOutfit(
+            fontSize: AppTheme.fontSizeMedium, // 17px
+            fontWeight: FontWeight.w500, // medium
+            color: AppTheme.elementColor2, // #886699
+          ),
         ),
       ),
     );
   }
 
-  /// Forțează navigația către AuthScreen după logout
+  /// Forteaza navigatia catre AuthScreen dupa logout
   Future<void> _forceLogoutNavigation(NavigatorState navigator) async {
     
     // Verificam ca signOut-ul a reusit
@@ -176,7 +238,7 @@ class ConsultantPopup extends StatelessWidget {
       await Future.delayed(const Duration(milliseconds: 100));
     }
     
-    // Ștergem preferințele de navigație pentru a forța default-urile (dashboard, clients)
+    // Stergem preferintele de navigatie pentru a forta default-urile (dashboard, clients)
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('main_screen_current_area');

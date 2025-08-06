@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-/// Logger specializat pentru operațiile OCR
+/// Logger specializat pentru operatiile OCR
 class OCRLogger {
   static final OCRLogger _instance = OCRLogger._internal();
   factory OCRLogger() => _instance;
@@ -11,7 +11,7 @@ class OCRLogger {
   bool _isEnabled = true;
   LogLevel _minLevel = LogLevel.info;
 
-  /// Activează/dezactivează logging-ul
+  /// Activeaza/dezactiveaza logging-ul
   void setEnabled(bool enabled) {
     _isEnabled = enabled;
     if (enabled) {
@@ -19,7 +19,7 @@ class OCRLogger {
     }
   }
 
-  /// Setează nivelul minim de logging
+  /// Seteaza nivelul minim de logging
   void setMinLevel(LogLevel level) {
     _minLevel = level;
     info('OCR_LOGGER', 'Nivel minim setat la: ${level.name}');
@@ -59,16 +59,16 @@ class OCRLogger {
 
     _logs.add(entry);
     
-    // Limitează numărul de log-uri (păstrează ultimele 1000)
+    // Limiteaza numarul de log-uri (pastreaza ultimele 1000)
     if (_logs.length > 1000) {
       _logs.removeRange(0, _logs.length - 1000);
     }
 
-    // Output în consolă
+    // Output in consola
     _printToConsole(entry);
   }
 
-  /// Afișează log-ul în consolă cu formatare colorată
+  /// Afiseaza log-ul in consola cu formatare colorata
   void _printToConsole(LogEntry entry) {
     final emoji = _getEmojiForLevel(entry.level);
     final timestamp = _formatTimestamp(entry.timestamp);
@@ -97,7 +97,7 @@ class OCRLogger {
     }
   }
 
-  /// Formatează timestamp-ul
+  /// Formateaza timestamp-ul
   String _formatTimestamp(DateTime timestamp) {
     return '${timestamp.hour.toString().padLeft(2, '0')}:'
            '${timestamp.minute.toString().padLeft(2, '0')}:'
@@ -107,19 +107,19 @@ class OCRLogger {
 
   // Metode specifice pentru OCR
 
-  /// Log pentru începutul procesării unei imagini
+  /// Log pentru inceputul procesarii unei imagini
   void startImageProcessing(String imageName, int imageSize) {
-    info('IMAGE_PROCESSING', 'Începe procesarea imaginii: $imageName (${_formatFileSize(imageSize)})', {
+    info('IMAGE_PROCESSING', 'Incepe procesarea imaginii: $imageName (${_formatFileSize(imageSize)})', {
       'image_name': imageName,
       'image_size_bytes': imageSize,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     });
   }
 
-  /// Log pentru finalizarea procesării unei imagini
+  /// Log pentru finalizarea procesarii unei imagini
   void completeImageProcessing(String imageName, int duration, bool success, [String? error]) {
     if (success) {
-      info('IMAGE_PROCESSING', 'Imagine procesată cu succes: $imageName în ${duration}ms', {
+      info('IMAGE_PROCESSING', 'Imagine procesata cu succes: $imageName in ${duration}ms', {
         'image_name': imageName,
         'duration_ms': duration,
         'success': true,
@@ -140,16 +140,16 @@ class OCRLogger {
 
   /// Log pentru contactele detectate
   void logContactsDetected(String imageName, int contactCount, List<String> contactNames) {
-    info('CONTACT_DETECTION', 'Detectate $contactCount contacte în $imageName: ${contactNames.join(', ')}', {
+    info('CONTACT_DETECTION', 'Detectate $contactCount contacte in $imageName: ${contactNames.join(', ')}', {
       'image_name': imageName,
       'contact_count': contactCount,
       'contact_names': contactNames,
     });
   }
 
-  /// Log pentru îmbunătățirea imaginii
+  /// Log pentru imbunatatirea imaginii
   void logImageEnhancement(String imageName, String enhancements) {
-    debug('IMAGE_ENHANCEMENT', 'Imagine îmbunătățită: $imageName - $enhancements', {
+    debug('IMAGE_ENHANCEMENT', 'Imagine imbunatatita: $imageName - $enhancements', {
       'image_name': imageName,
       'enhancements': enhancements,
     });
@@ -157,23 +157,23 @@ class OCRLogger {
 
   /// Log pentru transformarea textului
   void logTextTransformation(String originalLength, String cleanedLength, int improvements) {
-    debug('TEXT_TRANSFORMATION', 'Text transformat: $originalLength → $cleanedLength caractere, $improvements îmbunătățiri', {
+    debug('TEXT_TRANSFORMATION', 'Text transformat: $originalLength → $cleanedLength caractere, $improvements imbunatatiri', {
       'original_length': originalLength,
       'cleaned_length': cleanedLength,
       'improvements_count': improvements,
     });
   }
 
-  /// Log pentru performanță
+  /// Log pentru performanta
   void logPerformanceMetric(String operation, int durationMs, Map<String, dynamic> metrics) {
-    debug('PERFORMANCE', '$operation completată în ${durationMs}ms', {
+    debug('PERFORMANCE', '$operation completata in ${durationMs}ms', {
       'operation': operation,
       'duration_ms': durationMs,
       ...metrics,
     });
   }
 
-  /// Obține log-urile filtrate
+  /// Obtine log-urile filtrate
   List<LogEntry> getLogs({
     LogLevel? minLevel,
     String? category,
@@ -187,7 +187,7 @@ class OCRLogger {
     }).toList();
   }
 
-  /// Obține statistici de logging
+  /// Obtine statistici de logging
   LogStatistics getStatistics() {
     final now = DateTime.now();
     final last24h = now.subtract(const Duration(hours: 24));
@@ -217,7 +217,7 @@ class OCRLogger {
     );
   }
 
-  /// Exportă log-urile într-un format text
+  /// Exporta log-urile intr-un format text
   String exportLogs({
     LogLevel? minLevel,
     String? category,
@@ -241,10 +241,10 @@ class OCRLogger {
     return buffer.toString();
   }
 
-  /// Salvează log-urile într-un fișier (doar pe desktop)
+  /// Salveaza log-urile intr-un fisier (doar pe desktop)
   Future<bool> saveLogsToFile(String filePath) async {
     if (kIsWeb) {
-      warning('FILE_EXPORT', 'Salvarea în fișier nu este suportată pe web');
+      warning('FILE_EXPORT', 'Salvarea in fisier nu este suportata pe web');
       return false;
     }
     
@@ -253,7 +253,7 @@ class OCRLogger {
       final content = exportLogs();
       await file.writeAsString(content);
       
-      info('FILE_EXPORT', 'Log-uri salvate în: $filePath');
+      info('FILE_EXPORT', 'Log-uri salvate in: $filePath');
       return true;
     } catch (e) {
       error('FILE_EXPORT', 'Eroare la salvarea log-urilor: $e');
@@ -261,7 +261,7 @@ class OCRLogger {
     }
   }
 
-  /// Curăță log-urile vechi
+  /// Curata log-urile vechi
   void clearOldLogs([Duration? olderThan]) {
     final cutoff = DateTime.now().subtract(olderThan ?? const Duration(days: 7));
     final oldCount = _logs.length;
@@ -270,18 +270,18 @@ class OCRLogger {
     
     final removedCount = oldCount - _logs.length;
     if (removedCount > 0) {
-      info('MAINTENANCE', 'Șterse $removedCount log-uri vechi');
+      info('MAINTENANCE', 'Sterse $removedCount log-uri vechi');
     }
   }
 
-  /// Curăță toate log-urile
+  /// Curata toate log-urile
   void clearAllLogs() {
     final count = _logs.length;
     _logs.clear();
-    info('MAINTENANCE', 'Șterse toate log-urile ($count intrări)');
+    info('MAINTENANCE', 'Sterse toate log-urile ($count intrari)');
   }
 
-  /// Formatează dimensiunea fișierului
+  /// Formateaza dimensiunea fisierului
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '${bytes}B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
@@ -300,7 +300,7 @@ enum LogLevel {
   final int priority;
 }
 
-/// O intrare în log
+/// O intrare in log
 class LogEntry {
   final LogLevel level;
   final String category;

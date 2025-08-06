@@ -4,7 +4,6 @@ import 'package:broker_app/app_theme.dart';
 import 'package:broker_app/utils/smooth_scroll_behavior.dart';
 import 'package:broker_app/backend/services/form_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/sidebar_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:broker_app/backend/services/clients_service.dart';
@@ -933,7 +932,7 @@ class _FormAreaState extends State<FormArea> {
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(
                   onTap: () {
-                    // Navighează la clients_pane
+                    // Navigheaza la clients_pane
                     widget.onNavigateToClients?.call();
                   },
                   child: Container(

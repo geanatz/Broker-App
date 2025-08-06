@@ -313,9 +313,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
   void initState() {
     super.initState();
     
-    // Listener manual optimizat - doar când se schimbă efectiv starea
+    // Listener manual optimizat - doar cand se schimaa efectiv starea
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
-      // Doar dacă utilizatorul s-a schimbat efectiv
+      // Doar daca utilizatorul s-a schimbat efectiv
       if (_lastKnownUser?.uid != user?.uid) {
         _lastKnownUser = user;
         if (mounted) {
@@ -345,11 +345,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
         
-        // Folosim datele din stream ca sursă primară de adevăr
+        // Folosim datele din stream ca sursa primara de adevar
         final streamUser = snapshot.data;
         final currentUser = FirebaseAuth.instance.currentUser;
         
-        // Verificare dublă - considerăm utilizatorul autentificat doar dacă ambele confirmă
+        // Verificare dubla - consideram utilizatorul autentificat doar daca ambele confirma
         final hasUser = streamUser != null && currentUser != null;
         
         if (hasUser) {
