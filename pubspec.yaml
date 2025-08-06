@@ -120,4 +120,7 @@ flutter:
     - assets/logoutIcon.svg
     - assets/homeIcon.svg
     - assets/historyIcon.svg
+    - assets/coffeeIcon.svg
+    - assets/sendIcon.svg
+    - assets/chatIcon.svg
     - lib/backend/ocr/names.json

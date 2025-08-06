@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:broker_app/app_theme.dart';
+import 'package:broker_app/utils/smooth_scroll_behavior.dart';
 import 'package:broker_app/backend/services/form_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:broker_app/backend/services/sidebar_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:broker_app/backend/services/clients_service.dart';
@@ -17,7 +19,16 @@ import '../../backend/services/app_logger.dart' as app_log;
 /// Aceasta componenta inlocuieste vechiul FormScreen pastrand functionalitatea
 /// dar fiind adaptata la noua structura a aplicatiei.
 class FormArea extends StatefulWidget {
-  const FormArea({super.key});
+  /// Callback pentru navigarea la clients_pane
+  final VoidCallback? onNavigateToClients;
+  /// Indica daca clients_pane este vizibil
+  final bool isClientsPaneVisible;
+  
+  const FormArea({
+    super.key,
+    this.onNavigateToClients,
+    this.isClientsPaneVisible = false,
+  });
 
   @override
   State<FormArea> createState() => _FormAreaState();
@@ -30,6 +41,10 @@ class _FormAreaState extends State<FormArea> {
   
   // Text controllers pentru input fields
   final Map<String, TextEditingController> _textControllers = {};
+  
+  // ScrollController pentru smooth scrolling
+  final ScrollController _creditScrollController = ScrollController();
+  final ScrollController _incomeScrollController = ScrollController();
   
   // Debounce timer for saving controller values
   Timer? _saveTimer;
@@ -81,6 +96,10 @@ class _FormAreaState extends State<FormArea> {
     // Cleanup timers
     _saveTimer?.cancel();
     _clientChangeTimer?.cancel();
+    
+    // Cleanup scroll controllers
+    _creditScrollController.dispose();
+    _incomeScrollController.dispose();
     
     // Remove listeners
     _clientService.removeListener(_onClientServiceChanged);
@@ -908,6 +927,33 @@ class _FormAreaState extends State<FormArea> {
                 color: AppTheme.elementColor1,
               ),
             ),
+            if (!widget.isClientsPaneVisible) ...[
+              const SizedBox(height: AppTheme.mediumGap),
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    // Navighează la clients_pane
+                    widget.onNavigateToClients?.call();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.containerColor1,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'Vezi clienti',
+                      style: AppTheme.safeOutfit(
+                        color: AppTheme.elementColor2,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1175,8 +1221,15 @@ class _FormAreaState extends State<FormArea> {
           borderRadius: BorderRadius.circular(24),
         ),
       ),
-      child: ListView(
-        children: allWidgets,
+      child: SmoothScrollWrapper(
+        controller: _creditScrollController,
+        scrollSpeed: 100.0,
+        animationDuration: const Duration(milliseconds: 250),
+        child: ListView(
+          controller: _creditScrollController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: allWidgets,
+        ),
       ),
     );
   }
@@ -1260,8 +1313,15 @@ class _FormAreaState extends State<FormArea> {
           borderRadius: BorderRadius.circular(24),
         ),
       ),
-      child: ListView(
-        children: allWidgets,
+      child: SmoothScrollWrapper(
+        controller: _incomeScrollController,
+        scrollSpeed: 100.0,
+        animationDuration: const Duration(milliseconds: 250),
+        child: ListView(
+          controller: _incomeScrollController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: allWidgets,
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'package:broker_app/utils/smooth_scroll_behavior.dart';
 
 
 import 'package:broker_app/frontend/popups/meeting_popup.dart';
@@ -437,11 +438,16 @@ class CalendarAreaState extends State<CalendarArea> {
         }
       }
 
-      return SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
+      return SmoothScrollWrapper(
         controller: _scrollController,
-        child: Column(
-          children: _buildHourRows(meetingsMap, meetingsDocIds),
+        scrollSpeed: 120.0, // Viteza mai mare pentru calendarul cu multe randuri
+        animationDuration: const Duration(milliseconds: 300),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
+          controller: _scrollController,
+          child: Column(
+            children: _buildHourRows(meetingsMap, meetingsDocIds),
+          ),
         ),
       );
     }

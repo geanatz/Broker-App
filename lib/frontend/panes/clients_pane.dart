@@ -1,6 +1,7 @@
 import '../../app_theme.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../utils/smooth_scroll_behavior.dart';
 import '../components/headers/widget_header2.dart';
 import '../components/headers/widget_header3.dart';
 import '../components/items/dark_item7.dart';
@@ -45,6 +46,11 @@ class _ClientsPaneState extends State<ClientsPane> {
   // Stari pentru collapse/expand sectiuni (doar pentru Reveniri si Recente)
   bool _isReveniriCollapsed = false;
   bool _isRecenteCollapsed = false;
+  
+  // ScrollController pentru smooth scrolling
+  final ScrollController _apelurieScrollController = ScrollController();
+  final ScrollController _reveniriScrollController = ScrollController();
+  final ScrollController _recenteScrollController = ScrollController();
   
   // OPTIMIZARE: Cache pentru clienți cu timestamp
   List<ClientModel> _cachedClients = [];
@@ -182,6 +188,9 @@ class _ClientsPaneState extends State<ClientsPane> {
     _refreshDebounceTimer?.cancel();
     _clientService.removeListener(_onClientServiceChanged);
     _splashService.removeListener(_onSplashServiceChanged);
+    _apelurieScrollController.dispose();
+    _reveniriScrollController.dispose();
+    _recenteScrollController.dispose();
     super.dispose();
   }
 
@@ -242,10 +251,17 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isApeluri = category == ClientCategory.apeluri;
     
     if (isApeluri) {
-      return ListView.separated(
-        itemCount: clients.length,
-        separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
-        itemBuilder: (context, index) => _buildClientItem(clients[index]),
+      return SmoothScrollWrapper(
+        controller: _apelurieScrollController,
+        scrollSpeed: 80.0,
+        animationDuration: const Duration(milliseconds: 250),
+        child: ListView.separated(
+          controller: _apelurieScrollController,
+          physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
+          itemCount: clients.length,
+          separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
+          itemBuilder: (context, index) => _buildClientItem(clients[index]),
+        ),
       );
     } else {
       const int maxVisibleClients = 3;
@@ -258,12 +274,23 @@ class _ClientsPaneState extends State<ClientsPane> {
           ? (itemHeight * itemsToShow) + (gapHeight * (itemsToShow - 1))
           : 60.0; // Fallback pentru empty state
       
+      final scrollController = category == ClientCategory.reveniri 
+          ? _reveniriScrollController 
+          : _recenteScrollController;
+      
       return SizedBox(
         height: totalHeight,
-        child: ListView.separated(
-          itemCount: clients.length,
-          separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
-          itemBuilder: (context, index) => _buildClientItem(clients[index]),
+        child: SmoothScrollWrapper(
+          controller: scrollController,
+          scrollSpeed: 60.0,
+          animationDuration: const Duration(milliseconds: 200),
+          child: ListView.separated(
+            controller: scrollController,
+            physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
+            itemCount: clients.length,
+            separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
+            itemBuilder: (context, index) => _buildClientItem(clients[index]),
+          ),
         ),
       );
     }

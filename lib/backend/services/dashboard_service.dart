@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 class ConsultantRanking {
   final String id;
   final String name;
+  final String team;
   final int score;
   final int formsCompleted;
   final int callsMade;
@@ -17,6 +18,7 @@ class ConsultantRanking {
   ConsultantRanking({
     required this.id,
     required this.name,
+    required this.team,
     required this.score,
     required this.formsCompleted,
     required this.callsMade,
@@ -104,9 +106,8 @@ class DashboardService extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Navigare luni - separate pentru fiecare clasament
-  DateTime _selectedMonthConsultants = DateTime.now();
-  DateTime _selectedMonthTeams = DateTime.now();
+  // Navigare luni - unificata pentru clasamentul combinat
+  DateTime _selectedMonth = DateTime.now();
 
   // FIX: Cache pentru separarea datelor per consultant
   String? _currentConsultantToken;
@@ -124,28 +125,13 @@ class DashboardService extends ChangeNotifier {
   String? get dutyAgent => _dutyAgent;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  DateTime get selectedMonthConsultants => _selectedMonthConsultants;
-  DateTime get selectedMonthTeams => _selectedMonthTeams;
+  DateTime get selectedMonth => _selectedMonth;
 
   User? get _currentUser => _auth.currentUser;
 
-  // Eliminam metodele vechi dar păstrăm pentru backwards compatibility
-  DateTime get selectedMonth => _selectedMonthConsultants; // backwards compatibility
-
-  void goToPreviousMonth() {
-    // deprecated - kept for backwards compatibility
-    goToPreviousMonthConsultants();
-  }
-
-  void goToNextMonth() {
-    // deprecated - kept for backwards compatibility  
-    goToNextMonthConsultants();
-  }
-
-  void goToCurrentMonth() {
-    // deprecated - kept for backwards compatibility
-    goToCurrentMonthConsultants();
-  }
+  // Backwards compatibility - păstrăm pentru compatibilitate
+  DateTime get selectedMonthConsultants => _selectedMonth;
+  DateTime get selectedMonthTeams => _selectedMonth;
 
 
   /// FIX: Resetează cache-ul și forțează refresh pentru un nou consultant
@@ -191,40 +177,43 @@ class DashboardService extends ChangeNotifier {
     }
   }
 
-  /// Navigheaza la luna anterioara pentru clasamentul consultantilor
-  void goToPreviousMonthConsultants() {
-    _selectedMonthConsultants = DateTime(_selectedMonthConsultants.year, _selectedMonthConsultants.month - 1, 1);
-    _refreshConsultantsRankingForSelectedMonth();
+  /// Navigheaza la luna anterioara pentru clasamentul combinat
+  void goToPreviousMonth() {
+    _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1, 1);
+    _refreshRankingsForSelectedMonth();
   }
 
-  /// Navigheaza la luna urmatoare pentru clasamentul consultantilor
-  void goToNextMonthConsultants() {
-    _selectedMonthConsultants = DateTime(_selectedMonthConsultants.year, _selectedMonthConsultants.month + 1, 1);
-    _refreshConsultantsRankingForSelectedMonth();
+  /// Navigheaza la luna urmatoare pentru clasamentul combinat
+  void goToNextMonth() {
+    _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 1);
+    _refreshRankingsForSelectedMonth();
   }
 
-  /// Navigheaza la luna curenta pentru clasamentul consultantilor
-  void goToCurrentMonthConsultants() {
-    _selectedMonthConsultants = DateTime.now();
-    _refreshConsultantsRankingForSelectedMonth();
+  /// Navigheaza la luna curenta pentru clasamentul combinat
+  void goToCurrentMonth() {
+    _selectedMonth = DateTime.now();
+    _refreshRankingsForSelectedMonth();
   }
 
-  /// Navigheaza la luna anterioara pentru clasamentul echipelor
-  void goToPreviousMonthTeams() {
-    _selectedMonthTeams = DateTime(_selectedMonthTeams.year, _selectedMonthTeams.month - 1, 1);
-    _refreshTeamsRankingForSelectedMonth();
-  }
+  // Backwards compatibility methods
+  void goToPreviousMonthConsultants() => goToPreviousMonth();
+  void goToNextMonthConsultants() => goToNextMonth();
+  void goToCurrentMonthConsultants() => goToCurrentMonth();
+  void goToPreviousMonthTeams() => goToPreviousMonth();
+  void goToNextMonthTeams() => goToNextMonth();
+  void goToCurrentMonthTeams() => goToCurrentMonth();
 
-  /// Navigheaza la luna urmatoare pentru clasamentul echipelor
-  void goToNextMonthTeams() {
-    _selectedMonthTeams = DateTime(_selectedMonthTeams.year, _selectedMonthTeams.month + 1, 1);
-    _refreshTeamsRankingForSelectedMonth();
-  }
-
-  /// Navigheaza la luna curenta pentru clasamentul echipelor
-  void goToCurrentMonthTeams() {
-    _selectedMonthTeams = DateTime.now();
-    _refreshTeamsRankingForSelectedMonth();
+  /// Reincarca toate clasamentele pentru luna selectata
+  Future<void> _refreshRankingsForSelectedMonth() async {
+    try {
+      await Future.wait([
+        _loadConsultantsRanking(),
+        _loadTeamsRanking(),
+      ]);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Error refreshing rankings: $e');
+    }
   }
 
   /// Reincarca clasamentul consultantilor pentru luna selectata
@@ -237,15 +226,6 @@ class DashboardService extends ChangeNotifier {
     }
   }
 
-  /// Reincarca clasamentul echipelor pentru luna selectata
-  Future<void> _refreshTeamsRankingForSelectedMonth() async {
-    try {
-      await _loadTeamsRanking();
-      notifyListeners(); // Adăugat notifyListeners după încărcare
-    } catch (e) {
-      debugPrint('❌ DASHBOARD_SERVICE: Error refreshing teams ranking: $e');
-    }
-  }
 
   /// Incarca toate datele dashboard-ului (FIX: verifică consultant înainte de încărcare)
   Future<void> loadDashboardData() async {
@@ -307,7 +287,7 @@ class DashboardService extends ChangeNotifier {
         return;
       }
 
-      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonthConsultants);
+      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
       final monthlyStatsSnapshot = await _firestore
           .collection('data')
           .doc('stats')
@@ -322,6 +302,7 @@ class DashboardService extends ChangeNotifier {
         final consultantData = consultantDoc.data();
         final consultantToken = consultantData['token'] as String?;
         final consultantName = consultantData['name'] as String? ?? 'Necunoscut';
+        final consultantTeam = consultantData['team'] as String? ?? '';
         
         if (consultantToken == null) {
           return null;
@@ -336,6 +317,7 @@ class DashboardService extends ChangeNotifier {
         return ConsultantRanking(
           id: consultantDoc.id, // Păstrăm UID-ul pentru identificare
           name: consultantName,
+          team: consultantTeam,
           score: score,
           formsCompleted: forms.toInt(),
           callsMade: 0,
@@ -354,7 +336,7 @@ class DashboardService extends ChangeNotifier {
   /// Incarca clasamentul echipelor din Firebase (FIX: folosește consultantToken pentru stats)
   Future<void> _loadTeamsRanking() async {
     try {
-      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonthTeams);
+      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
       final monthlyStatsSnapshot = await _firestore
           .collection('data')
           .doc('stats')
@@ -483,7 +465,7 @@ class DashboardService extends ChangeNotifier {
   /// Calculeaza statisticile agregate pentru un consultant (FIX: robust cu casting corect)
   Future<Map<String, int>> calculateConsultantStatsOptimized(String consultantToken) async {
     try {
-      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonthConsultants);
+      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
       
       final doc = await _firestore
           .collection('data')

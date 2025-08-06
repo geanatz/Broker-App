@@ -265,7 +265,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Widgets pentru area
   Map<AreaType, Widget> get _areaWidgets => {
     AreaType.dashboard: DashboardArea(),
-    AreaType.form: FormArea(),
+    AreaType.form: FormArea(
+      onNavigateToClients: () {
+        _sidebarService.changePane(PaneType.clients);
+      },
+      isClientsPaneVisible: _currentPane == PaneType.clients,
+    ),
     AreaType.calendar: CalendarArea(
       key: _calendarKey,
       onMeetingSaved: _refreshMeetingsPane,

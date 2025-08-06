@@ -97,16 +97,20 @@ class LLMService extends ChangeNotifier {
       return;
     }
 
+    debugPrint('🤖 AI_DEBUG: Incepe procesarea intrebarii: "$userMessage"');
     _setLoading(true);
     _errorMessage = null;
 
     try {
       // OPTIMIZARE: Construieste promptul extins cu context live din Firestore
+      debugPrint('🤖 AI_DEBUG: Construire prompt cu context...');
       final extendedPrompt = await buildPromptWithContext(userMessage);
       
       // Construiește contextul pentru LLM
       final systemPrompt = _buildSystemPrompt();
       final conversationHistory = _buildConversationHistory();
+      
+      debugPrint('🤖 AI_DEBUG: Istoric conversatie: ${conversationHistory.length} mesaje');
       
       // Construiește mesajele pentru Gemini API
       final messages = <Map<String, dynamic>>[];
@@ -131,6 +135,8 @@ class LLMService extends ChangeNotifier {
         'parts': [{'text': extendedPrompt}],
       });
       
+      debugPrint('🤖 AI_DEBUG: Trimite cerere la Gemini API (${messages.length} mesaje)...');
+      
       final response = await http.post(
         Uri.parse('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$_apiKey'),
         headers: {
@@ -142,9 +148,13 @@ class LLMService extends ChangeNotifier {
         }),
       );
 
+      debugPrint('🤖 AI_DEBUG: Raspuns API status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final assistantMessage = data['candidates'][0]['content']['parts'][0]['text'];
+        
+        debugPrint('🤖 AI_DEBUG: Raspuns AI generat: "${assistantMessage.substring(0, assistantMessage.length > 100 ? 100 : assistantMessage.length)}..."');
         
         final message = ChatMessage(
           content: assistantMessage,
@@ -153,15 +163,19 @@ class LLMService extends ChangeNotifier {
         );
         
         _messages.add(message);
+        debugPrint('🤖 AI_DEBUG: Raspuns adaugat cu succes');
       } else {
         final errorData = jsonDecode(response.body);
-        _errorMessage = 'Eroare API: ${errorData['error']['message'] ?? 'Eroare necunoscuta'}';
+        final errorMsg = 'Eroare API: ${errorData['error']['message'] ?? 'Eroare necunoscuta'}';
+        debugPrint('❌ AI_DEBUG: Eroare API: $errorMsg');
+        _errorMessage = errorMsg;
       }
     } catch (e) {
-      debugPrint('❌ LLM_SERVICE: Error sending message: $e');
+      debugPrint('❌ AI_DEBUG: Eroare procesare: $e');
       _errorMessage = 'Eroare de conexiune: $e';
     } finally {
       _setLoading(false);
+      debugPrint('🤖 AI_DEBUG: Procesare finalizata');
     }
   }
 
@@ -196,6 +210,28 @@ class LLMService extends ChangeNotifier {
     _messages.clear();
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Șterge ultimul mesaj
+  void removeLastMessage() {
+    if (_messages.isNotEmpty) {
+      _messages.removeLast();
+      notifyListeners();
+    }
+  }
+
+  /// Retrimite ultimul mesaj al utilizatorului fără să-l adauge din nou
+  void retryLastUserMessage() {
+    if (_messages.isNotEmpty) {
+      // Găsește ultimul mesaj al utilizatorului
+      for (int i = _messages.length - 1; i >= 0; i--) {
+        if (_messages[i].isUser) {
+          // Trimite din nou mesajul către AI fără să-l adauge în listă
+          _sendMessageToLLM(_messages[i].content);
+          break;
+        }
+      }
+    }
   }
 
   /// Setează starea de loading
@@ -235,43 +271,43 @@ class LLMService extends ChangeNotifier {
 
   /// Extrage contextul complet pentru consultantul activ (date live din Firestore)
   Future<Map<String, dynamic>> getConsultantContextData() async {
+    debugPrint('🤖 AI_DEBUG: Extragere context consultant...');
+    
     // 1. Extrage toti clientii (live)
     final clients = await ClientsService().getAllClients();
-    debugPrint('LLM_DEBUG: clients extrasi: ${clients.length}');
-    // Log detaliat pentru a vedea structura formData
-    for (int i = 0; i < clients.length; i++) {
+    debugPrint('🤖 AI_DEBUG: Clienti extrasi: ${clients.length}');
+    
+    // Log detaliat pentru a vedea structura formData (doar primii 3 clienti pentru a nu aglomera logurile)
+    for (int i = 0; i < clients.length && i < 3; i++) {
       final client = clients[i];
       final formData = client.formData;
-      debugPrint('LLM_DEBUG: Client ${i + 1} - ${client.name}:');
+      debugPrint('🤖 AI_DEBUG: Client ${i + 1} - ${client.name}:');
       debugPrint('  - clientCredits: ${formData['clientCredits']}');
       debugPrint('  - coDebitorCredits: ${formData['coDebitorCredits']}');
       debugPrint('  - clientIncomes: ${formData['clientIncomes']}');
       debugPrint('  - coDebitorIncomes: ${formData['coDebitorIncomes']}');
-      debugPrint('  - formData keys: ${formData.keys.toList()}');
     }
 
     // 2. Extrage toate intalnirile (live)
     final meetingsRaw = await NewFirebaseService().getAllMeetings();
-    debugPrint('LLM_DEBUG: meetingsRaw type: [33m${meetingsRaw.runtimeType}[0m, len: ${meetingsRaw.length}');
-    if (meetingsRaw.isNotEmpty) {
-      debugPrint('LLM_DEBUG: meetingsRaw[0] type: ${meetingsRaw[0].runtimeType}, keys: ${(meetingsRaw[0]).keys}');
-    }
+    debugPrint('🤖 AI_DEBUG: Intalniri extrase: ${meetingsRaw.length}');
+    
     // Cast explicit la Map<String, dynamic> daca e nevoie
     final meetings = meetingsRaw.map((m) => m).toList();
-    debugPrint('LLM_DEBUG: meetings dupa cast: ${meetings.length}');
 
     // 3. Extrage statisticile consultantului (live)
     final consultantData = await ConsultantService().getCurrentConsultantData();
     final consultantToken = consultantData?['token'] ?? '';
     final consultantName = consultantData?['name'] ?? 'Necunoscut';
     final stats = await DashboardService().calculateConsultantStatsOptimized(consultantToken);
-    debugPrint('LLM_DEBUG: stats: $stats');
+    debugPrint('🤖 AI_DEBUG: Statistici calculate pentru consultant: $consultantName');
 
     // 4. Extrage agentul de serviciu
     final dashboardService = DashboardService();
     final dutyAgent = dashboardService.dutyAgent ?? 'Necunoscut'; // Foloseste cache-ul existent
-    debugPrint('LLM_DEBUG: consultantName: $consultantName, dutyAgent: $dutyAgent');
+    debugPrint('🤖 AI_DEBUG: Agent serviciu: $dutyAgent');
 
+    debugPrint('🤖 AI_DEBUG: Context extras cu succes');
     return {
       'consultantToken': consultantToken,
       'consultantName': consultantName,
@@ -292,35 +328,68 @@ class LLMService extends ChangeNotifier {
     final meetings = contextData['meetings'] ?? [];
     final stats = contextData['stats'] ?? {};
 
-    debugPrint('LLM_DEBUG: buildPromptWithContext meetings type:  [33m${meetings.runtimeType} [0m, len: ${meetings.length}');
-    if (meetings.isNotEmpty) {
-      debugPrint('LLM_DEBUG: buildPromptWithContext meetings[0] type: ${meetings[0].runtimeType}, keys: ${(meetings[0] as Map<String, dynamic>).keys}');
-    }
+    debugPrint('🤖 AI_DEBUG: Procesare intrebare: "$userMessage"');
+    debugPrint('🤖 AI_DEBUG: Consultant: $consultantName ($consultantToken)');
+    debugPrint('🤖 AI_DEBUG: Total clienti: ${clients.length}');
+    debugPrint('🤖 AI_DEBUG: Total intalniri: ${meetings.length}');
 
-    // Rezumat structurat pentru AI (limiteaza la ultimele 20 de formulare si toate intalnirile viitoare)
+    // Rezumat structurat pentru AI (include toate intalnirile - viitoare si din trecut)
     final clientsSummary = clients.take(20).map((c) => c.toString()).join('\n');
-    final now = DateTime.now().millisecondsSinceEpoch;
-    debugPrint('LLM_DEBUG: now ms: $now');
+    final now = DateTime.now();
+    final currentDate = '${now.day}/${now.month}/${now.year}';
+    final currentMonth = now.month;
+    final currentYear = now.year;
+    
+    // Calculează luna trecută pentru ghidarea AI-ului
+    final lastMonth = now.month == 1 ? 12 : now.month - 1;
+    final lastMonthYear = now.month == 1 ? now.year - 1 : now.year;
+    final lastMonthName = _getMonthName(lastMonth);
+    
+    // Calculează săptămâna curentă și viitoare
+    final currentWeekStart = now.subtract(Duration(days: now.weekday - 1));
+    final nextWeekStart = currentWeekStart.add(const Duration(days: 7));
+    
+    debugPrint('🤖 AI_DEBUG: Data curenta: $currentDate');
+    debugPrint('🤖 AI_DEBUG: Luna trecuta: $lastMonthName $lastMonthYear');
+    debugPrint('🤖 AI_DEBUG: Saptamana curenta: ${currentWeekStart.day}/${currentWeekStart.month} - ${currentWeekStart.add(const Duration(days: 6)).day}/${currentWeekStart.add(const Duration(days: 6)).month}');
+    debugPrint('🤖 AI_DEBUG: Saptamana viitoare: ${nextWeekStart.day}/${nextWeekStart.month} - ${nextWeekStart.add(const Duration(days: 6)).day}/${nextWeekStart.add(const Duration(days: 6)).month}');
+    
     String meetingsSummary = '';
+    String pastMeetingsSummary = '';
+    String detailedMeetingsInfo = '';
+    
     try {
-      final filteredMeetings = (meetings as List<Map<String, dynamic>>)
-          .where((m) {
-            final dt = m['dateTime'];
-            int ms = 0;
-            if (dt is Timestamp) {
-              ms = dt.toDate().millisecondsSinceEpoch;
-            } else if (dt is DateTime) {
-              ms = dt.millisecondsSinceEpoch;
-            } else if (dt is int) {
-              ms = dt;
-            }
-            debugPrint('LLM_DEBUG: meeting dateTime ms: $ms');
-            return ms >= now; // Toate intalnirile viitoare
-          })
-          .toList();
-      debugPrint('LLM_DEBUG: filteredMeetings count: ${filteredMeetings.length}');
-      meetingsSummary = filteredMeetings
-          .take(20) // Limiteaza la 20 intalniri pentru a nu depasi contextul
+      final allMeetings = (meetings as List<Map<String, dynamic>>);
+      debugPrint('🤖 AI_DEBUG: Procesare ${allMeetings.length} intalniri');
+      
+      // Proceseaza toate intalnirile si le separa in viitoare si din trecut
+      final futureMeetings = <Map<String, dynamic>>[];
+      final pastMeetings = <Map<String, dynamic>>[];
+      
+      for (final m in allMeetings) {
+        final dt = m['dateTime'];
+        int ms = 0;
+        if (dt is Timestamp) {
+          ms = dt.toDate().millisecondsSinceEpoch;
+        } else if (dt is DateTime) {
+          ms = dt.millisecondsSinceEpoch;
+        } else if (dt is int) {
+          ms = dt;
+        }
+        
+        if (ms >= now.millisecondsSinceEpoch) {
+          futureMeetings.add(m);
+        } else {
+          pastMeetings.add(m);
+        }
+      }
+      
+      debugPrint('🤖 AI_DEBUG: Intalniri viitoare: ${futureMeetings.length}');
+      debugPrint('🤖 AI_DEBUG: Intalniri din trecut: ${pastMeetings.length}');
+      
+      // Formateaza intalnirile viitoare
+      meetingsSummary = futureMeetings
+          .take(15) // Mărit de la 10 la 15 pentru mai multe date
           .map((m) {
             final dt = m['dateTime'];
             DateTime meetingDate;
@@ -331,24 +400,104 @@ class LLMService extends ChangeNotifier {
             } else {
               meetingDate = DateTime.fromMillisecondsSinceEpoch(dt as int);
             }
-            final formattedDate = '${meetingDate.day}/${meetingDate.month}/${meetingDate.year} ${meetingDate.hour}:${meetingDate.minute.toString().padLeft(2, '0')}';
-            return '${m['clientName']} - $formattedDate';
+            final formattedDate = '${meetingDate.day} ${_getMonthName(meetingDate.month)} ${meetingDate.year} ${meetingDate.hour}:${meetingDate.minute.toString().padLeft(2, '0')}';
+            return '${m['clientName']} - $formattedDate (VIITOARE)';
           })
           .join('\n');
+      
+      // Formateaza intalnirile din trecut
+      pastMeetingsSummary = pastMeetings
+          .take(15) // Mărit de la 10 la 15 pentru mai multe date
+          .map((m) {
+            final dt = m['dateTime'];
+            DateTime meetingDate;
+            if (dt is Timestamp) {
+              meetingDate = dt.toDate();
+            } else if (dt is DateTime) {
+              meetingDate = dt;
+            } else {
+              meetingDate = DateTime.fromMillisecondsSinceEpoch(dt as int);
+            }
+            final formattedDate = '${meetingDate.day} ${_getMonthName(meetingDate.month)} ${meetingDate.year} ${meetingDate.hour}:${meetingDate.minute.toString().padLeft(2, '0')}';
+            return '${m['clientName']} - $formattedDate (TRE cut)';
+          })
+          .join('\n');
+      
+      // Informații detaliate pentru analiză
+      detailedMeetingsInfo = '''
+INFORMATII DETALIATE PENTRU ANALIZA:
+- Total intalniri: ${allMeetings.length}
+- Intalniri viitoare: ${futureMeetings.length}
+- Intalniri din trecut: ${pastMeetings.length}
+- Urmatoarele 3 intalniri viitoare: ${futureMeetings.take(3).map((m) {
+        final dt = m['dateTime'];
+        DateTime meetingDate;
+        if (dt is Timestamp) {
+          meetingDate = dt.toDate();
+        } else if (dt is DateTime) {
+          meetingDate = dt;
+        } else {
+          meetingDate = DateTime.fromMillisecondsSinceEpoch(dt as int);
+        }
+        return '${m['clientName']} - ${meetingDate.day} ${_getMonthName(meetingDate.month)} ${meetingDate.year}';
+      }).join(', ')}
+- Ultimele 3 intalniri din trecut: ${pastMeetings.take(3).map((m) {
+        final dt = m['dateTime'];
+        DateTime meetingDate;
+        if (dt is Timestamp) {
+          meetingDate = dt.toDate();
+        } else if (dt is DateTime) {
+          meetingDate = dt;
+        } else {
+          meetingDate = DateTime.fromMillisecondsSinceEpoch(dt as int);
+        }
+        return '${m['clientName']} - ${meetingDate.day} ${_getMonthName(meetingDate.month)} ${meetingDate.year}';
+      }).join(', ')}
+''';
+          
+      debugPrint('🤖 AI_DEBUG: Intalniri viitoare formatate: ${meetingsSummary.split('\n').length}');
+      debugPrint('🤖 AI_DEBUG: Intalniri din trecut formatate: ${pastMeetingsSummary.split('\n').length}');
+          
     } catch (e, st) {
-      debugPrint('LLM_DEBUG: meetingsSummary ERROR: $e\n$st');
+      debugPrint('❌ AI_DEBUG: Eroare procesare intalniri: $e\n$st');
       meetingsSummary = 'Eroare la procesarea intalnirilor: $e';
+      pastMeetingsSummary = 'Eroare la procesarea intalnirilor din trecut: $e';
+      detailedMeetingsInfo = 'Eroare la procesarea informatiilor detaliate: $e';
     }
+    
     final statsSummary = stats.toString();
+    debugPrint('🤖 AI_DEBUG: Statistici: $statsSummary');
 
-    return '''
+    final prompt = '''
+INFORMATII DESPRE PERIOADE:
+- Data curenta: ${now.day} ${_getMonthName(now.month)} ${now.year}
+- Luna curenta: ${_getMonthName(currentMonth)} $currentYear
+- Luna trecuta: $lastMonthName $lastMonthYear
+- Saptamana curenta: ${currentWeekStart.day} ${_getMonthName(currentWeekStart.month)} - ${currentWeekStart.add(const Duration(days: 6)).day} ${_getMonthName(currentWeekStart.add(const Duration(days: 6)).month)}
+- Saptamana viitoare: ${nextWeekStart.day} ${_getMonthName(nextWeekStart.month)} - ${nextWeekStart.add(const Duration(days: 6)).day} ${_getMonthName(nextWeekStart.add(const Duration(days: 6)).month)}
+
+$detailedMeetingsInfo
+
 Consultantul activ: $consultantName ($consultantToken)
 Agent de serviciu: $dutyAgent
 Statistici: $statsSummary
 Clienti (ultimii 20):\n$clientsSummary
-Intalniri viitoare (max 10):\n$meetingsSummary
+Intalniri viitoare (max 15):\n$meetingsSummary
+Intalniri din trecut (max 15):\n$pastMeetingsSummary
 ---
 Intrebare utilizator: $userMessage
 ''';
+
+    debugPrint('🤖 AI_DEBUG: Prompt generat cu succes (${prompt.length} caractere)');
+    return prompt;
+  }
+
+  /// Helper pentru a obține numele lunii
+  String _getMonthName(int month) {
+    const monthNames = [
+      'Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',
+      'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'
+    ];
+    return monthNames[month - 1];
   }
 } 

@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/consultant_service.dart';
 import 'package:broker_app/backend/services/connection_service.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:broker_app/utils/smooth_scroll_behavior.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -145,8 +146,8 @@ void main() async {
       await windowManager.ensureInitialized();
       
       WindowOptions windowOptions = const WindowOptions(
-        size: Size(1496, 904),
-        minimumSize: Size(1496, 904),
+        size: Size(1496, 864),
+        minimumSize: Size(1496, 864),
         center: true,
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
@@ -252,6 +253,7 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         title: 'Aplicatie de Consultanta Financiara',
         debugShowCheckedModeBanner: false,
+        scrollBehavior: SmoothScrollBehavior(),
         locale: const Locale('ro', 'RO'),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
