@@ -1,0 +1,609 @@
+Restarted application in 603ms.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/befc75d8-dce0-4e8b-b95f-c834aea3ab95' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/c86f33d3-4c57-4c87-81a0-dc98ff8491bc' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/9fc41917-1eb0-489d-90e5-003e4a0fd721' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/66e1d5d8-98b9-40ae-9b6c-d5654654f3a4' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+➕ CLIENT: added - 0772 → Eva
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: null
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: null
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
+📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
+📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
+📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
+📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
+🎯 CLIENT_SERVICE: focusClient called for: 0772
+🎯 CLIENT_SERVICE: Current focused client: null
+🎯 CLIENT_SERVICE: Total clients in list: 1
+🎯 CLIENT_SERVICE: Client found at index: 0
+🎯 CLIENT_SERVICE: _clearAllFocusStates called
+🎯 CLIENT_SERVICE: Clients with focus before clear: []
+🎯 CLIENT_SERVICE: All focus states cleared
+✅ CLIENT_SERVICE: Client focused successfully: 0772
+✅ CLIENT_SERVICE: New focused client: Eva
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Eva
+✅ GOOGLE_DRIVE_SERVICE: Token is still valid, no refresh needed
+✅ [FIREBASE_SUCCESS] getClient found matching client
+📊 SPLASH_SERVICE: Performance Metrics:
+  Initializare servicii...: 22ms
+  Preincarcare date...: 2285ms
+  Sincronizare servicii...: 33ms
+  Optimizare cache...: 0ms
+  Finalizare...: 0ms
+🔍 Checking for updates...
+✅ No updates available | Current: 0.1.5
+SPLASH: Current role: Consultant
+🔄 SPLASH: Consultant/team changed, resetting state
+🔧 SPLASH: Old consultant: null, New: 0c01cf96-f3f0-4f07-b3c6-19059d8a6137
+🔧 SPLASH: Old team: null, New: Echipa Cristina
+🔄 SPLASH: Reloading services for new consultant
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/7c1d54cc-1e18-4481-bfd3-1bcebc51b27d' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Eva
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/c8d34f16-a7d2-46e8-81dc-8652cf3f11ff' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+➕ CLIENT: added - 0772 → Eva
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Eva
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Eva
+📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
+🔄 SPLASH: Invalidating cache with enhanced state management
+✅ SPLASH: Cache invalidation completed successfully
+📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
+📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
+✅ SPLASH: Services reloaded successfully for new consultant
+✅ SPLASH: Consultant reset completed successfully
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🔄 FORM: Found focused client at initialization: 0772
+🎯 CLIENTS_PANE: Client 0772 is focused in UI
+🎯 CLIENTS_PANE: Building client item: Eva, focused: true, temporary: false
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🎯 CLIENTS_PANE: _onSplashServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: Eva
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Eva
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: Eva
+🎯 CLIENTS_PANE: Total clients in service: 1
+⚡ CLIENTS: Preloading form data for 1 clients
+🎯 CLIENTS_PANE: Client 0772 is focused in UI
+🎯 CLIENTS_PANE: Building client item: Eva, focused: true, temporary: false
+🎯 CLIENTS_PANE: No client data changes from splash service
+🎯 CLIENTS_PANE: No client data changes detected
+🎯 CLIENTS_PANE: Client 0772 is focused in UI
+🎯 CLIENTS_PANE: Building client item: Eva, focused: true, temporary: false
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Eva
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: Eva
+🎯 CLIENTS_PANE: Total clients in service: 1
+🎯 CLIENTS_PANE: No client data changes detected
+🎯 CLIENTS_PANE: Client 0772 is focused in UI
+🎯 CLIENTS_PANE: Building client item: Eva, focused: true, temporary: false
+🎯 CLIENTS_PANE: Client 0772 is focused in UI
+🎯 CLIENTS_PANE: Building client item: Eva, focused: true, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: Eva
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsOnly
+🔍 POPUP: Temporary client exists: false
+🔍 POPUP: _startClientCreation called
+🔍 POPUP: Current focused client before creation: Eva
+🔵 TEMP_CLIENT: createTemporaryClient called
+🔵 TEMP_CLIENT: Current focused client before creation: Eva
+🔵 TEMP_CLIENT: Temporary client created with ID: temp_1754689786969
+🔵 TEMP_CLIENT: Temporary client focused and added to list
+🔵 TEMP_CLIENT: Total clients in list: 2
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client:
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client:
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client:
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Temporary client created
+🔍 POPUP: Temporary client focused:
+🔍 POPUP: _openEditClient called with client: null
+🔍 POPUP: Current focused client in service:
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsOnly
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service:
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsOnly
+🔍 POPUP: Temporary client exists: true
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback:
+🔍 POPUP: Focus is valid, keeping edit open
+🔍 POPUP: About to set state for edit client
+🔍 POPUP: State set successfully, new state: PopupState.clientsWithEdit
+🔄 FORM: Client changed - Previous: 0772, Current:
+⚡ FORM: Processing client change - Previous: 0772, Current:
+⚡ FORM: Saving form data for previous client: 0772
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service:
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+✅ [FIREBASE_SUCCESS] getClient found matching client
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="" phone1="" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client:
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client:
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client:
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback:
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🔄 FORM: Client changed - Previous: 0772, Current:
+⚡ FORM: Skipping redundant client change operation
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service:
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔄 CLIENT: category_change - 0772 → recente
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client:
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client:
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client:
+🔍 POPUP: Current editing client: null
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client:
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client:
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client:
+🔍 POPUP: Current editing client: null
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback:
+🔍 POPUP: Focus is valid, keeping edit open
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback:
+🔍 POPUP: Focus is valid, keeping edit open
+🔄 FORM: Client changed - Previous: 0772, Current:
+⚡ FORM: Skipping redundant client change operation
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service:
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+⚡ FORM: Clearing controllers for client change
+🔧 FORM_SERVICE: Cleared form data cache for client 0772
+🔧 FORM_AREA: Cleared form data cache for previous client 0772
+⚡ FORM: Skipping form data load for temporary client
+⚡ FORM: Total client selection time: 870ms
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client:
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client:
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client:
+🔍 POPUP: Current editing client: null
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client:
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client:
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client:
+🔍 POPUP: Current editing client: null
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback:
+🔍 POPUP: Focus is valid, keeping edit open
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback:
+🔍 POPUP: Focus is valid, keeping edit open
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service:
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="F" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="F" phone1="" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: F
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: F
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: F
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback: F
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: F
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FR" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="F" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FR" phone1="" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FR
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FR
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FR
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback: FR
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FR
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FRA" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="FR" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FRA" phone1="" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FRA" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="FRA" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FRA" phone1="" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FRA" phone1="0" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="FRA" phone1="" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FRA" phone1="0" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🔄 FORM: Temporary client update - ignoring form reset
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FRA" phone1="07" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="FRA" phone1="0" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FRA" phone1="07" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🔄 FORM: Temporary client update - ignoring form reset
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FRA" phone1="073" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="FRA" phone1="07" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FRA" phone1="073" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🔄 FORM: Temporary client update - ignoring form reset
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FRA" phone1="0734" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="FRA" phone1="073" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FRA" phone1="0734" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+[ClientsPopup2] _onFormChanged triggered, will schedule setState in parent
+🎯 CLIENTS_PANE: Client data changed, updating UI
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+[ClientsPopup2] Executing setState in parent after frame
+🔄 FORM: Temporary client update - ignoring form reset
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: updateTemporaryClient called with: name="FRA" phone1="0734" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: Before update: name="FRA" phone1="0734" phone2="null" codebitor="null"
+🔵 TEMP_CLIENT: After update: name="FRA" phone1="0734" phone2="null" codebitor="null"
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient
+🔵 TEMP_CLIENT: Finalizing client: FRA (0734)
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+🔄 FORM: Temporary client update - ignoring form reset
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+➕ CLIENT: added - 0734 → FRA
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+🔄 FORM: Temporary client update - ignoring form reset
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsWithEdit
+🔍 POPUP: Temporary client exists: true
+🔵 TEMP_CLIENT: Firebase creation successful
+🔵 TEMP_CLIENT: Client finalized successfully
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsOnly
+🔍 POPUP: Temporary client exists: false
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+🔄 FORM: Client changed - Previous: , Current: 0734
+⚡ FORM: Processing client change - Previous: , Current: 0734
+⚡ FORM: Clearing controllers for client change
+🔧 FORM_SERVICE: Cleared form data cache for client
+🔧 FORM_AREA: Cleared form data cache for previous client
+⚡ FORM: Loading form data for new client: 0734
+🎯 CLIENTS_PANE: _onSplashServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onSplashServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsOnly
+🔍 POPUP: Temporary client exists: false
+🎯 CLIENTS_PANE: Client 0734 is focused in UI
+🎯 CLIENTS_PANE: Building client item: FRA, focused: true, temporary: false
+🎯 CLIENTS_PANE: No client data changes from splash service
+🎯 CLIENTS_PANE: No client data changes from splash service
+🔄 CLIENT: category_change - 0734 → clienti
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+✅ [FIREBASE_SUCCESS] getClient found matching client
+✅ [FIREBASE_SUCCESS] getClient found matching client
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+🔄 FORM: Client changed - Previous: , Current: 0734
+⚡ FORM: Skipping redundant client change operation
+🎯 CLIENTS_PANE: Client 0734 is focused in UI
+🎯 CLIENTS_PANE: Building client item: FRA, focused: true, temporary: false
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsOnly
+🔍 POPUP: Temporary client exists: false
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🎯 CLIENTS_PANE: No client data changes detected
+🔍 POPUP: Focused client in callback: FRA
+🔍 POPUP: Focus is valid, keeping edit open
+🔄 FORM: Client changed - Previous: , Current: 0734
+⚡ FORM: Skipping redundant client change operation
+🎯 CLIENTS_PANE: Client 0734 is focused in UI
+🎯 CLIENTS_PANE: Building client item: FRA, focused: true, temporary: false
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔍 POPUP: Build method called
+🔍 POPUP: Focused client from service: FRA
+🔍 POPUP: Current editing client: null
+🔍 POPUP: Current popup state: PopupState.clientsOnly
+🔍 POPUP: Temporary client exists: false
+⚡ FORM: Total client selection time: 161ms
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: FRA
+🎯 CLIENTS_PANE: _onClientServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: Total clients in service: 2
+🔍 POPUP: _onClientServiceChanged called
+🔍 POPUP: Current focused client: FRA
+🔍 POPUP: Current editing client: null
+🎯 CLIENTS_PANE: Client 0734 is focused in UI
+🎯 CLIENTS_PANE: Building client item: FRA, focused: true, temporary: false
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🔵 TEMP_CLIENT: No temporary client found in list
+🎯 CLIENTS_PANE: No client data changes detected
+🎯 CLIENTS_PANE: Client 0734 is focused in UI
+🎯 CLIENTS_PANE: Building client item: FRA, focused: true, temporary: false
+🎯 CLIENTS_PANE: Building client item: Eva, focused: false, temporary: false
+🎯 CLIENTS_PANE: Focused client tapped: FRA
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🎯 CLIENTS_PANE: _onSplashServiceChanged called
+🎯 CLIENTS_PANE: Current focused client: FRA
+🎯 CLIENTS_PANE: No client data changes from splash service
+🔍 MEETING_DATA: Constructor called
+🔍 MEETING_DATA: clientName = "FRA"
+🔍 MEETING_DATA: phoneNumber = "0734"
+🔍 MEETING_DATA: consultantToken = "0c01cf96-f3f0-4f07-b3c6-19059d8a6137"
+🔍 MEETING_DATA: consultantName = "Claudiu"
+🔍 MEETING_DATA: dateTime = 2025-08-11 10:00:00.000
+🔍 MEETING_DATA: type = MeetingType.meeting
+✅ MEETING_DATA: Constructor completed successfully
+🔍 STATUS_POPUP: Creating meeting for accepted client | FRA | 2025-08-11 10:00:00.000
+🔍 MEETING_SERVICE: Starting createMeeting | Client: FRA | Date: 2025-08-11 10:00:00.000 | Type: MeetingType.meeting
+🔍 MEETING_SERVICE: Starting optimized parallel operations
+🔔 MEETING_SERVICE: Notifying meeting created for consultant: 0c01cf96 for client: 0734
+📈 DASHBOARD_SERVICE: Recording meeting for consultant 0c01cf96... in 2025-08 for client 0734
+✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in 2025-08 for client 0734
+🔄 DASHBOARD_SERVICE: Refreshing rankings after meeting creation...
+✅ MEETING_SERVICE: Dashboard notified successfully
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+✅ [FIREBASE_SUCCESS] getClient found matching client
+✅ MEETING_SERVICE: Meeting created successfully | Client: FRA | Date: 2025-08-11 10:00:00.000
+📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: FRA
+📱 MEETING_SERVICE: Client not completed, proceeding with move and statistics increment
+✅ STATUS_POPUP: Meeting saved successfully | FRA | 2025-08-11 10:00:00.000
+✅ STATUS_POPUP: Meeting creation handled by MeetingService, skipping duplicate client move
+✅ Client mutat cu succes: FRA - Status: Acceptat
+🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE START ==========
+🔧 STATUS_POPUP: Client: FRA (0734)
+🔧 STATUS_POPUP: Status: Acceptat
+🔧 STATUS_POPUP: Additional info:
+🔧 STATUS_POPUP: Scheduled date: 2025-08-11 10:00:00.000
+🔧 STATUS_POPUP: Step 1 - Updating Firebase...
+📈 DASHBOARD_SERVICE: Recording form completion for consultant 0c01cf96... in 2025-08 for client 0734
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
+✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in 2025-08 for client 0734
+🔄 DASHBOARD_SERVICE: Refreshing rankings after form completion...
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false

@@ -1294,13 +1294,17 @@ class ClientUIService extends ChangeNotifier {
 
   /// FIX: Robust client focusing with advanced debouncing and state validation
   Future<void> focusClient(String phoneNumber) async {
+    debugPrint('🎯 CLIENT_SERVICE: focusClient called for: $phoneNumber');
+    debugPrint('🎯 CLIENT_SERVICE: Current focused client: ${_focusedClient?.name ?? "null"}');
+    debugPrint('🎯 CLIENT_SERVICE: Total clients in list: ${_clients.length}');
+    
     // OPTIMIZATION: Prevent redundant focus operations with time-based validation
     final now = DateTime.now();
     if (_isFocusingClient || 
         (_currentlyFocusedClientId == phoneNumber && 
          _lastFocusTime != null && 
          now.difference(_lastFocusTime!).inMilliseconds < 100)) {
-      debugPrint('🎯 CLIENTS: Focus operation skipped - already focused or too recent');
+      debugPrint('🎯 CLIENT_SERVICE: Focus operation skipped - already focused or too recent');
       return;
     }
     
@@ -1314,9 +1318,12 @@ class ClientUIService extends ChangeNotifier {
       // FIX: Validate client exists before focusing
       final clientIndex = _clients.indexWhere((client) => client.phoneNumber == phoneNumber);
       if (clientIndex == -1) {
-        debugPrint('❌ CLIENTS: Client not found for focus: $phoneNumber');
+        debugPrint('❌ CLIENT_SERVICE: Client not found for focus: $phoneNumber');
+        debugPrint('❌ CLIENT_SERVICE: Available clients: ${_clients.map((c) => c.phoneNumber).toList()}');
         return;
       }
+      
+      debugPrint('🎯 CLIENT_SERVICE: Client found at index: $clientIndex');
       
       // FIX: Clear all existing focus states first
       _clearAllFocusStates();
@@ -1330,7 +1337,8 @@ class ClientUIService extends ChangeNotifier {
       _focusHistory[phoneNumber] = now;
       _validFocusStates.add(phoneNumber);
       
-      debugPrint('✅ CLIENTS: Client focused successfully: $phoneNumber');
+      debugPrint('✅ CLIENT_SERVICE: Client focused successfully: $phoneNumber');
+      debugPrint('✅ CLIENT_SERVICE: New focused client: ${_focusedClient?.name}');
       
       // FIX: Strategic background form data loading with error handling
       if (_focusedClient != null && !_focusedClient!.id.startsWith('temp_')) {
@@ -1341,7 +1349,7 @@ class ClientUIService extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('❌ CLIENTS: Error during focus operation: $e');
+      debugPrint('❌ CLIENT_SERVICE: Error during focus operation: $e');
       // FIX: Reset focus state on error
       _currentlyFocusedClientId = null;
       _focusedClient = null;
@@ -1352,14 +1360,20 @@ class ClientUIService extends ChangeNotifier {
 
   /// FIX: Clear all focus states with validation
   void _clearAllFocusStates() {
+    debugPrint('🎯 CLIENT_SERVICE: _clearAllFocusStates called');
+    debugPrint('🎯 CLIENT_SERVICE: Clients with focus before clear: ${_clients.where((c) => c.status == ClientStatus.focused).map((c) => c.name).toList()}');
+    
     for (int i = 0; i < _clients.length; i++) {
       if (_clients[i].status == ClientStatus.focused) {
         _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
         _validFocusStates.remove(_clients[i].phoneNumber);
+        debugPrint('🎯 CLIENT_SERVICE: Cleared focus from: ${_clients[i].name}');
       }
     }
     _focusedClient = null;
     _currentlyFocusedClientId = null;
+    
+    debugPrint('🎯 CLIENT_SERVICE: All focus states cleared');
   }
 
   /// FIX: Validate focus state consistency
@@ -1459,32 +1473,38 @@ class ClientUIService extends ChangeNotifier {
   
   /// Creeaza un client temporar pentru popup-ul de clienti
   void createTemporaryClient() {
-    // Verifica daca exista deja un client temporar
-    final alreadyExists = _clients.any((client) => client.id.startsWith('temp_'));
-    if (alreadyExists) {
-      debugPrint('TEMP_CLIENT: Temporary client already exists, creation skipped');
-      return;
-    }
-    debugPrint('TEMP_CLIENT: Creating temporary client');
-    // Creeaza un client temporar cu ID unic
+    debugPrint('🔵 TEMP_CLIENT: createTemporaryClient called');
+    debugPrint('🔵 TEMP_CLIENT: Current focused client before creation: ${_focusedClient?.name ?? "null"}');
+    
+    // Genereaza un ID temporar unic
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Creeaza clientul temporar
     final tempClient = ClientModel(
       id: tempId,
-      name: '', // Numele este gol la creare
-      phoneNumber1: '', // Empty phone number initially
+      name: '',
+      phoneNumber1: '',
+      phoneNumber2: null,
+      coDebitorName: null,
       status: ClientStatus.focused,
       category: ClientCategory.apeluri,
       formData: {},
-      createdAt: DateTime.now(), // <-- nou
+      updatedAt: DateTime.now(),
+      createdAt: DateTime.now(),
     );
-    debugPrint('TEMP_CLIENT: Created temp client with ID: $tempId, updatedAt: ${tempClient.updatedAt}');
-    // Adauga direct in lista principala (nu separat)
+    
+    debugPrint('🔵 TEMP_CLIENT: Temporary client created with ID: $tempId');
+    
+    // Adauga clientul temporar la lista principala
     _clients.add(tempClient);
-    debugPrint('TEMP_CLIENT: Added temp client to main list, total clients: ${_clients.length}');
+    
     // Focuseaza clientul temporar
     _focusedClient = tempClient;
-    // FIX: Nu sorta lista principala cand se adauga un client temporar
-    // Sortarea se va face doar cand clientul devine real
+    
+    debugPrint('🔵 TEMP_CLIENT: Temporary client focused and added to list');
+    debugPrint('🔵 TEMP_CLIENT: Total clients in list: ${_clients.length}');
+    
+    // Notifica listenerii
     notifyListeners();
   }
 
@@ -2073,14 +2093,18 @@ class ClientUIService extends ChangeNotifier {
     if (clientIndex != -1) {
       final client = _clients[clientIndex];
       
-      // Notifica DashboardService doar daca formularul nu a fost deja contorizat
+      // Notifica DashboardService doar daca formularul nu a fost deja contorizat (fire-and-forget)
       if (!client.isCompleted) {
         final firebaseService = NewFirebaseService();
         final consultantToken = await firebaseService.getCurrentConsultantToken();
         if (consultantToken != null) {
           final dashboardService = dashboard.DashboardService();
-          await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
-          dashboardService.refreshData();
+          unawaited(Future.microtask(() async {
+            try {
+              await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
+              await dashboardService.refreshData();
+            } catch (_) {}
+          }));
         }
       }
 
@@ -2110,9 +2134,13 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (imediat pentru schimbari de categorie)
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (fire-and-forget)
       final splashService = SplashService();
-      await splashService.invalidateClientsCacheForCategoryChange();
+      unawaited(Future.microtask(() async {
+        try {
+          await splashService.invalidateClientsCacheForCategoryChange();
+        } catch (_) {}
+      }));
     }
   }
 
@@ -2125,14 +2153,18 @@ class ClientUIService extends ChangeNotifier {
     if (clientIndex != -1) {
       final client = _clients[clientIndex];
 
-      // Notifica DashboardService doar daca formularul nu a fost deja contorizat
+      // Notifica DashboardService doar daca formularul nu a fost deja contorizat (fire-and-forget)
       if (!client.isCompleted) {
         final firebaseService = NewFirebaseService();
         final consultantToken = await firebaseService.getCurrentConsultantToken();
         if (consultantToken != null) {
           final dashboardService = dashboard.DashboardService();
-          await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
-          dashboardService.refreshData();
+          unawaited(Future.microtask(() async {
+            try {
+              await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
+              await dashboardService.refreshData();
+            } catch (_) {}
+          }));
         }
       }
 
@@ -2162,9 +2194,13 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (imediat pentru schimbari de categorie)
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (fire-and-forget)
       final splashService = SplashService();
-      await splashService.invalidateClientsCacheForCategoryChange();
+      unawaited(Future.microtask(() async {
+        try {
+          await splashService.invalidateClientsCacheForCategoryChange();
+        } catch (_) {}
+      }));
     }
   }
 
@@ -2176,14 +2212,18 @@ class ClientUIService extends ChangeNotifier {
     if (clientIndex != -1) {
       final client = _clients[clientIndex];
 
-      // Notifica DashboardService doar daca formularul nu a fost deja contorizat
+      // Notifica DashboardService doar daca formularul nu a fost deja contorizat (fire-and-forget)
       if (!client.isCompleted) {
         final firebaseService = NewFirebaseService();
         final consultantToken = await firebaseService.getCurrentConsultantToken();
         if (consultantToken != null) {
           final dashboardService = dashboard.DashboardService();
-          await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
-          dashboardService.refreshData();
+          unawaited(Future.microtask(() async {
+            try {
+              await dashboardService.onFormCompleted(consultantToken, clientPhoneNumber);
+              await dashboardService.refreshData();
+            } catch (_) {}
+          }));
         }
       }
 
@@ -2212,9 +2252,13 @@ class ClientUIService extends ChangeNotifier {
         }
       }
       
-      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (imediat pentru schimbari de categorie)
+      // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI (fire-and-forget)
       final splashService = SplashService();
-      await splashService.invalidateClientsCacheForCategoryChange();
+      unawaited(Future.microtask(() async {
+        try {
+          await splashService.invalidateClientsCacheForCategoryChange();
+        } catch (_) {}
+      }));
     }
   }
 
@@ -2336,6 +2380,8 @@ class ClientUIService extends ChangeNotifier {
 
   @override
   void notifyListeners() {
+    debugPrint('🎯 CLIENT_SERVICE: notifyListeners called');
+    debugPrint('🎯 CLIENT_SERVICE: Current focused client: ${_focusedClient?.name ?? "null"}');
     super.notifyListeners();
   }
 

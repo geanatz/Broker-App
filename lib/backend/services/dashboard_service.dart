@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -783,10 +784,22 @@ class DashboardService extends ChangeNotifier {
       
       // IMPORTANT: Reincarca clasamentele si notifica UI-ul pentru actualizare instantanee
       debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after meeting creation...');
-      await _refreshConsultantsRankingForSelectedMonth();
-      await _loadConsultantStats(); // Reincarca si statisticile consultantului
-      notifyListeners(); // Notifica UI-ul sa se actualizeze
-      debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified');
+      
+      // FIX: Muta operatiile costisitoare pe un thread separat pentru a preveni blocajul UI
+      unawaited(Future.microtask(() async {
+        try {
+          await _refreshConsultantsRankingForSelectedMonth();
+          await _loadConsultantStats(); // Reincarca si statisticile consultantului
+          
+          // FIX: Programeaza notifyListeners pe urmatorul microtask pentru a evita deadlock-ul
+          Future.microtask(() {
+            notifyListeners(); // Notifica UI-ul sa se actualizeze
+            debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified');
+          });
+        } catch (e) {
+          debugPrint('❌ DASHBOARD_SERVICE: Error in async refresh after meeting creation: $e');
+        }
+      }));
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onMeetingCreated: $e');
     }
@@ -886,10 +899,22 @@ class DashboardService extends ChangeNotifier {
       
       // IMPORTANT: Reincarca clasamentele si notifica UI-ul pentru actualizare instantanee
       debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after form completion...');
-      await _refreshConsultantsRankingForSelectedMonth();
-      await _loadConsultantStats(); // Reincarca si statisticile consultantului
-      notifyListeners(); // Notifica UI-ul sa se actualizeze
-      debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified after form completion');
+      
+      // FIX: Muta operatiile costisitoare pe un thread separat pentru a preveni blocajul UI
+      unawaited(Future.microtask(() async {
+        try {
+          await _refreshConsultantsRankingForSelectedMonth();
+          await _loadConsultantStats(); // Reincarca si statisticile consultantului
+          
+          // FIX: Programeaza notifyListeners pe urmatorul microtask pentru a evita deadlock-ul
+          Future.microtask(() {
+            notifyListeners(); // Notifica UI-ul sa se actualizeze
+            debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified after form completion');
+          });
+        } catch (e) {
+          debugPrint('❌ DASHBOARD_SERVICE: Error in async refresh after form completion: $e');
+        }
+      }));
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onFormCompleted: $e');
     }

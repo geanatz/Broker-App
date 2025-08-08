@@ -339,10 +339,10 @@ class FirebaseThreadHandler {
       }
     }
 
-    // Ensure MethodChannel calls are executed on the platform thread (UI thread)
-    // Some plugins require being called from the platform thread to avoid threading errors.
+    // Run on the UI isolate without waiting for a new frame to be pumped.
+    // Waiting for a post-frame callback can freeze when no frame is produced (e.g., dialogs/minimized window).
     try {
-      WidgetsBinding.instance.addPostFrameCallback((_) => runOperation());
+      scheduleMicrotask(runOperation);
     } catch (_) {
       // Fallback: schedule in next event loop tick
       Future<void>(() => runOperation());

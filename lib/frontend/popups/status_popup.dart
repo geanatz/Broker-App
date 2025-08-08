@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:broker_app/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,6 +77,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   // Services
   final MeetingService _meetingService = MeetingService();
   final ClientUIService _clientService = ClientUIService();
+  
   
   // Controllers pentru inputuri
   final TextEditingController _statusController = TextEditingController();
@@ -429,7 +431,12 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         // IMPORTANT: Invalideaza cache-ul pentru a afisa imediat intalnirea in calendar
         try {
           final splashService = SplashService();
-          await splashService.invalidateMeetingsCacheAndRefresh();
+          // Fire-and-forget: nu bloca UI-ul cu refresh-ul de meetings
+          unawaited(Future.microtask(() async {
+            try {
+              await splashService.invalidateMeetingsCacheAndRefresh();
+            } catch (_) {}
+          }));
           // Cache invalidated after meeting save
         } catch (e) {
           debugPrint('❌ STATUS_POPUP: Error invalidating cache: $e');
@@ -477,35 +484,38 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       debugPrint('🔧 STATUS_POPUP: Additional info: ${_statusController.text}');
       debugPrint('🔧 STATUS_POPUP: Scheduled date: $finalDateTime');
       
-      try {
+            try {
         // 1. Actualizeaza statusul si informatiile aditionale in Firebase
+        debugPrint('🔧 STATUS_POPUP: Step 1 - Updating Firebase...');
         final firebaseService = NewFirebaseService();
         await firebaseService.updateClient(
           widget.client.phoneNumber,
           {
-            'discussionStatus': _selectedStatus,
+'discussionStatus': _selectedStatus,
             'additionalInfo': _statusController.text.isNotEmpty ? _statusController.text : null,
           },
         );
-        debugPrint('✅ STATUS_POPUP: Updated discussionStatus and additionalInfo in Firebase');
+        debugPrint('✅ STATUS_POPUP: Step 1 COMPLETED - Updated discussionStatus and additionalInfo in Firebase');
 
         // 2. Obtine clientul complet cu toate datele din Firebase (date actualizate)
+        debugPrint('🔧 STATUS_POPUP: Step 2 - Retrieving complete client data...');
         final completeClient = await firebaseService.getClient(widget.client.phoneNumber);
         if (completeClient != null) {
-          debugPrint('✅ STATUS_POPUP: Retrieved complete client data from Firebase');
+          debugPrint('✅ STATUS_POPUP: Step 2 COMPLETED - Retrieved complete client data from Firebase');
           debugPrint('🔧 STATUS_POPUP: Client formData keys: ${completeClient['formData']?.keys.toList() ?? 'NULL'}');
           debugPrint('🔧 STATUS_POPUP: DEBUG additionalInfo from Firebase: ${completeClient['additionalInfo'] ?? 'NULL'}');
           // 3. Salveaza in Google Sheets
+          debugPrint('🔧 STATUS_POPUP: Step 3 - Saving to Google Sheets...');
           final googleDriveService = GoogleDriveService();
           final saveResult = await googleDriveService.saveClientToXlsx(completeClient);
           if (saveResult == null) {
-            debugPrint('✅ STATUS_POPUP: Client saved successfully to Google Sheets');
+            debugPrint('✅ STATUS_POPUP: Step 3 COMPLETED - Client saved successfully to Google Sheets');
           } else {
-            debugPrint('❌ STATUS_POPUP: Failed to save to Google Sheets: $saveResult');
+            debugPrint('❌ STATUS_POPUP: Step 3 FAILED - Failed to save to Google Sheets: $saveResult');
             // Nu afisa eroare utilizatorului - salvarea in Firebase a reusit
           }
         } else {
-          debugPrint('❌ STATUS_POPUP: Could not retrieve complete client data from Firebase');
+          debugPrint('❌ STATUS_POPUP: Step 2 FAILED - Could not retrieve complete client data from Firebase');
         }
       } catch (e) {
         debugPrint('❌ STATUS_POPUP: Exception during Google Sheets save: $e');

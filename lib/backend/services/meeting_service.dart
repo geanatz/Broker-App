@@ -127,8 +127,12 @@ class MeetingService {
             await dashboardService.onMeetingCreated(consultantToken, clientPhoneNumber);
             debugPrint('✅ MEETING_SERVICE: Dashboard notified successfully');
             
-            // OPTIMIZARE: Refresh singur in loc de multiple
-            dashboardService.refreshData();
+          // OPTIMIZARE: Refresh singur in loc de multiple (fire-and-forget)
+          unawaited(Future.microtask(() async {
+            try {
+              await dashboardService.refreshData();
+            } catch (_) {}
+          }));
             _pendingNotifications.remove('meeting_created');
           } catch (e) {
             debugPrint('❌ MEETING_SERVICE: Error in debounced notification: $e');
@@ -213,7 +217,12 @@ class MeetingService {
       final splashService = SplashService();
       // OPTIMIZARE: Delay redus pentru raspuns mai rapid
       await Future.delayed(const Duration(milliseconds: 50));
-      await splashService.invalidateMeetingsCacheAndRefresh();
+      // Fire-and-forget: nu bloca thread-ul curent
+      unawaited(Future.microtask(() async {
+        try {
+          await splashService.invalidateMeetingsCacheAndRefresh();
+        } catch (_) {}
+      }));
     } catch (e) {
       debugPrint('❌ MEETING_SERVICE: Error invalidating cache: $e');
     }

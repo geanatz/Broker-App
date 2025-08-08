@@ -244,9 +244,9 @@ class SplashService extends ChangeNotifier {
         return;
       }
 
-      // OPTIMIZARE: Timeout pentru operatiunea de refresh
+      // OPTIMIZARE: Timeout pentru operatiunea de refresh (redus pentru a evita FREEZE)
       final meetingsData = await firebaseService.getTeamMeetings()
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 3));
       
       final List<ClientActivity> meetings = [];
       for (final meetingMap in meetingsData) {
@@ -282,9 +282,9 @@ class SplashService extends ChangeNotifier {
         return;
       }
 
-      // OPTIMIZARE: Timeout pentru operatiunea de refresh
+      // OPTIMIZARE: Timeout pentru operatiunea de refresh (redus pentru a evita FREEZE)
       await clientService.loadClientsFromFirebase()
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 3));
       
       _cachedClients = List.from(clientService.clients);
       _clientsCacheTime = DateTime.now();
