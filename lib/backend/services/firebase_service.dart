@@ -317,7 +317,10 @@ class FirebaseThreadHandler {
 
   static final FirebaseThreadHandler instance = FirebaseThreadHandler._();
 
-  Future<T> executeOnPlatformThread<T>(Future<T> Function() operation) async {
+  Future<T> executeOnPlatformThread<T>(
+    Future<T> Function() operation, {
+    bool logErrors = true,
+  }) async {
     final completer = Completer<T>();
 
     void runOperation() async {
@@ -327,25 +330,33 @@ class FirebaseThreadHandler {
           completer.complete(result);
         }
       } catch (e) {
-        FirebaseLogger.error('Error in Firebase operation: $e');
+        if (logErrors) {
+          FirebaseLogger.error('Error in Firebase operation: $e');
+        }
         if (!completer.isCompleted) {
           completer.completeError(e);
         }
       }
     }
 
-    // FIX: Use microtask instead of addPostFrameCallback to avoid UI dependency
-    // This ensures operations run immediately without waiting for frame rendering
-    scheduleMicrotask(() => runOperation());
+    // Ensure MethodChannel calls are executed on the platform thread (UI thread)
+    // Some plugins require being called from the platform thread to avoid threading errors.
+    try {
+      WidgetsBinding.instance.addPostFrameCallback((_) => runOperation());
+    } catch (_) {
+      // Fallback: schedule in next event loop tick
+      Future<void>(() => runOperation());
+    }
 
     return completer.future;
   }
 
-  Stream<QuerySnapshot> createSafeQueryStream(
-    Stream<QuerySnapshot> Function() queryStream,
+  Stream<QuerySnapshot<Map<String, dynamic>>> createSafeQueryStream(
+    Stream<QuerySnapshot<Map<String, dynamic>>> Function() queryStream,
   ) {
     // Create a stream controller that will be responsible for the stream management
-    final controller = StreamController<QuerySnapshot>.broadcast();
+    final controller =
+        StreamController<QuerySnapshot<Map<String, dynamic>>>.broadcast();
 
     // Set up proper cancellation handler
     StreamSubscription? subscription;
@@ -378,6 +389,51 @@ class FirebaseThreadHandler {
         );
       } catch (e) {
         FirebaseLogger.error("Error setting up Firestore query: $e");
+        if (!controller.isClosed) {
+          controller.addError(e);
+          controller.close();
+        }
+      }
+    });
+
+    return controller.stream;
+  }
+
+  // Safe wrapper for document streams executed on the platform thread
+  Stream<DocumentSnapshot<Map<String, dynamic>>> createSafeDocumentStream(
+    Stream<DocumentSnapshot<Map<String, dynamic>>> Function() documentStream,
+  ) {
+    final controller =
+        StreamController<DocumentSnapshot<Map<String, dynamic>>>.broadcast();
+
+    StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? subscription;
+    controller.onCancel = () {
+      subscription?.cancel();
+      controller.close();
+    };
+
+    executeOnPlatformThread<void>(() async {
+      try {
+        subscription = documentStream().listen(
+          (snapshot) {
+            if (!controller.isClosed) {
+              controller.add(snapshot);
+            }
+          },
+          onError: (error) {
+            FirebaseLogger.error("Error in Firestore document stream: $error");
+            if (!controller.isClosed) {
+              controller.addError(error);
+            }
+          },
+          onDone: () {
+            if (!controller.isClosed) {
+              controller.close();
+            }
+          },
+        );
+      } catch (e) {
+        FirebaseLogger.error("Error setting up Firestore document stream: $e");
         if (!controller.isClosed) {
           controller.addError(e);
           controller.close();
@@ -891,42 +947,26 @@ class NewFirebaseService {
     }
 
     try {
-      // FIX: Use a simpler query that doesn't require composite indexes
+      // Server-side orderBy folosind index: consultantToken + updatedAt desc
       final query = _firestore
           .collection(_clientsCollection)
-          .where('consultantToken', isEqualTo: consultantToken);
+          .where('consultantToken', isEqualTo: consultantToken)
+          .orderBy('updatedAt', descending: true);
 
-      // Returneaza stream-ul de snapshots
-      yield* query
-          .snapshots()
+      // Returneaza stream-ul de snapshots (abonare sigura pe platform thread)
+      yield* _threadHandler.createSafeQueryStream(() => query.snapshots())
           .map((snapshot) {
-            final clients =
-                snapshot.docs.map((doc) {
+            final clients = snapshot.docs
+                .map<Map<String, dynamic>>((doc) {
                   final data = doc.data();
-                  data['id'] = doc.id; // Adauga ID-ul documentului
-                  return data;
-                }).toList();
+                  return {
+                    ...data,
+                    'id': doc.id,
+                  };
+                })
+                .toList();
 
-            // FIX: Sort locally to avoid index requirements
-            clients.sort((a, b) {
-              final aTime = a['updatedAt'] as Timestamp?;
-              final bTime = b['updatedAt'] as Timestamp?;
-
-              if (aTime == null && bTime == null) return 0;
-              if (aTime == null) return 1;
-              if (bTime == null) return -1;
-
-              return bTime.compareTo(aTime); // descending
-            });
-
-            // Only log significant changes
-            if (clients.isNotEmpty) {}
             return clients;
-          })
-          .handleError((error) {
-            FirebaseLogger.error('Real-time stream error: $error');
-            // FIX: Return empty list on error to prevent crashes
-            return <Map<String, dynamic>>[];
           });
     } catch (e) {
       FirebaseLogger.error('Error creating real-time stream: $e');
@@ -946,15 +986,19 @@ class NewFirebaseService {
     }
 
     // Creeaza query-ul pentru clientul specific
-    final query =
-        _firestore.collection(_clientsCollection).doc(phoneNumber).snapshots();
+    final query = _threadHandler.createSafeDocumentStream(
+      () => _firestore
+          .collection(_clientsCollection)
+          .doc(phoneNumber)
+          .snapshots(),
+    );
 
     // Returneaza stream-ul de snapshots
     yield* query.map((snapshot) {
       if (snapshot.exists) {
-        final data = snapshot.data() as Map<String, dynamic>;
+        final data = snapshot.data();
         // Verifica daca clientul apartine consultantului curent
-        if (data['consultantToken'] == consultantToken) {
+        if (data != null && data['consultantToken'] == consultantToken) {
           data['id'] = snapshot.id;
 
           return data;
@@ -981,14 +1025,17 @@ class NewFirebaseService {
         .where('category', isEqualTo: category)
         .orderBy('updatedAt', descending: true);
 
-    // Returneaza stream-ul de snapshots
-    yield* query.snapshots().map((snapshot) {
-      final clients =
-          snapshot.docs.map((doc) {
+    // Returneaza stream-ul de snapshots (abonare sigura pe platform thread)
+    yield* _threadHandler.createSafeQueryStream(() => query.snapshots()).map((snapshot) {
+      final clients = snapshot.docs
+          .map<Map<String, dynamic>>((doc) {
             final data = doc.data();
-            data['id'] = doc.id;
-            return data;
-          }).toList();
+            return {
+              ...data,
+              'id': doc.id,
+            };
+          })
+          .toList();
 
       return clients;
     });
@@ -1011,14 +1058,17 @@ class NewFirebaseService {
         .where('status', isEqualTo: status)
         .orderBy('updatedAt', descending: true);
 
-    // Returneaza stream-ul de snapshots
-    yield* query.snapshots().map((snapshot) {
-      final clients =
-          snapshot.docs.map((doc) {
+    // Returneaza stream-ul de snapshots (abonare sigura pe platform thread)
+    yield* _threadHandler.createSafeQueryStream(() => query.snapshots()).map((snapshot) {
+      final clients = snapshot.docs
+          .map<Map<String, dynamic>>((doc) {
             final data = doc.data();
-            data['id'] = doc.id;
-            return data;
-          }).toList();
+            return {
+              ...data,
+              'id': doc.id,
+            };
+          })
+          .toList();
 
       return clients;
     });
@@ -1038,9 +1088,9 @@ class NewFirebaseService {
           .collection(_clientsCollection)
           .where('consultantToken', isEqualTo: consultantToken);
 
-      // Returneaza stream-ul de snapshots cu informatii despre operatiuni
-      yield* query
-          .snapshots()
+      // Returneaza stream-ul de snapshots cu informatii despre operatiuni (abonare sigura)
+      yield* _threadHandler
+          .createSafeQueryStream(() => query.snapshots())
           .map((snapshot) {
             final operations = <String, dynamic>{
               'timestamp': DateTime.now().toIso8601String(),
@@ -1145,11 +1195,11 @@ class NewFirebaseService {
 
     try {
       final snapshot = await _threadHandler.executeOnPlatformThread(
-        () =>
-            _firestore
-                .collection(_clientsCollection)
-                .where('consultantToken', isEqualTo: consultantToken)
-                .get(),
+        () => _firestore
+            .collection(_clientsCollection)
+            .where('consultantToken', isEqualTo: consultantToken)
+            .orderBy('updatedAt', descending: true)
+            .get(),
       );
 
       final clientsList = <Map<String, dynamic>>[];
@@ -1163,17 +1213,7 @@ class NewFirebaseService {
         }
       }
 
-      // Sortez local dupa updatedAt (descending)
-      clientsList.sort((a, b) {
-        final aTime = a['updatedAt'] as Timestamp?;
-        final bTime = b['updatedAt'] as Timestamp?;
-
-        if (aTime == null && bTime == null) return 0;
-        if (aTime == null) return 1;
-        if (bTime == null) return -1;
-
-        return bTime.compareTo(aTime); // descending
-      });
+      // Sortare deja facuta pe server (index compus)
 
       // OPTIMIZARE: Salveaza in cache
       _allClientsCache = clientsList;
@@ -1201,12 +1241,21 @@ class NewFirebaseService {
 
       updates['updatedAt'] = FieldValue.serverTimestamp();
 
-      await _threadHandler.executeOnPlatformThread(
-        () => _firestore
-            .collection(_clientsCollection)
-            .doc(phoneNumber)
-            .update(updates),
-      );
+      try {
+        await _threadHandler.executeOnPlatformThread(
+          () => _firestore
+              .collection(_clientsCollection)
+              .doc(phoneNumber)
+              .update(updates),
+        );
+      } on FirebaseException catch (fe) {
+        if (fe.code == 'not-found') {
+          // Ignore benign not-found updates (ex: a fost sters intre timp)
+          FirebaseLogger.warning('Update ignored, client not found: $phoneNumber');
+          return false;
+        }
+        rethrow;
+      }
 
       // OPTIMIZARE: Invalideaza cache-ul pentru client
       invalidateClientCache(phoneNumber);
@@ -1472,6 +1521,7 @@ class NewFirebaseService {
         'dateTime': Timestamp.fromDate(dateTime),
         'type': type,
         'description': description,
+        'phoneNumber': phoneNumber,
         'consultantToken': consultantToken,
         'consultantName':
             additionalData?['consultantName'] ?? 'Consultant necunoscut',
@@ -1522,53 +1572,92 @@ class NewFirebaseService {
     }
 
     try {
-      final clients =
-          await getAllClients(); // Foloseste getAllClients care deja filtreaza corect
-      final List<Map<String, dynamic>> allMeetings = [];
+      // Foloseste collectionGroup pe toate meetings, filtrat pe consultantToken si ordonat dupa dateTime
+    final snapshot = await _threadHandler.executeOnPlatformThread(
+      () => _firestore
+          .collectionGroup(_meetingsSubcollection)
+          .where('consultantToken', isEqualTo: consultantToken)
+          .orderBy('dateTime', descending: false)
+          .get(),
+    );
 
-      for (final client in clients) {
-        final phoneNumber = client['phoneNumber'] as String;
+      final meetings = <Map<String, dynamic>>[];
+      for (final doc in snapshot.docs) {
+        final meetingData = doc.data();
+        final additionalData =
+            meetingData['additionalData'] as Map<String, dynamic>? ?? {};
 
-        // Verificare suplimentara pentru siguranta
-        if (client['consultantToken'] != consultantToken) {
-          continue;
-        }
+        // In lipsa clientPhoneNumber in path, folosim meetingData['phoneNumber']
+        final phone = meetingData['phoneNumber'] ?? additionalData['phoneNumber'] ?? '';
 
-        final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
-          () =>
-              _firestore
+        meetings.add({
+          'id': doc.id,
+          'clientPhoneNumber': phone,
+          'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? 'Client necunoscut',
+          'consultantToken': consultantToken,
+          ...meetingData,
+          'additionalData': {
+            ...additionalData,
+            'consultantToken': consultantToken,
+          },
+        });
+      }
+
+      // Sortare deja facuta pe server
+      return meetings;
+    } catch (e) {
+      FirebaseLogger.error('Error getting all meetings: $e');
+
+      // Fallback: daca lipseste indexul pentru collectionGroup, foloseste vechiul N+1
+      if (e is FirebaseException && e.code == 'failed-precondition') {
+        try {
+          final clients = await getAllClients();
+          final List<Map<String, dynamic>> allMeetings = [];
+
+          for (final client in clients) {
+            final phoneNumber = client['phoneNumber'] as String? ?? client['id'] as String? ?? '';
+            if (phoneNumber.isEmpty) continue;
+
+            final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
+              () => _firestore
                   .collection(_clientsCollection)
                   .doc(phoneNumber)
                   .collection(_meetingsSubcollection)
-                  .orderBy('dateTime', descending: false)
                   .get(),
-        );
+            );
 
-        for (final doc in meetingsSnapshot.docs) {
-          // FIX: Asigura-te ca consultantToken este disponibil pentru identificare
-          final meetingData = doc.data();
-          final additionalData =
-              meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+            for (final doc in meetingsSnapshot.docs) {
+              final meetingData = doc.data();
+              final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+              allMeetings.add({
+                'id': doc.id,
+                'clientPhoneNumber': phoneNumber,
+                ...meetingData,
+                'additionalData': {
+                  ...additionalData,
+                  'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? client['name'] ?? 'Client necunoscut',
+                  'consultantToken': meetingData['consultantToken'] ?? additionalData['consultantToken'] ?? client['consultantToken'] ?? '',
+                },
+              });
+            }
+          }
 
-          allMeetings.add({
-            'id': doc.id,
-            'clientPhoneNumber': phoneNumber,
-            'clientName': client['name'],
-            'consultantToken':
-                consultantToken, // FIX: asigura-te ca este setat corect
-            ...meetingData,
-            'additionalData': {
-              ...additionalData,
-              'consultantToken':
-                  consultantToken, // FIX: Foloseste token-ul pentru identificare
-            },
+          // Sortare locala dupa dateTime asc
+          allMeetings.sort((a, b) {
+            final aTs = a['dateTime'];
+            final bTs = b['dateTime'];
+            final aDt = aTs is Timestamp ? aTs.toDate() : DateTime.fromMillisecondsSinceEpoch(aTs ?? 0);
+            final bDt = bTs is Timestamp ? bTs.toDate() : DateTime.fromMillisecondsSinceEpoch(bTs ?? 0);
+            return aDt.compareTo(bDt);
           });
+
+          return allMeetings;
+        } catch (fallbackError) {
+          FirebaseLogger.error('Fallback getAllMeetings failed: $fallbackError');
+          return [];
         }
       }
 
-      return allMeetings;
-    } catch (e) {
-      FirebaseLogger.error('Error getting all meetings: $e');
       return [];
     }
   }
@@ -1581,78 +1670,134 @@ class NewFirebaseService {
     }
 
     try {
-      // Obtine toti consultantii din echipa
-      final teamConsultantsSnapshot = await _threadHandler
-          .executeOnPlatformThread(
-            () =>
-                _firestore
-                    .collection(_consultantsCollection)
-                    .where('team', isEqualTo: team)
-                    .get(),
-          );
+      // Obtine toti consultantii din echipa si colecteaza token-urile
+      final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+        () => _firestore
+            .collection(_consultantsCollection)
+            .where('team', isEqualTo: team)
+            .get(),
+      );
 
-      final List<String> teamTokens =
-          teamConsultantsSnapshot.docs
-              .map((doc) => doc.data()['token'] as String)
-              .where((token) => token.isNotEmpty)
-              .toList();
+      final List<String> teamTokens = teamConsultantsSnapshot.docs
+          .map((doc) => doc.data()['token'] as String?)
+          .where((t) => (t ?? '').isNotEmpty)
+          .cast<String>()
+          .toList();
 
-      // Obtine clientii pentru toti consultantii din echipa
+      if (teamTokens.isEmpty) return [];
+
       final List<Map<String, dynamic>> teamMeetings = [];
 
-      for (final token in teamTokens) {
-        final clientsSnapshot = await _threadHandler.executeOnPlatformThread(
-          () =>
-              _firestore
-                  .collection(_clientsCollection)
-                  .where('consultantToken', isEqualTo: token)
-                  .get(),
+      // Firestore whereIn max 10 elemente: chunking
+      const int chunkSize = 10;
+      for (int i = 0; i < teamTokens.length; i += chunkSize) {
+        final chunk = teamTokens.sublist(i, i + chunkSize > teamTokens.length ? teamTokens.length : i + chunkSize);
+
+        final snapshot = await _threadHandler.executeOnPlatformThread(
+          () => _firestore
+              .collectionGroup(_meetingsSubcollection)
+              .where('consultantToken', whereIn: chunk)
+              .orderBy('dateTime', descending: false)
+              .get(),
         );
 
-        for (final clientDoc in clientsSnapshot.docs) {
-          final phoneNumber = clientDoc.id;
-          final clientData = clientDoc.data();
+        for (final doc in snapshot.docs) {
+          final meetingData = doc.data();
+          final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+          final phone = meetingData['phoneNumber'] ?? additionalData['phoneNumber'] ?? '';
+          final token = meetingData['consultantToken'] as String? ?? additionalData['consultantToken'] as String? ?? '';
 
-          // FIX: verificare suplimentara pentru siguranta
-          if (clientData['consultantToken'] != token) {
-            continue;
-          }
-
-          final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
-            () =>
-                _firestore
-                    .collection(_clientsCollection)
-                    .doc(phoneNumber)
-                    .collection(_meetingsSubcollection)
-                    .orderBy('dateTime', descending: false)
-                    .get(),
-          );
-
-          for (final meetingDoc in meetingsSnapshot.docs) {
-            // FIX: Asigura-te ca consultantToken este disponibil pentru identificare
-            final meetingData = meetingDoc.data();
-            final additionalData =
-                meetingData['additionalData'] as Map<String, dynamic>? ?? {};
-
-            teamMeetings.add({
-              'id': meetingDoc.id,
-              'clientPhoneNumber': phoneNumber,
-              'clientName': clientData['name'],
-              'consultantToken': token, // FIX: asigura-te ca este setat corect
-              ...meetingData,
-              'additionalData': {
-                ...additionalData,
-                'consultantToken':
-                    token, // FIX: Foloseste token-ul pentru identificare in calendar
-              },
-            });
-          }
+          teamMeetings.add({
+            'id': doc.id,
+            'clientPhoneNumber': phone,
+            'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? 'Client necunoscut',
+            'consultantToken': token,
+            ...meetingData,
+            'additionalData': {
+              ...additionalData,
+              'consultantToken': token,
+            },
+          });
         }
       }
 
+      // Sortare deja facuta pe server
       return teamMeetings;
     } catch (e) {
       FirebaseLogger.error('Error getting team meetings: $e');
+
+      // Fallback: daca lipseste indexul pentru collectionGroup, query pe clienti per token si N+1 pe meetings
+      if (e is FirebaseException && e.code == 'failed-precondition') {
+        try {
+          final List<Map<String, dynamic>> teamMeetings = [];
+
+          // Obtine toti consultantii din echipa si colecteaza token-urile
+          final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+            () => _firestore
+                .collection(_consultantsCollection)
+                .where('team', isEqualTo: team)
+                .get(),
+          );
+
+          final List<String> teamTokens = teamConsultantsSnapshot.docs
+              .map((doc) => doc.data()['token'] as String? ?? '')
+              .where((t) => t.isNotEmpty)
+              .toList();
+
+          for (final token in teamTokens) {
+            // Ia clientii pentru fiecare token
+            final clientsSnapshot = await _threadHandler.executeOnPlatformThread(
+              () => _firestore
+                  .collection(_clientsCollection)
+                  .where('consultantToken', isEqualTo: token)
+                  .get(),
+            );
+
+            for (final clientDoc in clientsSnapshot.docs) {
+              final phoneNumber = clientDoc.id;
+              final clientData = clientDoc.data();
+              final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
+                () => _firestore
+                    .collection(_clientsCollection)
+                    .doc(phoneNumber)
+                    .collection(_meetingsSubcollection)
+                    .get(),
+              );
+
+              for (final meetingDoc in meetingsSnapshot.docs) {
+                final meetingData = meetingDoc.data();
+                final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+                final tokenValue = meetingData['consultantToken'] ?? additionalData['consultantToken'] ?? clientData['consultantToken'] ?? token;
+                teamMeetings.add({
+                  'id': meetingDoc.id,
+                  'clientPhoneNumber': phoneNumber,
+                  ...meetingData,
+                  'additionalData': {
+                    ...additionalData,
+                    'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? clientData['name'] ?? 'Client necunoscut',
+                    'consultantToken': tokenValue,
+                  },
+                });
+              }
+            }
+          }
+
+          // Sortare locala
+          teamMeetings.sort((a, b) {
+            final aTs = a['dateTime'];
+            final bTs = b['dateTime'];
+            final aDt = aTs is Timestamp ? aTs.toDate() : DateTime.fromMillisecondsSinceEpoch(aTs ?? 0);
+            final bDt = bTs is Timestamp ? bTs.toDate() : DateTime.fromMillisecondsSinceEpoch(bTs ?? 0);
+            return aDt.compareTo(bDt);
+          });
+
+          return teamMeetings;
+        } catch (fallbackError) {
+          FirebaseLogger.error('Fallback getTeamMeetings failed: $fallbackError');
+          return [];
+        }
+      }
+
       return [];
     }
   }

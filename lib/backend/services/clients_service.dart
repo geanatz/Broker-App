@@ -208,7 +208,7 @@ class ClientsService {
         category: _categoryToString(category ?? ClientCategory.apeluri),
         additionalData: {
           'phoneNumber2': phoneNumber2,
-          'formData': formData ?? {},
+          // formData normalizat: nu mai scriem in doc-ul clientului
           'isCompleted': false,
         },
       );
@@ -280,7 +280,7 @@ class ClientsService {
       if (coDebitorName != null) updates['coDebitorName'] = coDebitorName;
       if (status != null) updates['status'] = _statusToString(status);
       if (category != null) updates['category'] = _categoryToString(category);
-      if (formData != null) updates['formData'] = formData;
+      // formData normalizat: nu mai scriem in doc-ul clientului
       if (discussionStatus != null) updates['discussionStatus'] = discussionStatus;
       if (scheduledDateTime != null) updates['scheduledDateTime'] = scheduledDateTime.millisecondsSinceEpoch;
       if (additionalInfo != null) updates['additionalInfo'] = additionalInfo;
@@ -325,10 +325,7 @@ class ClientsService {
         formData: formData,
       );
 
-      if (success) {
-        // Actualizeaza si datele clientului cu formData
-        await updateClient(phoneNumber, formData: formData);
-      }
+      // Dupa salvarea formularului in subcolectie nu mai duplicam in doc-ul clientului
 
       return success;
     } catch (e) {
@@ -1739,7 +1736,7 @@ class ClientUIService extends ChangeNotifier {
         phoneNumber2: tempClient.phoneNumber2,
         status: tempClient.status,
         category: tempClient.category,
-        formData: tempClient.formData,
+        // formData normalizat: nu mai scriem in doc-ul clientului
       );
       
       if (success) {
@@ -1880,7 +1877,7 @@ class ClientUIService extends ChangeNotifier {
         coDebitorName: clientWithPhoneId.coDebitorName,
         status: clientWithPhoneId.status,
         category: clientWithPhoneId.category,
-        formData: clientWithPhoneId.formData,
+        // formData normalizat: nu mai scriem in doc-ul clientului
       );
       
       if (!success) {

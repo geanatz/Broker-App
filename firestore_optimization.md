@@ -366,3 +366,93 @@ normalizare formData: reduce dimensiune doc client, imbunatateste sync si elimin
 reguli mai stricte: protejeaza datele si previn edge cases (ex. schimbarea consultantToken)
 Am livrat schema optimizata cu reguli si indexuri corecte, cod Dart pentru queries rapide si counters shard-uiti, strategii de caching si un plan de migrare incremental si sigur.
 Impact: latența mai mica (fara N+1, sort server-side), costuri reduse (mai putine reads, fara duplicari), scalare scrieri (counters shard), si securitate consolidata (token imuabil, scope strict).
+
+---
+
+Structura de lucru propusa (faze, fara a rupe business-ul)
+Faza 0 — Pregatire si guardrails
+Feature flags si fallback-uri in servicii (NewFirebaseService, DashboardService, FormService, MeetingService) pentru a comuta gradual la noile query-uri/agregari.
+Audit utilizari: locuri unde se scrie/actualizeaza stats, clients, meetings, forms.
+Acceptanta: build curat, comportament neschimbat by default.
+Faza 1 — Reguli si indexuri corecte (sigure, non-breaking)
+Reguli:
+Protejeaza consultantToken la update (immutable).
+Restrange data/stats/** la scriere doar pentru consultantul curent sau functii backend.
+Elimina regula nefolosita pentru /meetings top-level.
+Indexuri:
+Inlocuieste collectionGroup: "clients" cu collectionId: "clients".
+Adauga composite: (consultantToken ASC, updatedAt DESC), (consultantToken ASC, category ASC, updatedAt DESC), (consultantToken ASC, status ASC, updatedAt DESC).
+Acceptanta: toate stream-urile ruleaza fara sort local atunci cand folosim orderBy server-side; niciun deny de la rules in fluxurile curente.
+Faza 2 — Query-uri server-side (fara sort local)
+getClientsRealTimeStream si getAllClients: folosesc orderBy pe updatedAt si compozite pe category/status cand e nevoie; elimina sortarea locala.
+Acceptanta: ordinea ramane identica cu implementarea actuala; latenta CPU client scade; fara erori de index.
+Faza 3 — Meetings fara N+1 pentru echipe
+Scriere: in fiecare meeting adauga campuri plane phoneNumber si consultantToken la radacina (uneori exista in additionalData, dar facem oficial si consistent).
+Citire echipa: inlocuieste N+1 cu collectionGroup('meetings') filtrat pe interval si consultantToken in teamTokens (batch-uri de 10).
+Acceptanta: lista de meetings in dashboard/calendar ramane completa si corecta; reads scad semnificativ.
+Faza 4 — Stats scalabile si consistente (dual-write, fara downtime)
+Dedup per client in subcolectii:
+.../monthly/{ym}/consultants/{token}/countedForms/{clientPhone}
+.../monthly/{ym}/consultants/{token}/countedMeetings/{clientPhone}
+Sharded counters:
+.../counters/forms/shards/{0..N-1}.count
+.../counters/meetings/shards/{0..N-1}.count
+Dual-write: la increment scriem si noul sistem si vechiul camp (formsCompleted, meetingsHeld) o perioada; citirea prefera noul sistem cand disponibil.
+Acceptanta: zero duble la concurenta; valori identice fata de sistemul vechi la final de zi; latenta stabila sub incarcare.
+Faza 5 — Normalizare forms (sursa unica)
+Oprire scriere clients.formData; raman doar clients/{id}/forms/{formId}.data.
+Citiri se fac doar din forms; mentinem fallback scurt daca e necesar.
+Acceptanta: UI afiseaza aceleasi date; dimensiunea doc client scade; fara regresii in salvare.
+Faza 6 — ID compus pentru clients (compat incremental)
+Pentru clienti noi: docId = ${consultantToken}__${phoneNumber}; campurile pastreaza phoneNumber si consultantToken.
+Citire: fallback la id vechi (phoneNumber) pentru clientii existenti.
+Migrare ulterioara offline/admin (copiere + stergere).
+Acceptanta: niciun conflict intre consultanti cu acelasi numar; UI si status pane functioneaza identic.
+Faza 7 — Unificare paths stats si TTL
+Muta stats/global si stats/teams sub data/stats/... pentru consistenta.
+daily docs cu expireAt si TTL 32 zile (config in consola).
+Acceptanta: dashboard si clasamente citesc corect din noua locatie, cu fallback pe vechi in tranziție.
+Faza 8 — Caching si paginare
+Server-side orderBy si limit/startAfter pentru liste > 500.
+Pastreaza cache-ul existent in SplashService/ClientsService, dar sincronizeaza-l cu noile query-uri.
+Acceptanta: memorie stabila, navigare cursiva in liste mari.
+Faza 9 — Observabilitate si guardrails
+Loguri concise (fara emoji), sampling pentru Firestore errors.
+Metrici: duratele pentru clients load, team meetings, save form; rata deny in rules.
+Optional: export Firestore catre BigQuery, alerte de usage spikes.
+Acceptanta: rapoarte scurte si utile, fara spam.
+Faza 10 — Migrare date (offline/admin, fara downtime)
+Script admin pentru:
+Copiere clienti vechi → id compus.
+Mutare stats vechi → noua structura; populare dedup markers initiali.
+Acceptanta: numar entitati si agregari egale inainte/dupa; rollback posibil prin feature flag.
+Puncte concrete de implementare (cod touchpoints)
+Reguli si indexuri:
+firestore.rules: token imuabil la update, restrangere data/stats/**, cleanup regula meetings top-level.
+firestore.indexes.json: corectare clients ca collectionId, adaugare composite necesare, meetings collectionGroup.
+Servicii:
+NewFirebaseService: getClientsRealTimeStream, getAllClients, getClientsByCategory/StatusRealTimeStream → orderBy server-side; scriere meeting cu campuri plane; adaugare queries collectionGroup.
+DashboardService: in onMeetingCreated/onFormCompleted → dual-write dedup + sharded counters; citire stats prefera noul sistem.
+FormService/FirebaseFormService: nu mai scrie clients.formData; citeste/scrie doar in forms.
+MeetingService: foloseste noile campuri plane si notificarile raman neschimbate logic.
+SplashService: foloseste noile queries (collectionGroup) pentru echipa; mentine cache si invalidate inteligente.
+Migrare: MigrationService extins pentru copiere clienti la id compus si seed pentru dedup markers.
+Acceptanta si testare pe faze (fara a rula comenzi)
+F1 (reguli + indexuri): nul impact vizual; toate listele si salvarea funcționeaza; zero deny neasteptat; queries cu orderBy nu mai necesita sort local.
+F3 (meetings group): acelasi set de meetings in calendar si dashboard ca inainte; scad citirile.
+F4 (stats dual-write): contadoarele raman corecte sub operatii paralele; nu apar duplicate; dashboard afiseaza aceleasi cifre.
+F5 (forms normalizare): formularul salveaza/recupereaza identic; dimensiunile doc scad.
+F6 (id compus): creare/listare/actualizare/stergere clienti functioneaza identic; clienti vechi raman accesibili prin fallback.
+F7 (stats unificare + TTL): dashboard si clasamente lucreaza pe noile cai; daily se curata automat.
+Riscuri si mitigari
+Schimbari in reguli pot bloca scrieri: introduc treptat (permit compat) si verific logs de deny.
+Dual-write poate dubla costul temporar: limitat la o perioada scurta; masuram si oprim vechiul flux cand validarea trece.
+Id compus necesita migrare: rulam fallback la citire pana la migrare completa; script admin testat pe subset.
+Ce livrez imediat (Faza 1, non-breaking)
+Edit firestore.rules: token imuabil, restrangere data/stats/**, cleanup reguli nefolosite.
+Edit firestore.indexes.json: inlocuire collectionGroup: "clients" cu collectionId: "clients", adaugare composite; meetings collectionGroup asc/desc pe dateTime.
+Actualizari minime in NewFirebaseService pentru a activa orderBy server-side atunci cand indexurile devin active (fallback sort local pastrat sub flag).
+Dupa aprobarea structurii, execut fazele incremental si verific la fiecare pas ca UI si metricile raman stabile.
+Am confirmat schema reala si problemele cheie (id=phoneNumber global, meetings N+1, stats cu arrays si write-open, sort local, duplicare formData).
+Am propus un plan incremental, sigur: reguli+indexuri corecte, query-uri server-side, meetings collectionGroup, stats cu dedup+shards, normalizare forms, id compus cu fallback, unificare stats si TTL, observabilitate.
+Am indicat fisierele de atins si criterii de acceptanta per faza, cu riscuri si mitigari.

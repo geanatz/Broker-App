@@ -208,9 +208,7 @@ void main() async {
       FirebaseFirestore.setLoggingEnabled(false);
     }
     
-    // Initialize connection monitoring
-    final connectionService = ConnectionService();
-    await connectionService.initialize();
+    // Defer connection monitoring to after first frame to avoid platform-thread warnings
     
     // Set up global error handling for platform errors
     PlatformDispatcher.instance.onError = (error, stack) {
@@ -234,13 +232,19 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final ConnectionService _connectionService = ConnectionService();
   @override
   void initState() {
     super.initState();
+    // Initialize connection monitoring after first frame to ensure platform thread
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _connectionService.initialize();
+    });
   }
 
   @override
   void dispose() {
+    // ConnectionService is a singleton; no explicit dispose needed here
     super.dispose();
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'firebase_service.dart';
 
 /// Service pentru monitorizarea starii conexiunii si gestionarea sincronizarii
 /// CRITICAL FIX: Implementare avansata pentru gestionarea reconnects si sync failures
@@ -85,24 +86,26 @@ class ConnectionService extends ChangeNotifier {
   /// Monitorizeaza conexiunea Firebase
   void _monitorFirebaseConnection() {
     try {
-      // FIX: Monitor Firebase connection status
-      _firebaseConnectionSubscription = FirebaseFirestore.instance
-          .collection('_health')
-          .doc('connection')
-          .snapshots()
-          .listen(
+      // FIX: Monitor Firebase connection status via platform-thread safe wrapper
+      final thread = FirebaseThreadHandler.instance;
+      final stream = thread.createSafeDocumentStream(
+        () => FirebaseFirestore.instance
+            .collection('_health')
+            .doc('connection')
+            .snapshots(),
+      );
+
+      _firebaseConnectionSubscription = stream.listen(
         (snapshot) {
           final wasConnected = _isFirebaseConnected;
           _isFirebaseConnected = snapshot.exists;
-          
 
-          
           if (wasConnected && !_isFirebaseConnected) {
             _handleFirebaseConnectionLoss();
           } else if (!wasConnected && _isFirebaseConnected) {
             _handleFirebaseConnectionRestored();
           }
-          
+
           notifyListeners();
         },
         onError: (error) {

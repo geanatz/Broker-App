@@ -99,6 +99,7 @@ class DashboardService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ClientsFirebaseService _clientsService = ClientsFirebaseService();
   final ConsultantService _consultantService = ConsultantService();
+  static const int _counterShards = 20; // configurable
 
   // State variables
   List<ConsultantRanking> _consultantsRanking = [];
@@ -657,6 +658,19 @@ class DashboardService extends ChangeNotifier {
         'completedClientsForMeetings': completedClientsForMeetings,
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      // Dual-write (nou sistem): dedup marker + sharded counter
+      // 1) Dedup marker per client (monthly)
+      await monthlyDocRef
+          .collection('countedMeetings')
+          .doc(clientPhoneNumber)
+          .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+
+      // 2) Sharded counter (monthly)
+      await _incrementShardedCounter(
+        parentDoc: monthlyDocRef,
+        counterGroup: 'meetings',
+      );
       
       // Salveaza si statistici zilnice pentru tracking detaliat
       final dailyDocRef = _firestore
@@ -678,7 +692,20 @@ class DashboardService extends ChangeNotifier {
           'meetingsHeld': FieldValue.increment(1),
           'completedClientsForMeetings': dailyCompletedClientsForMeetings,
           'lastUpdated': FieldValue.serverTimestamp(),
+          // Optional: TTL field; configure TTL on this field in console
+          'expireAt': Timestamp.fromDate(DateTime.now().add(const Duration(days: 32))),
         }, SetOptions(merge: true));
+
+        // Dual-write (daily): dedup marker + sharded counter
+        await dailyDocRef
+            .collection('countedMeetings')
+            .doc(clientPhoneNumber)
+            .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+
+        await _incrementShardedCounter(
+          parentDoc: dailyDocRef,
+          counterGroup: 'meetings',
+        );
       }
       
       debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in $yearMonth for client $clientPhoneNumber');
@@ -734,6 +761,19 @@ class DashboardService extends ChangeNotifier {
         'completedClientsForForms': completedClientsForForms,
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      // Dual-write (nou sistem): dedup marker + sharded counter
+      // 1) Dedup marker per client (monthly)
+      await monthlyDocRef
+          .collection('countedForms')
+          .doc(clientPhoneNumber)
+          .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+
+      // 2) Sharded counter (monthly)
+      await _incrementShardedCounter(
+        parentDoc: monthlyDocRef,
+        counterGroup: 'forms',
+      );
       
       // Salveaza si statistici zilnice pentru tracking detaliat
       final dailyDocRef = _firestore
@@ -755,7 +795,20 @@ class DashboardService extends ChangeNotifier {
           'formsCompleted': FieldValue.increment(1),
           'completedClientsForForms': dailyCompletedClientsForForms,
           'lastUpdated': FieldValue.serverTimestamp(),
+          // Optional: TTL field; configure TTL on this field in console
+          'expireAt': Timestamp.fromDate(DateTime.now().add(const Duration(days: 32))),
         }, SetOptions(merge: true));
+
+        // Dual-write (daily): dedup marker + sharded counter
+        await dailyDocRef
+            .collection('countedForms')
+            .doc(clientPhoneNumber)
+            .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+
+        await _incrementShardedCounter(
+          parentDoc: dailyDocRef,
+          counterGroup: 'forms',
+        );
       }
       
       debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in $yearMonth for client $clientPhoneNumber');
@@ -773,6 +826,25 @@ class DashboardService extends ChangeNotifier {
       debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified after form completion');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onFormCompleted: $e');
+    }
+  }
+}
+
+extension _ShardedCounters on DashboardService {
+  Future<void> _incrementShardedCounter({
+    required DocumentReference<Map<String, dynamic>> parentDoc,
+    required String counterGroup, // 'forms' | 'meetings'
+  }) async {
+    try {
+      final shardId = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+      final shardRef = parentDoc
+          .collection('counters')
+          .doc(counterGroup)
+          .collection('shards')
+          .doc(shardId);
+      await shardRef.set({'count': FieldValue.increment(1)}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Error incrementing sharded counter $counterGroup: $e');
     }
   }
 }

@@ -1,11 +1,15 @@
-{
+﻿{
   "indexes": [
     {
-      "collectionGroup": "clients",
+      "collectionId": "clients",
       "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "consultantToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
           "order": "ASCENDING"
         },
         {
@@ -15,7 +19,7 @@
       ]
     },
     {
-      "collectionGroup": "clients",
+      "collectionId": "clients",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -33,8 +37,50 @@
       ]
     },
     {
-      "collectionGroup": "meetings",
+      "collectionId": "clients",
       "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "consultantToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "creditBureauAppointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "consultantId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateTime",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "reservations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "consultantId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateTime",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "meetings",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
           "fieldPath": "consultantToken",
@@ -48,7 +94,7 @@
     },
     {
       "collectionGroup": "meetings",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
           "fieldPath": "consultantToken",
@@ -62,4 +108,4 @@
     }
   ],
   "fieldOverrides": []
-} 
+}

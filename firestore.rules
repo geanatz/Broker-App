@@ -15,13 +15,25 @@ service cloud.firestore {
     
     // Reguli pentru colectia de clienti
     match /clients/{phoneNumber} {
-      allow read, write: if request.auth != null && (
+      // Citire permisa proprietarului (prin consultantToken) sau supervisorului
+      allow read: if request.auth != null && (
         resource.data.consultantToken == getConsultantToken(request.auth.uid) ||
         isSupervisor(request.auth.uid)
       );
+
+      // Creare permisa doar cand consultantToken al documentului creat corespunde utilizatorului curent
       allow create: if request.auth != null && (
         request.resource.data.consultantToken == getConsultantToken(request.auth.uid) ||
         isSupervisor(request.auth.uid)
+      );
+
+      // Update/Delete permise proprietarului (prin consultantToken) sau supervisorului
+      // token-ul este imuabil: nu poate fi schimbat la update
+      allow update, delete: if request.auth != null && (
+        (
+          resource.data.consultantToken == getConsultantToken(request.auth.uid) &&
+          request.resource.data.consultantToken == resource.data.consultantToken
+        ) || isSupervisor(request.auth.uid)
       );
     }
     
@@ -33,22 +45,40 @@ service cloud.firestore {
       );
     }
     
-    // Reguli pentru colectia de statistici
-    match /data/stats/{document=**} {
-      allow read, write: if request.auth != null;
+    // Reguli pentru colectia de statistici (mai stricte)
+    // Monthly stats per consultant
+    match /data/stats/monthly/{yearMonth}/consultants/{token} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        token == getConsultantToken(request.auth.uid) || isSupervisor(request.auth.uid)
+      );
+    }
+
+    // Daily stats per consultant
+    match /data/stats/daily/{day}/consultants/{token} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        token == getConsultantToken(request.auth.uid) || isSupervisor(request.auth.uid)
+      );
+    }
+
+    // Global si teams (scriere doar de catre supervisor)
+    match /data/stats/global {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && isSupervisor(request.auth.uid);
+    }
+    match /data/stats/teams/{team}/stats {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && isSupervisor(request.auth.uid);
+    }
+
+    // Compatibilitate: reguli pentru colectia veche "stats" la radacina
+    match /stats/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && isSupervisor(request.auth.uid);
     }
     
-    // Reguli pentru colectia de meetings
-    match /meetings/{meetingId} {
-      allow read, write: if request.auth != null && (
-        resource.data.consultantToken == getConsultantToken(request.auth.uid) ||
-        isSupervisor(request.auth.uid)
-      );
-      allow create: if request.auth != null && (
-        request.resource.data.consultantToken == getConsultantToken(request.auth.uid) ||
-        isSupervisor(request.auth.uid)
-      );
-    }
+    // (Eliminat) Reguli pentru colectia de meetings la radacina - nu se foloseste
     
     // Functie helper pentru a obtine consultant token-ul
     function getConsultantToken(uid) {
