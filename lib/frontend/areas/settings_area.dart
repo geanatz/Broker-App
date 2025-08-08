@@ -5,6 +5,7 @@ import 'package:broker_app/backend/services/matcher_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:broker_app/backend/services/llm_service.dart';
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
+import 'package:broker_app/backend/services/role_service.dart';
 
 /// Area pentru setari care urmeaza exact design-ul specificat
 /// Permite gestionarea Google Drive si alte setari
@@ -78,6 +79,8 @@ class _SettingsAreaState extends State<SettingsArea> {
 
   /// Construieste continutul setarilor conform design-ului specificat
   Widget _buildSettingsContent() {
+    final isSupervisor = RoleService().isSupervisor;
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
@@ -87,7 +90,39 @@ class _SettingsAreaState extends State<SettingsArea> {
         WidgetHeader1(title: 'Setari'),
         
         const SizedBox(height: AppTheme.smallGap),
-        
+
+        // Indicator pentru supervisor
+        if (isSupervisor)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppTheme.smallGap),
+            margin: const EdgeInsets.only(bottom: AppTheme.smallGap),
+            decoration: ShapeDecoration(
+              color: AppTheme.elementColor3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.admin_panel_settings,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'SUPERVISOR MODE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: AppTheme.fontSizeMedium,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         // Placeholder pentru setari
         Expanded(
           child: Center(
@@ -130,5 +165,3 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 }
-
-

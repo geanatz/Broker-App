@@ -54,7 +54,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   /// Gestioneaza inregistrarea unui consultant
-  Future<void> _handleRegistration(String consultantName, String password, String confirmPassword, String team) async {
+  Future<void> _handleRegistration(String consultantName, String password, String confirmPassword, String team, String? supervisorPassword) async {
     if (!mounted) return;
     
     try {
@@ -63,6 +63,7 @@ class _AuthScreenState extends State<AuthScreen> {
         password: password,
         confirmPassword: confirmPassword,
         team: team,
+        supervisorPassword: supervisorPassword,
       );
       
       if (!mounted) return;

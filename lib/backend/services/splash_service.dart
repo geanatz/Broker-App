@@ -12,6 +12,7 @@ import 'package:broker_app/backend/services/firebase_service.dart';
 import 'package:broker_app/backend/services/sheets_service.dart';
 import 'package:broker_app/backend/services/connection_service.dart';
 import 'package:broker_app/backend/services/llm_service.dart';
+import 'package:broker_app/backend/services/role_service.dart';
 
 /// Service pentru gestionarea incarcarilor de pe splash screen si cache-ul aplicatiei
 /// OPTIMIZAT: Implementare avansata cu preloading paralel si cache inteligent
@@ -135,6 +136,9 @@ class SplashService extends ChangeNotifier {
       
       final newConsultantToken = await NewFirebaseService().getCurrentConsultantToken();
       final newTeam = await NewFirebaseService().getCurrentConsultantTeam();
+      // Refresh role on consultant change
+      final role = await RoleService().refreshRole();
+      debugPrint('SPLASH: Current role: ${role.asString}');
       
       if (newConsultantToken != _currentConsultantToken || newTeam != _currentTeam) {
         debugPrint('🔄 SPLASH: Consultant/team changed, resetting state');

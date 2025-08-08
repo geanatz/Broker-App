@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/frontend/modules/login_module.dart';
 
 class RegisterPopup extends StatefulWidget {
-  final Function(String consultantName, String password, String confirmPassword, String team) onRegisterAttempt;
+  final Function(String consultantName, String password, String confirmPassword, String team, String? supervisorPassword) onRegisterAttempt;
   final VoidCallback onGoToLogin;
 
   const RegisterPopup({
@@ -22,10 +22,12 @@ class _RegisterPopupState extends State<RegisterPopup> {
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _supervisorPasswordController = TextEditingController();
   String? _selectedTeam;
-  final List<String> _teamOptions = ['Echipa Andreea', 'Echipa Cristina', 'Echipa Scarlat'];
+  final List<String> _teamOptions = ['Echipa Andreea', 'Echipa Cristina', 'Echipa Scarlat', 'Supervisor'];
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _obscureSupervisorPassword = true;
   String? _registerError;
 
   // Adaugare stari pentru validare vizuala
@@ -99,11 +101,14 @@ class _RegisterPopupState extends State<RegisterPopup> {
     
     // Daca totul e valid, trimitem datele
     if (isValid) {
+      final supervisorPassword = _supervisorPasswordController.text.trim();
+      final team = _selectedTeam == 'Supervisor' ? '' : _selectedTeam!;
       widget.onRegisterAttempt(
         _nameController.text,
         _passwordController.text,
         _confirmPasswordController.text,
-        _selectedTeam!,
+        team,
+        _selectedTeam == 'Supervisor' ? supervisorPassword : null,
       );
     }
   }
@@ -113,6 +118,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
     _nameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _supervisorPasswordController.dispose();
     AppTheme().removeListener(_onAppThemeChanged);
     super.dispose();
   }
@@ -130,40 +136,43 @@ class _RegisterPopupState extends State<RegisterPopup> {
   @override
   Widget build(BuildContext context) {
     const double popupWidth = 360.0;
-    const double popupHeight = 488.0;
 
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.zero,
       child: Container(
         width: popupWidth,
-        height: popupHeight,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: AppTheme.popupDecoration.copyWith(
           color: AppTheme.popupBackground,
           boxShadow: [AppTheme.widgetShadow],
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            SizedBox(height: AppTheme.smallGap),
-            _buildRegisterForm(),
-            SizedBox(height: AppTheme.smallGap),
-            _buildGoToLoginLink(),
-            SizedBox(height: AppTheme.smallGap),
-            _buildRegisterButton(),
-            if (_registerError != null)
-              Padding(
-                padding: const EdgeInsets.only(top: AppTheme.tinyGap),
-                child: Text(
-                  _registerError!,
-                  style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.elementColor2),
-                  textAlign: TextAlign.center,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(),
+              SizedBox(height: AppTheme.smallGap),
+              _buildRegisterForm(),
+              SizedBox(height: AppTheme.smallGap),
+              _buildGoToLoginLink(),
+              SizedBox(height: AppTheme.smallGap),
+              _buildRegisterButton(),
+              if (_registerError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppTheme.tinyGap),
+                  child: Text(
+                    _registerError!,
+                    style: AppTheme.tinyTextStyle.copyWith(color: AppTheme.elementColor2),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -280,6 +289,10 @@ class _RegisterPopupState extends State<RegisterPopup> {
             ),
             SizedBox(height: AppTheme.smallGap),
             _buildTeamDropdown(),
+            if (_selectedTeam == 'Supervisor') ...[
+              SizedBox(height: AppTheme.smallGap),
+              _buildSupervisorPasswordField(),
+            ],
           ],
         ),
       ),
@@ -424,6 +437,10 @@ class _RegisterPopupState extends State<RegisterPopup> {
                 if (value != null) {
                   _isTeamInvalid = false;
                 }
+                // Clear supervisor password when team changes
+                if (value != 'Supervisor') {
+                  _supervisorPasswordController.clear();
+                }
               });
             },
             hint: Text(
@@ -447,6 +464,22 @@ class _RegisterPopupState extends State<RegisterPopup> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSupervisorPasswordField() {
+    return _buildPasswordField(
+      controller: _supervisorPasswordController,
+      title: "Parola Supervisor",
+      hintText: "Introdu parola pentru a deveni supervisor",
+      obscureText: _obscureSupervisorPassword,
+      onToggleObscure: () => setState(() => _obscureSupervisorPassword = !_obscureSupervisorPassword),
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Introdu parola supervisor';
+        if (value != 'iamsupervisor') return 'Parola supervisor incorecta';
+        return null;
+      },
+      isInvalid: false,
     );
   }
 

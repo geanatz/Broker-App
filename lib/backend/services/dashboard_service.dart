@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'clients_service.dart';
 import 'consultant_service.dart';
 import 'package:intl/intl.dart';
+import 'role_service.dart';
 
 /// Model pentru consultant in clasament
 class ConsultantRanking {
@@ -208,9 +209,11 @@ class DashboardService extends ChangeNotifier {
   /// Reincarca toate clasamentele pentru luna selectata
   Future<void> _refreshRankingsForSelectedMonth() async {
     try {
+      final role = await RoleService().refreshRole();
+      final isSupervisor = role == UserRole.supervisor;
       await Future.wait([
-        _loadConsultantsRanking(),
-        _loadTeamsRanking(),
+        _loadConsultantsRanking(isSupervisor: isSupervisor),
+        _loadTeamsRanking(isSupervisor: isSupervisor),
       ]);
       notifyListeners();
     } catch (e) {
@@ -249,8 +252,8 @@ class DashboardService extends ChangeNotifier {
       final futures = <Future<void>>[
         _loadConsultantStats(), // Cel mai rapid - doar consultantul curent
         _loadUpcomingMeetings(), // Rapid - doar intalnirile consultantului curent
-        _loadConsultantsRanking(), // Mai lent - toti consultantii
-        _loadTeamsRanking(), // Cel mai lent - toate echipele
+        _loadConsultantsRanking(isSupervisor: await RoleService().refreshRole() == UserRole.supervisor), // Mai lent - toti consultantii
+        _loadTeamsRanking(isSupervisor: await RoleService().refreshRole() == UserRole.supervisor), // Cel mai lent - toate echipele
         _loadDutyAgent(), // Incarca agentul de serviciu
       ];
 
@@ -280,8 +283,10 @@ class DashboardService extends ChangeNotifier {
   }
 
   /// Incarca clasamentul consultantilor din Firebase (FIX: foloseste consultantToken pentru stats)
-  Future<void> _loadConsultantsRanking() async {
+  Future<void> _loadConsultantsRanking({bool isSupervisor = false}) async {
     try {
+      debugPrint('📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: $isSupervisor');
+      
       // FIX: Obtine toate consultantii cu token-urile lor
       final consultantsSnapshot = await _firestore.collection('consultants').get();
       if (consultantsSnapshot.docs.isEmpty) {
@@ -300,6 +305,13 @@ class DashboardService extends ChangeNotifier {
           
       final statsMap = { for (var doc in monthlyStatsSnapshot.docs) doc.id : doc.data() };
 
+      // Determine current team for filtering when not supervisor
+      String? currentTeam;
+      if (!isSupervisor) {
+        final currentConsultant = await _consultantService.getCurrentConsultantData();
+        currentTeam = currentConsultant?['team'] as String?;
+      }
+
       final rankings = consultantsSnapshot.docs.map((consultantDoc) {
         final consultantData = consultantDoc.data();
         final consultantToken = consultantData['token'] as String?;
@@ -308,6 +320,13 @@ class DashboardService extends ChangeNotifier {
         
         if (consultantToken == null) {
           return null;
+        }
+
+        // If not supervisor and current team is set, restrict to same team
+        if (!isSupervisor && currentTeam != null && currentTeam.isNotEmpty) {
+          if (consultantTeam != currentTeam) {
+            return null;
+          }
         }
 
         // FIX: Foloseste consultantToken pentru a gasi statisticile
@@ -329,6 +348,7 @@ class DashboardService extends ChangeNotifier {
 
       rankings.sort((a, b) => b.score.compareTo(a.score));
       _consultantsRanking = rankings;
+      debugPrint('📊 DASHBOARD_SERVICE: Loaded ${rankings.length} consultants | isSupervisor: $isSupervisor | Teams excluded: ${rankings.where((r) => r.team.isEmpty).length}');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading consultants: $e');
       _consultantsRanking = [];
@@ -336,8 +356,10 @@ class DashboardService extends ChangeNotifier {
   }
 
   /// Incarca clasamentul echipelor din Firebase (FIX: foloseste consultantToken pentru stats)
-  Future<void> _loadTeamsRanking() async {
+  Future<void> _loadTeamsRanking({bool isSupervisor = false}) async {
     try {
+      debugPrint('📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: $isSupervisor');
+      
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
       final monthlyStatsSnapshot = await _firestore
           .collection('data')
@@ -353,6 +375,13 @@ class DashboardService extends ChangeNotifier {
       final consultantsSnapshot = await _firestore.collection('consultants').get();
       final Map<String, Map<String, int>> teamStats = {};
 
+      // Determine current team for filtering when not supervisor
+      String? currentTeam;
+      if (!isSupervisor) {
+        final currentConsultant = await _consultantService.getCurrentConsultantData();
+        currentTeam = currentConsultant?['team'] as String?;
+      }
+
       for (var consultantDoc in consultantsSnapshot.docs) {
         final consultantData = consultantDoc.data();
         final consultantToken = consultantData['token'] as String?;
@@ -362,6 +391,18 @@ class DashboardService extends ChangeNotifier {
           continue;
         }
         
+        // Skip supervisors from team rankings - they don't belong to any team
+        if (teamId.isEmpty) {
+          continue;
+        }
+        
+        // If not supervisor and current team is set, restrict aggregation to same team only
+        if (!isSupervisor && currentTeam != null && currentTeam.isNotEmpty) {
+          if (teamId != currentTeam) {
+            continue;
+          }
+        }
+
         // FIX: Foloseste consultantToken pentru a gasi statisticile
         final stats = statsMap[consultantToken] ?? {};
         final forms = (stats['formsCompleted'] ?? 0) as num;
@@ -376,7 +417,8 @@ class DashboardService extends ChangeNotifier {
       }
       
       final teamNames = await _consultantService.getAllTeams();
-      final teamRankings = teamNames.map((teamName) {
+      debugPrint('📊 DASHBOARD_SERVICE: Found teams: $teamNames');
+      final teamRankings = teamNames.where((teamName) => teamName != 'Supervisor').map((teamName) {
         final stats = teamStats[teamName] ?? {'forms': 0, 'meetings': 0, 'members': 0, 'score': 0};
         
         return TeamRanking(
@@ -391,6 +433,7 @@ class DashboardService extends ChangeNotifier {
 
       teamRankings.sort((a, b) => b.score.compareTo(a.score));
       _teamsRanking = teamRankings;
+      debugPrint('📊 DASHBOARD_SERVICE: Loaded ${teamRankings.length} teams | isSupervisor: $isSupervisor');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading teams: $e');
       _teamsRanking = [];

@@ -1,6 +1,7 @@
 import 'package:broker_app/app_theme.dart';
 import 'package:broker_app/backend/services/dashboard_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:broker_app/backend/services/role_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../components/chatbot_widget.dart';
@@ -142,6 +143,24 @@ class _DashboardAreaState extends State<DashboardArea> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  // Indicator pentru supervisor
+                  if (RoleService().isSupervisor)
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.elementColor3,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'SUPERVISOR',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

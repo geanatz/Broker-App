@@ -58,6 +58,7 @@ class AuthService {
     required String password,
     required String confirmPassword,
     required String team,
+    String? supervisorPassword,
   }) async {
     try {
       debugPrint('🟨 AUTH_SERVICE: Starting registration | Name: $consultantName | Team: $team');
@@ -121,6 +122,21 @@ class AuthService {
       // Adaugam un delay mic pentru a permite AuthWrapper sa proceseze complete signOut-ul
       await Future.delayed(const Duration(milliseconds: 500));
 
+      // Determina rolul in functie de parola supervisor
+      String role = 'Consultant';
+      if (supervisorPassword != null && supervisorPassword.isNotEmpty) {
+        if (supervisorPassword == 'iamsupervisor') {
+          role = 'Supervisor';
+          debugPrint('🟢 AUTH_SERVICE: Supervisor role granted with password');
+        } else {
+          debugPrint('🔴 AUTH_SERVICE: Invalid supervisor password provided');
+          return {
+            'success': false,
+            'message': 'Parola supervisor incorecta',
+          };
+        }
+      }
+
       // Salveaza datele consultantului in noua structura Firebase
       // IMPORTANT: documentul va fi cu UID-ul din Firebase Auth, dar va contine token-ul unic
       await _threadHandler.executeOnPlatformThread(() =>
@@ -129,6 +145,7 @@ class AuthService {
           'team': team,
           'token': consultantToken, // Token-ul unic al consultantului
           'email': userCredential.user!.email,
+          'role': role, // role based on supervisor password
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
           'lastActive': FieldValue.serverTimestamp(),
