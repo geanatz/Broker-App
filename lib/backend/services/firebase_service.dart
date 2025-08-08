@@ -711,6 +711,7 @@ class NewFirebaseService {
   String? _cachedConsultantToken;
   DateTime? _tokenCacheTime;
   static const Duration _tokenCacheDuration = Duration(minutes: 5);
+  String? _cachedTokenUid; // ensure token cache is tied to current UID
 
   // OPTIMIZARE: Cache pentru client data
   final Map<String, Map<String, dynamic>> _clientCache = {};
@@ -726,6 +727,7 @@ class NewFirebaseService {
   List<Map<String, dynamic>>? _allClientsCache;
   DateTime? _allClientsCacheTime;
   static const Duration _allClientsCacheDuration = Duration(seconds: 30);
+  String? _allClientsCacheToken; // consultantToken that the list belongs to
 
   /// OPTIMIZARE: Curata cache-ul pentru client data
   void clearClientCache() {
@@ -746,6 +748,7 @@ class NewFirebaseService {
     clearClientCache();
     clearFormCache();
     invalidateConsultantTokenCache();
+    invalidateAllClientsCache();
   }
 
   /// Obtine token-ul consultantului curent din baza de data (cu cache)
@@ -753,7 +756,8 @@ class NewFirebaseService {
     PerformanceMonitor.startTimer('getCurrentConsultantToken');
 
     // Verifica cache-ul
-    if (_cachedConsultantToken != null && _tokenCacheTime != null) {
+    final user = currentUser;
+    if (_cachedConsultantToken != null && _tokenCacheTime != null && user != null && _cachedTokenUid == user.uid) {
       final cacheAge = DateTime.now().difference(_tokenCacheTime!);
       if (cacheAge < _tokenCacheDuration) {
         // Only log cache usage occasionally to reduce spam
@@ -766,7 +770,6 @@ class NewFirebaseService {
     }
 
     return await _threadHandler.executeOnPlatformThread(() async {
-      final user = currentUser;
       if (user == null) {
         FirebaseLogger.error('getCurrentConsultantToken currentUser is null');
         PerformanceMonitor.endTimer('getCurrentConsultantToken');
@@ -794,6 +797,7 @@ class NewFirebaseService {
             // Salveaza in cache
             _cachedConsultantToken = token;
             _tokenCacheTime = DateTime.now();
+            _cachedTokenUid = user.uid;
 
             PerformanceMonitor.endTimer('getCurrentConsultantToken');
             return token;
@@ -819,6 +823,7 @@ class NewFirebaseService {
   void invalidateConsultantTokenCache() {
     _cachedConsultantToken = null;
     _tokenCacheTime = null;
+    _cachedTokenUid = null;
   }
 
   /// Obtine datele consultantului pe baza token-ului
@@ -1186,7 +1191,7 @@ class NewFirebaseService {
     }
 
     // OPTIMIZARE: Verifica cache-ul pentru all clients
-    if (_allClientsCache != null && _allClientsCacheTime != null) {
+    if (_allClientsCache != null && _allClientsCacheTime != null && _allClientsCacheToken == consultantToken) {
       final cacheAge = DateTime.now().difference(_allClientsCacheTime!);
       if (cacheAge < _allClientsCacheDuration) {
         return _allClientsCache!;
@@ -1218,6 +1223,7 @@ class NewFirebaseService {
       // OPTIMIZARE: Salveaza in cache
       _allClientsCache = clientsList;
       _allClientsCacheTime = DateTime.now();
+      _allClientsCacheToken = consultantToken;
 
       return clientsList;
     } catch (e) {
@@ -2019,6 +2025,7 @@ class NewFirebaseService {
   void invalidateAllClientsCache() {
     _allClientsCache = null;
     _allClientsCacheTime = null;
+    _allClientsCacheToken = null;
   }
 }
 

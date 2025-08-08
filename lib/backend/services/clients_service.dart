@@ -2276,6 +2276,9 @@ class ClientUIService extends ChangeNotifier {
       // Sterge cache-ul local
       _clients.clear();
       _focusedClient = null;
+      // Clear Firebase service caches to avoid data leaking across consultants
+      NewFirebaseService().clearAllCaches();
+      NewFirebaseService().invalidateConsultantTokenCache();
       
       // Incarca datele pentru noul consultant (fara auto-refresh pentru a evita apelurile multiple)
       await loadClientsFromFirebase();

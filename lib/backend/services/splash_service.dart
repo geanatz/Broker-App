@@ -134,6 +134,8 @@ class SplashService extends ChangeNotifier {
         return;
       }
       
+      // Invalidate cached consultant token before reading a new one to avoid leakage
+      NewFirebaseService().invalidateConsultantTokenCache();
       final newConsultantToken = await NewFirebaseService().getCurrentConsultantToken();
       final newTeam = await NewFirebaseService().getCurrentConsultantTeam();
       // Refresh role on consultant change
@@ -151,6 +153,9 @@ class SplashService extends ChangeNotifier {
         
         // FIX: Enhanced cache invalidation
         _invalidateCacheWithDebouncing();
+
+        // Also clear Firebase-side caches strictly bound to previous consultant
+        NewFirebaseService().clearAllCaches();
         
         // FIX: Switch consultant in Google Drive service
         if (_googleDriveService != null && newConsultantToken != null) {
@@ -179,7 +184,9 @@ class SplashService extends ChangeNotifier {
       
       // FIX: Reload client service with new consultant context
       if (_clientUIService != null) {
+        _clientUIService!.stopRealTimeListeners();
         await _clientUIService!.loadClientsFromFirebase();
+        await _clientUIService!.startRealTimeListeners();
       }
       
       // FIX: Reload dashboard service with new consultant context

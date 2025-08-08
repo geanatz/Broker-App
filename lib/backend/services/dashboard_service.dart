@@ -296,15 +296,6 @@ class DashboardService extends ChangeNotifier {
       }
 
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
-      final monthlyStatsSnapshot = await _firestore
-          .collection('data')
-          .doc('stats')
-          .collection('monthly')
-          .doc(yearMonth)
-          .collection('consultants')
-          .get();
-          
-      final statsMap = { for (var doc in monthlyStatsSnapshot.docs) doc.id : doc.data() };
 
       // Determine current team for filtering when not supervisor
       String? currentTeam;
@@ -313,39 +304,34 @@ class DashboardService extends ChangeNotifier {
         currentTeam = currentConsultant?['team'] as String?;
       }
 
-      final rankings = consultantsSnapshot.docs.map((consultantDoc) {
-        final consultantData = consultantDoc.data();
-        final consultantToken = consultantData['token'] as String?;
-        final consultantName = consultantData['name'] as String? ?? 'Necunoscut';
-        final consultantTeam = consultantData['team'] as String? ?? '';
-        
-        if (consultantToken == null) {
-          return null;
+      final List<QueryDocumentSnapshot<Map<String, dynamic>>> filtered = consultantsSnapshot.docs.where((consultantDoc) {
+        final data = consultantDoc.data();
+        final team = (data['team'] as String?) ?? '';
+        if (!isSupervisor && (currentTeam ?? '').isNotEmpty) {
+          return team == currentTeam;
         }
+        return true;
+      }).toList();
 
-        // If not supervisor and current team is set, restrict to same team
-        if (!isSupervisor && currentTeam != null && currentTeam.isNotEmpty) {
-          if (consultantTeam != currentTeam) {
-            return null;
-          }
-        }
-
-        // FIX: Foloseste consultantToken pentru a gasi statisticile
-        final stats = statsMap[consultantToken] ?? {};
-        final forms = (stats['formsCompleted'] ?? 0) as num;
-        final meetings = (stats['meetingsHeld'] ?? 0) as num;
-        final score = (forms.toInt() * 5) + (meetings.toInt() * 10);
-
-        return ConsultantRanking(
-          id: consultantDoc.id, // Pastram UID-ul pentru identificare
-          name: consultantName,
-          team: consultantTeam,
+      final List<ConsultantRanking> rankings = [];
+      await Future.wait(filtered.map((consultantDoc) async {
+        final data = consultantDoc.data();
+        final consultantToken = data['token'] as String?;
+        if (consultantToken == null || consultantToken.isEmpty) return;
+        final counters = await _readMonthlyCountersForToken(yearMonth, consultantToken);
+        final forms = counters['forms'] ?? 0;
+        final meetings = counters['meetings'] ?? 0;
+        final score = (forms * 5) + (meetings * 10);
+        rankings.add(ConsultantRanking(
+          id: consultantDoc.id,
+          name: data['name'] as String? ?? 'Necunoscut',
+          team: data['team'] as String? ?? '',
           score: score,
-          formsCompleted: forms.toInt(),
+          formsCompleted: forms,
           callsMade: 0,
-          meetingsScheduled: meetings.toInt(),
-        );
-      }).where((ranking) => ranking != null).cast<ConsultantRanking>().toList();
+          meetingsScheduled: meetings,
+        ));
+      }));
 
       rankings.sort((a, b) => b.score.compareTo(a.score));
       _consultantsRanking = rankings;
@@ -362,15 +348,6 @@ class DashboardService extends ChangeNotifier {
       debugPrint('📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: $isSupervisor');
       
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
-      final monthlyStatsSnapshot = await _firestore
-          .collection('data')
-          .doc('stats')
-          .collection('monthly')
-          .doc(yearMonth)
-          .collection('consultants')
-          .get();
-          
-      final statsMap = { for (var doc in monthlyStatsSnapshot.docs) doc.id : doc.data() };
 
       // FIX: Obtine toti consultantii cu token-urile lor
       final consultantsSnapshot = await _firestore.collection('consultants').get();
@@ -387,32 +364,23 @@ class DashboardService extends ChangeNotifier {
         final consultantData = consultantDoc.data();
         final consultantToken = consultantData['token'] as String?;
         final teamId = consultantData['team'] as String? ?? '';
-        
         if (consultantToken == null || teamId.isEmpty) {
           continue;
         }
-        
-        // Skip supervisors from team rankings - they don't belong to any team
-        if (teamId.isEmpty) {
-          continue;
-        }
-        
-        // If not supervisor and current team is set, restrict aggregation to same team only
         if (!isSupervisor && currentTeam != null && currentTeam.isNotEmpty) {
           if (teamId != currentTeam) {
             continue;
           }
         }
 
-        // FIX: Foloseste consultantToken pentru a gasi statisticile
-        final stats = statsMap[consultantToken] ?? {};
-        final forms = (stats['formsCompleted'] ?? 0) as num;
-        final meetings = (stats['meetingsHeld'] ?? 0) as num;
-        final consultantScore = (forms.toInt() * 5) + (meetings.toInt() * 10);
-        
+        final counters = await _readMonthlyCountersForToken(yearMonth, consultantToken);
+        final forms = counters['forms'] ?? 0;
+        final meetings = counters['meetings'] ?? 0;
+        final consultantScore = (forms * 5) + (meetings * 10);
+
         teamStats.putIfAbsent(teamId, () => {'forms': 0, 'meetings': 0, 'members': 0, 'score': 0});
-        teamStats[teamId]!['forms'] = teamStats[teamId]!['forms']! + forms.toInt();
-        teamStats[teamId]!['meetings'] = teamStats[teamId]!['meetings']! + meetings.toInt();
+        teamStats[teamId]!['forms'] = teamStats[teamId]!['forms']! + forms;
+        teamStats[teamId]!['meetings'] = teamStats[teamId]!['meetings']! + meetings;
         teamStats[teamId]!['members'] = teamStats[teamId]!['members']! + 1;
         teamStats[teamId]!['score'] = teamStats[teamId]!['score']! + consultantScore;
       }
@@ -497,9 +465,10 @@ class DashboardService extends ChangeNotifier {
       if (consultantToken == null) return;
 
       final stats = await calculateConsultantStatsOptimized(consultantToken);
+      final dailyFormsToday = await _readDailyFormsCompletedToday(consultantToken);
       
       _consultantStats = ConsultantStats(
-        formsCompletedToday: 0, // Placeholder
+        formsCompletedToday: dailyFormsToday,
         dailyFormsTarget: 10, // Placeholder
         formsCompletedThisMonth: stats['formsCompleted'] ?? 0,
         totalMeetingsScheduled: stats['meetingsScheduled'] ?? 0,
@@ -515,28 +484,43 @@ class DashboardService extends ChangeNotifier {
   Future<Map<String, int>> calculateConsultantStatsOptimized(String consultantToken) async {
     try {
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
-      
-      final doc = await _firestore
+      // Prefer new system: sharded counters under data/stats/monthly/{ym}/consultants/{token}/counters/*
+      final parentDoc = _firestore
           .collection('data')
           .doc('stats')
           .collection('monthly')
           .doc(yearMonth)
           .collection('consultants')
-          .doc(consultantToken)
-          .get();
-      
-      if (doc.exists) {
-        final data = doc.data();
+          .doc(consultantToken);
+
+      final formsFromShards = await _getShardedCounterTotal(
+        parentDoc: parentDoc,
+        counterGroup: 'forms',
+      );
+      final meetingsFromShards = await _getShardedCounterTotal(
+        parentDoc: parentDoc,
+        counterGroup: 'meetings',
+      );
+
+      if (formsFromShards > 0 || meetingsFromShards > 0 || await _hasAnyShards(parentDoc)) {
+        return {
+          'formsCompleted': formsFromShards,
+          'meetingsScheduled': meetingsFromShards,
+        };
+      }
+
+      // Fallback to old fields on the monthly doc
+      final monthlyDoc = await parentDoc.get();
+      if (monthlyDoc.exists) {
+        final data = monthlyDoc.data();
         final formsCompleted = (data?['formsCompleted'] ?? 0) as num;
-        final meetingsScheduled = (data?['meetingsHeld'] ?? 0) as num;
-        
+        final meetingsHeld = (data?['meetingsHeld'] ?? 0) as num;
         return {
           'formsCompleted': formsCompleted.toInt(),
-          'meetingsScheduled': meetingsScheduled.toInt(),
+          'meetingsScheduled': meetingsHeld.toInt(),
         };
-      } else {
-        return {'formsCompleted': 0, 'meetingsScheduled': 0};
       }
+      return {'formsCompleted': 0, 'meetingsScheduled': 0};
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error calculating stats: $e');
       return {'formsCompleted': 0, 'meetingsScheduled': 0};
@@ -586,6 +570,88 @@ class DashboardService extends ChangeNotifier {
     _dutyAgentCache.clear();
     super.dispose();
     debugPrint('🗑️ DASHBOARD_SERVICE: Disposed with cache cleanup');
+  }
+
+  /// Returns total value of a sharded counter under parentDoc/counters/{counterGroup}/shards/*
+  Future<int> _getShardedCounterTotal({
+    required DocumentReference<Map<String, dynamic>> parentDoc,
+    required String counterGroup,
+  }) async {
+    try {
+      final shardsSnap = await parentDoc
+          .collection('counters')
+          .doc(counterGroup)
+          .collection('shards')
+          .get();
+
+      if (shardsSnap.docs.isEmpty) return 0;
+
+      int total = 0;
+      for (final doc in shardsSnap.docs) {
+        final data = doc.data();
+        final count = (data['count'] ?? 0) as num;
+        total += count.toInt();
+      }
+      return total;
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Error reading sharded counter $counterGroup: $e');
+      return 0;
+    }
+  }
+
+  /// Checks if there is any shard present for either forms or meetings
+  Future<bool> _hasAnyShards(DocumentReference<Map<String, dynamic>> parentDoc) async {
+    try {
+      final forms = await parentDoc
+          .collection('counters')
+          .doc('forms')
+          .collection('shards')
+          .limit(1)
+          .get();
+      if (forms.docs.isNotEmpty) return true;
+      final meetings = await parentDoc
+          .collection('counters')
+          .doc('meetings')
+          .collection('shards')
+          .limit(1)
+          .get();
+      return meetings.docs.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Reads daily forms completed today from sharded counters (fallback to old field)
+  Future<int> _readDailyFormsCompletedToday(String consultantToken) async {
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final dailyParent = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('daily')
+          .doc(today)
+          .collection('consultants')
+          .doc(consultantToken);
+
+      final fromShards = await _getShardedCounterTotal(
+        parentDoc: dailyParent,
+        counterGroup: 'forms',
+      );
+      if (fromShards > 0 || await _hasAnyShards(dailyParent)) {
+        return fromShards;
+      }
+
+      final dailyDoc = await dailyParent.get();
+      if (dailyDoc.exists) {
+        final data = dailyDoc.data();
+        final val = (data?['formsCompleted'] ?? 0) as num;
+        return val.toInt();
+      }
+      return 0;
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Error reading daily forms today: $e');
+      return 0;
+    }
   }
 
   /// Incarca agentul de serviciu din consultantii reali
@@ -845,6 +911,38 @@ extension _ShardedCounters on DashboardService {
       await shardRef.set({'count': FieldValue.increment(1)}, SetOptions(merge: true));
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error incrementing sharded counter $counterGroup: $e');
+    }
+  }
+
+  /// Helper: reads monthly counters for a consultant token via shards with fallback
+  Future<Map<String, int>> _readMonthlyCountersForToken(String yearMonth, String consultantToken) async {
+    try {
+      final parentDoc = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('monthly')
+          .doc(yearMonth)
+          .collection('consultants')
+          .doc(consultantToken);
+
+      final forms = await _getShardedCounterTotal(parentDoc: parentDoc, counterGroup: 'forms');
+      final meetings = await _getShardedCounterTotal(parentDoc: parentDoc, counterGroup: 'meetings');
+      if (forms > 0 || meetings > 0 || await _hasAnyShards(parentDoc)) {
+        return {'forms': forms, 'meetings': meetings};
+      }
+
+      final doc = await parentDoc.get();
+      if (doc.exists) {
+        final data = doc.data();
+        return {
+          'forms': ((data?['formsCompleted'] ?? 0) as num).toInt(),
+          'meetings': ((data?['meetingsHeld'] ?? 0) as num).toInt(),
+        };
+      }
+      return {'forms': 0, 'meetings': 0};
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Error reading monthly counters for token: $e');
+      return {'forms': 0, 'meetings': 0};
     }
   }
 }

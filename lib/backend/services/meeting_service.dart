@@ -439,6 +439,8 @@ class MeetingService {
   Future<List<MeetingData>> getMeetingsForDate(DateTime date) async {
     try {
       final splashService = SplashService();
+      // Ensure caches are aligned with current consultant
+      await splashService.resetForNewConsultant();
       final allMeetings = await splashService.getCachedMeetings();
       
       final List<MeetingData> meetingsForDate = [];
