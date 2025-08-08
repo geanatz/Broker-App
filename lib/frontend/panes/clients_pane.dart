@@ -168,8 +168,7 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   /// FIX: Asculta la schimbarile din SplashService pentru refresh automat
   void _onSplashServiceChanged() {
-    debugPrint('🎯 CLIENTS_PANE: _onSplashServiceChanged called');
-    debugPrint('🎯 CLIENTS_PANE: Current focused client: ${_clientService.focusedClient?.name ?? "null"}');
+    // Keep UI in sync when splash data changes
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isRefreshing) {
@@ -182,14 +181,11 @@ class _ClientsPaneState extends State<ClientsPane> {
                 newClient.category == client.category &&
                 newClient.status == client.status &&
                 newClient.name == client.name));
-
+ 
         if (hasChanged || _cachedClients.isEmpty) {
-          debugPrint('🎯 CLIENTS_PANE: Client data changed from splash service, updating UI');
-          setState(() {
-            _cachedClients = newClients;
-          });
-        } else {
-          debugPrint('🎯 CLIENTS_PANE: No client data changes from splash service');
+           setState(() {
+             _cachedClients = newClients;
+           });
         }
       }
     });
@@ -197,9 +193,7 @@ class _ClientsPaneState extends State<ClientsPane> {
 
   /// FIX: Asculta la schimbarile din ClientUIService pentru refresh automat
   void _onClientServiceChanged() {
-    debugPrint('🎯 CLIENTS_PANE: _onClientServiceChanged called');
-    debugPrint('🎯 CLIENTS_PANE: Current focused client: ${_clientService.focusedClient?.name ?? "null"}');
-    debugPrint('🎯 CLIENTS_PANE: Total clients in service: ${_clientService.clients.length}');
+    // Keep UI in sync when clients list/focus changes
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_isRefreshing) {
@@ -212,14 +206,11 @@ class _ClientsPaneState extends State<ClientsPane> {
                 newClient.category == client.category &&
                 newClient.status == client.status &&
                 newClient.name == client.name));
-
+ 
         if (hasChanged || _cachedClients.isEmpty) {
-          debugPrint('🎯 CLIENTS_PANE: Client data changed, updating UI');
-          setState(() {
-            _cachedClients = newClients;
-          });
-        } else {
-          debugPrint('🎯 CLIENTS_PANE: No client data changes detected');
+           setState(() {
+             _cachedClients = newClients;
+           });
         }
       }
     });
@@ -299,10 +290,7 @@ class _ClientsPaneState extends State<ClientsPane> {
   Widget _buildClientItem(ClientModel client) {
     final bool isFocused = _clientService.focusedClient?.phoneNumber == client.phoneNumber;
     
-    // FIX: Debug focus state for troubleshooting
-    if (isFocused) {
-      debugPrint('🎯 CLIENTS_PANE: Client ${client.phoneNumber} is focused in UI');
-    }
+    // Optional: could log focused item if needed
     
     // FIX: Previne focus loss la editare prin verificarea daca clientul este temporar
     final bool isTemporary = client.id.startsWith('temp_');
@@ -317,17 +305,16 @@ class _ClientsPaneState extends State<ClientsPane> {
       _lastFocusedRealClient = client.phoneNumber;
     }
     
-    // FIX: Verifica daca clientul are status de discutie salvat
-    final bool hasDiscussionStatus = client.formData['discussionStatus'] != null;
+    // FIX: Verifica daca clientul are status de discutie salvat (din camp dedicat, nu din formData)
+    debugPrint('GD_VERIFY: UI item for ${client.phoneNumber} | focused=$isFocused | category=${client.category} | status=${client.discussionStatus ?? 'null'}');
     
-    debugPrint('🎯 CLIENTS_PANE: Building client item: ${client.name}, focused: $isFocused, temporary: $isTemporary');
+    // debugPrint('🎯 CLIENTS_PANE: Building client item: ${client.name}, focused: $isFocused, temporary: $isTemporary');
     
     return isFocused ? DarkItem7(
       title: client.name,
       description: client.phoneNumber1,
       svgAsset: 'assets/doneIcon.svg',
       onTap: () {
-        debugPrint('🎯 CLIENTS_PANE: Focused client tapped: ${client.name}');
         _showStatusPopup(client);
       },
     ) : LightItem7(
@@ -335,12 +322,8 @@ class _ClientsPaneState extends State<ClientsPane> {
       description: client.phoneNumber1,
       svgAsset: 'assets/viewIcon.svg',
       onTap: () {
-        debugPrint('🎯 CLIENTS_PANE: Unfocused client tapped: ${client.name}');
-        if (client.category == ClientCategory.recente && hasDiscussionStatus) {
-          _showStatusPopup(client);
-        } else {
-          _focusClient(client);
-        }
+        // Faza focus/popup: primul click = focus, al doilea (cand e focusat) = popup
+        _focusClient(client);
       },
     );
   }
@@ -348,16 +331,13 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// FIX: Enhanced client switching with robust debouncing
   void _focusClient(ClientModel client) async {
     
-    debugPrint('🎯 CLIENTS_PANE: _focusClient called for client: ${client.name}');
-    debugPrint('🎯 CLIENTS_PANE: Current focused client before switch: ${_clientService.focusedClient?.name ?? "null"}');
-    
-    // OPTIMIZATION: Advanced protection for ultra-fast response
+    // Avoid redundant/fast switches
     final now = DateTime.now();
     if (_isSwitchingClient || 
         (_lastTappedClientId == client.phoneNumber && 
          _lastTapTime != null && 
          now.difference(_lastTapTime!).inMilliseconds < 200)) {
-      debugPrint('🎯 CLIENTS_PANE: Client switch skipped - too recent or already switching');
+      // Skip rapid consecutive switches
       return;
     }
     
@@ -366,7 +346,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       _lastTappedClientId = client.phoneNumber;
       _lastTapTime = now;
       
-      debugPrint('🔄 CLIENTS_PANE: Switching to client: ${client.phoneNumber}');
+      // Switched successfully
       
       // OPTIMIZATION: Strategic area switching with timing
       if (widget.onSwitchToFormArea != null) {
@@ -376,11 +356,8 @@ class _ClientsPaneState extends State<ClientsPane> {
       // FIX: Enhanced focus with validation
       await _clientService.focusClient(client.phoneNumber);
       
-      debugPrint('✅ CLIENTS_PANE: Client switch completed: ${client.phoneNumber}');
-      debugPrint('✅ CLIENTS_PANE: New focused client: ${_clientService.focusedClient?.name ?? "null"}');
-      
     } catch (e) {
-      debugPrint('❌ CLIENTS_PANE: Error switching client: $e');
+      debugPrint('CLIENTS_PANE: Error switching client: $e');
     } finally {
       _isSwitchingClient = false;
     }

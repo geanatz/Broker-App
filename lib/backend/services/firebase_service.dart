@@ -339,14 +339,9 @@ class FirebaseThreadHandler {
       }
     }
 
-    // Run on the UI isolate without waiting for a new frame to be pumped.
-    // Waiting for a post-frame callback can freeze when no frame is produced (e.g., dialogs/minimized window).
-    try {
-      scheduleMicrotask(runOperation);
-    } catch (_) {
-      // Fallback: schedule in next event loop tick
-      Future<void>(() => runOperation());
-    }
+    // Ensure platform-thread execution: post a task that runs ASAP on event loop
+    // Avoid post-frame dependency to prevent FREEZE during dialogs/minimized window
+    Future<void>(() => runOperation());
 
     return completer.future;
   }
@@ -1382,6 +1377,7 @@ class NewFirebaseService {
     if (consultantToken == null) return [];
 
     // OPTIMIZARE: Verifica cache-ul pentru form data
+    FirebaseLogger.log('GD_VERIFY: getClientForms called for $phoneNumber');
     final cacheKey = '${phoneNumber}_forms';
     if (_formCache.containsKey(cacheKey)) {
       final cacheTime = _formCacheTime[cacheKey];
@@ -1414,6 +1410,7 @@ class NewFirebaseService {
           snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
 
       // OPTIMIZARE: Salveaza in cache
+      FirebaseLogger.log('GD_VERIFY: loaded ${forms.length} forms for $phoneNumber');
       _formCache[cacheKey] = {'forms': forms};
       _formCacheTime[cacheKey] = DateTime.now();
 

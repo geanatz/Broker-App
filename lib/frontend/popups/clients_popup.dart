@@ -138,14 +138,9 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Callback pentru schimbarile in servicea
   void _onClientServiceChanged() {
-    debugPrint('POPUP: _onClientServiceChanged');
-    debugPrint('POPUP: Current focused client: ${_clientService.focusedClient?.name ?? "null"}');
-    debugPrint('POPUP: Current editing client: ${_editingClient?.name ?? "null"}');
-    
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        // Pastram editarea chiar daca focusul global este null; popup-ul gestioneaza local editarea
         setState(() {});
       });
     }
@@ -153,23 +148,16 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Incepe procesul de creare client cu client temporar
   void _startClientCreation() {
-    debugPrint('🔍 POPUP: _startClientCreation called');
-    debugPrint('🔍 POPUP: Current focused client before creation: ${_clientService.focusedClient?.name ?? "null"}');
-    
     // Creeaza clientul temporar in service
     final clientService = SplashService().clientUIService;
     clientService.createTemporaryClient();
     
-    debugPrint('🔍 POPUP: Temporary client created');
-    
     // Gaseste clientul temporar creat (acum focusat)
     final focusedTempClient = clientService.focusedClient;
     if (focusedTempClient == null) {
-      debugPrint('🔍 POPUP: ERROR - Could not focus temporary client after creation!');
+      debugPrint('POPUP: Could not focus temporary client after creation');
       return;
     }
-    
-    debugPrint('🔍 POPUP: Temporary client focused: ${focusedTempClient.name}');
     
     setState(() {
       _selectedClientPhoneInPopup = focusedTempClient.phoneNumber;
@@ -471,15 +459,8 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   /// Deschide widgetul de editare/creare client
   void _openEditClient([Client? client]) {
-    debugPrint('🔍 POPUP: _openEditClient called with client: ${client?.name ?? "null"}');
-    debugPrint('🔍 POPUP: Current focused client in service: ${_clientService.focusedClient?.name ?? "null"}');
-    debugPrint('🔍 POPUP: Current editing client: ${_editingClient?.name ?? "null"}');
-    debugPrint('🔍 POPUP: Current popup state: $_currentState');
-    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      
-      debugPrint('🔍 POPUP: About to set state for edit client');
       setState(() {
         _editingClient = client;
         if (_selectedImages.isNotEmpty) {
@@ -488,7 +469,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
           _currentState = PopupState.clientsWithEdit;
         }
       });
-      debugPrint('🔍 POPUP: State set successfully, new state: $_currentState');
     });
   }
 
@@ -917,9 +897,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
                             title: displayName,
                             description: client.phoneNumber,
                             onTap: () {
-                              debugPrint('🔍 POPUP: Focused client tapped for edit: ${client.name}');
-                              debugPrint('🔍 POPUP: Current focused client before tap: ${_clientService.focusedClient?.name ?? "null"}');
-                              debugPrint('🔍 POPUP: Current editing client before tap: ${_editingClient?.name ?? "null"}');
                               _openEditClient(client);
                             },
                           );
@@ -928,10 +905,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
                             title: displayName,
                             description: client.phoneNumber,
                             onTap: () {
-                              debugPrint('🔍 POPUP: Client tapped for edit: ${client.name}');
-                              debugPrint('🔍 POPUP: Current focused client before tap: ${_clientService.focusedClient?.name ?? "null"}');
-                              debugPrint('🔍 POPUP: Current editing client before tap: ${_editingClient?.name ?? "null"}');
-                              
                               setState(() {
                                 _selectedClientPhoneInPopup = client.phoneNumber1;
                               });
@@ -981,14 +954,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
 
   @override
   Widget build(BuildContext context) {
-    // Sincronizez focusul cu backend-ul
-    final focusedClient = _clientService.focusedClient;
-    
-    debugPrint('POPUP: Build');
-    debugPrint('POPUP: Focused client from service: ${focusedClient?.name ?? "null"}');
-    debugPrint('POPUP: Current editing client: ${_editingClient?.name ?? "null"}');
-    debugPrint('POPUP: Current popup state: $_currentState');
-    debugPrint('POPUP: Temporary client exists: ${_clientService.temporaryClient != null}');
+    // Sincronizez focusul cu backend-ul (daca este necesar)
     
     // Calculate total width based on current state  
     double totalWidth;
@@ -1010,18 +976,14 @@ class _ClientsPopupState extends State<ClientsPopup> {
         break;
     }
 
-    // Nu mai calculam o latime comuna, fiecare widget are latimea sa fixa
-
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: totalWidth, minHeight: 432),
       child: Container(
         width: totalWidth,
         height: 432,
-        // Elimin border radius-ul de la containerul principal
         color: Colors.transparent,
         child: Row(
           children: [
-            // OCR Widget (if active)
             if (_currentState == PopupState.ocrOnly || 
                 _currentState == PopupState.ocrWithClients || 
                 _currentState == PopupState.ocrWithClientsAndEdit) ...[
@@ -1029,22 +991,17 @@ class _ClientsPopupState extends State<ClientsPopup> {
               if (_currentState != PopupState.ocrOnly)
                 const SizedBox(width: 16),
             ],
-            
-            // Clients List Widget (if visible)
             if (_currentState == PopupState.clientsOnly ||
                 _currentState == PopupState.clientsWithEdit ||
                 _currentState == PopupState.ocrWithClients ||
                 _currentState == PopupState.ocrWithClientsAndEdit) ...[
               _buildClientsWidget(_clientsWidgetWidth),
             ],
-            
-            // Edit Client Widget (if active) – elimin cerinta de focusedClient != null
             if ((_currentState == PopupState.clientsWithEdit || _currentState == PopupState.ocrWithClientsAndEdit)
-                && (_editingClient != null || _clientService.temporaryClient != null))
-              ...[
-                const SizedBox(width: 16),
-                _buildEditClientWidget(_editWidgetWidth),
-              ],
+                && (_editingClient != null || _clientService.temporaryClient != null)) ...[
+              const SizedBox(width: 16),
+              _buildEditClientWidget(_editWidgetWidth),
+            ],
           ],
         ),
       ),

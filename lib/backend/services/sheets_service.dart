@@ -59,6 +59,14 @@ class GoogleDriveService extends ChangeNotifier {
   String? get userEmail => _userEmail;
   String? get userName => _userName;
   String? get sheetName => 'clienti'; // Numele fix al spreadsheet-ului
+  /// WATCHDOG: logs periodically while a long-running async step is pending
+  Timer _startWatch(String stepLabel, {Duration interval = const Duration(seconds: 2)}) {
+    int seconds = 0;
+    return Timer.periodic(interval, (t) {
+      seconds += interval.inSeconds;
+      debugPrint('GD_WATCH: waiting on $stepLabel for ${seconds}s...');
+    });
+  }
 
   /// Verifica daca platforma este suportata pentru Google Sign In
   bool _isPlatformSupported() {
@@ -849,7 +857,10 @@ class GoogleDriveService extends ChangeNotifier {
   
       // Step 4: Enhanced spreadsheet finding/creation
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 4 - Enhanced spreadsheet finding/creation...');
+      final swFindOrCreateSpreadsheet = Stopwatch()..start();
       final spreadsheetId = await _findOrCreateSpreadsheet('clienti');
+      swFindOrCreateSpreadsheet.stop();
+      debugPrint('GD_TRACE: _findOrCreateSpreadsheet completed in ${swFindOrCreateSpreadsheet.elapsedMilliseconds}ms');
       if (spreadsheetId == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create spreadsheet');
         return _lastError ?? 'Eroare la gasirea sau crearea fisierului Google Sheets.';
@@ -858,7 +869,11 @@ class GoogleDriveService extends ChangeNotifier {
   
       // Step 5: Enhanced sheet finding/creation
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5 - Enhanced sheet finding/creation...');
-      final sheetTitle = await _findOrCreateSheet(spreadsheetId);
+      final swFindOrCreateSheet = Stopwatch()..start();
+      final watchdog = _startWatch('_findOrCreateSheet');
+      final sheetTitle = await _findOrCreateSheet(spreadsheetId).whenComplete(() => watchdog.cancel());
+      swFindOrCreateSheet.stop();
+      debugPrint('GD_TRACE: _findOrCreateSheet completed in ${swFindOrCreateSheet.elapsedMilliseconds}ms');
       if (sheetTitle == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create sheet');
         return _lastError ?? 'Eroare la gasirea sau crearea foii de calcul pentru luna curenta.';
@@ -868,7 +883,10 @@ class GoogleDriveService extends ChangeNotifier {
       // Step 5.5: Enhanced duplicate checking
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5.5 - Enhanced duplicate checking...');
       final clientPhoneNumber = client['phoneNumber']?.toString() ?? client['phoneNumber1']?.toString() ?? '';
+      final swDup = Stopwatch()..start();
       final clientExists = await _checkIfClientExistsInSheet(spreadsheetId, sheetTitle, clientPhoneNumber);
+      swDup.stop();
+      debugPrint('GD_TRACE: _checkIfClientExistsInSheet completed in ${swDup.elapsedMilliseconds}ms');
       
       if (clientExists) {
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client already exists in sheet, skipping save to prevent duplicates');
@@ -878,8 +896,12 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client does not exist in sheet, proceeding with save');
   
       // Step 6: Enhanced client data preparation
+      debugPrint('GD_VERIFY: using forms subcollection as single source of truth for form data');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 6 - Enhanced client data preparation...');
+      final swPrep = Stopwatch()..start();
       final clientRowData = await _prepareClientRowData(client);
+      swPrep.stop();
+      debugPrint('GD_TRACE: _prepareClientRowData completed in ${swPrep.elapsedMilliseconds}ms');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Prepared row data: $clientRowData');
       
       // Step 7: Enhanced save with improved retry mechanism
@@ -893,7 +915,10 @@ class GoogleDriveService extends ChangeNotifier {
         debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Save attempt $attempt/$maxRetries');
         
         try {
+          final swAppend = Stopwatch()..start();
           success = await _appendRowToSheet(spreadsheetId, sheetTitle, clientRowData);
+          swAppend.stop();
+          debugPrint('GD_TRACE: _appendRowToSheet attempt $attempt took ${swAppend.elapsedMilliseconds}ms');
           
           if (success) {
             debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client saved successfully to Google Sheets on attempt $attempt');
@@ -947,12 +972,9 @@ class GoogleDriveService extends ChangeNotifier {
       return false;
     }
     
-    // FIX: Enhanced validation for required fields
-    final formData = client['formData'] as Map<String, dynamic>?;
-    if (formData == null || formData.isEmpty) {
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Missing form data');
-      return false;
-    }
+      // FIX: Enhanced validation for required fields
+      // Nu mai presupune existenta client['formData'] in documentul clientului.
+      // Datele formularului sunt stocate in subcolectia `forms` (unified form).
     
     debugPrint('✅ GOOGLE_DRIVE_SERVICE: Enhanced client data validation passed');
     return true;
@@ -1049,6 +1071,7 @@ class GoogleDriveService extends ChangeNotifier {
   Future<String?> _findOrCreateSpreadsheet(String name) async {
     try {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSpreadsheet START - Name: $name');
+      debugPrint('GD_TRACE: _findOrCreateSpreadsheet entering');
       
       if (_driveApi == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Drive API is null');
@@ -1059,7 +1082,11 @@ class GoogleDriveService extends ChangeNotifier {
       final query = "mimeType='application/vnd.google-apps.spreadsheet' and name='$name' and trashed=false";
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Search query: $query');
       
-      final response = await _driveApi!.files.list(q: query, $fields: 'files(id, name)');
+      final swList = Stopwatch()..start();
+      final wdList = _startWatch('Drive.files.list');
+      final response = await _driveApi!.files.list(q: query, $fields: 'files(id, name)').whenComplete(() => wdList.cancel());
+      swList.stop();
+      debugPrint('GD_TRACE: Drive files.list took ${swList.elapsedMilliseconds}ms');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Search response: ${response.files?.length ?? 0} files found');
       
       if (response.files != null && response.files!.isNotEmpty) {
@@ -1073,7 +1100,11 @@ class GoogleDriveService extends ChangeNotifier {
           properties: sheets.SpreadsheetProperties(title: name),
         );
         
-        final createdSheet = await _sheetsApi!.spreadsheets.create(newSheet);
+        final swCreate = Stopwatch()..start();
+        final wdCreate = _startWatch('Sheets.spreadsheets.create');
+        final createdSheet = await _sheetsApi!.spreadsheets.create(newSheet).whenComplete(() => wdCreate.cancel());
+        swCreate.stop();
+        debugPrint('GD_TRACE: Sheets.spreadsheets.create took ${swCreate.elapsedMilliseconds}ms');
         final fileId = createdSheet.spreadsheetId!;
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Created new spreadsheet: $fileId');
         return fileId;
@@ -1090,6 +1121,7 @@ class GoogleDriveService extends ChangeNotifier {
   Future<String?> _findOrCreateSheet(String spreadsheetId) async {
     try {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSheet START - SpreadsheetId: $spreadsheetId');
+      debugPrint('GD_TRACE: _findOrCreateSheet entering');
       
       if (_sheetsApi == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Sheets API is null');
@@ -1102,7 +1134,11 @@ class GoogleDriveService extends ChangeNotifier {
       final sheetTitle = _generateRomanianSheetTitle(now);
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Generated sheet title: $sheetTitle');
 
-      final spreadsheet = await _sheetsApi!.spreadsheets.get(spreadsheetId, includeGridData: false);
+      final swGet = Stopwatch()..start();
+      final wdGet = _startWatch('Sheets.spreadsheets.get');
+      final spreadsheet = await _sheetsApi!.spreadsheets.get(spreadsheetId, includeGridData: false).whenComplete(() => wdGet.cancel());
+      swGet.stop();
+      debugPrint('GD_TRACE: Sheets.spreadsheets.get took ${swGet.elapsedMilliseconds}ms');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Retrieved spreadsheet with ${spreadsheet.sheets?.length ?? 0} sheets');
 
       final existingSheet = spreadsheet.sheets?.firstWhere(
@@ -1120,16 +1156,24 @@ class GoogleDriveService extends ChangeNotifier {
           properties: sheets.SheetProperties(title: sheetTitle),
         );
         
+        final swBatchUpdate = Stopwatch()..start();
+        final wdBatch = _startWatch('Sheets.spreadsheets.batchUpdate(addSheet)');
         await _sheetsApi!.spreadsheets.batchUpdate(
           sheets.BatchUpdateSpreadsheetRequest(requests: [sheets.Request(addSheet: addSheetRequest)]),
           spreadsheetId,
-        );
+        ).whenComplete(() => wdBatch.cancel());
+        swBatchUpdate.stop();
+        debugPrint('GD_TRACE: Sheets.spreadsheets.batchUpdate(addSheet) took ${swBatchUpdate.elapsedMilliseconds}ms');
 
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Created new sheet: $sheetTitle');
         
         // Adauga header-ul in noul sheet
         debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adding header to new sheet...');
-        await _addHeaderToSheet(spreadsheetId, sheetTitle);
+        final swHeader = Stopwatch()..start();
+        final wdHeader = _startWatch('_addHeaderToSheet');
+        await _addHeaderToSheet(spreadsheetId, sheetTitle).whenComplete(() => wdHeader.cancel());
+        swHeader.stop();
+        debugPrint('GD_TRACE: _addHeaderToSheet took ${swHeader.elapsedMilliseconds}ms');
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Header added successfully');
         
         return sheetTitle;
@@ -1148,13 +1192,15 @@ class GoogleDriveService extends ChangeNotifier {
       final headers = _getHeaders();
       final valueRange = sheets.ValueRange()..values = [headers];
       final range = "'$sheetTitle'!A1";
-      
+      final swHeaderUpdate = Stopwatch()..start();
       await _sheetsApi!.spreadsheets.values.update(
         valueRange,
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
       );
+      swHeaderUpdate.stop();
+      debugPrint('GD_TRACE: Sheets.values.update(header) took ${swHeaderUpdate.elapsedMilliseconds}ms');
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _addHeaderToSheet: $e');
       rethrow; // Re-arunca eroarea pentru ca functia apelanta sa o poata gestiona
@@ -1168,6 +1214,7 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: SpreadsheetId: $spreadsheetId');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: SheetTitle: $sheetTitle');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: RowData: $rowData');
+      debugPrint('GD_TRACE: _appendRowToSheet entering');
       
       if (_sheetsApi == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Sheets API is null');
@@ -1179,7 +1226,11 @@ class GoogleDriveService extends ChangeNotifier {
       final range = "'$sheetTitle'!A:Z";
       
       // Obtine datele existente pentru a gasi ultimul rand
-      final response = await _sheetsApi!.spreadsheets.values.get(spreadsheetId, range);
+      final swGetValues = Stopwatch()..start();
+      final wdGetValues = _startWatch('Sheets.values.get(range=A:Z)');
+      final response = await _sheetsApi!.spreadsheets.values.get(spreadsheetId, range).whenComplete(() => wdGetValues.cancel());
+      swGetValues.stop();
+      debugPrint('GD_TRACE: Sheets.values.get(range=A:Z) took ${swGetValues.elapsedMilliseconds}ms');
       final existingRows = response.values ?? [];
       
       // Calculeaza urmatorul rand (ultimul rand + 1)
@@ -1193,12 +1244,16 @@ class GoogleDriveService extends ChangeNotifier {
       final valueRange = sheets.ValueRange()..values = [rowData];
       
       // Adauga randul nou
+      final swValuesUpdate = Stopwatch()..start();
+      final wdValuesUpdate = _startWatch('Sheets.values.update(append)');
       final updateResponse = await _sheetsApi!.spreadsheets.values.update(
         valueRange,
         spreadsheetId,
         appendRange,
         valueInputOption: 'USER_ENTERED',
-      );
+      ).whenComplete(() => wdValuesUpdate.cancel());
+      swValuesUpdate.stop();
+      debugPrint('GD_TRACE: Sheets.values.update(append) took ${swValuesUpdate.elapsedMilliseconds}ms');
       
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Update response: ${updateResponse.updatedCells} cells updated');
       
@@ -1262,6 +1317,7 @@ class GoogleDriveService extends ChangeNotifier {
     try {
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _prepareClientRowData START');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client object: ${client.runtimeType}');
+      debugPrint('GD_VERIFY: client keys: ${client is Map ? client.keys.toList() : []}');
       
       // Extrage datele de baza din Map
       final String clientName = client['name'] ?? '';
@@ -1284,12 +1340,19 @@ class GoogleDriveService extends ChangeNotifier {
 
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Formatted data - Contact: $contact, CoDebitor: $coDebitorName, Day: $ziua, Status: $status');
 
-      // Extrage creditele si veniturile din formData
-      final formData = client['formData'] as Map<String, dynamic>? ?? {};
+      // Extrage creditele si veniturile din noua structura (subcolectia forms)
+      Map<String, dynamic> formData = {};
+      try {
+        final newFirebaseService = NewFirebaseService();
+        final forms = await newFirebaseService.getClientForms(phoneNumber1);
+        debugPrint('GD_VERIFY: forms_count=${forms.length}, first_form_id=${forms.isNotEmpty ? forms.first['id'] : 'NONE'}');
+        formData = forms.isNotEmpty ? Map<String, dynamic>.from(forms.first['data'] ?? {}) : {};
+      } catch (e) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to load form data from forms subcollection: $e');
+        formData = {};
+      }
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Form data keys: ${formData.keys.toList()}');
-      
-      // DEBUG: Dump entire form data structure
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: FULL FORM DATA DUMP:');
+      // DEBUG: Dump entire form data structure (optional, pentru investigatii)
       _dumpFormDataStructure(formData);
       
       final clientCredits = _extractCredits(formData, 'client');

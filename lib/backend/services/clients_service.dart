@@ -101,7 +101,8 @@ class ClientModel {
       'coDebitorName': coDebitorName,
       'status': status.index,
       'category': category.index,
-      'formData': formData,
+      // Faza 5: nu mai scriem formData in documentul clientului (pastram campul in model doar pentru UI cache)
+      // 'formData': formData,
       'discussionStatus': discussionStatus,
       'scheduledDateTime': scheduledDateTime?.millisecondsSinceEpoch,
       'additionalInfo': additionalInfo,
@@ -123,6 +124,7 @@ class ClientModel {
       coDebitorName: map['coDebitorName'],
       status: ClientStatus.values[map['status'] is String ? _parseStatus(map['status']) : (map['status'] ?? 0)],
       category: ClientCategory.values[map['category'] is String ? _parseCategory(map['category']) : (map['category'] ?? 0)],
+      // Faza 5: citirea formData din doc nu mai este sursa de adevar; pastram fallback gol
       formData: Map<String, dynamic>.from(map['formData'] ?? {}),
       discussionStatus: map['discussionStatus'],
       scheduledDateTime: map['scheduledDateTime'] != null 
@@ -1294,17 +1296,12 @@ class ClientUIService extends ChangeNotifier {
 
   /// FIX: Robust client focusing with advanced debouncing and state validation
   Future<void> focusClient(String phoneNumber) async {
-    debugPrint('🎯 CLIENT_SERVICE: focusClient called for: $phoneNumber');
-    debugPrint('🎯 CLIENT_SERVICE: Current focused client: ${_focusedClient?.name ?? "null"}');
-    debugPrint('🎯 CLIENT_SERVICE: Total clients in list: ${_clients.length}');
-    
-    // OPTIMIZATION: Prevent redundant focus operations with time-based validation
-    final now = DateTime.now();
+    // Focus a client by phone number; skip if same/too recent
     if (_isFocusingClient || 
         (_currentlyFocusedClientId == phoneNumber && 
          _lastFocusTime != null && 
-         now.difference(_lastFocusTime!).inMilliseconds < 100)) {
-      debugPrint('🎯 CLIENT_SERVICE: Focus operation skipped - already focused or too recent');
+         DateTime.now().difference(_lastFocusTime!).inMilliseconds < 100)) {
+      // Skip redundant focus operations
       return;
     }
     
@@ -1313,13 +1310,12 @@ class ClientUIService extends ChangeNotifier {
     
     try {
       _isFocusingClient = true;
-      _lastFocusTime = now;
+      _lastFocusTime = DateTime.now();
       
       // FIX: Validate client exists before focusing
       final clientIndex = _clients.indexWhere((client) => client.phoneNumber == phoneNumber);
       if (clientIndex == -1) {
-        debugPrint('❌ CLIENT_SERVICE: Client not found for focus: $phoneNumber');
-        debugPrint('❌ CLIENT_SERVICE: Available clients: ${_clients.map((c) => c.phoneNumber).toList()}');
+        debugPrint('CLIENT_SERVICE: Client not found for focus: $phoneNumber');
         return;
       }
       
@@ -1334,7 +1330,7 @@ class ClientUIService extends ChangeNotifier {
       _currentlyFocusedClientId = phoneNumber;
       
       // FIX: Track focus history for debugging
-      _focusHistory[phoneNumber] = now;
+      _focusHistory[phoneNumber] = DateTime.now();
       _validFocusStates.add(phoneNumber);
       
       debugPrint('✅ CLIENT_SERVICE: Client focused successfully: $phoneNumber');
@@ -1349,7 +1345,7 @@ class ClientUIService extends ChangeNotifier {
       notifyListeners();
       
     } catch (e) {
-      debugPrint('❌ CLIENT_SERVICE: Error during focus operation: $e');
+      debugPrint('CLIENT_SERVICE: Error during focus operation: $e');
       // FIX: Reset focus state on error
       _currentlyFocusedClientId = null;
       _focusedClient = null;
@@ -1360,9 +1356,7 @@ class ClientUIService extends ChangeNotifier {
 
   /// FIX: Clear all focus states with validation
   void _clearAllFocusStates() {
-    debugPrint('🎯 CLIENT_SERVICE: _clearAllFocusStates called');
-    debugPrint('🎯 CLIENT_SERVICE: Clients with focus before clear: ${_clients.where((c) => c.status == ClientStatus.focused).map((c) => c.name).toList()}');
-    
+    // Clear previous focused flags
     for (int i = 0; i < _clients.length; i++) {
       if (_clients[i].status == ClientStatus.focused) {
         _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
@@ -1373,6 +1367,7 @@ class ClientUIService extends ChangeNotifier {
     _focusedClient = null;
     _currentlyFocusedClientId = null;
     
+    // All focus states cleared
     debugPrint('🎯 CLIENT_SERVICE: All focus states cleared');
   }
 
@@ -2380,6 +2375,7 @@ class ClientUIService extends ChangeNotifier {
 
   @override
   void notifyListeners() {
+    // Emitting listeners update
     debugPrint('🎯 CLIENT_SERVICE: notifyListeners called');
     debugPrint('🎯 CLIENT_SERVICE: Current focused client: ${_focusedClient?.name ?? "null"}');
     super.notifyListeners();

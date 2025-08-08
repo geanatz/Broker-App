@@ -502,8 +502,10 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         final completeClient = await firebaseService.getClient(widget.client.phoneNumber);
         if (completeClient != null) {
           debugPrint('✅ STATUS_POPUP: Step 2 COMPLETED - Retrieved complete client data from Firebase');
-          debugPrint('🔧 STATUS_POPUP: Client formData keys: ${completeClient['formData']?.keys.toList() ?? 'NULL'}');
           debugPrint('🔧 STATUS_POPUP: DEBUG additionalInfo from Firebase: ${completeClient['additionalInfo'] ?? 'NULL'}');
+          debugPrint('GD_VERIFY: status_popup completeClient keys: ${completeClient.keys.toList()}');
+          // Cross-check that unified form path will be used by GoogleDriveService
+          debugPrint('GD_VERIFY: GoogleDriveService will fetch forms via NewFirebaseService.getClientForms(${widget.client.phoneNumber})');
           // 3. Salveaza in Google Sheets
           debugPrint('🔧 STATUS_POPUP: Step 3 - Saving to Google Sheets...');
           final googleDriveService = GoogleDriveService();
