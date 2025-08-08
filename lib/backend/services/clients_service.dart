@@ -1286,52 +1286,121 @@ class ClientUIService extends ChangeNotifier {
 
   bool _isFocusingClient = false;
 
-  /// OPTIMIZATION: Track current focus to prevent redundant operations
+  /// FIX: Advanced focus management with robust state tracking
   String? _currentlyFocusedClientId;
+  DateTime? _lastFocusTime;
+  Timer? _focusDebounceTimer;
 
-  /// FIX: Advanced client focusing with detailed performance profiling
+  /// FIX: Focus state validation
+  final Set<String> _validFocusStates = <String>{};
+  final Map<String, DateTime> _focusHistory = <String, DateTime>{};
+
+  /// FIX: Robust client focusing with advanced debouncing and state validation
   Future<void> focusClient(String phoneNumber) async {
-    // OPTIMIZATION: Prevent redundant focus operations
-    if (_isFocusingClient || _currentlyFocusedClientId == phoneNumber) {
+    // OPTIMIZATION: Prevent redundant focus operations with time-based validation
+    final now = DateTime.now();
+    if (_isFocusingClient || 
+        (_currentlyFocusedClientId == phoneNumber && 
+         _lastFocusTime != null && 
+         now.difference(_lastFocusTime!).inMilliseconds < 100)) {
+      debugPrint('🎯 CLIENTS: Focus operation skipped - already focused or too recent');
       return;
     }
     
+    // FIX: Cancel any pending focus operations
+    _focusDebounceTimer?.cancel();
+    
     try {
       _isFocusingClient = true;
-      _currentlyFocusedClientId = phoneNumber;
+      _lastFocusTime = now;
       
-      // Find the client to focus
+      // FIX: Validate client exists before focusing
       final clientIndex = _clients.indexWhere((client) => client.phoneNumber == phoneNumber);
       if (clientIndex == -1) {
+        debugPrint('❌ CLIENTS: Client not found for focus: $phoneNumber');
         return;
       }
       
-      // FIX: Preserve current focus state for logging
+      // FIX: Clear all existing focus states first
+      _clearAllFocusStates();
       
-      // Clear focus from all clients with optimized timing
-      for (int i = 0; i < _clients.length; i++) {
-        if (_clients[i].status == ClientStatus.focused) {
-          _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
-        }
-      }
-      
-      // Focus the selected client
+      // FIX: Set new focus with validation
       _clients[clientIndex] = _clients[clientIndex].copyWith(status: ClientStatus.focused);
       _focusedClient = _clients[clientIndex];
+      _currentlyFocusedClientId = phoneNumber;
       
-      // OPTIMIZATION: Strategic background form data loading
+      // FIX: Track focus history for debugging
+      _focusHistory[phoneNumber] = now;
+      _validFocusStates.add(phoneNumber);
+      
+      debugPrint('✅ CLIENTS: Client focused successfully: $phoneNumber');
+      
+      // FIX: Strategic background form data loading with error handling
       if (_focusedClient != null && !_focusedClient!.id.startsWith('temp_')) {
-        // Start background loading immediately
         unawaited(_loadFormDataInBackground(_focusedClient!.phoneNumber));
       }
       
-      // Notify listeners immediately for instant UI response
+      // FIX: Immediate notification with validation
       notifyListeners();
       
     } catch (e) {
-      // Error handling
+      debugPrint('❌ CLIENTS: Error during focus operation: $e');
+      // FIX: Reset focus state on error
+      _currentlyFocusedClientId = null;
+      _focusedClient = null;
     } finally {
       _isFocusingClient = false;
+    }
+  }
+
+  /// FIX: Clear all focus states with validation
+  void _clearAllFocusStates() {
+    for (int i = 0; i < _clients.length; i++) {
+      if (_clients[i].status == ClientStatus.focused) {
+        _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
+        _validFocusStates.remove(_clients[i].phoneNumber);
+      }
+    }
+    _focusedClient = null;
+    _currentlyFocusedClientId = null;
+  }
+
+  /// FIX: Validate focus state consistency
+  void _validateFocusState() {
+    final focusedClients = _clients.where((c) => c.status == ClientStatus.focused).toList();
+    
+    if (focusedClients.length > 1) {
+      debugPrint('⚠️ CLIENTS: Multiple focused clients detected, clearing all');
+      _clearAllFocusStates();
+      notifyListeners();
+    } else if (focusedClients.length == 1) {
+      _focusedClient = focusedClients.first;
+      _currentlyFocusedClientId = _focusedClient!.phoneNumber;
+    } else {
+      _focusedClient = null;
+      _currentlyFocusedClientId = null;
+    }
+  }
+
+  /// FIX: Enhanced cleanup focus state from cache with validation
+  void cleanupFocusStateFromCacheEnhanced(List<ClientModel> cachedClients) {
+    try {
+      // FIX: Validate cache consistency
+      final currentFocusId = _currentlyFocusedClientId;
+      if (currentFocusId != null) {
+        final cacheHasFocus = cachedClients.any((c) => c.phoneNumber == currentFocusId);
+        if (!cacheHasFocus) {
+          debugPrint('🔄 CLIENTS: Focus client not in cache, clearing focus');
+          _clearAllFocusStates();
+        }
+      }
+      
+      // FIX: Validate focus state consistency
+      _validateFocusState();
+      
+    } catch (e) {
+      debugPrint('❌ CLIENTS: Error cleaning up focus state: $e');
+      _clearAllFocusStates();
     }
   }
 
@@ -2358,22 +2427,7 @@ class ClientUIService extends ChangeNotifier {
     }
   }
 
-  /// FIX: Enhanced batch deletion with forced operation execution
-  Future<void> deleteAllClientsWithForcedExecution() async {
-    try {
-      // Force execution of any pending operations first
-      await forceExecutePendingOperations();
-      
-      // Perform the actual batch deletion
-      await deleteAllClients();
-      
-      // Force another execution to ensure UI updates
-      await forceExecutePendingOperations();
-      
-    } catch (e) {
-      FirebaseLogger.error('❌ CLIENT_SERVICE: Error in forced batch deletion: $e');
-    }
-  }
+
 
   /// Verifica daca exista clienti temporari in lista
   bool get hasTemporaryClient {

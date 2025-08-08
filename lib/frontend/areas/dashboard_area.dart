@@ -3,8 +3,6 @@ import 'package:broker_app/backend/services/dashboard_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart';
-import '../components/headers/widget_header6.dart';
 import '../components/chatbot_widget.dart';
 
 
@@ -19,7 +17,7 @@ class DashboardArea extends StatefulWidget {
 
 class _DashboardAreaState extends State<DashboardArea> {
   late final DashboardService _dashboardService;
-  final Map<String, bool> _expandedTeams = {}; // Track expanded state for each team
+  String? _selectedTeamId; // Track selected team for consultant view
 
   @override
   void initState() {
@@ -74,124 +72,264 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Clasament combinat pentru echipe si consultanti
+  /// Clasament nou cu design bazat pe clasament.md
   Widget _buildCombinedLeaderboard() {
-    final teams = _dashboardService.teamsRanking;
-    final consultants = _dashboardService.consultantsRanking;
-    
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 520),
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.smallGap),
-        decoration: AppTheme.widgetDecoration,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header cu navigare luni pentru clasament combinat
-            WidgetHeader6(
-              title: 'Top echipe si consultanti',
-              dateText: DateFormat('MMM yyyy', 'ro').format(_dashboardService.selectedMonth),
-              onPrevDateTap: _dashboardService.goToPreviousMonth,
-              onNextDateTap: _dashboardService.goToNextMonth,
-              onDateTextTap: _dashboardService.goToCurrentMonth,
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: ShapeDecoration(
-                  color: AppTheme.containerColor1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTableHeader(['Pozitie', 'Nume', 'Membri', 'Formulare', 'Intalniri'], [1, 3, 2, 2, 2]),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: teams.isEmpty
-                          ? _buildEmptyState('Nu exista echipe in clasament')
-                          : _buildCombinedTable(teams, consultants),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Tabel combinat pentru echipe si consultanti
-  Widget _buildCombinedTable(List<TeamRanking> teams, List<ConsultantRanking> consultants) {
-    final List<Widget> tableItems = [];
-    
-    for (int i = 0; i < teams.length; i++) {
-      final team = teams[i];
-      final isExpanded = _expandedTeams[team.id] ?? false;
-      
-      // Adauga randul pentru echipa
-      tableItems.add(_buildTeamRow(team, i + 1, isExpanded));
-      
-      // Daca echipa este expandata, adauga consultanti
-      if (isExpanded) {
-        final teamConsultants = _getConsultantsForTeam(team.teamName, consultants);
-        for (int j = 0; j < teamConsultants.length; j++) {
-          final consultant = teamConsultants[j];
-          tableItems.add(_buildConsultantRow(consultant, j + 1, true)); // true = isSubItem
-        }
-      }
-    }
-    
-    return ListView.separated(
-      padding: EdgeInsets.zero,
-      itemCount: tableItems.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => tableItems[index],
-    );
-  }
-
-  /// Construieste randul pentru o echipa
-  Widget _buildTeamRow(TeamRanking team, int position, bool isExpanded) {
     return Container(
       width: double.infinity,
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor2,
+        color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(32),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 8,
         children: [
-          _buildTableCell('$position', isFirstColumn: true),
-          _buildTableCell(team.teamName, flex: 3, isName: true),
-          _buildTableCell(team.memberCount.toString(), flex: 2),
-          _buildTableCell(team.formsCompleted.toString(), flex: 2),
-          _buildTableCell(team.meetingsHeld.toString(), flex: 2),
-          // Toggle button pentru expandare
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _expandedTeams[team.id] = !isExpanded;
-              });
-            },
-            child: SizedBox(
-              width: 24,
+          _buildLeaderboardHeader(),
+          Expanded(child: _buildLeaderboardContent()),
+        ],
+      ),
+    );
+  }
+
+  /// Header pentru clasament cu titlu si navigare luna
+  Widget _buildLeaderboardHeader() {
+    final title = _selectedTeamId == null 
+        ? 'Clasament' 
+        : _getTeamName(_selectedTeamId!);
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Titlu + back button daca e in modul consultanti
+          Expanded(
+            child: Container(
               height: 24,
-              child: Icon(
-                isExpanded ? Icons.expand_less : Icons.expand_more,
-                size: 20,
-                color: AppTheme.elementColor2,
+              clipBehavior: Clip.antiAlias,
+              decoration: const BoxDecoration(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  if (_selectedTeamId != null)
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedTeamId = null),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          size: 19,
+                          color: AppTheme.elementColor1,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    title,
+                    style: AppTheme.safeOutfit(
+                      color: AppTheme.elementColor1,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Navigare luna
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Săgeată stânga
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: InkWell(
+                  onTap: _dashboardService.goToPreviousMonth,
+                  customBorder: const CircleBorder(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Icon(
+                        Icons.chevron_left,
+                        color: AppTheme.elementColor1,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Text data
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: InkWell(
+                  onTap: _dashboardService.goToCurrentMonth,
+                  customBorder: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Container(
+                    width: 80,
+                    height: 24,
+                    alignment: Alignment.center,
+                    child: Text(
+                      _formatMonthYear(_dashboardService.selectedMonth),
+                      textAlign: TextAlign.center,
+                      style: AppTheme.safeOutfit(
+                        color: _isCurrentMonth() 
+                            ? AppTheme.elementColor1 
+                            : AppTheme.elementColor2,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ),
+              // Săgeată dreapta
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: InkWell(
+                  onTap: _dashboardService.goToNextMonth,
+                  customBorder: const CircleBorder(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.elementColor1,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Continut clasament - echipe sau consultanti
+  Widget _buildLeaderboardContent() {
+    if (_selectedTeamId == null) {
+      return _buildTeamsRanking();
+    } else {
+      return _buildTeamConsultantsRanking(_selectedTeamId!);
+    }
+  }
+
+  /// Clasamentul echipelor cu design nou pe coloane
+  Widget _buildTeamsRanking() {
+    final teams = _dashboardService.teamsRanking;
+    
+    if (teams.isEmpty) {
+      return _buildEmptyState('Nu exista echipe in clasament');
+    }
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 16),
+      decoration: ShapeDecoration(
+        color: AppTheme.containerColor1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Spatiul disponibil pentru inaltimea barelor (rezervam spatiu pentru numele echipei)
+          final double availableHeight = constraints.maxHeight.isFinite
+              ? constraints.maxHeight - 72 // spatiu pentru nume + padding
+              : 300; // fallback in caz de constrangeri nefinite
+
+          // Garantam limite rezonabile pentru afisare
+          final double minBarHeight = 80.0; // minim vizibil pentru text si punctaj
+          final double maxBarHeight = availableHeight > minBarHeight
+              ? availableHeight
+              : minBarHeight;
+
+          final children = <Widget>[];
+          for (int i = 0; i < teams.length; i++) {
+            children.add(
+              Expanded(
+                child: _buildTeamBar(teams[i], maxBarHeight, minBarHeight),
+              ),
+            );
+            // Adauga gap intre bare, dar nu dupa ultima bara
+            if (i < teams.length - 1) {
+              children.add(const SizedBox(width: 56));
+            }
+          }
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: children,
+          );
+        },
+      ),
+    );
+  }
+
+  /// Clasamentul consultantilor dintr-o echipa
+  Widget _buildTeamConsultantsRanking(String teamId) {
+    final allConsultants = _dashboardService.consultantsRanking;
+    final teamConsultants = _getConsultantsForTeam(teamId, allConsultants);
+    
+    if (teamConsultants.isEmpty) {
+      return _buildEmptyState('Nu exista consultanti in aceasta echipa');
+    }
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: ShapeDecoration(
+        color: AppTheme.containerColor1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 8,
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              clipBehavior: Clip.antiAlias,
+              decoration: ShapeDecoration(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 8,
+                children: teamConsultants.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final consultant = entry.value;
+                  return _buildConsultantRankingRow(consultant, index + 1);
+                }).toList(),
               ),
             ),
           ),
@@ -200,50 +338,220 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Construieste randul pentru un consultant (sub echipa)
-  Widget _buildConsultantRow(ConsultantRanking consultant, int position, bool isSubItem) {
-    return Container(
-      width: double.infinity,
-      height: 40,
-      margin: const EdgeInsets.only(left: 32), // Indentare pentru consultanti
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+  /// Bara pentru o echipa in clasament (coloana crescanda de jos in sus)
+  Widget _buildTeamBar(TeamRanking team, double maxBarHeight, double minBarHeight) {
+    // Echipa cu scor maxim trebuie sa umple inaltimea disponibila
+    final int maxScore = _dashboardService.teamsRanking.isNotEmpty
+        ? _dashboardService.teamsRanking.first.score
+        : team.score;
+
+    final double ratio = maxScore > 0 ? (team.score / maxScore) : 0.0;
+
+    // Interpolare liniara intre minimul vizibil si maximul disponibil
+    final double barHeight = minBarHeight + (maxBarHeight - minBarHeight) * ratio;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTeamId = team.id),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+              // Bara cu punctajul in interior
+              Container(
+                width: double.infinity,
+                height: barHeight,
+              decoration: BoxDecoration(
+                color: AppTheme.containerColor2,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+                              child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      '${team.score} puncte',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.safeOutfit(
+                        color: AppTheme.elementColor3,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Numele echipei sub bara
+              Container(
+                width: double.infinity,
+              padding: const EdgeInsets.only(top: 10),
+                child: Text(
+                  team.teamName,
+                  textAlign: TextAlign.center,
+                  style: AppTheme.safeOutfit(
+                  color: AppTheme.elementColor2,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
         ),
-      ),
-      child: Row(
-        children: [
-          _buildTableCell('$position', isFirstColumn: true, isSubItem: true),
-          _buildTableCell(consultant.name, flex: 3, isName: true, isSubItem: true),
-          _buildTableCell('-', flex: 2, isSubItem: true), // Membri nu se aplica la consultant
-          _buildTableCell(consultant.formsCompleted.toString(), flex: 2, isSubItem: true),
-          _buildTableCell(consultant.meetingsScheduled.toString(), flex: 2, isSubItem: true),
-          // Spatiu gol pentru aliniere
-          const SizedBox(width: 24),
-        ],
       ),
     );
   }
 
+  /// Randul pentru un consultant in clasament echipei cu width flexibil bazat pe punctaj
+  Widget _buildConsultantRankingRow(ConsultantRanking consultant, int position) {
+    final teamConsultants = _getConsultantsForTeam(_selectedTeamId!, _dashboardService.consultantsRanking);
+    final int maxScore = teamConsultants.isNotEmpty ? teamConsultants.first.score : 0;
+    final double ratio = maxScore > 0 ? (consultant.score / maxScore) : 0.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Latimea maxima disponibila pentru bara
+        final double maxWidth = constraints.maxWidth;
+        final double minWidth = 220.0; // minim pentru text lizibil
+
+        final double finalWidth = minWidth + (maxWidth - minWidth) * ratio;
+
+            return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        height: 64,
+        width: finalWidth,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: ShapeDecoration(
+          color: AppTheme.containerColor2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 16,
+          children: [
+            Expanded(
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 10,
+                  children: [
+                    Text(
+                      consultant.name,
+                      style: AppTheme.safeOutfit(
+                        color: AppTheme.elementColor3,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: const BoxDecoration(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  Text(
+                    '${consultant.score} puncte',
+                    style: AppTheme.safeOutfit(
+                      color: AppTheme.elementColor3,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+      },
+    );
+  }
+
+  /// Obtine numele echipei dupa ID
+  String _getTeamName(String teamId) {
+    final team = _dashboardService.teamsRanking.firstWhere(
+      (t) => t.id == teamId,
+      orElse: () => TeamRanking(
+        id: teamId,
+        teamName: 'Echipa necunoscuta',
+        memberCount: 0,
+        formsCompleted: 0,
+        meetingsHeld: 0,
+        score: 0,
+      ),
+    );
+    return team.teamName;
+  }
+
   /// Obtine consultanti pentru o echipa specifica
-  List<ConsultantRanking> _getConsultantsForTeam(String teamName, List<ConsultantRanking> allConsultants) {
-    // Debug: afiseaza toti consultantii pentru debugging
-    debugPrint('🔍 DASHBOARD: Caut consultanti pentru echipa: $teamName');
-    debugPrint('🔍 DASHBOARD: Total consultanti disponibili: ${allConsultants.length}');
+  List<ConsultantRanking> _getConsultantsForTeam(String teamId, List<ConsultantRanking> allConsultants) {
+    // Gaseste numele echipei dupa ID
+    final teamName = _getTeamName(teamId);
     
     // Acum folosim campul team din ConsultantRanking
     final teamConsultants = allConsultants.where((consultant) => 
       consultant.team.toLowerCase() == teamName.toLowerCase()
     ).toList();
     
-    debugPrint('🔍 DASHBOARD: Gasiti ${teamConsultants.length} consultanti pentru echipa $teamName');
-    for (var consultant in teamConsultants) {
-      debugPrint('🔍 DASHBOARD: - ${consultant.name} (echipa: ${consultant.team})');
-    }
+    // Sorteaza consultantii dupa punctaj
+    teamConsultants.sort((a, b) => b.score.compareTo(a.score));
     
     return teamConsultants;
+  }
+
+  /// Formateaza luna si anul in formatul dorit: "iul. 25", "aug. 25", etc.
+  String _formatMonthYear(DateTime date) {
+    final monthNames = {
+      1: 'ian',
+      2: 'feb', 
+      3: 'mar',
+      4: 'apr',
+      5: 'mai',
+      6: 'iun',
+      7: 'iul',
+      8: 'aug',
+      9: 'sep',
+      10: 'oct',
+      11: 'noi',
+      12: 'dec',
+    };
+    
+    final month = monthNames[date.month] ?? 'ian';
+    final year = date.year.toString().substring(2); // Ultimele 2 cifre ale anului
+    
+    return '$month. $year';
+  }
+
+  /// Verifica daca luna selectata este luna curenta
+  bool _isCurrentMonth() {
+    final now = DateTime.now();
+    final selected = _dashboardService.selectedMonth;
+    return now.year == selected.year && now.month == selected.month;
   }
 
   /// Widget combinat pentru intalniri si statistici (design din widgetStatistics.md)
@@ -324,7 +632,7 @@ class _DashboardAreaState extends State<DashboardArea> {
   Widget _buildStatCard(String svgAsset, String text) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: ShapeDecoration(
           color: AppTheme.containerColor1,
           shape: RoundedRectangleBorder(
@@ -358,7 +666,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                 textAlign: TextAlign.center,
                 style: AppTheme.safeOutfit(
                   color: AppTheme.elementColor2,
-                  fontSize: 17,
+                  fontSize: 19,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -369,89 +677,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 
-  /// Construieste header-ul pentru tabele
-  Widget _buildTableHeader(List<String> headers, List<int> flexValues) {
-    assert(headers.length == flexValues.length, 'Headers and flexValues must have the same length');
-    return Container(
-      width: double.infinity,
-      height: 21,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          // Prima coloana cu latime fixa de 80px
-          Container(
-            width: 80,
-            height: 21,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            alignment: Alignment.centerLeft,
-            child: Text(
-              headers[0],
-              style: AppTheme.safeOutfit(
-                color: AppTheme.elementColor2,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          // Restul coloanelor cu Expanded
-          ...List.generate(headers.length - 1, (index) => Expanded(
-            flex: flexValues[index + 1],
-            child: Container(
-              height: 21,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              alignment: Alignment.centerLeft,
-              child: Text(
-                headers[index + 1],
-                style: AppTheme.safeOutfit(
-                  color: AppTheme.elementColor2,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          )),
-        ],
-      ),
-    );
-  }
 
-  /// Construieste o celula de tabel
-  Widget _buildTableCell(String text, {int flex = 1, bool isName = false, bool isFirstColumn = false, bool isSubItem = false}) {
-    if (isFirstColumn) {
-      // Prima coloana cu latime fixa de 80px
-      return Container(
-        width: 80,
-        height: 21,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: AppTheme.safeOutfit(
-            color: isSubItem ? AppTheme.elementColor3 : (isName ? AppTheme.elementColor2 : AppTheme.elementColor3),
-            fontSize: isSubItem ? 13 : 15,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      );
-    }
-    
-    return Expanded(
-      flex: flex,
-      child: Container(
-        height: 21,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: AppTheme.safeOutfit(
-            color: isSubItem ? AppTheme.elementColor3 : (isName ? AppTheme.elementColor2 : AppTheme.elementColor3),
-            fontSize: isSubItem ? 13 : 15,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
 
   /// Starea de loading
   Widget _buildLoadingState() {

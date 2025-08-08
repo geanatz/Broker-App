@@ -94,10 +94,7 @@ class TransformerOCR {
       '0': 'O', '1': 'I', '5': 'S', '6': 'G', '7': 'T', '8': 'B',
       
       // Caractere speciale romanesti
-      'ã': 'a', 'a': 'a', 'a': 'a',
-      'i': 'i', 'ï': 'i',
-      'ş': 's', 's': 's',
-      'ţ': 't', 't': 't',
+      'â': 'a', 'ă': 'a', 'î': 'i', 'ș': 's', 'ț': 't',
     };
     
     int changes = 0;

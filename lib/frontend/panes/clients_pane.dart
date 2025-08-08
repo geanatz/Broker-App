@@ -103,8 +103,8 @@ class _ClientsPaneState extends State<ClientsPane> {
       // Incarca clientii din cache instant
       final cachedClients = await _splashService.getCachedClients();
       
-      // FIX: Cleanup focus state when loading from cache
-      _clientService.cleanupFocusStateFromCache(cachedClients);
+      // FIX: Enhanced cleanup focus state when loading from cache
+      _clientService.cleanupFocusStateFromCacheEnhanced(cachedClients);
       
       // FIX: Force notification to ensure form_area receives the focus update
       _clientService.notifyListeners();
@@ -342,15 +342,16 @@ class _ClientsPaneState extends State<ClientsPane> {
     );
   }
   
-  /// FIX: Focus client and switch to form area
+  /// FIX: Enhanced client switching with robust debouncing
   void _focusClient(ClientModel client) async {
     
-    // OPTIMIZATION: Minimal protection for ultra-fast response
+    // OPTIMIZATION: Advanced protection for ultra-fast response
     final now = DateTime.now();
     if (_isSwitchingClient || 
         (_lastTappedClientId == client.phoneNumber && 
          _lastTapTime != null && 
-         now.difference(_lastTapTime!).inMilliseconds < 50)) {
+         now.difference(_lastTapTime!).inMilliseconds < 200)) {
+      debugPrint('🎯 CLIENTS: Client switch skipped - too recent or already switching');
       return;
     }
     
@@ -359,12 +360,17 @@ class _ClientsPaneState extends State<ClientsPane> {
       _lastTappedClientId = client.phoneNumber;
       _lastTapTime = now;
       
+      debugPrint('🔄 CLIENTS: Switching to client: ${client.phoneNumber}');
+      
       // OPTIMIZATION: Strategic area switching with timing
       if (widget.onSwitchToFormArea != null) {
         widget.onSwitchToFormArea!();
       }
       
+      // FIX: Enhanced focus with validation
       await _clientService.focusClient(client.phoneNumber);
+      
+      debugPrint('✅ CLIENTS: Client switch completed: ${client.phoneNumber}');
       
     } catch (e) {
       debugPrint('❌ CLIENTS: Error switching client: $e');

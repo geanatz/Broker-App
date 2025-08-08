@@ -778,10 +778,6 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Verifica daca serviciul Google Sheets este complet initializat
-  bool _isServiceReady() {
-    return _isAuthenticated && _driveApi != null && _sheetsApi != null;
-  }
 
   /// Debug method to dump form data structure
   void _dumpFormDataStructure(Map<String, dynamic> formData, [String prefix = '']) {
@@ -810,37 +806,8 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  /// Valideaza datele clientului inainte de salvare
-  bool _validateClientData(dynamic client) {
-    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: _validateClientData START');
-    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client type: ${client.runtimeType}');
-    
-    if (client == null) {
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client is null');
-      return false;
-    }
-    
-    // Acceseaza datele din Map
-    final name = client['name']?.toString() ?? '';
-    final phoneNumber = client['phoneNumber']?.toString() ?? client['phoneNumber1']?.toString() ?? '';
-    
-    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Validation data - Name: "$name", Phone: "$phoneNumber"');
-    
-    if (name.isEmpty) {
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client name is empty');
-      return false;
-    }
-    
-    if (phoneNumber.isEmpty) {
-      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client phone number is empty');
-      return false;
-    }
-    
-    debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client data validation passed');
-    return true;
-  }
 
-  /// Salveaza un singur client in Google Sheets cu noua logica automata
+  /// FIX: Enhanced client saving with robust error handling and validation
   Future<String?> saveClientToXlsx(dynamic client) async {
     debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx START ==========');
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Client: ${client?['name'] ?? 'NULL'} (${client?['phoneNumber'] ?? 'NULL'})');
@@ -850,38 +817,38 @@ class GoogleDriveService extends ChangeNotifier {
     debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Sheets API: ${_sheetsApi != null ? 'OK' : 'NULL'}');
     
     try {
-      // Step 0: Validate client data
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 0 - Validating client data...');
-      if (!_validateClientData(client)) {
-        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client data validation failed');
+      // Step 0: Enhanced client data validation
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 0 - Enhanced client data validation...');
+      if (!_validateClientDataEnhanced(client)) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Enhanced client data validation failed');
         return 'Datele clientului sunt incomplete sau invalide';
       }
       
-      // Step 1: Validate token
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 1 - Validating token...');
-      final tokenValid = await _ensureValidToken();
+      // Step 1: Enhanced token validation with retry
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 1 - Enhanced token validation...');
+      final tokenValid = await _ensureValidTokenWithRetry();
       if (!tokenValid) {
-        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Token validation failed');
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Enhanced token validation failed');
         return 'Token expirat. Reconectati-va la Google Drive din Setari';
       }
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Token validation successful');
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Enhanced token validation successful');
       
-      // Step 2: Check authentication
+      // Step 2: Enhanced authentication check
       if (!_isAuthenticated) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Not authenticated');
         return 'Pentru a salva datele, conectati-va la Google Drive din Setari';
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Authentication check passed');
   
-      // Step 3: Check service readiness
-      if (!_isServiceReady()) {
-        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Service not ready');
+      // Step 3: Enhanced service readiness check
+      if (!_isServiceReadyEnhanced()) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Enhanced service not ready');
         return 'Eroare: Serviciul Google Sheets nu este complet initializat. Incercati sa va reconectati din Setari.';
       }
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Service readiness check passed');
+      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Enhanced service readiness check passed');
   
-      // Step 4: Find or create spreadsheet
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 4 - Finding/creating spreadsheet...');
+      // Step 4: Enhanced spreadsheet finding/creation
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 4 - Enhanced spreadsheet finding/creation...');
       final spreadsheetId = await _findOrCreateSpreadsheet('clienti');
       if (spreadsheetId == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create spreadsheet');
@@ -889,8 +856,8 @@ class GoogleDriveService extends ChangeNotifier {
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Spreadsheet ID: $spreadsheetId');
   
-      // Step 5: Find or create sheet for current month
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5 - Finding/creating sheet...');
+      // Step 5: Enhanced sheet finding/creation
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5 - Enhanced sheet finding/creation...');
       final sheetTitle = await _findOrCreateSheet(spreadsheetId);
       if (sheetTitle == null) {
         debugPrint('❌ GOOGLE_DRIVE_SERVICE: Could not find or create sheet');
@@ -898,8 +865,8 @@ class GoogleDriveService extends ChangeNotifier {
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet title: $sheetTitle');
 
-      // Step 5.5: Check if client already exists in sheet
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5.5 - Checking if client already exists...');
+      // Step 5.5: Enhanced duplicate checking
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 5.5 - Enhanced duplicate checking...');
       final clientPhoneNumber = client['phoneNumber']?.toString() ?? client['phoneNumber1']?.toString() ?? '';
       final clientExists = await _checkIfClientExistsInSheet(spreadsheetId, sheetTitle, clientPhoneNumber);
       
@@ -910,13 +877,13 @@ class GoogleDriveService extends ChangeNotifier {
       }
       debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client does not exist in sheet, proceeding with save');
   
-      // Step 6: Prepare client data
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 6 - Preparing client data...');
+      // Step 6: Enhanced client data preparation
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 6 - Enhanced client data preparation...');
       final clientRowData = await _prepareClientRowData(client);
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Prepared row data: $clientRowData');
       
-      // Step 7: Save row to sheet with retry mechanism
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 7 - Saving row to sheet with retry...');
+      // Step 7: Enhanced save with improved retry mechanism
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Step 7 - Enhanced save with improved retry...');
       
       bool success = false;
       String? lastError;
@@ -937,8 +904,8 @@ class GoogleDriveService extends ChangeNotifier {
             debugPrint('❌ GOOGLE_DRIVE_SERVICE: Failed to save on attempt $attempt: $lastError');
             
             if (attempt < maxRetries) {
-              debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Waiting 2 seconds before retry...');
-              await Future.delayed(const Duration(seconds: 2));
+              debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Waiting 3 seconds before retry...');
+              await Future.delayed(const Duration(seconds: 3));
             }
           }
         } catch (e) {
@@ -946,8 +913,8 @@ class GoogleDriveService extends ChangeNotifier {
           debugPrint('❌ GOOGLE_DRIVE_SERVICE: Exception on attempt $attempt: $e');
           
           if (attempt < maxRetries) {
-            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Waiting 2 seconds before retry...');
-            await Future.delayed(const Duration(seconds: 2));
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Waiting 3 seconds before retry...');
+            await Future.delayed(const Duration(seconds: 3));
           }
         }
       }
@@ -963,6 +930,63 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (EXCEPTION) ==========');
       return 'Eroare la salvarea clientului: ${e.toString()}';
     }
+  }
+
+  /// FIX: Enhanced client data validation
+  bool _validateClientDataEnhanced(dynamic client) {
+    if (client == null) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Client is null');
+      return false;
+    }
+    
+    final name = client['name']?.toString() ?? '';
+    final phoneNumber = client['phoneNumber']?.toString() ?? client['phoneNumber1']?.toString() ?? '';
+    
+    if (name.isEmpty || phoneNumber.isEmpty) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Missing name or phone number');
+      return false;
+    }
+    
+    // FIX: Enhanced validation for required fields
+    final formData = client['formData'] as Map<String, dynamic>?;
+    if (formData == null || formData.isEmpty) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Missing form data');
+      return false;
+    }
+    
+    debugPrint('✅ GOOGLE_DRIVE_SERVICE: Enhanced client data validation passed');
+    return true;
+  }
+
+  /// FIX: Enhanced token validation with retry
+  Future<bool> _ensureValidTokenWithRetry() async {
+    const int maxRetries = 2;
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final isValid = await _ensureValidToken();
+        if (isValid) return true;
+        
+        if (attempt < maxRetries) {
+          debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Token validation failed, retrying...');
+          await Future.delayed(const Duration(seconds: 1));
+        }
+      } catch (e) {
+        debugPrint('❌ GOOGLE_DRIVE_SERVICE: Token validation error: $e');
+        if (attempt < maxRetries) {
+          await Future.delayed(const Duration(seconds: 1));
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /// FIX: Enhanced service readiness check
+  bool _isServiceReadyEnhanced() {
+    final isReady = _isAuthenticated && _driveApi != null && _sheetsApi != null;
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Service readiness: $isReady (auth: $_isAuthenticated, drive: ${_driveApi != null}, sheets: ${_sheetsApi != null})');
+    return isReady;
   }
 
   /// Verifica daca un client exista deja in sheet dupa numarul de telefon

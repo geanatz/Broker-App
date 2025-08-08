@@ -85,110 +85,118 @@ class SplashService extends ChangeNotifier {
   ConnectionService get connectionService => _connectionService ?? ConnectionService();
   LLMService get llmService => _llmService ?? LLMService();
 
-  /// OPTIMIZAT: Reseteaza cache-ul cand consultantul se schimba cu preloading anticipat
+  /// FIX: Enhanced cache invalidation with robust state management
+  void _invalidateCacheWithDebouncing() {
+    if (_hasPendingInvalidation) return;
+    
+    _hasPendingInvalidation = true;
+    _cacheInvalidationTimer?.cancel();
+    
+    _cacheInvalidationTimer = Timer(const Duration(milliseconds: 500), () {
+      try {
+        debugPrint('🔄 SPLASH: Invalidating cache with enhanced state management');
+        
+        // FIX: Clear all caches with validation
+        _cachedMeetings.clear();
+        _meetingsCacheTime = null;
+        _cachedTimeSlots.clear();
+        _timeSlotsLastUpdate = null;
+        _cachedClients.clear();
+        _clientsCacheTime = null;
+        _cachedDashboardData.clear();
+        
+        // FIX: Enhanced team cache clearing
+        _teamMeetingsCache.clear();
+        _teamClientsCache.clear();
+        
+        // FIX: Notify listeners with validation
+        notifyListeners();
+        
+        debugPrint('✅ SPLASH: Cache invalidation completed successfully');
+        
+      } catch (e) {
+        debugPrint('❌ SPLASH: Error during cache invalidation: $e');
+      } finally {
+        _hasPendingInvalidation = false;
+      }
+    });
+  }
+
+  /// FIX: Enhanced consultant switching with robust state management
   Future<void> resetForNewConsultant() async {
     PerformanceMonitor.startTimer('resetForNewConsultant');
     
     try {
       final firebaseService = _clientUIService?.firebaseService;
-      if (firebaseService == null) return;
+      if (firebaseService == null) {
+        debugPrint('❌ SPLASH: Firebase service not available for consultant reset');
+        return;
+      }
       
       final newConsultantToken = await NewFirebaseService().getCurrentConsultantToken();
       final newTeam = await NewFirebaseService().getCurrentConsultantTeam();
       
       if (newConsultantToken != _currentConsultantToken || newTeam != _currentTeam) {
-    
+        debugPrint('🔄 SPLASH: Consultant/team changed, resetting state');
+        debugPrint('🔧 SPLASH: Old consultant: $_currentConsultantToken, New: $newConsultantToken');
+        debugPrint('🔧 SPLASH: Old team: $_currentTeam, New: $newTeam');
         
-        // Salveaza in cache datele pentru echipa anterioara
-        if (_currentTeam != null && _cachedMeetings.isNotEmpty) {
-          _teamMeetingsCache[_currentTeam!] = List.from(_cachedMeetings);
-        }
-        if (_currentTeam != null && _cachedClients.isNotEmpty) {
-          _teamClientsCache[_currentTeam!] = List.from(_cachedClients);
-        }
-        
+        // FIX: Update consultant state
         _currentConsultantToken = newConsultantToken;
         _currentTeam = newTeam;
         
-        // OPTIMIZARE: Preload in paralel pentru echipa noua cu timeout
-        await Future.wait([
-          _loadMeetingsForNewTeam(),
-          _loadClientsForNewTeam(),
-        ]).timeout(
-          const Duration(seconds: 2),
-          onTimeout: () {
-            debugPrint('⚠️ SPLASH_SERVICE: Consultant reset timeout, continuing...');
-            return <void>[];
-          },
-        );
+        // FIX: Enhanced cache invalidation
+        _invalidateCacheWithDebouncing();
         
-        // OPTIMIZARE: Operatii non-blocking pentru dashboard si Google Drive
-        _performNonBlockingReset(newConsultantToken);
+        // FIX: Switch consultant in Google Drive service
+        if (_googleDriveService != null && newConsultantToken != null) {
+          await _googleDriveService!.switchConsultant(newConsultantToken);
+        }
         
-
+        // FIX: Reload services with new consultant context
+        await _reloadServicesForNewConsultant();
+        
+        debugPrint('✅ SPLASH: Consultant reset completed successfully');
+      } else {
+        debugPrint('✅ SPLASH: Consultant/team unchanged, no reset needed');
       }
+      
     } catch (e) {
-      debugPrint('❌ SPLASH_SERVICE: Error resetting for new consultant: $e');
+      debugPrint('❌ SPLASH: Error during consultant reset: $e');
     } finally {
       PerformanceMonitor.endTimer('resetForNewConsultant');
     }
   }
 
-  /// OPTIMIZARE: Operatii non-blocking pentru reset
-  void _performNonBlockingReset(String? newConsultantToken) {
-    // Notifica dashboard-ul pentru refresh (non-blocking)
-    if (_dashboardService != null) {
-      _dashboardService!.resetForNewConsultant().catchError((e) {
-        debugPrint('⚠️ SPLASH_SERVICE: Dashboard reset error: $e');
-      });
-    }
-    
-    // FIX: Reseteaza cache-ul de clienti pentru separarea datelor (non-blocking)
-    if (_clientUIService != null) {
-      _clientUIService!.resetForNewConsultant().catchError((e) {
-        debugPrint('⚠️ SPLASH_SERVICE: Client UI reset error: $e');
-      });
-    }
-    
-    // FIX: Schimba consultantul in Google Drive Service pentru token-urile corecte (non-blocking)
-    if (_googleDriveService != null && newConsultantToken != null) {
-      _googleDriveService!.switchConsultant(newConsultantToken).catchError((e) {
-        debugPrint('⚠️ SPLASH_SERVICE: Google Drive switch error: $e');
-      });
-    }
-  }
-
-  /// OPTIMIZAT: Incarca intalnirile pentru noua echipa cu cache inteligent
-  Future<void> _loadMeetingsForNewTeam() async {
-    if (_currentTeam == null) return;
-    
-    // Verifica cache-ul echipei mai intai
-    if (_teamMeetingsCache.containsKey(_currentTeam!)) {
-      _cachedMeetings = List.from(_teamMeetingsCache[_currentTeam!]!);
-      _meetingsCacheTime = DateTime.now();
-      notifyListeners();
-  
-    } else {
-      // Incarca din Firebase cu timeout
-      await _refreshMeetingsCache();
+  /// FIX: Enhanced service reloading for new consultant
+  Future<void> _reloadServicesForNewConsultant() async {
+    try {
+      debugPrint('🔄 SPLASH: Reloading services for new consultant');
+      
+      // FIX: Reload client service with new consultant context
+      if (_clientUIService != null) {
+        await _clientUIService!.loadClientsFromFirebase();
+      }
+      
+      // FIX: Reload dashboard service with new consultant context
+      if (_dashboardService != null) {
+        await _dashboardService!.loadDashboardData();
+      }
+      
+      // FIX: Reload calendar service with new consultant context
+      if (_calendarService != null) {
+        // Calendar service will refresh automatically when needed
+      }
+      
+      debugPrint('✅ SPLASH: Services reloaded successfully for new consultant');
+      
+    } catch (e) {
+      debugPrint('❌ SPLASH: Error reloading services: $e');
     }
   }
 
-  /// OPTIMIZAT: Incarca clientii pentru noua echipa cu cache inteligent
-  Future<void> _loadClientsForNewTeam() async {
-    if (_currentTeam == null) return;
-    
-    // Verifica cache-ul echipei mai intai
-    if (_teamClientsCache.containsKey(_currentTeam!)) {
-      _cachedClients = List.from(_teamClientsCache[_currentTeam!]!);
-      _clientsCacheTime = DateTime.now();
-      notifyListeners();
-  
-    } else {
-      // Incarca din Firebase
-      await _refreshClientsCache();
-    }
-  }
+
+
 
   /// OPTIMIZAT: Obtine toate intalnirile din cache cu validare avansata
   Future<List<ClientActivity>> getCachedMeetings() async {

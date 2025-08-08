@@ -9,15 +9,12 @@ import '../components/items/light_item3.dart';
 import '../components/items/dark_item3.dart';
 import '../components/items/light_item7.dart';
 import '../components/items/dark_item7.dart';
-import '../components/buttons/flex_buttons3.dart';
-import '../components/buttons/flex_buttons2.dart';
 import '../components/buttons/flex_buttons1.dart';
+import '../components/buttons/flex_buttons2.dart';
 import '../components/fields/input_field1.dart';
 import '../../backend/services/ocr_service.dart';
 import '../../backend/services/clients_service.dart';
 import '../../backend/services/splash_service.dart';
-import '../../backend/ocr/scanner_ocr.dart';
-import 'package:image/image.dart' as img;
 
 /// Client model to represent client data
 class Client {
@@ -69,9 +66,6 @@ class ClientsPopup extends StatefulWidget {
   /// Callback when "Extract Clients" button is tapped
   final VoidCallback? onExtractClients;
 
-  /// Callback when "Delete All Clients" button is tapped
-  final VoidCallback? onDeleteAllClients;
-
   /// Callback when "Delete OCR Clients" from selected image is tapped  
   final VoidCallback? onDeleteOcrClients;
 
@@ -94,7 +88,6 @@ class ClientsPopup extends StatefulWidget {
     super.key,
     this.onAddClient,
     this.onExtractClients,
-    this.onDeleteAllClients,
     this.onDeleteOcrClients,
     this.onClientSelected,
     this.onEditClient,
@@ -114,8 +107,8 @@ class _ClientsPopupState extends State<ClientsPopup> {
   Map<String, OcrResult>? _ocrResults;
   String? _selectedOcrImagePath;
   bool _isOcrProcessing = false;
-  String _ocrMessage = 'Se pregateste extragerea...';
-  double _ocrProgress = 0.0;
+  final String _ocrMessage = 'Se pregateste extragerea...';
+  final double _ocrProgress = 0.0;
   String? _ocrError;
   Client? _editingClient;
   
@@ -189,189 +182,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     _openEditClient(null);
   }
 
-  /// Deschide file picker pentru selectia imaginilor OCR
-  Future<void> _openImagePicker() async {
-    try {
-  
-      
 
-      
-      FilePickerResult? result;
-      
-      if (kIsWeb) {
-        // Pe web folosim FileType.custom cu extensii specifice
-        result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowMultiple: true,
-          allowedExtensions: ['jpg', 'jpeg', 'png', 'bmp', 'gif'],
-          dialogTitle: 'Selecteaza imaginile pentru extragerea contactelor',
-        );
-      } else {
-        // Pe desktop/mobile folosim FileType.image fara extensii
-        result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-          allowMultiple: true,
-          dialogTitle: 'Selecteaza imaginile pentru extragerea contactelor',
-        );
-      }
-      
-      if (result != null && result.files.isNotEmpty) {
-    
-        
-        if (mounted) {
-          setState(() {
-            if (kIsWeb) {
-              _webFiles = result!.files;
-              _selectedImages = [];
-            } else {
-              _selectedImages = result!.files
-                  .where((file) => file.path != null)
-                  .map((file) => File(file.path!))
-                  .toList();
-              _webFiles = null;
-            }
-            _currentState = PopupState.ocrOnly;
-          });
-          _startOcrProcess();
-        }
-      } else {
-    
-      }
-    } catch (e) {
-      // Error handling for image selection
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Eroare la selectia imaginilor: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Incepe procesul OCR
-  Future<void> _startOcrProcess() async {
-
-    
-    setState(() {
-      _isOcrProcessing = true;
-      _ocrMessage = 'Se extrage textul din imaginea...';
-      _ocrProgress = 0.0;
-      _ocrError = null;
-      _ocrResults = null;
-    });
-
-    try {
-      final ocrService = OcrService();
-      
-      // Creeaza lista de imagini pentru procesare
-      List<dynamic> imagesToProcess = [];
-      if (kIsWeb && _webFiles != null) {
-        // Pe web procesam imaginile asincron pentru a nu bloca UI-ul
-        setState(() {
-          _ocrMessage = 'Se prepara imaginile pentru procesare...';
-          _ocrProgress = 0.0;
-        });
-        
-        for (int i = 0; i < _webFiles!.length; i++) {
-          final file = _webFiles![i];
-          if (file.bytes != null) {
-            setState(() {
-              _ocrMessage = 'Se prepara imaginea ${i + 1} din ${_webFiles!.length}...';
-              _ocrProgress = (i + 1) / _webFiles!.length * 0.3; // 30% pentru preparare
-            });
-            
-            // Proceseaza fiecare imagine asincron cu delay pentru a nu bloca UI-ul
-            await Future.delayed(const Duration(milliseconds: 50));
-            
-            try {
-              final image = img.decodeImage(file.bytes!);
-              if (image != null) {
-                imagesToProcess.add(ImageFile(
-                  name: file.name,
-                  bytes: file.bytes!,
-                  size: file.size,
-                  width: image.width,
-                  height: image.height,
-                ));
-            
-              } else {
-                // Cannot decode image
-              }
-            } catch (e) {
-              // Error decoding image
-            }
-          }
-        }
-        
-        setState(() {
-          _ocrMessage = 'Imaginile sunt pregatite, se incepe extragerea...';
-          _ocrProgress = 0.3;
-        });
-        
-    
-        
-        // Pe web limitez numarul de imagini pentru a evita blocarea
-        if (imagesToProcess.length > 5) {
-      
-          imagesToProcess = imagesToProcess.take(5).toList();
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Pe web se proceseaza maxim 5 imagini simultan. Selectate ${imagesToProcess.length} imagini.'),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        }
-      } else {
-        // Pe desktop folosim fisierele direct
-        imagesToProcess = _selectedImages;
-    
-      }
-      
-      final batchResult = await ocrService.processMultipleImages(
-        imagesToProcess,
-        onProgress: (current, total) {
-          setState(() {
-            _ocrMessage = 'Se proceseaza imaginea $current din $total...';
-            // Pe web incepem de la 30% (dupa preparare), pe desktop de la 0%
-            final baseProgress = kIsWeb ? 0.3 : 0.0;
-            final progressRange = kIsWeb ? 0.7 : 1.0;
-            _ocrProgress = baseProgress + (total > 0 ? (current / total * progressRange) : 0.0);
-          });
-        },
-      );
-
-      // Converteste List<OcrResult> la Map<String, OcrResult>
-      final resultsMap = <String, OcrResult>{};
-      for (final result in batchResult.individualResults) {
-        resultsMap[result.imagePath] = result;
-      }
-
-      setState(() {
-        _isOcrProcessing = false;
-        _ocrResults = resultsMap;
-        _ocrMessage = 'Extragere finalizata!';
-      });
-      
-  
-
-    } catch (e) {
-      // Error in OCR process
-      
-      setState(() {
-        _isOcrProcessing = false;
-        _ocrError = e.toString();
-        _ocrMessage = 'Eroare la extragere';
-      });
-    }
-  }
 
   /// Anuleaza procesul OCR
   void _cancelOcrProcess() {
@@ -630,41 +441,6 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
   }
 
-  /// Sterge imaginea OCR selectata complet (inclusiv item-ul din galerie)
-  void _deleteOcrClientsFromSelectedImage() {
-    if (_selectedOcrImagePath != null && _ocrResults != null) {
-      final result = _ocrResults![_selectedOcrImagePath];
-      if (result?.extractedClients != null) {
-        final clientCount = result!.extractedClients!.length;
-        final imageName = result.imagePath.split('/').last;
-        
-        // Sterge complet imaginea din rezultatele OCR si din lista de imagini selectate
-        setState(() {
-          _ocrResults!.remove(_selectedOcrImagePath!);
-          _selectedImages.removeWhere((image) => image.path == _selectedOcrImagePath);
-          _selectedOcrImagePath = null;
-          
-          // Daca nu mai sunt imagini, trece la starea clientsOnly
-          if (_selectedImages.isEmpty) {
-            _currentState = PopupState.clientsOnly;
-          } else {
-            _currentState = PopupState.ocrOnly;
-          }
-        });
-        
-        // Afiseaza mesaj de confirmare
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Imaginea "$imageName" stearsa complet ($clientCount clienti)'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    }
-  }
 
   /// Returneaza lista de clienti de afisat (ori clientii din imaginea OCR selectata, ori toti clientii)
   List<Client> _getClientsToDisplay() {
@@ -1280,35 +1056,23 @@ class _ClientsPopupState extends State<ClientsPopup> {
                                      _selectedOcrImagePath != null;
     
     if (isShowingOcrClients) {
-      return FlexButtonWithTrailingIcon(
-        primaryButtonText: "Adauga client",
-        primaryButtonIconPath: "assets/addIcon.svg",
-        trailingIconPath: "assets/deleteIcon.svg",
-        onPrimaryButtonTap: () => _startClientCreation(),
-        onTrailingIconTap: () {
-          // Sterge complet imaginea OCR selectata (inclusiv item-ul din galerie)
-          _deleteOcrClientsFromSelectedImage();
-          widget.onDeleteOcrClients?.call();
-        },
-        spacing: AppTheme.smallGap,
+      return FlexButtonSingle(
+        text: "Adauga client",
+        iconPath: "assets/addIcon.svg",
+        onTap: () => _startClientCreation(),
         borderRadius: AppTheme.borderRadiusMedium,
         buttonHeight: 48.0,
-        primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
+        textStyle: AppTheme.navigationButtonTextStyle,
       );
     } else {
-      // In lista de contacte reala, afiseaza 3 butoane
-      return FlexButtonWithTwoTrailingIcons(
-        primaryButtonText: "Adauga client",
-        primaryButtonIconPath: "assets/addIcon.svg",
-        trailingIcon1Path: "assets/imageIcon.svg",
-        trailingIcon2Path: "assets/deleteIcon.svg",
-        onPrimaryButtonTap: () => _startClientCreation(),
-        onTrailingIcon1Tap: _openImagePicker,
-        onTrailingIcon2Tap: widget.onDeleteAllClients,
-        spacing: AppTheme.smallGap,
+      // In lista de contacte reala, afiseaza doar butonul de adaugare
+      return FlexButtonSingle(
+        text: "Adauga client",
+        iconPath: "assets/addIcon.svg",
+        onTap: () => _startClientCreation(),
         borderRadius: AppTheme.borderRadiusMedium,
         buttonHeight: 48.0,
-        primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
+        textStyle: AppTheme.navigationButtonTextStyle,
       );
     }
   }

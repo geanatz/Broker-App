@@ -33,6 +33,7 @@ class TeamRanking {
   final int memberCount;
   final int formsCompleted;
   final int meetingsHeld;
+  final int score; // Punctaj total calculat ca suma punctajelor consultantilor
 
   TeamRanking({
     required this.id,
@@ -40,6 +41,7 @@ class TeamRanking {
     required this.memberCount,
     required this.formsCompleted,
     required this.meetingsHeld,
+    required this.score,
   });
 }
 
@@ -312,7 +314,7 @@ class DashboardService extends ChangeNotifier {
         final stats = statsMap[consultantToken] ?? {};
         final forms = (stats['formsCompleted'] ?? 0) as num;
         final meetings = (stats['meetingsHeld'] ?? 0) as num;
-        final score = (forms.toInt() * 10) + (meetings.toInt() * 5);
+        final score = (forms.toInt() * 5) + (meetings.toInt() * 10);
 
         return ConsultantRanking(
           id: consultantDoc.id, // Pastram UID-ul pentru identificare
@@ -364,16 +366,18 @@ class DashboardService extends ChangeNotifier {
         final stats = statsMap[consultantToken] ?? {};
         final forms = (stats['formsCompleted'] ?? 0) as num;
         final meetings = (stats['meetingsHeld'] ?? 0) as num;
+        final consultantScore = (forms.toInt() * 5) + (meetings.toInt() * 10);
         
-        teamStats.putIfAbsent(teamId, () => {'forms': 0, 'meetings': 0, 'members': 0});
+        teamStats.putIfAbsent(teamId, () => {'forms': 0, 'meetings': 0, 'members': 0, 'score': 0});
         teamStats[teamId]!['forms'] = teamStats[teamId]!['forms']! + forms.toInt();
         teamStats[teamId]!['meetings'] = teamStats[teamId]!['meetings']! + meetings.toInt();
         teamStats[teamId]!['members'] = teamStats[teamId]!['members']! + 1;
+        teamStats[teamId]!['score'] = teamStats[teamId]!['score']! + consultantScore;
       }
       
       final teamNames = await _consultantService.getAllTeams();
       final teamRankings = teamNames.map((teamName) {
-        final stats = teamStats[teamName] ?? {'forms': 0, 'meetings': 0, 'members': 0};
+        final stats = teamStats[teamName] ?? {'forms': 0, 'meetings': 0, 'members': 0, 'score': 0};
         
         return TeamRanking(
           id: teamName,
@@ -381,10 +385,11 @@ class DashboardService extends ChangeNotifier {
           memberCount: stats['members']!,
           formsCompleted: stats['forms']!,
           meetingsHeld: stats['meetings']!,
+          score: stats['score']!,
         );
       }).toList();
 
-      teamRankings.sort((a, b) => b.formsCompleted.compareTo(a.formsCompleted));
+      teamRankings.sort((a, b) => b.score.compareTo(a.score));
       _teamsRanking = teamRankings;
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading teams: $e');

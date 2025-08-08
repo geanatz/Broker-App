@@ -410,7 +410,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       onEditClient: _handleEditClient,
                       onSaveClient: _handleSaveClient,
                       onDeleteClient: (client) => _handleDeleteClient(client),
-                      onDeleteAllClients: _handleDeleteAllClients,
+
                       onDeleteOcrClients: _handleDeleteOcrClients,
                     ),
                   
@@ -530,55 +530,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
   
-  /// Handles delete all clients button press
-  void _handleDeleteAllClients() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirmare stergere'),
-          content: const Text('Esti sigur ca vrei sa stergi toti clientii din lista?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Anuleaza'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _performDeleteAllClients();
-              },
-              child: const Text('Sterge'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-  
-  /// Performs the actual deletion of all clients
-  void _performDeleteAllClients() async {
-    try {
-      // Use the enhanced deletion method with forced execution
-      await _clientService.deleteAllClientsWithForcedExecution();
-      
-      // Inchide popup-ul
-      _closeAllPopups();
-      
-    } catch (e) {
-      FirebaseLogger.error('❌ MAIN_SCREEN: Error during forced deletion: $e');
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Eroare la stergerea clientilor: $e'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
+
 
   /// Handles delete OCR image completely (removes item from gallery)
   void _handleDeleteOcrClients() {

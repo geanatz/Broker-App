@@ -798,15 +798,17 @@ class _FormAreaState extends State<FormArea> {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: _buildCreditSection(client),
-        ),
-        const SizedBox(width: AppTheme.mediumGap),
-        Expanded(
-          child: _buildIncomeSection(client),
-        ),
-      ],
+                      children: [
+                  Expanded(
+                    flex: 10,
+                    child: _buildCreditSection(client),
+                  ),
+                  const SizedBox(width: AppTheme.mediumGap),
+                  Expanded(
+                    flex: 7,
+                    child: _buildIncomeSection(client),
+                  ),
+                ],
     );
     
     
@@ -875,11 +877,10 @@ class _FormAreaState extends State<FormArea> {
 
   /// Construieste placeholder-ul cand nu exista client selectat
   Widget _buildNoClientSelectedPlaceholder() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      padding: const EdgeInsets.all(AppTheme.largeGap),
-      clipBehavior: Clip.antiAlias,
+            return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8.0),
+          clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
@@ -894,67 +895,86 @@ class _FormAreaState extends State<FormArea> {
           )
         ],
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SvgPicture.asset(
-              'assets/userIcon.svg',
-              width: 64,
-              height: 64,
-              colorFilter: ColorFilter.mode(
-                AppTheme.elementColor2,
-                BlendMode.srcIn,
-              ),
-            ),
-            const SizedBox(height: AppTheme.mediumGap),
-            Text(
-              'Niciun client selectat',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeLarge,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.elementColor2,
-              ),
-            ),
-            const SizedBox(height: AppTheme.smallGap),
-            Text(
-              'Selectati un client din panoul de clienti pentru a vedea formularul clientului',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeMedium,
-                color: AppTheme.elementColor1,
-              ),
-            ),
-            if (!widget.isClientsPaneVisible) ...[
-              const SizedBox(height: AppTheme.mediumGap),
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    // Navigheaza la clients_pane
-                    widget.onNavigateToClients?.call();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.containerColor1,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Vezi clienti',
-                      style: AppTheme.safeOutfit(
-                        color: AppTheme.elementColor2,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Widget Header
+          WidgetHeader2(
+            title: 'Formular',
+            altText: '',
+            onAltTextTap: null,
+          ),
+          
+          const SizedBox(height: AppTheme.smallGap),
+          
+          // Placeholder pentru niciun client selectat
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    'assets/userIcon.svg',
+                    width: 64,
+                    height: 64,
+                    colorFilter: ColorFilter.mode(
+                      AppTheme.elementColor2,
+                      BlendMode.srcIn,
                     ),
                   ),
-                ),
+                  const SizedBox(height: AppTheme.mediumGap),
+                  Text(
+                    'Niciun client selectat',
+                    style: TextStyle(
+                      fontSize: AppTheme.fontSizeLarge,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.elementColor2,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.smallGap),
+                  Text(
+                    'Selectati un client din panoul de clienti pentru a vedea formularul clientului',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: AppTheme.fontSizeMedium,
+                      color: AppTheme.elementColor1,
+                    ),
+                  ),
+                  if (!widget.isClientsPaneVisible) ...[
+                    const SizedBox(height: AppTheme.mediumGap),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigheaza la clients_pane
+                          widget.onNavigateToClients?.call();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.containerColor1,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            'Vezi clienti',
+                            style: AppTheme.safeOutfit(
+                              color: AppTheme.elementColor2,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

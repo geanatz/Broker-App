@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -18,18 +19,32 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
   late final LLMService _llmService;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _quickActionsController = ScrollController();
+  Timer? _quickActionsTimer;
+  static const int _quickActionsRepeats = 200; // repeat list to emulate infinite loop
+
+  final List<String> _quickActions = const [
+    'Ce intalniri am astazi?',
+    'Care este urmatoarea intalnire?',
+    'Ce intalniri am saptamana aceasta?',
+  ];
 
   @override
   void initState() {
     super.initState();
     _llmService = SplashService().llmService;
     _llmService.loadConversation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startQuickActionsAutoScroll();
+    });
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _quickActionsTimer?.cancel();
+    _quickActionsController.dispose();
     super.dispose();
   }
 
@@ -62,7 +77,9 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                 child: _buildMessagesArea(),
               ),
               
-              const SizedBox(height: 8),
+          const SizedBox(height: 8),
+          _buildQuickActionsCarousel(),
+          const SizedBox(height: 8),
               
               // Input area
               _buildInputArea(),
@@ -124,28 +141,34 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
             ),
             textAlign: TextAlign.center,
           ),
-                      const SizedBox(height: 16),
-          // Actiuni rapide
-          _buildQuickActions(),
+          const SizedBox(height: 16),
+          // Quick actions au fost mutate jos, deasupra inputului
         ],
       ),
     );
   }
 
-  /// Construieste actiunile rapide
-  Widget _buildQuickActions() {
-    final quickActions = [
-      'Ce intalniri am astazi?',
-      'Cati clienti am adaugat luna aceasta?',
-      'Care este norma BCR pentru credite ipotecare?',
-      'Ce intalniri am saptamana aceasta?',
-    ];
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: quickActions.map((action) => _buildQuickActionButton(action)).toList(),
+  /// Carusel infinit si lent cu actiuni rapide, plasat deasupra inputului
+  Widget _buildQuickActionsCarousel() {
+    return SizedBox(
+      height: 44,
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: ListView.builder(
+          controller: _quickActionsController,
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _quickActions.isEmpty ? 0 : _quickActions.length * _quickActionsRepeats,
+          itemBuilder: (context, index) {
+            if (_quickActions.isEmpty) return const SizedBox.shrink();
+            final text = _quickActions[index % _quickActions.length];
+            return Padding(
+              padding: EdgeInsets.only(right: index == _quickActions.length * _quickActionsRepeats - 1 ? 0 : 8),
+              child: _buildQuickActionButton(text),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -156,17 +179,19 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
       child: GestureDetector(
         onTap: () => _sendMessage(text),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: AppTheme.containerColor1,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Text(
-            text,
-            style: AppTheme.safeOutfit(
-              color: AppTheme.elementColor2,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+          child: Center(
+            child: Text(
+              text,
+              style: AppTheme.safeOutfit(
+                color: AppTheme.elementColor2,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ),
@@ -482,5 +507,27 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
         ),
       );
     }
+  }
+
+  /// Auto-scroll smooth for quick actions carousel, infinite loop
+  void _startQuickActionsAutoScroll() {
+    _quickActionsTimer?.cancel();
+    if (_quickActions.isEmpty) return;
+
+    // Tune speed and interval for a slightly faster, smoother animation
+    const Duration interval = Duration(milliseconds: 16); // ~60 FPS
+    const double stepPx = 0.8; // faster but still smooth
+
+    _quickActionsTimer = Timer.periodic(interval, (timer) {
+      if (!_quickActionsController.hasClients) return;
+      final max = _quickActionsController.position.maxScrollExtent;
+      final current = _quickActionsController.offset;
+
+      if (current + stepPx >= max) {
+        _quickActionsController.jumpTo(0);
+      } else {
+        _quickActionsController.jumpTo(current + stepPx);
+      }
+    });
   }
 } 
