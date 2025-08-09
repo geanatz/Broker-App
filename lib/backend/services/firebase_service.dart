@@ -321,29 +321,15 @@ class FirebaseThreadHandler {
     Future<T> Function() operation, {
     bool logErrors = true,
   }) async {
-    final completer = Completer<T>();
-
-    void runOperation() async {
-      try {
-        final result = await operation();
-        if (!completer.isCompleted) {
-          completer.complete(result);
-        }
-      } catch (e) {
-        if (logErrors) {
-          FirebaseLogger.error('Error in Firebase operation: $e');
-        }
-        if (!completer.isCompleted) {
-          completer.completeError(e);
-        }
+    try {
+      // Execute directly on the main isolate to avoid platform-thread issues
+      return await operation();
+    } catch (e) {
+      if (logErrors) {
+        FirebaseLogger.error('Error in Firebase operation: $e');
       }
+      rethrow;
     }
-
-    // Ensure platform-thread execution: post a task that runs ASAP on event loop
-    // Avoid post-frame dependency to prevent FREEZE during dialogs/minimized window
-    Future<void>(() => runOperation());
-
-    return completer.future;
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> createSafeQueryStream(

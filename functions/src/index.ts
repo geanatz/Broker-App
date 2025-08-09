@@ -61,13 +61,13 @@ export const llmGenerate = functions
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const data: any = await response.json();
       if (!response.ok) {
-        res.status(response.status).json({ error: data?.error?.message || 'Upstream error' });
+        res.status(response.status).json({ error: (data?.error?.message as string) || 'Upstream error' });
         return;
       }
 
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      const text = (data?.candidates?.[0]?.content?.parts?.[0]?.text as string) ?? '';
       res.json({ text });
       return;
     } catch (e: any) {

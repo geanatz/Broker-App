@@ -68,7 +68,7 @@ class LLMService extends ChangeNotifier {
 
   // Production-ready: use backend proxy so no API key is shipped in the client
   static const bool _useProxyEndpoint = true; // set to true for zero-setup per consultant
-  static const String _proxyEndpoint = 'https://your-llm-proxy.example.com/api/generate';
+  static const String _proxyEndpoint = 'https://europe-west1-broker-app-f1n4nc3.cloudfunctions.net/llmGenerate';
   static bool get _isProxyConfigured => _useProxyEndpoint && _proxyEndpoint.startsWith('http');
 
   void initState() {

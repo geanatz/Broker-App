@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
+import fetch from 'node-fetch';
 // Initialize Admin SDK
 initializeApp();
 // Secure config: set via
