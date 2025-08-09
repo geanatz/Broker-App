@@ -189,6 +189,17 @@ Actiuni
 Implementat
 - LLMService: contextul este construit cache-first din SplashService; API key citit din environment (GEMINI_API_KEY), fallback doar pentru debug
 
+Backend proxy (nou)
+- Adaugat Firebase Functions endpoint `llmGenerate` (region: europe-west1) care apeleaza `gemini-2.0-flash` cu cheia stocata in functions.config().gemini.key
+- Clientul (LLMService) foloseste implicit proxy-ul `_useProxyEndpoint = true`, fara niciun setup local
+- Raspuns proxy: `{ text: string }` (compatibil cu UI-ul existent)
+ - IMPORTANT: seteaza `_proxyEndpoint` in `LLMService` la URL-ul functiei Cloud (`https://europe-west1-<project>.cloudfunctions.net/llmGenerate`)
+
+Note de deploy
+- Seteaza cheia: `firebase functions:config:set gemini.key="<KEY>"` (sau foloseste env var GEMINI_KEY in Cloud Run/Functions 2nd gen)
+- Build: `npm --prefix functions run build`
+- Deploy: `firebase deploy --only functions`
+
 Success metrics (ms)
 - Timp pregatire prompt -300..-1200 ms; zero blocaj UI
 

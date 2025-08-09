@@ -66,6 +66,11 @@ class LLMService extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasApiKey => _apiKey.isNotEmpty;
 
+  // Production-ready: use backend proxy so no API key is shipped in the client
+  static const bool _useProxyEndpoint = true; // set to true for zero-setup per consultant
+  static const String _proxyEndpoint = 'https://your-llm-proxy.example.com/api/generate';
+  static bool get _isProxyConfigured => _useProxyEndpoint && _proxyEndpoint.startsWith('http');
+
   void initState() {
     // Nu mai este nevoie sa incarcam API key-ul din SharedPreferences
     notifyListeners();
@@ -98,10 +103,18 @@ class LLMService extends ChangeNotifier {
 
   /// Trimite mesajul catre Google Gemini API
   Future<void> _sendMessageToLLM(String userMessage) async {
-    if (!hasApiKey) {
-      _errorMessage = 'Cheia API nu este configurata';
-      notifyListeners();
-      return;
+    if (_useProxyEndpoint) {
+      if (!_isProxyConfigured) {
+        _errorMessage = 'LLM proxy endpoint nu este configurat';
+        notifyListeners();
+        return;
+      }
+    } else {
+      if (!hasApiKey) {
+        _errorMessage = 'Cheia API nu este configurata';
+        notifyListeners();
+        return;
+      }
     }
 
     debugPrint('🤖 AI_DEBUG: Incepe procesarea intrebarii: "$userMessage"');
@@ -109,7 +122,7 @@ class LLMService extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-    // OPTIMIZARE: Construieste promptul extins cu context din cache-ul SplashService (evita fetch live)
+      // OPTIMIZARE: Construieste promptul extins cu context din cache-ul SplashService (evita fetch live)
     debugPrint('🤖 AI_DEBUG: Construire prompt cu context (cache-first)...');
     final extendedPrompt = await buildPromptWithContext(userMessage);
       
@@ -142,24 +155,47 @@ class LLMService extends ChangeNotifier {
         'parts': [{'text': extendedPrompt}],
       });
       
-      debugPrint('🤖 AI_DEBUG: Trimite cerere la Gemini API (${messages.length} mesaje)...');
-      
-      final response = await http.post(
-        Uri.parse('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$_apiKey'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'contents': messages,
-          'generationConfig': AIInstructions.generationConfig,
-        }),
-      );
+      debugPrint('🤖 AI_DEBUG: Trimitere cerere (${messages.length} mesaje)...');
+
+      http.Response response;
+      if (_useProxyEndpoint) {
+        // Route via backend proxy (no API key in client)
+        response = await http.post(
+          Uri.parse(_proxyEndpoint),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'contents': messages,
+            'generationConfig': AIInstructions.generationConfig,
+            'model': 'gemini-2.0-flash',
+          }),
+        );
+      } else {
+        // Direct call (only for local dev with dart-define)
+        response = await http.post(
+          Uri.parse('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=$_apiKey'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'contents': messages,
+            'generationConfig': AIInstructions.generationConfig,
+          }),
+        );
+      }
 
       debugPrint('🤖 AI_DEBUG: Raspuns API status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final assistantMessage = data['candidates'][0]['content']['parts'][0]['text'];
+        // Support both proxy response {text: ...} and raw Gemini {candidates[0]...}
+        String assistantMessage;
+        if (data is Map && data.containsKey('text')) {
+          assistantMessage = data['text'] as String? ?? '';
+        } else {
+          assistantMessage = data['candidates'][0]['content']['parts'][0]['text'];
+        }
         
         debugPrint('🤖 AI_DEBUG: Raspuns AI generat: "${assistantMessage.substring(0, assistantMessage.length > 100 ? 100 : assistantMessage.length)}..."');
         

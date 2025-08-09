@@ -1033,7 +1033,7 @@ class GoogleDriveService extends ChangeNotifier {
 
       // Normalizeaza numarul de telefon pentru comparare (elimina spatii, caractere speciale)
       final normalizedPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
-      final cacheKey = '${spreadsheetId}|${sheetTitle}';
+      final cacheKey = '$spreadsheetId|$sheetTitle';
       final now = DateTime.now();
       final cachedSet = _sheetPhonesCache[cacheKey];
       final cachedAt = _sheetPhonesCacheTime[cacheKey];
