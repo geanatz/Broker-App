@@ -938,7 +938,7 @@ class ClientUIService extends ChangeNotifier {
   Timer? _loadDebounceTimer;
   bool _isLoading = false;
   DateTime? _lastLoadTime;
-  static const int _cacheValidityMinutes = 2;
+  static const int _cacheValidityMinutes = 5;
   
   // Lista tuturor clientilor
   List<ClientModel> _clients = [];
@@ -1073,7 +1073,12 @@ class ClientUIService extends ChangeNotifier {
   /// Porneste actualizarea automata a clientilor din Firebase cu delay pentru evitarea apelurilor redundante
   void _startAutoRefresh() {
     _autoRefreshTimer?.cancel();
-    _autoRefreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+    // Do not start periodic refresh if real-time listeners are active
+    if (_realTimeSubscription != null || _operationsSubscription != null) {
+      return;
+    }
+    // Fallback refresh only if streams are not available
+    _autoRefreshTimer = Timer.periodic(const Duration(minutes: 10), (timer) {
       if (_clients.isEmpty) return;
       loadClientsFromFirebase();
     });
@@ -1923,6 +1928,10 @@ class ClientUIService extends ChangeNotifier {
       // OPTIMISTIC UPDATE: Elimina imediat din lista locala pentru UI instant
       _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
 
+      // NEW: Curata instant toate intalnirile clientului din cache-uri pentru a evita orfane in calendar
+      final splashService = SplashService();
+      splashService.removeMeetingsByPhoneFromCaches(clientPhoneNumber);
+
       // Update focus if needed
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
         _focusedClient = _clients.isNotEmpty ? _clients.first : null;
@@ -1932,8 +1941,9 @@ class ClientUIService extends ChangeNotifier {
       }
 
       // FIX: Invalideaza cache-ul din SplashService pentru sincronizare UI
-      final splashService = SplashService();
       await splashService.invalidateClientsCacheAndRefresh();
+      // Trigger si refresh pe meetings in fundal (fire-and-forget)
+      unawaited(splashService.invalidateMeetingsCacheAndRefresh());
 
       // Sterge din Firebase in background (optimistic update)
       final success = await _firebaseService.deleteClient(clientPhoneNumber);
@@ -1989,6 +1999,12 @@ class ClientUIService extends ChangeNotifier {
         // 3. Remove from local list
         _clients.removeWhere((client) => clientPhoneNumbers.contains(client.phoneNumber));
 
+        // NEW: Curata instant intalnirile pentru toti clientii din lista din cache-uri
+        final splashService = SplashService();
+        for (final phone in clientPhoneNumbers) {
+          splashService.removeMeetingsByPhoneFromCaches(phone);
+        }
+
         // 4. Update focus if needed
         if (_focusedClient != null && clientPhoneNumbers.contains(_focusedClient!.phoneNumber)) {
           _focusedClient = _clients.isNotEmpty ? _clients.first : null;
@@ -1998,8 +2014,8 @@ class ClientUIService extends ChangeNotifier {
         }
 
         // 5. Invalidate and refresh cache
-        final splashService = SplashService();
         await splashService.invalidateClientsCacheAndRefresh();
+        unawaited(splashService.invalidateMeetingsCacheAndRefresh());
 
         // 6. Notify listeners
         WidgetsBinding.instance.addPostFrameCallback((_) {

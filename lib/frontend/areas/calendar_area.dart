@@ -91,13 +91,17 @@ class CalendarAreaState extends State<CalendarArea> {
   /// OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
   Future<void> _loadFromCacheInstantly() async {
     try {
+      final totalSw = Stopwatch()..start();
       // OPTIMIZARE: Nu mai verifica consultantul la fiecare incarcare - doar la prima initializare
       if (!_isInitialized) {
         await _splashService.resetForNewConsultant();
       }
       
-      // Incarca intalnirile din cache instant
-      final cachedMeetings = await _splashService.getCachedMeetings();
+      // Incarca intalnirile din cache instant (fara await), apoi declanseaza refresh in background
+      final cacheSw = Stopwatch()..start();
+      final cachedMeetings = _splashService.getCachedMeetingsSync();
+      cacheSw.stop();
+      final filterSw = Stopwatch()..start();
       
       if (mounted) {
         setState(() {
@@ -107,6 +111,22 @@ class CalendarAreaState extends State<CalendarArea> {
           _isInitialized = true;
         });
       }
+      filterSw.stop();
+      totalSw.stop();
+      debugPrint('CALENDAR_METRICS: loadFromCacheInstantly totalMs=${totalSw.elapsedMilliseconds} cacheMs=${cacheSw.elapsedMilliseconds} filterMs=${filterSw.elapsedMilliseconds} allMeetings=${cachedMeetings.length} weekMeetings=${_cachedMeetings.length}');
+
+      // Declanseaza un refresh rapid in fundal doar daca datele sunt stale
+      unawaited(() async {
+        final beforeCount = _allMeetings.length;
+        final refreshed = await _splashService.getCachedMeetingsFast();
+        if (mounted && refreshed.length != beforeCount) {
+          // Actualizeaza UI doar daca s-a schimbat numarul de intalniri pentru a evita rebuild-uri inutile
+          setState(() {
+            _allMeetings = refreshed;
+            _filterMeetingsForCurrentWeek();
+          });
+        }
+      }());
       
   
     } catch (e) {
@@ -130,26 +150,35 @@ class CalendarAreaState extends State<CalendarArea> {
 
   /// FIX: Callback pentru refresh automat cand se schimba datele in SplashService
   void _onSplashServiceChanged() {
-    if (mounted) {
-      _loadMeetingsForCurrentWeek();
-    }
+    if (!mounted) return;
+    // Update immediately from sync cache for instant UI consistency
+    final instant = _splashService.getCachedMeetingsSync();
+    setState(() {
+      _allMeetings = instant;
+      _filterMeetingsForCurrentWeek();
+    });
+    // Then trigger a forced background refresh to ensure latest data (fire-and-forget)
+    unawaited(_loadMeetingsForCurrentWeek(force: true));
   }
 
   /// OPTIMIZAT: Filtreaza intalnirile pentru saptamana curenta din cache
   void _filterMeetingsForCurrentWeek() {
+    final sw = Stopwatch()..start();
     final DateTime startOfWeek = _calendarService.getStartOfWeekToDisplay(_currentWeekOffset);
     final DateTime endOfWeek = _calendarService.getEndOfWeekToDisplay(_currentWeekOffset);
-    
+    final total = _allMeetings.length;
     _cachedMeetings = _allMeetings.where((meeting) {
       final meetingDateTime = meeting.dateTime;
       return meetingDateTime.isAfter(startOfWeek) && meetingDateTime.isBefore(endOfWeek);
     }).toList();
+    sw.stop();
+    debugPrint('CALENDAR_METRICS: filterWeek offset=$_currentWeekOffset total=$total week=${_cachedMeetings.length} filterMs=${sw.elapsedMilliseconds}');
   }
 
   /// OPTIMIZAT: Incarca intalnirile cu debouncing imbunatatit
-  Future<void> _loadMeetingsForCurrentWeek() async {
+  Future<void> _loadMeetingsForCurrentWeek({bool force = false}) async {
     // OPTIMIZARE: Verifica daca cache-ul este recent (sub 3 secunde - redus de la 5)
-    if (_lastLoadTime != null && 
+    if (!force && _lastLoadTime != null && 
         DateTime.now().difference(_lastLoadTime!).inSeconds < 3) {
       // OPTIMIZARE: Log redus pentru performanta
       // debugPrint('⏭️ CALENDAR_AREA: Skipping load - cache is recent');
@@ -190,10 +219,14 @@ class CalendarAreaState extends State<CalendarArea> {
     }
 
     try {
+      final totalSw = Stopwatch()..start();
       _isLoadingMeetings = true;
       
       // OPTIMIZARE: Obtine toate intalnirile din cache-ul din splash (instant si actualizat)
+      final fetchSw = Stopwatch()..start();
       final allTeamMeetings = await _splashService.getCachedMeetings();
+      fetchSw.stop();
+      final filterSw = Stopwatch()..start();
       
       if (mounted) {
         setState(() {
@@ -203,6 +236,9 @@ class CalendarAreaState extends State<CalendarArea> {
           _lastLoadTime = DateTime.now();
         });
       }
+      filterSw.stop();
+      totalSw.stop();
+      debugPrint('CALENDAR_METRICS: loadWeek totalMs=${totalSw.elapsedMilliseconds} fetchMs=${fetchSw.elapsedMilliseconds} filter+setStateMs=${filterSw.elapsedMilliseconds} allMeetings=${allTeamMeetings.length} weekMeetings=${_cachedMeetings.length}');
       
   
     } catch (e) {

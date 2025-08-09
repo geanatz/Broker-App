@@ -59,6 +59,11 @@ class GoogleDriveService extends ChangeNotifier {
   String? get userEmail => _userEmail;
   String? get userName => _userName;
   String? get sheetName => 'clienti'; // Numele fix al spreadsheet-ului
+  
+  // Cache telefoane per (spreadsheetId|sheetTitle) pentru O(1) duplicate check
+  final Map<String, Set<String>> _sheetPhonesCache = <String, Set<String>>{};
+  final Map<String, DateTime> _sheetPhonesCacheTime = <String, DateTime>{};
+  static const Duration _sheetPhonesTtl = Duration(days: 31);
   /// WATCHDOG: logs periodically while a long-running async step is pending
   Timer _startWatch(String stepLabel, {Duration interval = const Duration(seconds: 2)}) {
     int seconds = 0;
@@ -1026,40 +1031,39 @@ class GoogleDriveService extends ChangeNotifier {
         return false;
       }
 
-      // Obtine toate datele din sheet
-      final response = await _sheetsApi!.spreadsheets.values.get(
-        spreadsheetId,
-        '$sheetTitle!A:Z', // Cauta in toate coloanele
-      );
-
-      if (response.values == null || response.values!.isEmpty) {
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Sheet is empty, client does not exist');
-        return false;
-      }
-
       // Normalizeaza numarul de telefon pentru comparare (elimina spatii, caractere speciale)
       final normalizedPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Normalized phone: $normalizedPhone');
+      final cacheKey = '${spreadsheetId}|${sheetTitle}';
+      final now = DateTime.now();
+      final cachedSet = _sheetPhonesCache[cacheKey];
+      final cachedAt = _sheetPhonesCacheTime[cacheKey];
 
-      // Cauta numarul de telefon in toate randurile
-      for (int rowIndex = 0; rowIndex < response.values!.length; rowIndex++) {
-        final row = response.values![rowIndex];
-        for (int colIndex = 0; colIndex < row.length; colIndex++) {
-          final cell = row[colIndex];
-          final cellValue = cell.toString();
-          
-          // Normalizeaza valoarea celulei pentru comparare
-          final normalizedCellValue = cellValue.replaceAll(RegExp(r'[^\d]'), '');
-          
-          if (normalizedCellValue.isNotEmpty && normalizedCellValue.contains(normalizedPhone)) {
-            debugPrint('✅ GOOGLE_DRIVE_SERVICE: Found existing client with phone: $phoneNumber in row ${rowIndex + 1}, col ${colIndex + 1}');
-            return true;
-          }
-        }
+      if (cachedSet != null && cachedAt != null && now.difference(cachedAt) < _sheetPhonesTtl) {
+        final exists = cachedSet.contains(normalizedPhone);
+        debugPrint('GD_CACHE: phones membership (cached=$exists)');
+        return exists;
       }
 
-      debugPrint('✅ GOOGLE_DRIVE_SERVICE: Client with phone $phoneNumber does not exist in sheet');
-      return false;
+      // Incarca toate valorile o singura data si construieste setul de telefoane normalizate
+      final response = await _sheetsApi!.spreadsheets.values.get(
+        spreadsheetId,
+        '$sheetTitle!A:Z',
+      );
+      final values = response.values ?? const [];
+      final phones = <String>{};
+      for (final row in values) {
+        for (final cell in row) {
+          final s = cell.toString();
+          final norm = s.replaceAll(RegExp(r'[^\d]'), '');
+          if (norm.isNotEmpty) phones.add(norm);
+        }
+      }
+      _sheetPhonesCache[cacheKey] = phones;
+      _sheetPhonesCacheTime[cacheKey] = now;
+
+      final exists = phones.contains(normalizedPhone);
+      debugPrint('GD_CACHE: phones membership (loaded=$exists)');
+      return exists;
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error checking if client exists: $e');
       // In caz de eroare, permitem salvarea pentru a nu bloca procesul
@@ -1221,50 +1225,32 @@ class GoogleDriveService extends ChangeNotifier {
         _lastError = 'Sheets API nu este initializat';
         return false;
       }
-      
-      // Construieste range-ul pentru ultimul rand
-      final range = "'$sheetTitle'!A:Z";
-      
-      // Obtine datele existente pentru a gasi ultimul rand
-      final swGetValues = Stopwatch()..start();
-      final wdGetValues = _startWatch('Sheets.values.get(range=A:Z)');
-      final response = await _sheetsApi!.spreadsheets.values.get(spreadsheetId, range).whenComplete(() => wdGetValues.cancel());
-      swGetValues.stop();
-      debugPrint('GD_TRACE: Sheets.values.get(range=A:Z) took ${swGetValues.elapsedMilliseconds}ms');
-      final existingRows = response.values ?? [];
-      
-      // Calculeaza urmatorul rand (ultimul rand + 1)
-      final nextRow = existingRows.length + 1;
-      final appendRange = "'$sheetTitle'!A$nextRow";
-      
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Next row: $nextRow');
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Append range: $appendRange');
-      
-      // Creeaza ValueRange pentru datele noi
-      final valueRange = sheets.ValueRange()..values = [rowData];
-      
-      // Adauga randul nou
-      final swValuesUpdate = Stopwatch()..start();
-      final wdValuesUpdate = _startWatch('Sheets.values.update(append)');
-      final updateResponse = await _sheetsApi!.spreadsheets.values.update(
+
+      // Use values.append with INSERT_ROWS to avoid extra get and manual row calculation
+      final valueRange = sheets.ValueRange()
+        ..majorDimension = 'ROWS'
+        ..values = [rowData];
+
+      final swAppend = Stopwatch()..start();
+      final wdAppend = _startWatch('Sheets.values.append(INSERT_ROWS)');
+      final appendResponse = await _sheetsApi!.spreadsheets.values.append(
         valueRange,
         spreadsheetId,
-        appendRange,
+        "'$sheetTitle'!A:Z",
         valueInputOption: 'USER_ENTERED',
-      ).whenComplete(() => wdValuesUpdate.cancel());
-      swValuesUpdate.stop();
-      debugPrint('GD_TRACE: Sheets.values.update(append) took ${swValuesUpdate.elapsedMilliseconds}ms');
-      
-      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Update response: ${updateResponse.updatedCells} cells updated');
-      
-      if (updateResponse.updatedCells != null && updateResponse.updatedCells! > 0) {
-        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Row appended successfully');
+        insertDataOption: 'INSERT_ROWS',
+      ).whenComplete(() => wdAppend.cancel());
+      swAppend.stop();
+      debugPrint('GD_TRACE: Sheets.values.append took ${swAppend.elapsedMilliseconds}ms');
+
+      final updates = appendResponse.updates;
+      final updatedRows = updates?.updatedRows ?? 0;
+      if (updatedRows > 0) {
+        debugPrint('✅ GOOGLE_DRIVE_SERVICE: Row appended successfully via INSERT_ROWS');
         return true;
-      } else {
-        debugPrint('❌ GOOGLE_DRIVE_SERVICE: No cells were updated');
-        _lastError = 'Nu s-au actualizat celule in Google Sheets';
-        return false;
       }
+      _lastError = 'Google Sheets append did not update any rows';
+      return false;
       
     } catch (e) {
       _lastError = 'Eroare la adaugarea randului: $e';

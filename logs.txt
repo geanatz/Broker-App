@@ -1,280 +1,65 @@
-Restarted application in 420ms.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/5c016c1c-c250-4a39-88fb-bb310ce195ae' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+Restarted application in 412ms.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/e157fb98-b42e-4234-b242-6f60c09d6fff' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/31ea02fe-e777-43fc-844e-881f070fd301' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/7c47ae35-46dc-4eac-b4a3-1d46117107a0' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/d036af5d-9ad6-4894-84cd-e0491537fdb9' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/460b71d4-3be4-4056-88f2-37565df09bba' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/ce832744-2d83-480f-95cd-341ec66d3603' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/3729453d-b498-4015-9ff5-11eede478deb' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
 🎯 CLIENT_SERVICE: notifyListeners called
 🎯 CLIENT_SERVICE: Current focused client: null
-➕ CLIENT: added - 0654 → Greg
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: null
 🎯 CLIENT_SERVICE: notifyListeners called
 🎯 CLIENT_SERVICE: Current focused client: null
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
-📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
-📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
+[FIREBASE] MEETINGS: getAllMeetings loaded 0 in 147ms
+📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
+📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
-📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
-📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
-🎯 CLIENT_SERVICE: Client found at index: 0
-🎯 CLIENT_SERVICE: Cleared focus from: Greg
-🎯 CLIENT_SERVICE: All focus states cleared
-✅ CLIENT_SERVICE: Client focused successfully: 0654
-✅ CLIENT_SERVICE: New focused client: Greg
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Greg
-✅ GOOGLE_DRIVE_SERVICE: Token is still valid, no refresh needed
-✅ [FIREBASE_SUCCESS] getClient found matching client
-[FIREBASE] GD_VERIFY: getClientForms called for 0654
-[FIREBASE] GD_VERIFY: loaded 0 forms for 0654
+[FIREBASE] MEETINGS: getAllMeetings loaded 0 in 150ms
+📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
+📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
+📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
+! GOOGLE_DRIVE_SERVICE: No saved tokens found for current consultant
+! GOOGLE_DRIVE_SERVICE: Missing access token: true
+! GOOGLE_DRIVE_SERVICE: Missing email: true
 📊 SPLASH_SERVICE: Performance Metrics:
-  Initializare servicii...: 12ms
-  Preincarcare date...: 1247ms
-  Sincronizare servicii...: 21ms
+  Initializare servicii...: 8ms
+  Preincarcare date...: 1395ms
+  Sincronizare servicii...: 0ms
   Optimizare cache...: 0ms
   Finalizare...: 0ms
 🔍 Checking for updates...
 ✅ No updates available | Current: 0.1.5
 SPLASH: Current role: Consultant
 🔄 SPLASH: Consultant/team changed, resetting state
-🔧 SPLASH: Old consultant: null, New: 0c01cf96-f3f0-4f07-b3c6-19059d8a6137
-🔧 SPLASH: Old team: null, New: Echipa Cristina
+🔧 SPLASH: Old consultant: null, New: 2363377c-c1d5-4578-9596-52e9cb303683
+🔧 SPLASH: Old team: null, New: Echipa Andreea
 🔄 SPLASH: Reloading services for new consultant
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/25454cd9-492d-47c9-a2cf-2cbfae8ab8a1' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/b6cb73ff-f4b1-4ce7-ab95-8f7489a3207d' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/b3534273-0ff4-4345-b7e5-9416ebd858b9' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-➕ CLIENT: added - 0654 → Greg
 🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Greg
-📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
-📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
-📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
+🎯 CLIENT_SERVICE: Current focused client: null
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/beefe36f-d240-48af-9db8-f95d29968bee' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: null
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: null
+[FIREBASE] MEETINGS: getAllMeetings loaded 0 in 98ms
+📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
+📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
 ✅ SPLASH: Services reloaded successfully for new consultant
 ✅ SPLASH: Consultant reset completed successfully
 🔄 SPLASH: Invalidating cache with enhanced state management
 ✅ SPLASH: Cache invalidation completed successfully
 SPLASH: Current role: Consultant
 ✅ SPLASH: Consultant/team unchanged, no reset needed
-🔄 FORM: Found focused client at initialization: 0654
-GD_VERIFY: UI item for 0654 | focused=true | category=ClientCategory.apeluri | status=null
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Greg
-⚡ CLIENTS: Preloading form data for 1 clients
-GD_VERIFY: UI item for 0654 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0654 | focused=true | category=ClientCategory.apeluri | status=null
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🔍 MEETING_DATA: Constructor called
-🔍 MEETING_DATA: clientName = "Greg"
-🔍 MEETING_DATA: phoneNumber = "0654"
-🔍 MEETING_DATA: consultantToken = "0c01cf96-f3f0-4f07-b3c6-19059d8a6137"
-🔍 MEETING_DATA: consultantName = "Claudiu"
-🔍 MEETING_DATA: dateTime = 2025-08-11 09:30:00.000
-🔍 MEETING_DATA: type = MeetingType.meeting
-✅ MEETING_DATA: Constructor completed successfully
-🔍 STATUS_POPUP: Creating meeting for accepted client | Greg | 2025-08-11 09:30:00.000
-🔍 MEETING_SERVICE: Starting createMeeting | Client: Greg | Date: 2025-08-11 09:30:00.000 | Type: MeetingType.meeting
-🔍 MEETING_SERVICE: Starting optimized parallel operations
-🔔 MEETING_SERVICE: Notifying meeting created for consultant: 0c01cf96 for client: 0654
-📈 DASHBOARD_SERVICE: Recording meeting for consultant 0c01cf96... in 2025-08 for client 0654
-✅ [FIREBASE_SUCCESS] getClient found matching client
-✅ MEETING_SERVICE: Meeting created successfully | Client: Greg | Date: 2025-08-11 09:30:00.000
-📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Greg
-📱 MEETING_SERVICE: Client not completed, proceeding with move and statistics increment
-✅ STATUS_POPUP: Meeting saved successfully | Greg | 2025-08-11 09:30:00.000
-✅ STATUS_POPUP: Meeting creation handled by MeetingService, skipping duplicate client move
-✅ Client mutat cu succes: Greg - Status: Acceptat
-🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE START ==========
-🔧 STATUS_POPUP: Client: Greg (0654)
-🔧 STATUS_POPUP: Status: Acceptat
-🔧 STATUS_POPUP: Additional info:
-🔧 STATUS_POPUP: Scheduled date: 2025-08-11 09:30:00.000
-🔧 STATUS_POPUP: Step 1 - Updating Firebase...
-📈 DASHBOARD_SERVICE: Recording form completion for consultant 0c01cf96... in 2025-08 for client 0654
-🔄 CLIENT: category_change - 0654 → clienti
-🔄 CLIENT: category_change - 0654 → recente
-✅ STATUS_POPUP: Step 1 COMPLETED - Updated discussionStatus and additionalInfo in Firebase
-🔧 STATUS_POPUP: Step 2 - Retrieving complete client data...
-✅ MEETING_SERVICE: Client moved to Recente successfully
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🔄 FORM: Client changed - Previous: 0654, Current: none
-⚡ FORM: Processing client change - Previous: 0654, Current: none
-⚡ FORM: Saving form data for previous client: 0654
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🔄 FORM: Client changed - Previous: 0654, Current: none
-⚡ FORM: Skipping redundant client change operation
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🔄 FORM: Client changed - Previous: 0654, Current: none
-⚡ FORM: Skipping redundant client change operation
-✅ [FIREBASE_SUCCESS] getClient found matching client
-✅ STATUS_POPUP: Step 2 COMPLETED - Retrieved complete client data from Firebase
-🔧 STATUS_POPUP: DEBUG additionalInfo from Firebase: Intalnire programata din calendar
-GD_VERIFY: status_popup completeClient keys: [additionalInfo, category, coDebitorName, consultantToken, createdAt, discussionStatus, isCompleted, name, phoneNumber, phoneNumber2, scheduledDateTime, status, updatedAt]
-GD_VERIFY: GoogleDriveService will fetch forms via NewFirebaseService.getClientForms(0654)
-🔧 STATUS_POPUP: Step 3 - Saving to Google Sheets...
-🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx START ==========
-🔧 GOOGLE_DRIVE_SERVICE: Client: Greg (0654)
-🔧 GOOGLE_DRIVE_SERVICE: Client type: _Map<String, dynamic>
-🔧 GOOGLE_DRIVE_SERVICE: Authentication status: true
-🔧 GOOGLE_DRIVE_SERVICE: Drive API: OK
-🔧 GOOGLE_DRIVE_SERVICE: Sheets API: OK
-🔧 GOOGLE_DRIVE_SERVICE: Step 0 - Enhanced client data validation...
-✅ GOOGLE_DRIVE_SERVICE: Enhanced client data validation passed
-🔧 GOOGLE_DRIVE_SERVICE: Step 1 - Enhanced token validation...
-✅ GOOGLE_DRIVE_SERVICE: Enhanced token validation successful
-✅ GOOGLE_DRIVE_SERVICE: Authentication check passed
-🔧 GOOGLE_DRIVE_SERVICE: Service readiness: true (auth: true, drive: true, sheets: true)
-✅ GOOGLE_DRIVE_SERVICE: Enhanced service readiness check passed
-🔧 GOOGLE_DRIVE_SERVICE: Step 4 - Enhanced spreadsheet finding/creation...
-🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSpreadsheet START - Name: clienti
-GD_TRACE: _findOrCreateSpreadsheet entering
-🔧 GOOGLE_DRIVE_SERVICE: Search query: mimeType='application/vnd.google-apps.spreadsheet' and name='clienti' and trashed=false
-✅ [FIREBASE_SUCCESS] getClient found matching client
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🔄 FORM: Client changed - Previous: 0654, Current: none
-⚡ FORM: Skipping redundant client change operation
-⚡ FORM: Clearing controllers for client change
-🔧 FORM_SERVICE: Cleared form data cache for client 0654
-🔧 FORM_AREA: Cleared form data cache for previous client 0654
-⚡ FORM: Total client selection time: 298ms
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-GD_TRACE: Drive files.list took 422ms
-🔧 GOOGLE_DRIVE_SERVICE: Search response: 1 files found
-✅ GOOGLE_DRIVE_SERVICE: Found existing spreadsheet: 1iz-GCn1VXGWw_h41pOIeJdTleeEZhEH9HLU-5MMGxeg
-GD_TRACE: _findOrCreateSpreadsheet completed in 424ms
-✅ GOOGLE_DRIVE_SERVICE: Spreadsheet ID: 1iz-GCn1VXGWw_h41pOIeJdTleeEZhEH9HLU-5MMGxeg
-🔧 GOOGLE_DRIVE_SERVICE: Step 5 - Enhanced sheet finding/creation...
-🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSheet START - SpreadsheetId: 1iz-GCn1VXGWw_h41pOIeJdTleeEZhEH9HLU-5MMGxeg
-GD_TRACE: _findOrCreateSheet entering
-🔧 GOOGLE_DRIVE_SERVICE: Generated sheet title: Aug 25
-✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in 2025-08 for client 0654
-🔄 DASHBOARD_SERVICE: Refreshing rankings after meeting creation...
-✅ MEETING_SERVICE: Dashboard notified successfully
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in 2025-08 for client 0654
-🔄 DASHBOARD_SERVICE: Refreshing rankings after form completion...
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
-📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
-📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
-📊 DASHBOARD_SERVICE: Loaded 1 consultants | isSupervisor: false | Teams excluded: 0
-📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
-📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
-📊 DASHBOARD_SERVICE: Found teams: [Echipa Andreea, Echipa Cristina]
-📊 DASHBOARD_SERVICE: Loaded 2 teams | isSupervisor: false
-✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified
-✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified after form completion
-GD_TRACE: Sheets.spreadsheets.get took 1329ms
-🔧 GOOGLE_DRIVE_SERVICE: Retrieved spreadsheet with 2 sheets
-✅ GOOGLE_DRIVE_SERVICE: Found existing sheet: Aug 25
-GD_TRACE: _findOrCreateSheet completed in 1331ms
-✅ GOOGLE_DRIVE_SERVICE: Sheet title: Aug 25
-🔧 GOOGLE_DRIVE_SERVICE: Step 5.5 - Enhanced duplicate checking...
-🔧 GOOGLE_DRIVE_SERVICE: _checkIfClientExistsInSheet - Phone: 0654
-🔧 GOOGLE_DRIVE_SERVICE: Normalized phone: 0654
-✅ GOOGLE_DRIVE_SERVICE: Client with phone 0654 does not exist in sheet
-GD_TRACE: _checkIfClientExistsInSheet completed in 875ms
-✅ GOOGLE_DRIVE_SERVICE: Client does not exist in sheet, proceeding with save
-GD_VERIFY: using forms subcollection as single source of truth for form data
-🔧 GOOGLE_DRIVE_SERVICE: Step 6 - Enhanced client data preparation...
-🔧 GOOGLE_DRIVE_SERVICE: _prepareClientRowData START
-🔧 GOOGLE_DRIVE_SERVICE: Client object: _Map<String, dynamic>
-GD_VERIFY: client keys: [additionalInfo, category, coDebitorName, consultantToken, createdAt, discussionStatus, isCompleted, name, phoneNumber, phoneNumber2, scheduledDateTime, status, updatedAt]
-🔧 GOOGLE_DRIVE_SERVICE: Basic data - Name: Greg, Phone1: 0654, Phone2:
-🔧 GOOGLE_DRIVE_SERVICE: DEBUG additionalInfo: Intalnire programata din calendar
-🔧 GOOGLE_DRIVE_SERVICE: DEBUG discussionStatus: Acceptat
-🔧 GOOGLE_DRIVE_SERVICE: DEBUG status (to be saved in sheet): Intalnire programata din calendar
-🔧 GOOGLE_DRIVE_SERVICE: Formatted data - Contact: 0654, CoDebitor: , Day: 9, Status: Intalnire programata din calendar
-[FIREBASE] GD_VERIFY: getClientForms called for 0654
-✅ [FIREBASE_SUCCESS] getClient found matching client
-[FIREBASE] GD_VERIFY: loaded 1 forms for 0654
-GD_VERIFY: forms_count=1, first_form_id=unified_form
-🔧 GOOGLE_DRIVE_SERVICE: Form data keys: [creditForms, incomeForms, showingClientIncomeForm, showingClientLoanForm]
-🔧 GOOGLE_DRIVE_SERVICE: creditForms: {
-🔧 GOOGLE_DRIVE_SERVICE:   client: [0 items]
-🔧 GOOGLE_DRIVE_SERVICE:   coborrower: [0 items]
-🔧 GOOGLE_DRIVE_SERVICE: }
-🔧 GOOGLE_DRIVE_SERVICE: incomeForms: {
-🔧 GOOGLE_DRIVE_SERVICE:   client: [0 items]
-🔧 GOOGLE_DRIVE_SERVICE:   coborrower: [0 items]
-🔧 GOOGLE_DRIVE_SERVICE: }
-🔧 GOOGLE_DRIVE_SERVICE: showingClientIncomeForm: true
-🔧 GOOGLE_DRIVE_SERVICE: showingClientLoanForm: true
-🔧 GOOGLE_DRIVE_SERVICE: _extractIncomes START - Type: client
-🔧 GOOGLE_DRIVE_SERVICE: Form data keys: [creditForms, incomeForms, showingClientIncomeForm, showingClientLoanForm]
-🔧 GOOGLE_DRIVE_SERVICE: Found incomeForms key
-🔧 GOOGLE_DRIVE_SERVICE: IncomeForms keys: [client, coborrower]
-🔧 GOOGLE_DRIVE_SERVICE: Found type key: client
-🔧 GOOGLE_DRIVE_SERVICE: Income list length: 0
-🔧 GOOGLE_DRIVE_SERVICE: Checking fallback key: clientIncomes
-🔧 GOOGLE_DRIVE_SERVICE: Fallback key not found or incomes not empty
-🔧 GOOGLE_DRIVE_SERVICE: _extractIncomes END - Result:
-🔧 GOOGLE_DRIVE_SERVICE: _extractIncomes START - Type: coborrower
-🔧 GOOGLE_DRIVE_SERVICE: Form data keys: [creditForms, incomeForms, showingClientIncomeForm, showingClientLoanForm]
-🔧 GOOGLE_DRIVE_SERVICE: Found incomeForms key
-🔧 GOOGLE_DRIVE_SERVICE: IncomeForms keys: [client, coborrower]
-🔧 GOOGLE_DRIVE_SERVICE: Found type key: coborrower
-🔧 GOOGLE_DRIVE_SERVICE: Income list length: 0
-🔧 GOOGLE_DRIVE_SERVICE: Checking fallback key: coborrowerIncomes
-🔧 GOOGLE_DRIVE_SERVICE: Fallback key not found or incomes not empty
-🔧 GOOGLE_DRIVE_SERVICE: _extractIncomes END - Result:
-🔧 GOOGLE_DRIVE_SERVICE: Extracted data - ClientCredits: , ClientIncomes:
-🔧 GOOGLE_DRIVE_SERVICE: Extracted data - CoDebitorCredits: , CoDebitorIncomes:
-🔧 GOOGLE_DRIVE_SERVICE: Final row data: [Greg, 0654, , 9, Intalnire programata din calendar, , , , ]
-✅ GOOGLE_DRIVE_SERVICE: _prepareClientRowData END
-GD_TRACE: _prepareClientRowData completed in 129ms
-🔧 GOOGLE_DRIVE_SERVICE: Prepared row data: [Greg, 0654, , 9, Intalnire programata din calendar, , , , ]
-🔧 GOOGLE_DRIVE_SERVICE: Step 7 - Enhanced save with improved retry...
-🔧 GOOGLE_DRIVE_SERVICE: Save attempt 1/3
-🔧 GOOGLE_DRIVE_SERVICE: _appendRowToSheet START
-🔧 GOOGLE_DRIVE_SERVICE: SpreadsheetId: 1iz-GCn1VXGWw_h41pOIeJdTleeEZhEH9HLU-5MMGxeg
-🔧 GOOGLE_DRIVE_SERVICE: SheetTitle: Aug 25
-🔧 GOOGLE_DRIVE_SERVICE: RowData: [Greg, 0654, , 9, Intalnire programata din calendar, , , , ]
-GD_TRACE: _appendRowToSheet entering
-GD_TRACE: Sheets.values.get(range=A:Z) took 812ms
-🔧 GOOGLE_DRIVE_SERVICE: Next row: 2
-🔧 GOOGLE_DRIVE_SERVICE: Append range: 'Aug 25'!A2
-GD_TRACE: Sheets.values.update(append) took 889ms
-🔧 GOOGLE_DRIVE_SERVICE: Update response: 9 cells updated
-✅ GOOGLE_DRIVE_SERVICE: Row appended successfully
-GD_TRACE: _appendRowToSheet attempt 1 took 1702ms
-✅ GOOGLE_DRIVE_SERVICE: Client saved successfully to Google Sheets on attempt 1
-🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx END (SUCCESS) ==========
-✅ STATUS_POPUP: Step 3 COMPLETED - Client saved successfully to Google Sheets
-🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE END ==========
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🧹 MEETING_SERVICE: Client cache cleared
-❌ CONNECTION_SERVICE: Max reconnection attempts reached

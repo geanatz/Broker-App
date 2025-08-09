@@ -551,15 +551,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         // Don't close the popup - let user continue working
         // _closeAllPopups(); // Removed automatic popup closing
         
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Client salvat cu succes'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        // silent
       }
       return;
     }
@@ -602,15 +594,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Handles deleting a client
   void _handleDeleteClient(Client? client) async {
     if (client == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Selecteaza un client pentru stergere'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+      // silent
       return;
     }
     // Check if this is a temporary client being cancelled

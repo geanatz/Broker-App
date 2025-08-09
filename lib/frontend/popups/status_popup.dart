@@ -313,7 +313,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       
       // Afiseaza mesaj daca nu sunt ore disponibile (dar nu pentru edit mode)
       if (_availableTimeSlots.isEmpty && _selectedTimeSlot == null) {
-        _showError('Nu sunt ore disponibile in aceasta data');
+        // silent
       }
     } catch (e) {
       debugPrint('Eroare la incarcarea orelor disponibile: $e');
@@ -402,7 +402,6 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         // FIX: Validare pentru consultantToken
         if (consultantToken == null || consultantToken.isEmpty) {
           debugPrint('❌ STATUS_POPUP: consultantToken is null or empty');
-          _showError("Eroare: Nu s-a putut obtine token-ul consultantului");
           return;
         }
         
@@ -422,7 +421,6 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         if (!result['success']) {
           final errorMessage = result['message'] ?? 'Eroare la salvarea intalnirii';
           debugPrint('❌ STATUS_POPUP: Meeting creation failed: $errorMessage');
-          _showError(errorMessage);
           return;
         }
         
@@ -534,20 +532,10 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
       }
       
-      String successMessage = "Statusul a fost salvat cu succes";
-      if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
-        successMessage = "Statusul a fost salvat si intalnirea a fost programata";
-      } else if (_selectedStatus == 'Amanat') {
-        successMessage = "Clientul a fost mutat in sectiunea Reveniri";
-      } else if (_selectedStatus == 'Refuzat') {
-        successMessage = "Clientul a fost mutat in sectiunea Recente";
-      }
-      _showSuccess(successMessage);
+      // silent success
     } catch (e) {
       debugPrint("Eroare la salvarea statusului: $e");
-      if (mounted) {
-        _showError("Eroare la salvarea statusului");
-      }
+      // silent
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -556,28 +544,10 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   }
 
   /// Afiseaza mesaj de eroare
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  void _showError(String message) {}
 
   /// Afiseaza mesaj de succes
-  void _showSuccess(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
+  // Removed UI snackbars
 
   @override
   Widget build(BuildContext context) {

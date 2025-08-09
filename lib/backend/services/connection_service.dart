@@ -160,7 +160,8 @@ class ConnectionService extends ChangeNotifier {
         }
       });
     } else {
-      debugPrint('❌ CONNECTION_SERVICE: Max reconnection attempts reached');
+      // Soft-cap: nu mai spama loguri dupa cap, mentinem starea si lasam reconectarea
+      // sa fie reluata de urmatoarea schimbare de conectivitate
       _reconnectAttempts = 0;
       _isReconnecting = false;
     }

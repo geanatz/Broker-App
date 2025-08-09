@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+    show defaultTargetPlatform, kIsWeb, TargetPlatform, kDebugMode;
 import 'clients_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -1370,6 +1370,56 @@ class NewFirebaseService {
     }
   }
 
+  /// Salveaza TOATE datele formularului folosind WriteBatch (atomic):
+  /// - forms/unified_form
+  /// - clients.updatedAt
+  Future<bool> saveAllFormDataBatched({
+    required String phoneNumber,
+    required String clientName,
+    required Map<String, dynamic> formData,
+  }) async {
+    final consultantToken = await getCurrentConsultantToken();
+    if (consultantToken == null) return false;
+
+    try {
+      final sw = Stopwatch()..start();
+      FirebaseLogger.log('FORMS: saveAllFormDataBatched start for $phoneNumber');
+      // Verifica clientul
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) return false;
+
+      final clientRef = _firestore
+          .collection(_clientsCollection)
+          .doc(phoneNumber);
+      final formRef = clientRef
+          .collection(_formsSubcollection)
+          .doc('unified_form');
+
+      await _threadHandler.executeOnPlatformThread(() async {
+        final batch = _firestore.batch();
+        batch.set(formRef, {
+          'formId': 'unified_form',
+          'data': formData,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        batch.update(clientRef, {
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        await batch.commit();
+      });
+
+      // Invalidate form cache
+      invalidateFormCache(phoneNumber);
+      sw.stop();
+      FirebaseLogger.success('FORMS: saveAllFormDataBatched success for $phoneNumber in ${sw.elapsedMilliseconds}ms');
+      return true;
+    } catch (e) {
+      FirebaseLogger.error('FORMS: saveAllFormDataBatched error', e);
+      return false;
+    }
+  }
+
   /// Obtine toate formularele pentru un client
   /// OPTIMIZAT: Obtine formularele unui client cu cache
   Future<List<Map<String, dynamic>>> getClientForms(String phoneNumber) async {
@@ -1439,29 +1489,41 @@ class NewFirebaseService {
     }
 
     try {
-      // OPTIMIZARE: Operatii paralele pentru crearea clientului si intalnirii
-
-      final results = await Future.wait([
-        // Operatia 1: Verifica/creaza clientul
-        _ensureClientExists(phoneNumber, additionalData, consultantToken),
-        // Operatia 2: Creeaza intalnirea
-        _createMeetingDocument(
-          phoneNumber,
-          dateTime,
-          type,
-          description,
-          additionalData,
-          consultantToken,
-        ),
-      ]);
-
-      final meetingCreated = results[1];
-
-      if (meetingCreated) {
-        return true;
-      } else {
+      // Verifica strict ca clientul exista; nu mai cream automat clienti
+      final existingClient = await getClient(phoneNumber);
+      if (existingClient == null) {
+        FirebaseLogger.error('createMeeting aborted: client not found for $phoneNumber');
         return false;
       }
+
+      // Creeaza intalnirea si actualizeaza updatedAt in acelasi WriteBatch
+      final success = await _threadHandler.executeOnPlatformThread(() async {
+        final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
+        final meetingRef = clientRef.collection(_meetingsSubcollection).doc();
+
+        final meetingDoc = {
+          'dateTime': Timestamp.fromDate(dateTime),
+          'type': type,
+          'description': description,
+          'phoneNumber': phoneNumber,
+          'consultantToken': consultantToken,
+          'consultantName': additionalData?['consultantName'] ?? 'Consultant necunoscut',
+          'clientName': additionalData?['clientName'] ?? 'Client necunoscut',
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          ...?additionalData,
+        };
+
+        final batch = _firestore.batch();
+        batch.set(meetingRef, meetingDoc);
+        batch.update(clientRef, {
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        await batch.commit();
+        return true;
+      });
+
+      return success;
     } catch (e) {
       FirebaseLogger.error('Error creating meeting: $e');
 
@@ -1469,103 +1531,11 @@ class NewFirebaseService {
     }
   }
 
-  /// OPTIMIZARE: Asigura ca clientul exista
-  Future<bool> _ensureClientExists(
-    String phoneNumber,
-    Map<String, dynamic>? additionalData,
-    String consultantToken,
-  ) async {
-    try {
-      final existingClient = await getClient(phoneNumber);
+  // _ensureClientExists eliminat: nu mai cream automat clienti la crearea intalnirilor
 
-      // Daca clientul nu exista, il creeaza
-      if (existingClient == null) {
-        final clientName = additionalData?['clientName'] ?? 'Client necunoscut';
-        final consultantName =
-            additionalData?['consultantName'] ?? 'Consultant necunoscut';
+  // _createMeetingDocument: unused after batching implementation
 
-        final clientData = {
-          'name': clientName,
-          'phoneNumber': phoneNumber,
-          'consultantToken': consultantToken,
-          'consultantName': consultantName,
-          'status': 'Nou',
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        };
-
-        await _threadHandler.executeOnPlatformThread(
-          () => _firestore
-              .collection(_clientsCollection)
-              .doc(phoneNumber)
-              .set(clientData),
-        );
-
-        return true;
-      }
-      return true;
-    } catch (e) {
-      FirebaseLogger.error('Error ensuring client exists: $e');
-      return false;
-    }
-  }
-
-  /// OPTIMIZARE: Creeaza documentul intalnirii
-  Future<bool> _createMeetingDocument(
-    String phoneNumber,
-    DateTime dateTime,
-    String type,
-    String? description,
-    Map<String, dynamic>? additionalData,
-    String consultantToken,
-  ) async {
-    try {
-      final meetingDoc = {
-        'dateTime': Timestamp.fromDate(dateTime),
-        'type': type,
-        'description': description,
-        'phoneNumber': phoneNumber,
-        'consultantToken': consultantToken,
-        'consultantName':
-            additionalData?['consultantName'] ?? 'Consultant necunoscut',
-        'clientName': additionalData?['clientName'] ?? 'Client necunoscut',
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-        ...?additionalData,
-      };
-
-      await _threadHandler.executeOnPlatformThread(
-        () => _firestore
-            .collection(_clientsCollection)
-            .doc(phoneNumber)
-            .collection(_meetingsSubcollection)
-            .add(meetingDoc),
-      );
-
-      // OPTIMIZARE: Actualizeaza timestamp-ul clientului in background
-      _updateClientTimestampInBackground(phoneNumber);
-
-      return true;
-    } catch (e) {
-      FirebaseLogger.error('Error creating meeting document: $e');
-      return false;
-    }
-  }
-
-  /// OPTIMIZARE: Actualizeaza timestamp-ul clientului in background
-  void _updateClientTimestampInBackground(String phoneNumber) {
-    Future.microtask(() async {
-      try {
-        await updateClient(phoneNumber, {
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      } catch (e) {
-        FirebaseLogger.error(
-          'Error updating client timestamp in background: $e',
-        );
-      }
-    });
-  }
+  // _updateClientTimestampInBackground: unused after batching implementation
 
   /// Obtine toate intalnirile pentru consultantul curent (FIX: mai robust filtering)
   Future<List<Map<String, dynamic>>> getAllMeetings() async {
@@ -1576,6 +1546,7 @@ class NewFirebaseService {
 
     try {
       // Foloseste collectionGroup pe toate meetings, filtrat pe consultantToken si ordonat dupa dateTime
+      final sw = Stopwatch()..start();
     final snapshot = await _threadHandler.executeOnPlatformThread(
       () => _firestore
           .collectionGroup(_meetingsSubcollection)
@@ -1583,6 +1554,8 @@ class NewFirebaseService {
           .orderBy('dateTime', descending: false)
           .get(),
     );
+      sw.stop();
+      FirebaseLogger.log('MEETINGS: getAllMeetings loaded ${snapshot.docs.length} in ${sw.elapsedMilliseconds}ms');
 
       final meetings = <Map<String, dynamic>>[];
       for (final doc in snapshot.docs) {
@@ -1609,54 +1582,60 @@ class NewFirebaseService {
       // Sortare deja facuta pe server
       return meetings;
     } catch (e) {
-      FirebaseLogger.error('Error getting all meetings: $e');
+      FirebaseLogger.error('MEETINGS: getAllMeetings error', e);
 
-      // Fallback: daca lipseste indexul pentru collectionGroup, foloseste vechiul N+1
+      // In release builds avoid N+1 fallback; in debug keep it to help when indexes are missing
       if (e is FirebaseException && e.code == 'failed-precondition') {
-        try {
-          final clients = await getAllClients();
-          final List<Map<String, dynamic>> allMeetings = [];
+        if (kDebugMode) {
+          try {
+            final clients = await getAllClients();
+            final List<Map<String, dynamic>> allMeetings = [];
 
-          for (final client in clients) {
-            final phoneNumber = client['phoneNumber'] as String? ?? client['id'] as String? ?? '';
-            if (phoneNumber.isEmpty) continue;
+            for (final client in clients) {
+              final phoneNumber = client['phoneNumber'] as String? ?? client['id'] as String? ?? '';
+              if (phoneNumber.isEmpty) continue;
 
-            final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
-              () => _firestore
-                  .collection(_clientsCollection)
-                  .doc(phoneNumber)
-                  .collection(_meetingsSubcollection)
-                  .get(),
-            );
+              final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
+                () => _firestore
+                    .collection(_clientsCollection)
+                    .doc(phoneNumber)
+                    .collection(_meetingsSubcollection)
+                    .get(),
+              );
 
-            for (final doc in meetingsSnapshot.docs) {
-              final meetingData = doc.data();
-              final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
-              allMeetings.add({
-                'id': doc.id,
-                'clientPhoneNumber': phoneNumber,
-                ...meetingData,
-                'additionalData': {
-                  ...additionalData,
-                  'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? client['name'] ?? 'Client necunoscut',
-                  'consultantToken': meetingData['consultantToken'] ?? additionalData['consultantToken'] ?? client['consultantToken'] ?? '',
-                },
-              });
+              for (final doc in meetingsSnapshot.docs) {
+                final meetingData = doc.data();
+                final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+                allMeetings.add({
+                  'id': doc.id,
+                  'clientPhoneNumber': phoneNumber,
+                  ...meetingData,
+                  'additionalData': {
+                    ...additionalData,
+                    'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? client['name'] ?? 'Client necunoscut',
+                    'consultantToken': meetingData['consultantToken'] ?? additionalData['consultantToken'] ?? client['consultantToken'] ?? '',
+                  },
+                });
+              }
             }
+
+            // Sortare locala dupa dateTime asc
+            allMeetings.sort((a, b) {
+              final aTs = a['dateTime'];
+              final bTs = b['dateTime'];
+              final aDt = aTs is Timestamp ? aTs.toDate() : DateTime.fromMillisecondsSinceEpoch(aTs ?? 0);
+              final bDt = bTs is Timestamp ? bTs.toDate() : DateTime.fromMillisecondsSinceEpoch(bTs ?? 0);
+              return aDt.compareTo(bDt);
+            });
+
+            FirebaseLogger.log('MEETINGS: fallback N+1 returned ${allMeetings.length}');
+            return allMeetings;
+          } catch (fallbackError) {
+            FirebaseLogger.error('Fallback getAllMeetings failed: $fallbackError');
+            return [];
           }
-
-          // Sortare locala dupa dateTime asc
-          allMeetings.sort((a, b) {
-            final aTs = a['dateTime'];
-            final bTs = b['dateTime'];
-            final aDt = aTs is Timestamp ? aTs.toDate() : DateTime.fromMillisecondsSinceEpoch(aTs ?? 0);
-            final bDt = bTs is Timestamp ? bTs.toDate() : DateTime.fromMillisecondsSinceEpoch(bTs ?? 0);
-            return aDt.compareTo(bDt);
-          });
-
-          return allMeetings;
-        } catch (fallbackError) {
-          FirebaseLogger.error('Fallback getAllMeetings failed: $fallbackError');
+        } else {
+          FirebaseLogger.warning('MEETINGS: missing index for collectionGroup');
           return [];
         }
       }
@@ -1729,74 +1708,79 @@ class NewFirebaseService {
     } catch (e) {
       FirebaseLogger.error('Error getting team meetings: $e');
 
-      // Fallback: daca lipseste indexul pentru collectionGroup, query pe clienti per token si N+1 pe meetings
+      // Keep N+1 fallback only in debug to aid development without indexes.
       if (e is FirebaseException && e.code == 'failed-precondition') {
-        try {
-          final List<Map<String, dynamic>> teamMeetings = [];
+        if (kDebugMode) {
+          try {
+            final List<Map<String, dynamic>> teamMeetings = [];
 
-          // Obtine toti consultantii din echipa si colecteaza token-urile
-          final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(
-            () => _firestore
-                .collection(_consultantsCollection)
-                .where('team', isEqualTo: team)
-                .get(),
-          );
-
-          final List<String> teamTokens = teamConsultantsSnapshot.docs
-              .map((doc) => doc.data()['token'] as String? ?? '')
-              .where((t) => t.isNotEmpty)
-              .toList();
-
-          for (final token in teamTokens) {
-            // Ia clientii pentru fiecare token
-            final clientsSnapshot = await _threadHandler.executeOnPlatformThread(
+            // Obtine toti consultantii din echipa si colecteaza token-urile
+            final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(
               () => _firestore
-                  .collection(_clientsCollection)
-                  .where('consultantToken', isEqualTo: token)
+                  .collection(_consultantsCollection)
+                  .where('team', isEqualTo: team)
                   .get(),
             );
 
-            for (final clientDoc in clientsSnapshot.docs) {
-              final phoneNumber = clientDoc.id;
-              final clientData = clientDoc.data();
-              final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
+            final List<String> teamTokens = teamConsultantsSnapshot.docs
+                .map((doc) => doc.data()['token'] as String? ?? '')
+                .where((t) => t.isNotEmpty)
+                .toList();
+
+            for (final token in teamTokens) {
+              // Ia clientii pentru fiecare token
+              final clientsSnapshot = await _threadHandler.executeOnPlatformThread(
                 () => _firestore
                     .collection(_clientsCollection)
-                    .doc(phoneNumber)
-                    .collection(_meetingsSubcollection)
+                    .where('consultantToken', isEqualTo: token)
                     .get(),
               );
 
-              for (final meetingDoc in meetingsSnapshot.docs) {
-                final meetingData = meetingDoc.data();
-                final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
-                final tokenValue = meetingData['consultantToken'] ?? additionalData['consultantToken'] ?? clientData['consultantToken'] ?? token;
-                teamMeetings.add({
-                  'id': meetingDoc.id,
-                  'clientPhoneNumber': phoneNumber,
-                  ...meetingData,
-                  'additionalData': {
-                    ...additionalData,
-                    'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? clientData['name'] ?? 'Client necunoscut',
-                    'consultantToken': tokenValue,
-                  },
-                });
+              for (final clientDoc in clientsSnapshot.docs) {
+                final phoneNumber = clientDoc.id;
+                final clientData = clientDoc.data();
+                final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
+                  () => _firestore
+                      .collection(_clientsCollection)
+                      .doc(phoneNumber)
+                      .collection(_meetingsSubcollection)
+                      .get(),
+                );
+
+                for (final meetingDoc in meetingsSnapshot.docs) {
+                  final meetingData = meetingDoc.data();
+                  final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+                  final tokenValue = meetingData['consultantToken'] ?? additionalData['consultantToken'] ?? clientData['consultantToken'] ?? token;
+                  teamMeetings.add({
+                    'id': meetingDoc.id,
+                    'clientPhoneNumber': phoneNumber,
+                    ...meetingData,
+                    'additionalData': {
+                      ...additionalData,
+                      'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? clientData['name'] ?? 'Client necunoscut',
+                      'consultantToken': tokenValue,
+                    },
+                  });
+                }
               }
             }
+
+            // Sortare locala
+            teamMeetings.sort((a, b) {
+              final aTs = a['dateTime'];
+              final bTs = b['dateTime'];
+              final aDt = aTs is Timestamp ? aTs.toDate() : DateTime.fromMillisecondsSinceEpoch(aTs ?? 0);
+              final bDt = bTs is Timestamp ? bTs.toDate() : DateTime.fromMillisecondsSinceEpoch(bTs ?? 0);
+              return aDt.compareTo(bDt);
+            });
+
+            return teamMeetings;
+          } catch (fallbackError) {
+            FirebaseLogger.error('Fallback getTeamMeetings failed: $fallbackError');
+            return [];
           }
-
-          // Sortare locala
-          teamMeetings.sort((a, b) {
-            final aTs = a['dateTime'];
-            final bTs = b['dateTime'];
-            final aDt = aTs is Timestamp ? aTs.toDate() : DateTime.fromMillisecondsSinceEpoch(aTs ?? 0);
-            final bDt = bTs is Timestamp ? bTs.toDate() : DateTime.fromMillisecondsSinceEpoch(bTs ?? 0);
-            return aDt.compareTo(bDt);
-          });
-
-          return teamMeetings;
-        } catch (fallbackError) {
-          FirebaseLogger.error('Fallback getTeamMeetings failed: $fallbackError');
+        } else {
+          FirebaseLogger.warning('Missing Firestore index for meetings collectionGroup team query. Returning empty in release.');
           return [];
         }
       }
@@ -1831,18 +1815,16 @@ class NewFirebaseService {
       if (description != null) updates['description'] = description;
       if (additionalData != null) updates['additionalData'] = additionalData;
 
-      await _threadHandler.executeOnPlatformThread(
-        () => _firestore
-            .collection(_clientsCollection)
-            .doc(phoneNumber)
-            .collection(_meetingsSubcollection)
-            .doc(meetingId)
-            .update(updates),
-      );
-
-      // Actualizeaza timestamp-ul clientului
-      await updateClient(phoneNumber, {
-        'updatedAt': FieldValue.serverTimestamp(),
+      // Update meeting and client.updatedAt in a single batch
+      await _threadHandler.executeOnPlatformThread(() async {
+        final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
+        final meetingRef = clientRef.collection(_meetingsSubcollection).doc(meetingId);
+        final batch = _firestore.batch();
+        batch.update(meetingRef, updates);
+        batch.update(clientRef, {
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        await batch.commit();
       });
       return true;
     } catch (e) {
@@ -1864,19 +1846,16 @@ class NewFirebaseService {
       final existingClient = await getClient(phoneNumber);
       if (existingClient == null) return false;
 
-      await _threadHandler.executeOnPlatformThread(
-        () =>
-            _firestore
-                .collection(_clientsCollection)
-                .doc(phoneNumber)
-                .collection(_meetingsSubcollection)
-                .doc(meetingId)
-                .delete(),
-      );
-
-      // Actualizeaza timestamp-ul clientului
-      await updateClient(phoneNumber, {
-        'updatedAt': FieldValue.serverTimestamp(),
+      // Delete meeting and update client.updatedAt in a single batch
+      await _threadHandler.executeOnPlatformThread(() async {
+        final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
+        final meetingRef = clientRef.collection(_meetingsSubcollection).doc(meetingId);
+        final batch = _firestore.batch();
+        batch.delete(meetingRef);
+        batch.update(clientRef, {
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        await batch.commit();
       });
       return true;
     } catch (e) {

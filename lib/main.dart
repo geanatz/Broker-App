@@ -171,6 +171,7 @@ void main() async {
       FirebaseFirestore.instance.settings = Settings(
         persistenceEnabled: true,
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+        ignoreUndefinedProperties: true,
       );
       
       // FIX: Disable verbose Firebase logging on mobile
@@ -187,6 +188,7 @@ void main() async {
           FirebaseFirestore.instance.settings = Settings(
             persistenceEnabled: true,
             cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+            ignoreUndefinedProperties: true,
           );
         } catch (e) {
           debugPrint('Error enabling persistence: $e');
@@ -194,6 +196,7 @@ void main() async {
           FirebaseFirestore.instance.settings = Settings(
             persistenceEnabled: false,
             cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+            ignoreUndefinedProperties: true,
           );
         }
       } else {
@@ -201,6 +204,7 @@ void main() async {
         FirebaseFirestore.instance.settings = Settings(
           persistenceEnabled: true,
           cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+          ignoreUndefinedProperties: true,
         );
       }
       

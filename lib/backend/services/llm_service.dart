@@ -3,11 +3,12 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'ai_instructions.dart';
-import 'clients_service.dart';
+// import 'clients_service.dart';
 import 'dashboard_service.dart';
-import 'firebase_service.dart'; // pentru NewFirebaseService
+// import 'firebase_service.dart'; // pentru NewFirebaseService
 import 'consultant_service.dart'; // pentru ConsultantService
 import 'package:cloud_firestore/cloud_firestore.dart'; // pentru Timestamp
+import 'splash_service.dart';
 
 /// Model pentru un mesaj in conversatia cu chatbot-ul
 class ChatMessage {
@@ -50,8 +51,14 @@ class LLMService extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   
-  // API Key hardcodat pentru toti consultantii
-  static const String _apiKey = 'AIzaSyDCDWgHEEoqj85vRMO84-oJ37KyNR-72FI'; // Inlocuieste cu cheia ta reala
+  // API key moved to environment/secure storage. Fallback is empty in production builds.
+  static String get _apiKey {
+    // Try environment variable first
+    const envKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+    if (envKey.isNotEmpty) return envKey;
+    // As a last-resort fallback for local debug only (should be empty in release)
+    return const String.fromEnvironment('GEMINI_API_KEY_FALLBACK', defaultValue: '');
+  }
 
   // Getters
   List<ChatMessage> get messages => List.unmodifiable(_messages);
@@ -102,9 +109,9 @@ class LLMService extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-      // OPTIMIZARE: Construieste promptul extins cu context live din Firestore
-      debugPrint('🤖 AI_DEBUG: Construire prompt cu context...');
-      final extendedPrompt = await buildPromptWithContext(userMessage);
+    // OPTIMIZARE: Construieste promptul extins cu context din cache-ul SplashService (evita fetch live)
+    debugPrint('🤖 AI_DEBUG: Construire prompt cu context (cache-first)...');
+    final extendedPrompt = await buildPromptWithContext(userMessage);
       
       // Construieste contextul pentru LLM
       final systemPrompt = _buildSystemPrompt();
@@ -269,12 +276,13 @@ class LLMService extends ChangeNotifier {
     }
   }
 
-  /// Extrage contextul complet pentru consultantul activ (date live din Firestore)
+  /// Extrage contextul complet pentru consultantul activ (cache-first via SplashService)
   Future<Map<String, dynamic>> getConsultantContextData() async {
     debugPrint('🤖 AI_DEBUG: Extragere context consultant...');
+    final splash = SplashService();
     
-    // 1. Extrage toti clientii (live)
-    final clients = await ClientsService().getAllClients();
+    // 1. Extrage toti clientii (cache)
+    final clients = await splash.getCachedClients();
     debugPrint('🤖 AI_DEBUG: Clienti extrasi: ${clients.length}');
     
     // Log detaliat pentru a vedea structura formData (doar primii 3 clienti pentru a nu aglomera logurile)
@@ -288,8 +296,17 @@ class LLMService extends ChangeNotifier {
       debugPrint('  - coDebitorIncomes: ${formData['coDebitorIncomes']}');
     }
 
-    // 2. Extrage toate intalnirile (live)
-    final meetingsRaw = await NewFirebaseService().getAllMeetings();
+    // 2. Extrage toate intalnirile (cache)
+    final meetingsRaw = (await splash.getCachedMeetings())
+        .map((m) => {
+              'id': m.id,
+              'dateTime': m.dateTime,
+              'type': m.type.name,
+              'clientName': m.additionalData?['clientName'] ?? '',
+              'additionalData': m.additionalData ?? {},
+              'clientPhoneNumber': m.additionalData?['phoneNumber'] ?? '',
+            })
+        .toList();
     debugPrint('🤖 AI_DEBUG: Intalniri extrase: ${meetingsRaw.length}');
     
     // Cast explicit la Map<String, dynamic> daca e nevoie

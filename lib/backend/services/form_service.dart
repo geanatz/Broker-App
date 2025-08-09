@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:broker_app/backend/services/clients_service.dart';
 import 'package:broker_app/backend/services/firebase_service.dart';
 import 'dart:async'; // Added for Timer
+import 'dart:convert';
 
 /// Enum pentru diferitele tipuri de credite
 enum CreditType { 
@@ -220,6 +221,14 @@ class FormService extends ChangeNotifier {
   
   // OPTIMIZARE: Debouncing pentru a evita multiple apeluri simultane
   // FIX: Removed debounce timer for immediate response
+  // New: Per-client debounce for autosave + payload deduplication
+  final Map<String, Timer> _saveDebounceTimers = {};
+  final Map<String, Map<String, dynamic>> _pendingPayloadByClient = {};
+  final Map<String, String> _lastSavedHashByClient = {};
+  static const Duration _autosaveDebounce = Duration(milliseconds: 600);
+  // Coalescing: evita multiple salvări simultane
+  final Map<String, Future<bool>> _inFlightSaves = {};
+  final Set<String> _saveRequestedWhileInFlight = <String>{};
 
   // Form data storage per client
   final Map<String, List<CreditFormModel>> _clientCreditForms = HashMap();
@@ -350,6 +359,8 @@ class FormService extends ChangeNotifier {
   /// Dispose resources
   @override
   void dispose() {
+    // Flush any pending autosaves before disposing to prevent data loss
+    unawaited(flushPendingSaves());
     _clientService.removeListener(_onClientChanged);
     super.dispose();
   }
@@ -540,25 +551,169 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// Automatically saves form data to Firebase for a client by phone number
-  Future<void> _autoSaveToFirebaseForClient(String clientPhoneNumber) async {
-    try {
+  /// Build the unified payload used for hashing and save
+  Map<String, dynamic> _buildUnifiedPayload(String clientId) {
+    final clientCreditData = getClientCreditForms(clientId)
+        .where((form) => !form.isEmpty)
+        .map((form) => form.toMap())
+        .toList();
+    final coborrowerCreditData = getCoborrowerCreditForms(clientId)
+        .where((form) => !form.isEmpty)
+        .map((form) => form.toMap())
+        .toList();
+    final clientIncomeData = getClientIncomeForms(clientId)
+        .where((form) => !form.isEmpty)
+        .map((form) => form.toMap())
+        .toList();
+    final coborrowerIncomeData = getCoborrowerIncomeForms(clientId)
+        .where((form) => !form.isEmpty)
+        .map((form) => form.toMap())
+        .toList();
 
-      
-      // Find client name - for now use phone number as fallback
-      String clientName = clientPhoneNumber;
-      
-      final success = await saveFormDataForClient(
-        clientPhoneNumber,
-        clientPhoneNumber,
-        clientName,
-      );
-      
-      if (!success) {
-        debugPrint('❌ FormService: Failed to auto-save form data to Firebase for client: $clientPhoneNumber');
+    return {
+      'creditForms': {
+        'client': clientCreditData,
+        'coborrower': coborrowerCreditData,
+      },
+      'incomeForms': {
+        'client': clientIncomeData,
+        'coborrower': coborrowerIncomeData,
+      },
+      'showingClientLoanForm': isShowingClientLoanForm(clientId),
+      'showingClientIncomeForm': isShowingClientIncomeForm(clientId),
+    };
+  }
+
+  /// Computes a stable hash for the payload to avoid identical writes
+  String _computePayloadHash(Map<String, dynamic> payload) {
+    // Stable string based on JSON encoding; keys order in our maps/lists is deterministic
+    return jsonEncode(payload);
+  }
+
+  /// Debounced autosave per client with deduplication
+  Future<void> _autoSaveToFirebaseForClient(String clientId) async {
+    try {
+      // Prepare pending payload and debounce timer
+      final payload = _buildUnifiedPayload(clientId);
+      _pendingPayloadByClient[clientId] = payload;
+
+      // Cancel previous timer and set a new one
+      if (_saveDebounceTimers[clientId]?.isActive == true) {
+        debugPrint('FormService: reschedule autosave for $clientId');
+      }
+      _saveDebounceTimers[clientId]?.cancel();
+      debugPrint('FormService: schedule autosave for $clientId in ${_autosaveDebounce.inMilliseconds}ms');
+      _saveDebounceTimers[clientId] = Timer(_autosaveDebounce, () async {
+        await _commitSaveForClient(clientId);
+      });
+    } catch (e) {
+      debugPrint('FormService: error scheduling autosave for $clientId: $e');
+    }
+  }
+
+  Future<void> _commitSaveForClient(String clientId) async {
+    try {
+      final sw = Stopwatch()..start();
+      debugPrint('FormService: commit autosave start for $clientId');
+      final payload = _pendingPayloadByClient[clientId];
+      if (payload == null) return;
+
+      final hash = _computePayloadHash(payload);
+      if (_lastSavedHashByClient[clientId] == hash) {
+        // No changes since last commit
+        debugPrint('FormService: skip commit (no changes) for $clientId');
+        return;
+      }
+
+      final success = await _enqueueSave(clientId: clientId, phoneNumber: clientId, clientName: clientId);
+
+      if (success) {
+        _lastSavedHashByClient[clientId] = hash;
+        sw.stop();
+        debugPrint('FormService: commit autosave success for $clientId in ${sw.elapsedMilliseconds}ms');
+      } else {
+        sw.stop();
+        debugPrint('FormService: commit autosave failed for $clientId in ${sw.elapsedMilliseconds}ms');
       }
     } catch (e) {
-      debugPrint('❌ FormService: Error auto-saving form data to Firebase: $e');
+      debugPrint('FormService: error committing autosave for $clientId: $e');
+    } finally {
+      // Clear pending state for this client
+      _saveDebounceTimers.remove(clientId);
+      _pendingPayloadByClient.remove(clientId);
+    }
+  }
+
+  /// Coalesce multiple save requests into one in-flight per client
+  Future<bool> _enqueueSave({
+    required String clientId,
+    required String phoneNumber,
+    required String clientName,
+  }) async {
+    // If a save is already in-flight, request another cycle and return the same future
+    final existing = _inFlightSaves[clientId];
+    if (existing != null) {
+      _saveRequestedWhileInFlight.add(clientId);
+      return existing;
+    }
+
+    final payload = _buildUnifiedPayload(clientId);
+    final currentHash = _computePayloadHash(payload);
+
+    final future = _performBatchedSave(
+      clientId: clientId,
+      phoneNumber: phoneNumber,
+      clientName: clientName,
+      expectedHash: currentHash,
+    );
+    _inFlightSaves[clientId] = future;
+
+    final result = await future;
+    _inFlightSaves.remove(clientId);
+
+    // If another save was requested while in flight, and data changed, run again
+    if (_saveRequestedWhileInFlight.remove(clientId)) {
+      final latestPayload = _buildUnifiedPayload(clientId);
+      final latestHash = _computePayloadHash(latestPayload);
+      if (_lastSavedHashByClient[clientId] != latestHash) {
+        // Fire-and-forget next coalesced save
+        unawaited(_enqueueSave(clientId: clientId, phoneNumber: phoneNumber, clientName: clientName));
+      }
+    }
+    return result;
+  }
+
+  Future<bool> _performBatchedSave({
+    required String clientId,
+    required String phoneNumber,
+    required String clientName,
+    required String expectedHash,
+  }) async {
+    final ok = await NewFirebaseService().saveAllFormDataBatched(
+      phoneNumber: phoneNumber,
+      clientName: clientName,
+      formData: _buildUnifiedPayload(clientId),
+    );
+    if (ok) {
+      _lastSavedHashByClient[clientId] = expectedHash;
+    }
+    return ok;
+  }
+
+  /// Flushes all pending autosaves (or a specific client if provided)
+  Future<void> flushPendingSaves({String? clientId}) async {
+    if (clientId != null) {
+      _saveDebounceTimers[clientId]?.cancel();
+      debugPrint('FormService: flush pending save for $clientId');
+      await _commitSaveForClient(clientId);
+      return;
+    }
+    final clients = List<String>.from(_saveDebounceTimers.keys);
+    debugPrint('FormService: flush all pending saves count=${clients.length}');
+    for (final cid in clients) {
+      _saveDebounceTimers[cid]?.cancel();
+      debugPrint('FormService: flush pending save for $cid');
+      await _commitSaveForClient(cid);
     }
   }
 
@@ -749,7 +904,7 @@ class FormService extends ChangeNotifier {
     }
   }
 
-  /// Salveaza datele formularului pentru un client
+  /// Salveaza datele formularului pentru un client (batched + atomic)
   Future<bool> saveFormDataForClient(String clientId, String phoneNumber, String clientName) async {
     try {
       final clientCreditData = getClientCreditForms(clientId)
@@ -772,15 +927,25 @@ class FormService extends ChangeNotifier {
           .map((form) => form.toMap())
           .toList();
 
-      final success = await _firebaseFormService.saveAllFormData(
+      // Build ensures consistency even if _buildUnifiedPayload changes
+      final _ = {
+        'creditForms': {
+          'client': clientCreditData,
+          'coborrower': coborrowerCreditData,
+        },
+        'incomeForms': {
+          'client': clientIncomeData,
+          'coborrower': coborrowerIncomeData,
+        },
+        'showingClientLoanForm': isShowingClientLoanForm(clientId),
+        'showingClientIncomeForm': isShowingClientIncomeForm(clientId),
+      };
+
+      // Coalesced save (payload already built above for hashing consistency)
+      final success = await _enqueueSave(
+        clientId: clientId,
         phoneNumber: phoneNumber,
         clientName: clientName,
-        clientCreditForms: clientCreditData,
-        coborrowerCreditForms: coborrowerCreditData,
-        clientIncomeForms: clientIncomeData,
-        coborrowerIncomeForms: coborrowerIncomeData,
-        showingClientLoanForm: isShowingClientLoanForm(clientId),
-        showingClientIncomeForm: isShowingClientIncomeForm(clientId),
       );
 
       return success;

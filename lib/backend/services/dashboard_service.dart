@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'clients_service.dart';
+import 'firebase_service.dart';
 import 'consultant_service.dart';
 import 'package:intl/intl.dart';
 import 'role_service.dart';
@@ -100,6 +101,7 @@ class DashboardService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ClientsFirebaseService _clientsService = ClientsFirebaseService();
   final ConsultantService _consultantService = ConsultantService();
+  final FirebaseThreadHandler _threadHandler = FirebaseThreadHandler.instance;
   static const int _counterShards = 20; // configurable
 
   // State variables
@@ -110,6 +112,8 @@ class DashboardService extends ChangeNotifier {
   String? _dutyAgent;
   bool _isLoading = false;
   String? _errorMessage;
+  // Debounce refresh to coalesce bursts of updates
+  Timer? _refreshDebounce;
 
   // Navigare luni - unificata pentru clasamentul combinat
   DateTime _selectedMonth = DateTime.now();
@@ -236,6 +240,10 @@ class DashboardService extends ChangeNotifier {
 
   /// Incarca toate datele dashboard-ului (FIX: verifica consultant inainte de incarcare)
   Future<void> loadDashboardData() async {
+    // Coalescing: evita incarcari simultane
+    if (_isLoading) {
+      return;
+    }
     if (_currentUser == null) {
       debugPrint('❌ DASHBOARD_SERVICE: User not authenticated');
       _errorMessage = 'Utilizator neautentificat';
@@ -251,12 +259,13 @@ class DashboardService extends ChangeNotifier {
 
     try {
       // Incarca datele in paralel pentru performanta maxima
+      final isSupervisor = (await RoleService().refreshRole()) == UserRole.supervisor;
       final futures = <Future<void>>[
-        _loadConsultantStats(), // Cel mai rapid - doar consultantul curent
-        _loadUpcomingMeetings(), // Rapid - doar intalnirile consultantului curent
-        _loadConsultantsRanking(isSupervisor: await RoleService().refreshRole() == UserRole.supervisor), // Mai lent - toti consultantii
-        _loadTeamsRanking(isSupervisor: await RoleService().refreshRole() == UserRole.supervisor), // Cel mai lent - toate echipele
-        _loadDutyAgent(), // Incarca agentul de serviciu
+        _loadConsultantStats(),
+        _loadUpcomingMeetings(),
+        _loadConsultantsRanking(isSupervisor: isSupervisor),
+        _loadTeamsRanking(isSupervisor: isSupervisor),
+        _loadDutyAgent(),
       ];
 
       // Asteapta toate task-urile sa se termine
@@ -271,7 +280,10 @@ class DashboardService extends ChangeNotifier {
 
   /// Actualizeaza datele dashboard-ului
   Future<void> refreshData() async {
-    await loadDashboardData();
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 200), () async {
+      await loadDashboardData();
+    });
   }
 
   /// Forteaza reincarcarea agentului de serviciu (pentru debug)
@@ -290,7 +302,9 @@ class DashboardService extends ChangeNotifier {
       debugPrint('📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: $isSupervisor');
       
       // FIX: Obtine toate consultantii cu token-urile lor
-      final consultantsSnapshot = await _firestore.collection('consultants').get();
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+        () => _firestore.collection('consultants').get(),
+      );
       if (consultantsSnapshot.docs.isEmpty) {
         _consultantsRanking = [];
         return;
@@ -298,21 +312,8 @@ class DashboardService extends ChangeNotifier {
 
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
 
-      // Determine current team for filtering when not supervisor
-      String? currentTeam;
-      if (!isSupervisor) {
-        final currentConsultant = await _consultantService.getCurrentConsultantData();
-        currentTeam = currentConsultant?['team'] as String?;
-      }
-
-      final List<QueryDocumentSnapshot<Map<String, dynamic>>> filtered = consultantsSnapshot.docs.where((consultantDoc) {
-        final data = consultantDoc.data();
-        final team = (data['team'] as String?) ?? '';
-        if (!isSupervisor && (currentTeam ?? '').isNotEmpty) {
-          return team == currentTeam;
-        }
-        return true;
-      }).toList();
+      // Nu mai filtram dupa echipa curenta: toti consultantii sunt vizibili pentru toti utilizatorii
+      final List<QueryDocumentSnapshot<Map<String, dynamic>>> filtered = consultantsSnapshot.docs.toList();
 
       final List<ConsultantRanking> rankings = [];
       await Future.wait(filtered.map((consultantDoc) async {
@@ -351,15 +352,10 @@ class DashboardService extends ChangeNotifier {
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
 
       // FIX: Obtine toti consultantii cu token-urile lor
-      final consultantsSnapshot = await _firestore.collection('consultants').get();
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+        () => _firestore.collection('consultants').get(),
+      );
       final Map<String, Map<String, int>> teamStats = {};
-
-      // Determine current team for filtering when not supervisor
-      String? currentTeam;
-      if (!isSupervisor) {
-        final currentConsultant = await _consultantService.getCurrentConsultantData();
-        currentTeam = currentConsultant?['team'] as String?;
-      }
 
       for (var consultantDoc in consultantsSnapshot.docs) {
         final consultantData = consultantDoc.data();
@@ -367,11 +363,6 @@ class DashboardService extends ChangeNotifier {
         final teamId = consultantData['team'] as String? ?? '';
         if (consultantToken == null || teamId.isEmpty) {
           continue;
-        }
-        if (!isSupervisor && currentTeam != null && currentTeam.isNotEmpty) {
-          if (teamId != currentTeam) {
-            continue;
-          }
         }
 
         final counters = await _readMonthlyCountersForToken(yearMonth, consultantToken);
@@ -387,8 +378,15 @@ class DashboardService extends ChangeNotifier {
       }
       
       final teamNames = await _consultantService.getAllTeams();
-      debugPrint('📊 DASHBOARD_SERVICE: Found teams: $teamNames');
-      final teamRankings = teamNames.where((teamName) => teamName != 'Supervisor').map((teamName) {
+      // Include always the 3 predefined teams even if there are no consultants
+      final Set<String> baseTeams = {
+        'Echipa Andreea',
+        'Echipa Cristina',
+        'Echipa Scarlat',
+      };
+      final Set<String> allTeamNames = {...baseTeams, ...teamNames};
+      debugPrint('📊 DASHBOARD_SERVICE: Found teams (with base): ${allTeamNames.toList()}');
+      final teamRankings = allTeamNames.where((teamName) => teamName != 'Supervisor').map((teamName) {
         final stats = teamStats[teamName] ?? {'forms': 0, 'meetings': 0, 'members': 0, 'score': 0};
         
         return TeamRanking(
@@ -511,7 +509,9 @@ class DashboardService extends ChangeNotifier {
       }
 
       // Fallback to old fields on the monthly doc
-      final monthlyDoc = await parentDoc.get();
+      final monthlyDoc = await _threadHandler.executeOnPlatformThread(
+        () => parentDoc.get(),
+      );
       if (monthlyDoc.exists) {
         final data = monthlyDoc.data();
         final formsCompleted = (data?['formsCompleted'] ?? 0) as num;
@@ -603,19 +603,23 @@ class DashboardService extends ChangeNotifier {
   /// Checks if there is any shard present for either forms or meetings
   Future<bool> _hasAnyShards(DocumentReference<Map<String, dynamic>> parentDoc) async {
     try {
-      final forms = await parentDoc
-          .collection('counters')
-          .doc('forms')
-          .collection('shards')
-          .limit(1)
-          .get();
+      final forms = await _threadHandler.executeOnPlatformThread(
+        () => parentDoc
+            .collection('counters')
+            .doc('forms')
+            .collection('shards')
+            .limit(1)
+            .get(),
+      );
       if (forms.docs.isNotEmpty) return true;
-      final meetings = await parentDoc
-          .collection('counters')
-          .doc('meetings')
-          .collection('shards')
-          .limit(1)
-          .get();
+      final meetings = await _threadHandler.executeOnPlatformThread(
+        () => parentDoc
+            .collection('counters')
+            .doc('meetings')
+            .collection('shards')
+            .limit(1)
+            .get(),
+      );
       return meetings.docs.isNotEmpty;
     } catch (_) {
       return false;
@@ -642,7 +646,9 @@ class DashboardService extends ChangeNotifier {
         return fromShards;
       }
 
-      final dailyDoc = await dailyParent.get();
+      final dailyDoc = await _threadHandler.executeOnPlatformThread(
+        () => dailyParent.get(),
+      );
       if (dailyDoc.exists) {
         final data = dailyDoc.data();
         final val = (data?['formsCompleted'] ?? 0) as num;
@@ -667,7 +673,9 @@ class DashboardService extends ChangeNotifier {
       }
       
       // Obtine toti consultantii din Firebase
-      final consultantsSnapshot = await _firestore.collection('consultants').get();
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+        () => _firestore.collection('consultants').get(),
+      );
       if (consultantsSnapshot.docs.isEmpty) {
         _dutyAgent = null;
         _dutyAgentCache[today] = null;
@@ -782,24 +790,21 @@ class DashboardService extends ChangeNotifier {
       _teamsRankingCache.remove(consultantToken);  
       _consultantStatsCache.remove(consultantToken);
       
-      // IMPORTANT: Reincarca clasamentele si notifica UI-ul pentru actualizare instantanee
+      // IMPORTANT: Reincarca clasamentele coalesced (debounced)
       debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after meeting creation...');
-      
-      // FIX: Muta operatiile costisitoare pe un thread separat pentru a preveni blocajul UI
-      unawaited(Future.microtask(() async {
+      _refreshDebounce?.cancel();
+      _refreshDebounce = Timer(const Duration(milliseconds: 200), () async {
         try {
           await _refreshConsultantsRankingForSelectedMonth();
-          await _loadConsultantStats(); // Reincarca si statisticile consultantului
-          
-          // FIX: Programeaza notifyListeners pe urmatorul microtask pentru a evita deadlock-ul
+          await _loadConsultantStats();
           Future.microtask(() {
-            notifyListeners(); // Notifica UI-ul sa se actualizeze
+            notifyListeners();
             debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified');
           });
         } catch (e) {
           debugPrint('❌ DASHBOARD_SERVICE: Error in async refresh after meeting creation: $e');
         }
-      }));
+      });
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onMeetingCreated: $e');
     }
@@ -897,24 +902,21 @@ class DashboardService extends ChangeNotifier {
       _teamsRankingCache.remove(consultantToken);
       _consultantStatsCache.remove(consultantToken);
       
-      // IMPORTANT: Reincarca clasamentele si notifica UI-ul pentru actualizare instantanee
+      // IMPORTANT: Reincarca clasamentele coalesced (debounced)
       debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after form completion...');
-      
-      // FIX: Muta operatiile costisitoare pe un thread separat pentru a preveni blocajul UI
-      unawaited(Future.microtask(() async {
+      _refreshDebounce?.cancel();
+      _refreshDebounce = Timer(const Duration(milliseconds: 200), () async {
         try {
           await _refreshConsultantsRankingForSelectedMonth();
-          await _loadConsultantStats(); // Reincarca si statisticile consultantului
-          
-          // FIX: Programeaza notifyListeners pe urmatorul microtask pentru a evita deadlock-ul
+          await _loadConsultantStats();
           Future.microtask(() {
-            notifyListeners(); // Notifica UI-ul sa se actualizeze
+            notifyListeners();
             debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified after form completion');
           });
         } catch (e) {
           debugPrint('❌ DASHBOARD_SERVICE: Error in async refresh after form completion: $e');
         }
-      }));
+      });
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onFormCompleted: $e');
     }

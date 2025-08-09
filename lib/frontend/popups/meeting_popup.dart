@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:broker_app/frontend/components/headers/widget_header1.dart';
-import 'package:broker_app/frontend/components/fields/input_field1.dart';
 import 'package:broker_app/frontend/components/fields/input_field3.dart';
 import 'package:broker_app/frontend/components/fields/dropdown_field1.dart';
+import 'package:broker_app/frontend/components/buttons/flex_buttons1.dart';
 import 'package:broker_app/frontend/components/buttons/flex_buttons2.dart';
 import 'package:broker_app/backend/services/meeting_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
@@ -78,9 +78,10 @@ class _MeetingPopupState extends State<MeetingPopup> {
   final MeetingService _meetingService = MeetingService();
   final SplashService _splashService = SplashService();
   
-  // Controllers pentru inputuri
-  final TextEditingController _clientNameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
+  // Selectie client existent
+  String? _selectedClientPhone;
+  List<ClientModel> _clients = [];
+  // Removed unused: original phone was used only by delete flow
   
   // State variables
   MeetingType _selectedType = MeetingType.meeting;
@@ -102,8 +103,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
   @override
   void dispose() {
-    _clientNameController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -111,6 +110,14 @@ class _MeetingPopupState extends State<MeetingPopup> {
     if (mounted) {
       setState(() => _isLoading = true);
     }
+
+    // Incarca lista de clienti existenti din cache
+    try {
+      final cachedClients = await _splashService.getCachedClients();
+      _clients = List.from(cachedClients);
+      // sorteaza alfabetic pentru UX
+      _clients.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } catch (_) {}
 
     if (isEditMode) {
       // Modul editare - incarca datele intalnirii existente din cache
@@ -143,7 +150,6 @@ class _MeetingPopupState extends State<MeetingPopup> {
 
       // Extrage datele din additionalData
       final additionalData = targetMeeting.additionalData ?? {};
-      final clientName = additionalData['clientName'] ?? 'Client nedefinit';
       final phoneNumber = additionalData['phoneNumber'] ?? '';
       
       // Convert ActivityType to MeetingType
@@ -151,8 +157,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
           ? MeetingType.bureauDelete 
           : MeetingType.meeting;
 
-      _clientNameController.text = clientName;
-      _phoneController.text = phoneNumber;
+      _selectedClientPhone = phoneNumber.isNotEmpty ? phoneNumber : null;
       _selectedType = meetingType;
       _selectedDate = targetMeeting.dateTime;
       _selectedTimeSlot = DateFormat('HH:mm').format(targetMeeting.dateTime);
@@ -251,19 +256,15 @@ class _MeetingPopupState extends State<MeetingPopup> {
     
     // Validare
     if (_selectedDate == null) {
-      _showError("Selecteaza o data");
       return;
     }
 
     if (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty) {
-      _showError("Selecteaza o ora");
       return;
     }
 
-    // FIX: Validare pentru numele clientului
-    final clientName = _clientNameController.text.trim();
-    if (clientName.isEmpty) {
-      _showError("Introduceti numele clientului");
+    // Validare client existent
+    if (_selectedClientPhone == null || _selectedClientPhone!.isEmpty) {
       return;
     }
 
@@ -300,17 +301,29 @@ class _MeetingPopupState extends State<MeetingPopup> {
       
       // FIX: Validare pentru consultantToken
       if (consultantToken == null || consultantToken.isEmpty) {
-        _showError("Eroare: Nu s-a putut obtine token-ul consultantului");
         return;
       }
 
-      // FIX: Validare pentru telefon (poate fi gol pentru intalniri generale)
-      final phoneNumber = _phoneController.text.trim();
-      
+      // Obtine clientul selectat
+      final selectedClient = _clients.firstWhere(
+        (c) => c.phoneNumber == _selectedClientPhone,
+        orElse: () => ClientModel(
+          id: _selectedClientPhone!,
+          name: '',
+          phoneNumber1: _selectedClientPhone!,
+          status: ClientStatus.normal,
+          category: ClientCategory.apeluri,
+          formData: const {},
+        ),
+      );
+      if (selectedClient.name.trim().isEmpty) {
+        return;
+      }
+
       // Creeaza obiectul MeetingData
       final meetingData = MeetingData(
-        clientName: clientName,
-        phoneNumber: phoneNumber.isEmpty ? 'no_client_meetings' : phoneNumber,
+        clientName: selectedClient.name,
+        phoneNumber: selectedClient.phoneNumber,
         dateTime: finalDateTime,
         type: _selectedType,
         consultantToken: consultantToken,
@@ -328,26 +341,33 @@ class _MeetingPopupState extends State<MeetingPopup> {
         
         // OPTIMIZARE: Inchide popup-ul imediat pentru feedback instant
         if (mounted) {
-          Navigator.of(context).pop();
-          if (widget.onSaved != null) {
-            widget.onSaved!();
-          }
-          final successMessage = result['message'] ?? 'Intalnire salvata cu succes';
-          _showSuccess(successMessage);
+          // Safe close: only pop if this popup was pushed as a route
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            try {
+              final nav = Navigator.of(context);
+              if (nav.canPop()) {
+                nav.pop();
+              } else {
+                debugPrint('MEETING_POPUP: cannot pop route, using onSaved callback only');
+              }
+            } catch (e) {
+              debugPrint('MEETING_POPUP: error while popping route: $e');
+            }
+            if (widget.onSaved != null) {
+              widget.onSaved!();
+            }
+          });
         }
         
         // OPTIMIZARE: Invalidare cache in background pentru actualizare rapida
         _invalidateCacheInBackground();
       } else {
-        final errorMessage = result['message'] ?? 'Eroare necunoscuta la salvarea intalnirii';
-        _showError(errorMessage);
+        // silent
       }
     } catch (e) {
       debugPrint("❌ MEETING_POPUP: Exception in _saveMeeting: $e");
       debugPrint("❌ MEETING_POPUP: Stack trace: ${StackTrace.current}");
-      if (mounted) {
-        _showError("Eroare la salvarea intalnirii");
-      }
+      // silent
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -367,65 +387,26 @@ class _MeetingPopupState extends State<MeetingPopup> {
     });
   }
 
-  Future<void> _deleteMeeting() async {
+  /// Delete meeting instantly (no confirmation) when editing
+  Future<void> _onDeleteMeeting() async {
     if (!isEditMode || widget.meetingId == null) {
       return;
     }
-
-    final bool? shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmare stergere'),
-        content: const Text('Esti sigur ca vrei sa stergi aceasta intalnire?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Anuleaza'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sterge'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldDelete != true) {
-      return;
-    }
-
     if (mounted) {
       setState(() => _isLoading = true);
     }
-
     try {
-      final phoneNumber = _phoneController.text.trim();
+      final phoneNumber = _selectedClientPhone ?? '';
       final result = await _meetingService.deleteMeeting(widget.meetingId!, phoneNumber);
-      
       if (result['success']) {
-        // OPTIMIZARE: Foloseste invalidarea optimizata cu debouncing
         _splashService.invalidateAllMeetingCaches();
-        
         if (mounted) {
           Navigator.of(context).pop();
-          if (widget.onSaved != null) {
-            widget.onSaved!();
-          }
-          final successMessage = result['message'] ?? 'Intalnire stearsa cu succes';
-          _showSuccess(successMessage);
-        }
-      } else {
-        final errorMessage = result['message'] ?? 'Eroare la stergerea intalnirii';
-        if (mounted) {
-          _showError(errorMessage);
+          widget.onSaved?.call();
         }
       }
     } catch (e) {
-      debugPrint("❌ MEETING_POPUP: Exception in _deleteMeeting: $e");
-      debugPrint("❌ MEETING_POPUP: Stack trace: ${StackTrace.current}");
-      if (mounted) {
-        _showError("Eroare la stergerea intalnirii");
-      }
+      debugPrint('❌ MEETING_POPUP: Exception in _onDeleteMeeting: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -433,27 +414,11 @@ class _MeetingPopupState extends State<MeetingPopup> {
     }
   }
 
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  // Delete flow handled elsewhere when editing; no delete button in create mode
 
-  void _showSuccess(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
+  void _showError(String message) {}
+
+  // Removed UI snackbars
 
   String get _selectedDateText {
     if (_selectedDate == null) return "Selecteaza data";
@@ -470,10 +435,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
       child: Material(
         color: Colors.transparent,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 296, minHeight: 352),
+          constraints: const BoxConstraints(minWidth: 296),
           child: Container(
             width: 360,
-            height: 432,
             padding: const EdgeInsets.all(AppTheme.smallGap),
             decoration: AppTheme.popupDecoration,
             child: Column(
@@ -490,31 +454,35 @@ class _MeetingPopupState extends State<MeetingPopup> {
                 const SizedBox(height: AppTheme.smallGap),
                 
                 // Form Container
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(AppTheme.smallGap),
-                    decoration: AppTheme.container1Decoration,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Nume client
-                        InputField1(
-                          title: "Nume client",
-                          controller: _clientNameController,
-                          hintText: "Introduceti numele",
-                        ),
-                        
-                        const SizedBox(height: AppTheme.smallGap),
-                        
-                        // Telefon (optional)
-                        InputField1(
-                          title: "Telefon",
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          hintText: "Introduceti telefonul",
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppTheme.smallGap),
+                  decoration: AppTheme.container1Decoration,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                        // Selectie client existent
+                        DropdownField1<String>(
+                          title: "Client",
+                          value: _selectedClientPhone,
+                          items: _clients.map((client) {
+                            final label = '${client.name} (${client.phoneNumber})';
+                            return DropdownMenuItem<String>(
+                              value: client.phoneNumber,
+                              child: Text(label),
+                            );
+                          }).toList(),
+                          onChanged: isEditMode ? null : (value) {
+                            if (mounted) {
+                              setState(() {
+                                _selectedClientPhone = value;
+                              });
+                            }
+                          },
+                          hintText: "Selecteaza clientul",
+                          enabled: _clients.isNotEmpty,
                         ),
                         
                         const SizedBox(height: AppTheme.smallGap),
@@ -581,34 +549,40 @@ class _MeetingPopupState extends State<MeetingPopup> {
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
                 
                 const SizedBox(height: AppTheme.smallGap),
                 
-                // Buttons - flexButtons2 with save and delete
-                FlexButtonWithTrailingIcon(
-                  primaryButtonText: "Salveaza",
-                  primaryButtonIconPath: "assets/saveIcon.svg",
-                  onPrimaryButtonTap: _saveMeeting,
-                  trailingIconPath: "assets/deleteIcon.svg",
-                  onTrailingIconTap: () {
-                    if (isEditMode) {
-                      _deleteMeeting();
-                    } else {
-                      _showError("Nu poti sterge o intalnire care nu exista inca");
-                    }
-                  },
-                  spacing: AppTheme.smallGap,
-                  borderRadius: AppTheme.borderRadiusMedium,
-                  buttonHeight: 48.0,
-                  primaryButtonTextStyle: AppTheme.safeOutfit(
-                    fontSize: AppTheme.fontSizeMedium,
-                    fontWeight: FontWeight.w500,
+                // Buttons – create: only save; edit: save + delete
+                if (!isEditMode)
+                  FlexButtonSingle(
+                    text: "Salveaza",
+                    iconPath: "assets/saveIcon.svg",
+                    onTap: _saveMeeting,
+                    borderRadius: AppTheme.borderRadiusMedium,
+                    buttonHeight: 48.0,
+                    textStyle: AppTheme.safeOutfit(
+                      fontSize: AppTheme.fontSizeMedium,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                else
+                  FlexButtonWithTrailingIcon(
+                    primaryButtonText: "Salveaza",
+                    primaryButtonIconPath: "assets/saveIcon.svg",
+                    onPrimaryButtonTap: _saveMeeting,
+                    trailingIconPath: "assets/deleteIcon.svg",
+                    onTrailingIconTap: _onDeleteMeeting,
+                    spacing: AppTheme.smallGap,
+                    borderRadius: AppTheme.borderRadiusMedium,
+                    buttonHeight: 48.0,
+                    primaryButtonTextStyle: AppTheme.safeOutfit(
+                      fontSize: AppTheme.fontSizeMedium,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

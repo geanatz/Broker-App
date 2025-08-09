@@ -31,8 +31,8 @@ class SmoothScrollBehavior extends MaterialScrollBehavior {
       controller: details.controller,
       thickness: 8.0,
       radius: const Radius.circular(4.0),
-      thumbColor: Colors.grey.withOpacity(0.6),
-      trackColor: Colors.grey.withOpacity(0.2),
+      thumbColor: Colors.grey.withAlpha(60),
+      trackColor: Colors.grey.withAlpha(20),
       trackRadius: const Radius.circular(4.0),
       child: child,
     );

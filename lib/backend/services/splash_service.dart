@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -222,6 +222,33 @@ class SplashService extends ChangeNotifier {
     return _cachedMeetings;
   }
 
+  /// OPTIMIZARE: Returneaza instant lista din cache (fara await) pentru UI instant.
+  /// Daca cache-ul este stale, pornesc refresh in background (fara a bloca UI-ul).
+  List<ClientActivity> getCachedMeetingsSync({bool preferTeamCache = true}) {
+    if (_cachedMeetings.isNotEmpty) {
+      return _cachedMeetings;
+    }
+    if (preferTeamCache && _currentTeam != null) {
+      final teamList = _teamMeetingsCache[_currentTeam!];
+      if (teamList != null && teamList.isNotEmpty) {
+        return teamList;
+      }
+    }
+    return const [];
+  }
+
+  /// OPTIMIZARE: Varianta rapida – intoarce imediat cache-ul si declanseaza refresh in fundal daca e nevoie
+  Future<List<ClientActivity>> getCachedMeetingsFast() async {
+    final result = getCachedMeetingsSync();
+    final isStale = _meetingsCacheTime == null ||
+        DateTime.now().difference(_meetingsCacheTime!).inSeconds > 60;
+    if (isStale) {
+      // Fire-and-forget refresh to keep UI instant
+      unawaited(_refreshMeetingsCache());
+    }
+    return result;
+  }
+
   /// OPTIMIZAT: Obtine toti clientii din cache cu validare avansata
   Future<List<ClientModel>> getCachedClients() async {
     // OPTIMIZARE: Verifica consultantul doar daca cache-ul este invalid
@@ -317,8 +344,14 @@ class SplashService extends ChangeNotifier {
     // CRITICAL FIX: Near-instant cache invalidation for immediate sync
     _cacheInvalidationTimer = Timer(const Duration(milliseconds: 10), () async {
       try {
+        // Clear in-memory caches immediately to avoid stale sync reads
         _cachedMeetings = [];
         _meetingsCacheTime = null;
+        if (_currentTeam != null) {
+          _teamMeetingsCache.remove(_currentTeam!);
+        } else {
+          _teamMeetingsCache.clear();
+        }
         
         // OPTIMIZARE: Reincarca imediat cache-ul nou pentru actualizare instantanee
         await _refreshMeetingsCache();
@@ -344,6 +377,57 @@ class SplashService extends ChangeNotifier {
         _hasPendingInvalidation = false;
       }
     });
+  }
+
+  /// OPTIMIZARE: Eliminare optimista a unei intalniri din toate cache-urile (apelata dupa delete reusit)
+  void removeMeetingFromCaches(String meetingId) {
+    bool removed = false;
+    if (_cachedMeetings.isNotEmpty) {
+      final before = _cachedMeetings.length;
+      _cachedMeetings.removeWhere((m) => m.id == meetingId);
+      removed = removed || (_cachedMeetings.length != before);
+    }
+    if (_currentTeam != null && _teamMeetingsCache.containsKey(_currentTeam!)) {
+      final list = _teamMeetingsCache[_currentTeam!];
+      if (list != null && list.isNotEmpty) {
+        final before = list.length;
+        list.removeWhere((m) => m.id == meetingId);
+        removed = removed || (list.length != before);
+      }
+    }
+    if (removed) {
+      // Notifica UI pentru update instant
+      notifyListeners();
+    }
+  }
+
+  /// OPTIMIZARE: Eliminare optimista a tuturor intalnirilor pentru un client (dupa stergerea clientului)
+  void removeMeetingsByPhoneFromCaches(String clientPhone) {
+    bool removed = false;
+    if (_cachedMeetings.isNotEmpty) {
+      final before = _cachedMeetings.length;
+      _cachedMeetings.removeWhere((m) => (m.additionalData?['phoneNumber'] ?? '') == clientPhone);
+      removed = removed || (_cachedMeetings.length != before);
+    }
+    if (_currentTeam != null && _teamMeetingsCache.containsKey(_currentTeam!)) {
+      final list = _teamMeetingsCache[_currentTeam!];
+      if (list != null && list.isNotEmpty) {
+        final before = list.length;
+        list.removeWhere((m) => (m.additionalData?['phoneNumber'] ?? '') == clientPhone);
+        removed = removed || (list.length != before);
+      }
+    } else {
+      // Safety: clean across all team caches
+      for (final entry in _teamMeetingsCache.entries) {
+        final list = entry.value;
+        final before = list.length;
+        list.removeWhere((m) => (m.additionalData?['phoneNumber'] ?? '') == clientPhone);
+        removed = removed || (list.length != before);
+      }
+    }
+    if (removed) {
+      notifyListeners();
+    }
   }
 
   /// Invalideaza cache-ul de meetings (sa fie apelat cand se adauga/modifica/sterge meeting)
@@ -651,8 +735,15 @@ class SplashService extends ChangeNotifier {
       // Pre-load clients data
       await _clientUIService!.loadClientsFromFirebase();
       
-      // OPTIMIZARE: Porneste real-time listeners pentru sincronizare automata
-      await _clientUIService!.startRealTimeListeners();
+      // OPTIMIZARE: Porneste real-time listeners dupa primul frame pentru a evita
+      // avertismentele platform thread la startup (plugin Firestore)
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await _clientUIService!.startRealTimeListeners();
+        } catch (e) {
+          debugPrint('❌ SPLASH_SERVICE: Error starting real-time listeners post-frame: $e');
+        }
+      });
       
   
     } catch (e) {

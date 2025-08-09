@@ -337,10 +337,10 @@ class MeetingService {
         // OPTIMIZARE: Notificare optimizata pentru client cu delay redus
         _notifyClientMeetingCreated(meetingData.phoneNumber, meetingData.dateTime);
         
-        return {
-          'success': true,
-          'message': 'Intalnire creata cu succes',
-        };
+          return {
+            'success': true,
+            'message': 'Intalnire creata cu succes',
+          };
       } else {
         debugPrint('❌ MEETING_SERVICE: Failed to create meeting');
         return {
@@ -416,6 +416,9 @@ class MeetingService {
         meetingId: meetingId,
       );
       _notifyMeetingDeleted();
+      // OPTIMIZARE: Eliminare optimista din toate cache-urile pentru update instant in UI
+      SplashService().removeMeetingFromCaches(meetingId);
+      SplashService().removeMeetingsByPhoneFromCaches(phoneNumber);
       
       debugPrint('✅ MEETING_SERVICE: Meeting deleted successfully');
       

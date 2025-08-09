@@ -312,7 +312,44 @@ class _DashboardAreaState extends State<DashboardArea> {
     final teamConsultants = _getConsultantsForTeam(teamId, allConsultants);
     
     if (teamConsultants.isEmpty) {
-      return _buildEmptyState('Nu exista consultanti in aceasta echipa');
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(8),
+        decoration: ShapeDecoration(
+          color: AppTheme.containerColor1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: SvgPicture.asset(
+                  'assets/userIcon.svg',
+                  colorFilter: ColorFilter.mode(
+                    AppTheme.elementColor1,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Nu exista consultanti in aceasta echipa',
+                style: AppTheme.safeOutfit(
+                  fontSize: 16,
+                  color: AppTheme.elementColor1,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
     }
     
     return Container(
@@ -385,7 +422,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withAlpha(10),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

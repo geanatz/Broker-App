@@ -200,15 +200,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         }
         
         // Afiseaza mesaj de confirmare
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${clientsToSave.length} clienti salvati in lista!'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
+        // silent
       }
     }
   }
@@ -271,15 +263,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     });
     
     // Afiseaza mesaj de confirmare
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Client adaugat la lista extrasa!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    // silent
   }
 
   /// Actualizeaza un client existent in lista de clienti extrasi
@@ -396,15 +380,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       }
       
       // Afiseaza mesaj de confirmare
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${clientsToSave.length} clienti salvati in lista!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
+      // silent
     }
     
     // Sterge imaginea din rezultatele OCR si din lista de imagini selectate
@@ -1197,26 +1173,12 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
       } else {
         debugPrint('🔵 POPUP: Failed to save client');
         // Failed to save client
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Eroare la salvarea clientului'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      // silent
       }
         } catch (e) {
       debugPrint('🔵 POPUP: Exception in _saveClient: $e');
       // Exception in _saveClient
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Eroare la salvarea clientului: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      // silent
     }
   }
   

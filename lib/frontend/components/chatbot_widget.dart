@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:broker_app/app_theme.dart';
 import 'package:broker_app/backend/services/llm_service.dart';
+import 'package:broker_app/backend/services/consultant_service.dart';
 import 'package:broker_app/backend/services/splash_service.dart';
 import 'headers/widget_header2.dart';
 
@@ -23,6 +24,8 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
   Timer? _quickActionsTimer;
   static const int _quickActionsRepeats = 200; // repeat list to emulate infinite loop
 
+  String? _consultantName;
+
   final List<String> _quickActions = const [
     'Ce intalniri am astazi?',
     'Care este urmatoarea intalnire?',
@@ -34,9 +37,22 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     super.initState();
     _llmService = SplashService().llmService;
     _llmService.loadConversation();
+    _loadConsultantName();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startQuickActionsAutoScroll();
     });
+  }
+
+  Future<void> _loadConsultantName() async {
+    try {
+      final data = await ConsultantService().getCurrentConsultantData();
+      final name = data?['name'] as String?;
+      if (name != null && name.trim().isNotEmpty && mounted) {
+        setState(() => _consultantName = name.trim());
+      }
+    } catch (_) {
+      // ignore
+    }
   }
 
   @override
@@ -133,7 +149,9 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
           ),
           const SizedBox(height: 8),
           Text(
-            _llmService.getWelcomeMessage(),
+            _consultantName != null && _consultantName!.isNotEmpty
+                ? 'Buna, ${_consultantName!}! Cu ce te pot ajuta?'
+                : _llmService.getWelcomeMessage(),
             style: AppTheme.safeOutfit(
               color: AppTheme.elementColor2,
               fontSize: 18,
@@ -486,26 +504,14 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
       Clipboard.setData(ClipboardData(text: message.content));
       
       // Afiseaza un feedback vizual
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Raspuns copiat in clipboard'),
-          backgroundColor: AppTheme.elementColor2,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      // silent
     }
   }
 
   /// Afiseaza eroarea daca exista
   void _showError() {
     if (_llmService.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_llmService.errorMessage!),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      // silent
     }
   }
 

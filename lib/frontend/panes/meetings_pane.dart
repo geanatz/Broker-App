@@ -73,8 +73,8 @@ class MeetingsPaneState extends State<MeetingsPane> {
   /// OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
   Future<void> _loadFromCacheInstantly() async {
     try {
-      // Incarca intalnirile din cache instant
-      final allMeetings = await _splashService.getCachedMeetings();
+      // Incarca intalnirile din cache instant (sync), apoi declanseaza refresh in fundal
+      final allMeetings = _splashService.getCachedMeetingsSync();
       final now = DateTime.now();
       
       // Filtreaza intalnirile viitoare ale consultantului curent  
@@ -121,8 +121,32 @@ class MeetingsPaneState extends State<MeetingsPane> {
         });
       }
       
-      // OPTIMIZARE: Log redus pentru performanta
-      // debugPrint('✅ MEETINGS_PANE: Loaded ${_allAppointments.length} upcoming meetings instantly from cache');
+      // Declanseaza un refresh rapid in fundal (fara a bloca UI-ul)
+      unawaited(() async {
+        final before = _allAppointments.length;
+        final refreshed = await _splashService.getCachedMeetingsFast();
+        if (mounted) {
+          final currentConsultantToken = await _getCurrentConsultantToken();
+          final filtered = <ClientActivity>[];
+          for (final meeting in refreshed) {
+            if (!meeting.dateTime.isAfter(now)) continue;
+            final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+            if (meetingConsultantId != null) {
+              if (meetingConsultantId != _auth.currentUser?.uid) continue;
+            } else {
+              final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+              if (meetingConsultantToken == null || meetingConsultantToken != currentConsultantToken) continue;
+            }
+            filtered.add(meeting);
+          }
+          filtered.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+          if (filtered.length != before) {
+            setState(() {
+              _allAppointments = filtered;
+            });
+          }
+        }
+      }());
     } catch (e) {
       debugPrint('❌ MEETINGS_PANE: Error loading from cache: $e');
       // Fallback to normal loading
@@ -132,10 +156,17 @@ class MeetingsPaneState extends State<MeetingsPane> {
 
   /// FIX: Callback pentru refresh automat cand se schimba datele in SplashService
   void _onSplashServiceChanged() {
-    if (mounted) {
-  
-      _loadUpcomingMeetings();
-    }
+    if (!mounted) return;
+    // Update instantly from sync cache
+    final allMeetings = _splashService.getCachedMeetingsSync();
+    final now = DateTime.now();
+    _rebuildUpcomingFromList(allMeetings, now).then((updated) {
+      if (updated && mounted) {
+        setState(() {});
+      }
+    });
+    // Then ensure background refresh (fire-and-forget)
+    unawaited(_loadUpcomingMeetings(force: true));
   }
   
   void _initializeFormatters() async {
@@ -164,9 +195,9 @@ class MeetingsPaneState extends State<MeetingsPane> {
   }
 
   /// OPTIMIZAT: Incarca intalnirile viitoare cu debouncing imbunatatit
-  Future<void> _loadUpcomingMeetings() async {
+  Future<void> _loadUpcomingMeetings({bool force = false}) async {
     // OPTIMIZARE: Verifica daca cache-ul este recent (sub 3 secunde - redus de la 5)
-    if (_lastLoadTime != null && 
+    if (!force && _lastLoadTime != null && 
         DateTime.now().difference(_lastLoadTime!).inSeconds < 3) {
       // OPTIMIZARE: Log redus pentru performanta
       // debugPrint('⏭️ MEETINGS_PANE: Skipping load - cache is recent');
@@ -183,6 +214,33 @@ class MeetingsPaneState extends State<MeetingsPane> {
     _loadDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
       await _performLoadUpcomingMeetings();
     });
+  }
+
+  Future<bool> _rebuildUpcomingFromList(List<ClientActivity> allMeetings, DateTime now) async {
+    try {
+      final currentConsultantToken = await _getCurrentConsultantToken();
+      final List<ClientActivity> futureAppointments = [];
+      for (final meeting in allMeetings) {
+        if (!meeting.dateTime.isAfter(now)) continue;
+        final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+        if (meetingConsultantId != null) {
+          if (meetingConsultantId != _auth.currentUser?.uid) continue;
+        } else {
+          final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+          if (meetingConsultantToken == null || meetingConsultantToken != currentConsultantToken) continue;
+        }
+        futureAppointments.add(meeting);
+      }
+      futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      final changed = futureAppointments.length != _allAppointments.length ||
+          !_allAppointments.asMap().entries.every((e) => e.value.id == futureAppointments[e.key].id);
+      if (changed) {
+        _allAppointments = futureAppointments;
+      }
+      return changed;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// OPTIMIZAT: Executa incarcarea efectiva a intalnirilor
