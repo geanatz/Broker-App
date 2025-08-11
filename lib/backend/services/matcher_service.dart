@@ -284,8 +284,15 @@ class MatcherService extends ChangeNotifier {
         return;
       }
 
+      // Cheie consistenta pentru client in FormService (prefer phoneNumber1)
+      final String clientKey = currentClient.phoneNumber1.isNotEmpty
+          ? currentClient.phoneNumber1
+          : currentClient.phoneNumber;
+
+      debugPrint('MATCHER: Using clientKey="$clientKey" for income cache and lookups');
+
       // OPTIMIZARE: Verifica cache-ul pentru calculul veniturilor
-      final cacheKey = currentClient.phoneNumber;
+      final cacheKey = clientKey;
       final cachedIncome = _incomeCache[cacheKey];
       final cacheTime = _incomeCacheTime[cacheKey];
       
@@ -305,8 +312,10 @@ class MatcherService extends ChangeNotifier {
       }
 
       // OPTIMIZARE: Calculeaza venitul doar daca nu e in cache
-      final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
-      final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+      final clientIncomeForms = _formService.getClientIncomeForms(clientKey);
+      final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(clientKey);
+
+      debugPrint('MATCHER: Found income forms client=${clientIncomeForms.length}, coborrower=${coborrowerIncomeForms.length}');
       
       // Loading income forms for calculation
       
@@ -879,8 +888,13 @@ class MatcherService extends ChangeNotifier {
         return 0;
       }
 
-      final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
-      final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+      // Cheie consistenta pentru client in FormService (prefer phoneNumber1)
+      final String clientKey = currentClient.phoneNumber1.isNotEmpty
+          ? currentClient.phoneNumber1
+          : currentClient.phoneNumber;
+
+      final clientIncomeForms = _formService.getClientIncomeForms(clientKey);
+      final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(clientKey);
       
       // Cauta in formularele clientului
       for (int i = 0; i < clientIncomeForms.length; i++) {
@@ -1024,8 +1038,15 @@ class MatcherService extends ChangeNotifier {
     final currentClient = _clientService.focusedClient;
     if (currentClient == null) return [];
 
-    final clientCreditForms = _formService.getClientCreditForms(currentClient.phoneNumber);
-    final coborrowerCreditForms = _formService.getCoborrowerCreditForms(currentClient.phoneNumber);
+    // Cheie consistenta pentru client in FormService (prefer phoneNumber1)
+    final String clientKey = currentClient.phoneNumber1.isNotEmpty
+        ? currentClient.phoneNumber1
+        : currentClient.phoneNumber;
+
+    debugPrint('MATCHER: Using clientKey="$clientKey" for loan extraction');
+
+    final clientCreditForms = _formService.getClientCreditForms(clientKey);
+    final coborrowerCreditForms = _formService.getCoborrowerCreditForms(clientKey);
     final allLoans = <Map<String, dynamic>>[];
 
     // Adauga creditele clientului
@@ -1060,9 +1081,16 @@ class MatcherService extends ChangeNotifier {
     final currentClient = _clientService.focusedClient;
     if (currentClient == null) return 0;
 
+    // Cheie consistenta pentru client in FormService (prefer phoneNumber1)
+    final String clientKey = currentClient.phoneNumber1.isNotEmpty
+        ? currentClient.phoneNumber1
+        : currentClient.phoneNumber;
+
+    debugPrint('MATCHER: Calculating total income using clientKey="$clientKey"');
+
     double salary = 0;
-    final clientIncomeForms = _formService.getClientIncomeForms(currentClient.phoneNumber);
-    final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(currentClient.phoneNumber);
+    final clientIncomeForms = _formService.getClientIncomeForms(clientKey);
+    final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(clientKey);
 
     for (final income in clientIncomeForms) {
       if (income.incomeAmount.isNotEmpty && !income.isEmpty) {
