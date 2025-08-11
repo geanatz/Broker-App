@@ -111,7 +111,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     return WidgetHeader2(
       title: 'Asistent AI',
       altText: 'Conversatie noua',
-      onAltTextTap: _llmService.hasApiKey ? _createNewChat : null,
+      onAltTextTap: _createNewChat,
     );
   }
 
@@ -384,9 +384,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: _llmService.hasApiKey 
-                    ? 'Scrie o intrebare...'
-                    : 'Configureaza cheia Gemini API pentru a incepe',
+                hintText: 'Scrie o intrebare...',
                 hintStyle: AppTheme.safeOutfit(
                   color: AppTheme.elementColor3,
                   fontSize: 16,
@@ -415,7 +413,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
             )
           else
             GestureDetector(
-              onTap: _llmService.hasApiKey ? _sendMessage : null,
+              onTap: _sendMessage,
               child: SizedBox(
                 width: 24,
                 height: 24,
@@ -424,9 +422,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                   width: 20,
                   height: 20,
                   colorFilter: ColorFilter.mode(
-                    _llmService.hasApiKey 
-                        ? AppTheme.elementColor2 
-                        : AppTheme.elementColor3,
+                    AppTheme.elementColor2,
                     BlendMode.srcIn,
                   ),
                 ),

@@ -51,20 +51,13 @@ class LLMService extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   
-  // API key moved to environment/secure storage. Fallback is empty in production builds.
-  static String get _apiKey {
-    // Try environment variable first
-    const envKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
-    if (envKey.isNotEmpty) return envKey;
-    // As a last-resort fallback for local debug only (should be empty in release)
-    return const String.fromEnvironment('GEMINI_API_KEY_FALLBACK', defaultValue: '');
-  }
+  // Legacy direct API key logic removed; client always uses backend proxy
 
   // Getters
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get hasApiKey => _apiKey.isNotEmpty;
+  // No API key needed on client side anymore; using backend proxy
 
   // Production-ready: use backend proxy so no API key is shipped in the client
   static const bool _useProxyEndpoint = true; // set to true for zero-setup per consultant
@@ -77,11 +70,7 @@ class LLMService extends ChangeNotifier {
   }
 
 
-  /// Nu mai este necesar - API key-ul este hardcodat
-  Future<void> setApiKey(String apiKey) async {
-    // Metoda pastrata pentru compatibilitate, dar nu face nimic
-    debugPrint('⚠️ LLM_SERVICE: API key is now hardcoded, this method is deprecated');
-  }
+  // Removed API key handling entirely
 
   /// Adauga un mesaj de la utilizator
   void addUserMessage(String content) {
@@ -103,18 +92,10 @@ class LLMService extends ChangeNotifier {
 
   /// Trimite mesajul catre Google Gemini API
   Future<void> _sendMessageToLLM(String userMessage) async {
-    if (_useProxyEndpoint) {
-      if (!_isProxyConfigured) {
-        _errorMessage = 'LLM proxy endpoint nu este configurat';
-        notifyListeners();
-        return;
-      }
-    } else {
-      if (!hasApiKey) {
-        _errorMessage = 'Cheia API nu este configurata';
-        notifyListeners();
-        return;
-      }
+    if (!_isProxyConfigured) {
+      _errorMessage = 'LLM proxy endpoint nu este configurat';
+      notifyListeners();
+      return;
     }
 
     debugPrint('🤖 AI_DEBUG: Incepe procesarea intrebarii: "$userMessage"');
@@ -157,33 +138,18 @@ class LLMService extends ChangeNotifier {
       
       debugPrint('🤖 AI_DEBUG: Trimitere cerere (${messages.length} mesaje)...');
 
-      http.Response response;
-      if (_useProxyEndpoint) {
-        // Route via backend proxy (no API key in client)
-        response = await http.post(
-          Uri.parse(_proxyEndpoint),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'contents': messages,
-            'generationConfig': AIInstructions.generationConfig,
-            'model': 'gemini-2.0-flash',
-          }),
-        );
-      } else {
-        // Direct call (only for local dev with dart-define)
-        response = await http.post(
-          Uri.parse('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=$_apiKey'),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'contents': messages,
-            'generationConfig': AIInstructions.generationConfig,
-          }),
-        );
-      }
+      // Always route via backend proxy (no API key in client)
+      final response = await http.post(
+        Uri.parse(_proxyEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'contents': messages,
+          'generationConfig': AIInstructions.generationConfig,
+          'model': 'gemini-2.0-flash',
+        }),
+      );
 
       debugPrint('🤖 AI_DEBUG: Raspuns API status: ${response.statusCode}');
 
