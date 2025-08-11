@@ -199,6 +199,13 @@ class SplashService extends ChangeNotifier {
         // Calendar service will refresh automatically when needed
       }
       
+      // FIX: Reset LLM service for new consultant to load correct conversation
+      if (_llmService != null) {
+        await _llmService!.resetForNewConsultant();
+        // Cleanup conversatii vechi pentru a evita acumularea de date
+        await _llmService!.clearOldConversations();
+      }
+      
       debugPrint('✅ SPLASH: Services reloaded successfully for new consultant');
       
     } catch (e) {

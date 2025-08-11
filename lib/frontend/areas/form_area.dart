@@ -54,11 +54,13 @@ class _FormAreaState extends State<FormArea> {
   // Previous client for handling client changes
   ClientModel? _previousClient;
 
-  // State for FormNew selections - separate for credit and income
-  String? _newCreditFormSelectedBank;
-  String? _newCreditFormSelectedType;
-  String? _newIncomeFormSelectedBank;
-  String? _newIncomeFormSelectedType;
+  // State for FormNew selections per side (client/coborrower) and per client
+  final Map<String, String?> _creditSelectedBank = {};
+  final Map<String, String?> _creditSelectedType = {};
+  final Map<String, String?> _incomeSelectedBank = {};
+  final Map<String, String?> _incomeSelectedType = {};
+
+  String _selectionKey(String phone, bool isClient) => '${phone}_${isClient ? 'client' : 'coborrower'}';
   
   // TYPING GUARD: Track which controllers are currently being typed in
   final Set<String> _typingControllers = {};
@@ -133,6 +135,42 @@ class _FormAreaState extends State<FormArea> {
       controller.dispose();
     });
     _textControllers.clear();
+  }
+
+  /// Optimized removal: clear only controllers for the specific row, then remove form and force UI refresh
+  void _removeFormFast({
+    required ClientModel client,
+    required bool isCreditForm,
+    required bool isClient,
+    required int index,
+  }) {
+    final clientType = isClient ? 'client' : 'coborrower';
+    final formType = isCreditForm ? 'credit' : 'income';
+    final prefix = '${client.phoneNumber}_${clientType}_${formType}_${index}_';
+
+    // Collect and dispose only the controllers belonging to this row
+    final keysToRemove = <String>[];
+    _textControllers.forEach((key, controller) {
+      if (key.startsWith(prefix)) {
+        keysToRemove.add(key);
+      }
+    });
+    for (final key in keysToRemove) {
+      _textControllers[key]?.dispose();
+      _textControllers.remove(key);
+    }
+
+    debugPrint('🔧 FORM_AREA: Cleared ${keysToRemove.length} controllers for ${client.phoneNumber} $clientType $formType index=$index');
+
+    // Perform removal in service (synchronous list mutation + debounced notify)
+    if (isCreditForm) {
+      _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient);
+    } else {
+      _formService.removeIncomeForm(client.phoneNumber, index, isClient: isClient);
+    }
+
+    // Immediate UI feedback
+    if (mounted) setState(() {});
   }
 
   /// Clear controllers for specific client type and form type to prevent data sharing
@@ -464,11 +502,12 @@ class _FormAreaState extends State<FormArea> {
         
         debugPrint('🔧 FORM_AREA: Cleared controllers for client ${currentClient.phoneNumber}, type $clientType, form $formType after deletion');
         
-        if (isCreditForm) {
-          _formService.removeCreditForm(currentClient.phoneNumber, index, isClient: isClient);
-        } else {
-          _formService.removeIncomeForm(currentClient.phoneNumber, index, isClient: isClient);
-        }
+        _removeFormFast(
+          client: currentClient,
+          isCreditForm: isCreditForm,
+          isClient: isClient,
+          index: index,
+        );
       }
     }
   }
@@ -1078,14 +1117,11 @@ class _FormAreaState extends State<FormArea> {
               debugPrint('🔄 FORM: Current isShowingClient: $isShowingClient');
               debugPrint('🔄 FORM: Client phone: ${client.phoneNumber}');
               
-              // Clear controllers for the current view before switching
-              final newClientType = isShowingClient ? 'coborrower' : 'client';
-              debugPrint('🔄 FORM: Clearing controllers for clientType: $newClientType');
-              _clearControllersForClientType(client.phoneNumber, newClientType, 'credit');
-              
               debugPrint('🔄 FORM: Calling toggleLoanFormType for: ${client.phoneNumber}');
               _formService.toggleLoanFormType(client.phoneNumber);
               debugPrint('🔄 FORM: toggleLoanFormType completed');
+              // Trigger immediate UI rebuild for snappier toggle without waiting for service notifications
+              if (mounted) setState(() {});
             },
           ),
           
@@ -1139,14 +1175,11 @@ class _FormAreaState extends State<FormArea> {
               debugPrint('🔄 FORM: Current isShowingClient: $isShowingClient');
               debugPrint('🔄 FORM: Client phone: ${client.phoneNumber}');
               
-              // Clear controllers for the current view before switching
-              final newClientType = isShowingClient ? 'coborrower' : 'client';
-              debugPrint('🔄 FORM: Clearing controllers for clientType: $newClientType');
-              _clearControllersForClientType(client.phoneNumber, newClientType, 'income');
-              
               debugPrint('🔄 FORM: Calling toggleIncomeFormType for: ${client.phoneNumber}');
               _formService.toggleIncomeFormType(client.phoneNumber);
               debugPrint('🔄 FORM: toggleIncomeFormType completed');
+              // Trigger immediate UI rebuild
+              if (mounted) setState(() {});
             },
           ),
           
@@ -1187,44 +1220,46 @@ class _FormAreaState extends State<FormArea> {
       
       // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
       FormNew(
-        key: ValueKey('credit_form_new_${_newCreditFormSelectedBank}_$_newCreditFormSelectedType'),
+        key: ValueKey('credit_form_new_${_creditSelectedBank[_selectionKey(client.phoneNumber, isClient)]}_${_creditSelectedType[_selectionKey(client.phoneNumber, isClient)]}'),
         titleF1: 'Banca',
-        valueF1: _newCreditFormSelectedBank,
+        valueF1: _creditSelectedBank[_selectionKey(client.phoneNumber, isClient)],
         itemsF1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
         )).toList(),
         onChangedF1: (value) {
           setState(() {
-            _newCreditFormSelectedBank = value;
+            _creditSelectedBank[_selectionKey(client.phoneNumber, isClient)] = value;
             debugPrint('DEBUG: Credit bank selected: $value');
           });
           // Check if both fields are completed and transform if needed
-          if (value != null && _newCreditFormSelectedType != null) {
+          final selType = _creditSelectedType[_selectionKey(client.phoneNumber, isClient)];
+          if (value != null && selType != null) {
             debugPrint('DEBUG: Both credit fields completed, transforming...');
             Future.microtask(() {
-              _transformCreditFormNew(client, value, _newCreditFormSelectedType!, isClient);
+              _transformCreditFormNew(client, value, selType, isClient);
             });
           }
         },
         hintTextF1: 'Selecteaza',
         
         titleF2: 'Tip credit',
-        valueF2: _newCreditFormSelectedType,
+        valueF2: _creditSelectedType[_selectionKey(client.phoneNumber, isClient)],
         itemsF2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
           value: type,
           child: Text(type),
         )).toList(),
         onChangedF2: (value) {
           setState(() {
-            _newCreditFormSelectedType = value;
+            _creditSelectedType[_selectionKey(client.phoneNumber, isClient)] = value;
             debugPrint('DEBUG: Credit type selected: $value');
           });
           // Check if both fields are completed and transform if needed
-          if (value != null && _newCreditFormSelectedBank != null) {
+          final selBank = _creditSelectedBank[_selectionKey(client.phoneNumber, isClient)];
+          if (value != null && selBank != null) {
             debugPrint('DEBUG: Both credit fields completed, transforming...');
             Future.microtask(() {
-              _transformCreditFormNew(client, _newCreditFormSelectedBank!, value, isClient);
+              _transformCreditFormNew(client, selBank, value, isClient);
             });
           }
         },
@@ -1279,44 +1314,46 @@ class _FormAreaState extends State<FormArea> {
       
       // Formular nou (FormNew) pentru adaugare - intotdeauna afisat
       FormNew(
-        key: ValueKey('income_form_new_${_newIncomeFormSelectedBank}_$_newIncomeFormSelectedType'),
+        key: ValueKey('income_form_new_${_incomeSelectedBank[_selectionKey(client.phoneNumber, isClient)]}_${_incomeSelectedType[_selectionKey(client.phoneNumber, isClient)]}'),
         titleF1: 'Banca',
-        valueF1: _newIncomeFormSelectedBank,
+        valueF1: _incomeSelectedBank[_selectionKey(client.phoneNumber, isClient)],
         itemsF1: FormService.incomeBanks.map((bank) => DropdownMenuItem<String>(
           value: bank,
           child: Text(bank),
         )).toList(),
         onChangedF1: (value) {
           setState(() {
-            _newIncomeFormSelectedBank = value;
+            _incomeSelectedBank[_selectionKey(client.phoneNumber, isClient)] = value;
             debugPrint('DEBUG: Income bank selected: $value');
           });
           // Check if both fields are completed and transform if needed
-          if (value != null && _newIncomeFormSelectedType != null) {
+          final selType = _incomeSelectedType[_selectionKey(client.phoneNumber, isClient)];
+          if (value != null && selType != null) {
             debugPrint('DEBUG: Both income fields completed, transforming...');
             Future.microtask(() {
-              _transformIncomeFormNew(client, value, _newIncomeFormSelectedType!, isClient);
+              _transformIncomeFormNew(client, value, selType, isClient);
             });
           }
         },
         hintTextF1: 'Selecteaza',
         
         titleF2: 'Tip venit',
-        valueF2: _newIncomeFormSelectedType,
+        valueF2: _incomeSelectedType[_selectionKey(client.phoneNumber, isClient)],
         itemsF2: FormService.incomeTypes.map((type) => DropdownMenuItem<String>(
           value: type,
           child: Text(type),
         )).toList(),
         onChangedF2: (value) {
           setState(() {
-            _newIncomeFormSelectedType = value;
+            _incomeSelectedType[_selectionKey(client.phoneNumber, isClient)] = value;
             debugPrint('DEBUG: Income type selected: $value');
           });
           // Check if both fields are completed and transform if needed
-          if (value != null && _newIncomeFormSelectedBank != null) {
+          final selBank = _incomeSelectedBank[_selectionKey(client.phoneNumber, isClient)];
+          if (value != null && selBank != null) {
             debugPrint('DEBUG: Both income fields completed, transforming...');
             Future.microtask(() {
-              _transformIncomeFormNew(client, _newIncomeFormSelectedBank!, value, isClient);
+              _transformIncomeFormNew(client, selBank, value, isClient);
             });
           }
         },
@@ -1546,8 +1583,13 @@ class _FormAreaState extends State<FormArea> {
     debugPrint('DEBUG: Resetting credit form selections');
     if (mounted) {
       setState(() {
-        _newCreditFormSelectedBank = null;
-        _newCreditFormSelectedType = null;
+        final client = _clientService.focusedClient;
+        if (client != null) {
+          _creditSelectedBank.remove(_selectionKey(client.phoneNumber, true));
+          _creditSelectedType.remove(_selectionKey(client.phoneNumber, true));
+          _creditSelectedBank.remove(_selectionKey(client.phoneNumber, false));
+          _creditSelectedType.remove(_selectionKey(client.phoneNumber, false));
+        }
         debugPrint('DEBUG: Credit selections reset to null');
       });
     }
@@ -1565,8 +1607,13 @@ class _FormAreaState extends State<FormArea> {
     debugPrint('DEBUG: Resetting income form selections');
     if (mounted) {
       setState(() {
-        _newIncomeFormSelectedBank = null;
-        _newIncomeFormSelectedType = null;
+        final client = _clientService.focusedClient;
+        if (client != null) {
+          _incomeSelectedBank.remove(_selectionKey(client.phoneNumber, true));
+          _incomeSelectedType.remove(_selectionKey(client.phoneNumber, true));
+          _incomeSelectedBank.remove(_selectionKey(client.phoneNumber, false));
+          _incomeSelectedType.remove(_selectionKey(client.phoneNumber, false));
+        }
         debugPrint('DEBUG: Income selections reset to null');
       });
     }

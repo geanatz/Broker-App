@@ -126,6 +126,18 @@ class DashboardService extends ChangeNotifier {
   final Map<String, ConsultantStats?> _consultantStatsCache = {};
   final Map<String, String?> _dutyAgentCache = {};
 
+  // Fast month caches (key = yyyy-MM). Store computed rankings to avoid refetching when navigating months
+  final Map<String, List<ConsultantRanking>> _consultantsRankingMonthCache = {};
+  final Map<String, List<TeamRanking>> _teamsRankingMonthCache = {};
+
+  // Cache for monthly counters snapshot: yyyy-MM -> token -> {forms, meetings}
+  final Map<String, Map<String, Map<String, int>>> _monthlyCountersCache = {};
+
+  // Short-lived consultants list cache to avoid duplicate reads across loaders
+  List<Map<String, dynamic>>? _consultantsListCache;
+  DateTime? _consultantsListCacheTime;
+  static const Duration _consultantsListTtl = Duration(seconds: 60);
+
   // Getters
   List<ConsultantRanking> get consultantsRanking => _consultantsRanking;
   List<TeamRanking> get teamsRanking => _teamsRanking;
@@ -217,10 +229,14 @@ class DashboardService extends ChangeNotifier {
     try {
       final role = await RoleService().refreshRole();
       final isSupervisor = role == UserRole.supervisor;
+      // Load selected month, then prefetch adjacent months in background
       await Future.wait([
         _loadConsultantsRanking(isSupervisor: isSupervisor),
         _loadTeamsRanking(isSupervisor: isSupervisor),
       ]);
+
+      // Fire-and-forget prefetch for previous and next months to make subsequent nav instant
+      _prefetchAdjacentMonths(isSupervisor: isSupervisor);
       notifyListeners();
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error refreshing rankings: $e');
@@ -270,6 +286,9 @@ class DashboardService extends ChangeNotifier {
 
       // Asteapta toate task-urile sa se termine
       await Future.wait(futures);
+
+      // Warm caches around the current month without blocking UI
+      _prefetchAdjacentMonths(isSupervisor: isSupervisor);
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading data: $e');
       _errorMessage = 'Eroare la incarcarea datelor: $e';
@@ -301,31 +320,41 @@ class DashboardService extends ChangeNotifier {
     try {
       debugPrint('📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: $isSupervisor');
       
-      // FIX: Obtine toate consultantii cu token-urile lor
-      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
-        () => _firestore.collection('consultants').get(),
-      );
-      if (consultantsSnapshot.docs.isEmpty) {
+      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
+
+      // Fast path: use month cache if available
+      final cachedMonthConsultants = _consultantsRankingMonthCache[yearMonth];
+      if (cachedMonthConsultants != null && cachedMonthConsultants.isNotEmpty) {
+        _consultantsRanking = cachedMonthConsultants;
+        return;
+      }
+
+      // Get consultants list with short-lived cache
+      final consultants = await _getAllConsultantsFast();
+      if (consultants.isEmpty) {
         _consultantsRanking = [];
         return;
       }
 
-      final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
-
-      // Nu mai filtram dupa echipa curenta: toti consultantii sunt vizibili pentru toti utilizatorii
-      final List<QueryDocumentSnapshot<Map<String, dynamic>>> filtered = consultantsSnapshot.docs.toList();
+      // Read all monthly totals in a single query, fallback per-token only if fields are missing
+      final monthlyTotals = await _readAllMonthlyCountersForMonth(yearMonth);
 
       final List<ConsultantRanking> rankings = [];
-      await Future.wait(filtered.map((consultantDoc) async {
-        final data = consultantDoc.data();
+      for (final data in consultants) {
         final consultantToken = data['token'] as String?;
-        if (consultantToken == null || consultantToken.isEmpty) return;
-        final counters = await _readMonthlyCountersForToken(yearMonth, consultantToken);
+        if (consultantToken == null || consultantToken.isEmpty) continue;
+
+        Map<String, int>? counters = monthlyTotals[consultantToken];
+        // Fallback only if fields are absent in monthly doc
+        if (counters == null) {
+          counters = await _readMonthlyCountersForToken(yearMonth, consultantToken);
+        }
+
         final forms = counters['forms'] ?? 0;
         final meetings = counters['meetings'] ?? 0;
         final score = (forms * 5) + (meetings * 10);
         rankings.add(ConsultantRanking(
-          id: consultantDoc.id,
+          id: data['id'] as String? ?? '',
           name: data['name'] as String? ?? 'Necunoscut',
           team: data['team'] as String? ?? '',
           score: score,
@@ -333,10 +362,11 @@ class DashboardService extends ChangeNotifier {
           callsMade: 0,
           meetingsScheduled: meetings,
         ));
-      }));
+      }
 
       rankings.sort((a, b) => b.score.compareTo(a.score));
       _consultantsRanking = rankings;
+      _consultantsRankingMonthCache[yearMonth] = rankings;
       debugPrint('📊 DASHBOARD_SERVICE: Loaded ${rankings.length} consultants | isSupervisor: $isSupervisor | Teams excluded: ${rankings.where((r) => r.team.isEmpty).length}');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading consultants: $e');
@@ -350,22 +380,27 @@ class DashboardService extends ChangeNotifier {
       debugPrint('📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: $isSupervisor');
       
       final yearMonth = DateFormat('yyyy-MM').format(_selectedMonth);
+      // Fast path: use month cache if available
+      final cachedMonthTeams = _teamsRankingMonthCache[yearMonth];
+      if (cachedMonthTeams != null && cachedMonthTeams.isNotEmpty) {
+        _teamsRanking = cachedMonthTeams;
+        debugPrint('📊 DASHBOARD_SERVICE: Loaded ${cachedMonthTeams.length} teams from cache | isSupervisor: $isSupervisor');
+        return;
+      }
 
-      // FIX: Obtine toti consultantii cu token-urile lor
-      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
-        () => _firestore.collection('consultants').get(),
-      );
+      // Get consultants list with short-lived cache
+      final consultants = await _getAllConsultantsFast();
       final Map<String, Map<String, int>> teamStats = {};
 
-      for (var consultantDoc in consultantsSnapshot.docs) {
-        final consultantData = consultantDoc.data();
-        final consultantToken = consultantData['token'] as String?;
-        final teamId = consultantData['team'] as String? ?? '';
-        if (consultantToken == null || teamId.isEmpty) {
-          continue;
-        }
+      // Read all monthly totals once
+      final monthlyTotals = await _readAllMonthlyCountersForMonth(yearMonth);
 
-        final counters = await _readMonthlyCountersForToken(yearMonth, consultantToken);
+      for (final data in consultants) {
+        final consultantToken = data['token'] as String?;
+        final teamId = data['team'] as String? ?? '';
+        if (consultantToken == null || (teamId).isEmpty) continue;
+
+        final counters = monthlyTotals[consultantToken] ?? await _readMonthlyCountersForToken(yearMonth, consultantToken);
         final forms = counters['forms'] ?? 0;
         final meetings = counters['meetings'] ?? 0;
         final consultantScore = (forms * 5) + (meetings * 10);
@@ -401,6 +436,7 @@ class DashboardService extends ChangeNotifier {
 
       teamRankings.sort((a, b) => b.score.compareTo(a.score));
       _teamsRanking = teamRankings;
+      _teamsRankingMonthCache[yearMonth] = teamRankings;
       debugPrint('📊 DASHBOARD_SERVICE: Loaded ${teamRankings.length} teams | isSupervisor: $isSupervisor');
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error loading teams: $e');
@@ -569,6 +605,11 @@ class DashboardService extends ChangeNotifier {
     _upcomingMeetingsCache.clear();
     _consultantStatsCache.clear();
     _dutyAgentCache.clear();
+    _consultantsRankingMonthCache.clear();
+    _teamsRankingMonthCache.clear();
+    _monthlyCountersCache.clear();
+    _consultantsListCache = null;
+    _consultantsListCacheTime = null;
     super.dispose();
     debugPrint('🗑️ DASHBOARD_SERVICE: Disposed with cache cleanup');
   }
@@ -971,5 +1012,160 @@ extension _ShardedCounters on DashboardService {
       debugPrint('❌ DASHBOARD_SERVICE: Error reading monthly counters for token: $e');
       return {'forms': 0, 'meetings': 0};
     }
+  }
+
+  /// Reads all monthly counters for the given month with a single collection get
+  /// Returns: token -> {forms, meetings}. Uses cached snapshot when possible.
+  Future<Map<String, Map<String, int>>> _readAllMonthlyCountersForMonth(String yearMonth) async {
+    // Return cached if present
+    final cached = _monthlyCountersCache[yearMonth];
+    if (cached != null) return cached;
+
+    try {
+      final parentCollection = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('monthly')
+          .doc(yearMonth)
+          .collection('consultants');
+
+      final snap = await _threadHandler.executeOnPlatformThread(
+        () => parentCollection.get(),
+      );
+
+      final Map<String, Map<String, int>> result = {};
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final formsCompleted = (data['formsCompleted'] ?? 0) as num;
+        final meetingsHeld = (data['meetingsHeld'] ?? 0) as num;
+        // Only add if fields exist or non-zero to indicate presence; zeros are valid
+        if (data.containsKey('formsCompleted') || data.containsKey('meetingsHeld')) {
+          result[doc.id] = {
+            'forms': formsCompleted.toInt(),
+            'meetings': meetingsHeld.toInt(),
+          };
+        }
+      }
+
+      _monthlyCountersCache[yearMonth] = result;
+      return result;
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Error reading all monthly counters for $yearMonth: $e');
+      return {};
+    }
+  }
+
+  /// Returns all consultants with minimal fields using a short-lived in-memory cache
+  Future<List<Map<String, dynamic>>> _getAllConsultantsFast() async {
+    final now = DateTime.now();
+    if (_consultantsListCache != null && _consultantsListCacheTime != null &&
+        now.difference(_consultantsListCacheTime!) < DashboardService._consultantsListTtl) {
+      return _consultantsListCache!;
+    }
+
+    final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+      () => _firestore.collection('consultants').get(),
+    );
+    final list = consultantsSnapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'id': doc.id,
+        'name': data['name'] as String? ?? 'Necunoscut',
+        'team': data['team'] as String? ?? '',
+        'token': data['token'] as String? ?? '',
+      };
+    }).toList();
+
+    _consultantsListCache = list;
+    _consultantsListCacheTime = now;
+    return list;
+  }
+
+  /// Prefetch previous and next months into caches without updating UI
+  void _prefetchAdjacentMonths({required bool isSupervisor}) {
+    final current = _selectedMonth;
+    final prev = DateTime(current.year, current.month - 1, 1);
+    final next = DateTime(current.year, current.month + 1, 1);
+
+    Future<void> warm(String ym) async {
+      // Short-circuit if both caches already have this month
+      final hasConsultants = _consultantsRankingMonthCache.containsKey(ym);
+      final hasTeams = _teamsRankingMonthCache.containsKey(ym);
+      if (hasConsultants && hasTeams) return;
+
+      try {
+        final consultants = await _getAllConsultantsFast();
+        final totals = await _readAllMonthlyCountersForMonth(ym);
+
+        if (!hasConsultants) {
+          final List<ConsultantRanking> rankings = [];
+          for (final data in consultants) {
+            final token = data['token'] as String?;
+            if (token == null || token.isEmpty) continue;
+            final counters = totals[token] ?? {'forms': 0, 'meetings': 0};
+            final forms = counters['forms'] ?? 0;
+            final meetings = counters['meetings'] ?? 0;
+            final score = (forms * 5) + (meetings * 10);
+            rankings.add(ConsultantRanking(
+              id: data['id'] as String? ?? '',
+              name: data['name'] as String? ?? 'Necunoscut',
+              team: data['team'] as String? ?? '',
+              score: score,
+              formsCompleted: forms,
+              callsMade: 0,
+              meetingsScheduled: meetings,
+            ));
+          }
+          rankings.sort((a, b) => b.score.compareTo(a.score));
+          _consultantsRankingMonthCache[ym] = rankings;
+        }
+
+        if (!hasTeams) {
+          final Map<String, Map<String, int>> teamStats = {};
+          for (final data in consultants) {
+            final token = data['token'] as String?;
+            final teamId = data['team'] as String? ?? '';
+            if (token == null || teamId.isEmpty) continue;
+            final counters = totals[token] ?? {'forms': 0, 'meetings': 0};
+            final forms = counters['forms'] ?? 0;
+            final meetings = counters['meetings'] ?? 0;
+            final score = (forms * 5) + (meetings * 10);
+            teamStats.putIfAbsent(teamId, () => {'forms': 0, 'meetings': 0, 'members': 0, 'score': 0});
+            teamStats[teamId]!['forms'] = teamStats[teamId]!['forms']! + forms;
+            teamStats[teamId]!['meetings'] = teamStats[teamId]!['meetings']! + meetings;
+            teamStats[teamId]!['members'] = teamStats[teamId]!['members']! + 1;
+            teamStats[teamId]!['score'] = teamStats[teamId]!['score']! + score;
+          }
+
+          final teamNames = await _consultantService.getAllTeams();
+          final Set<String> baseTeams = {'Echipa Andreea', 'Echipa Cristina', 'Echipa Scarlat'};
+          final Set<String> allTeamNames = {...baseTeams, ...teamNames};
+          final teamRankings = allTeamNames.where((t) => t != 'Supervisor').map((teamName) {
+            final stats = teamStats[teamName] ?? {'forms': 0, 'meetings': 0, 'members': 0, 'score': 0};
+            return TeamRanking(
+              id: teamName,
+              teamName: teamName,
+              memberCount: stats['members']!,
+              formsCompleted: stats['forms']!,
+              meetingsHeld: stats['meetings']!,
+              score: stats['score']!,
+            );
+          }).toList()
+            ..sort((a, b) => b.score.compareTo(a.score));
+
+          _teamsRankingMonthCache[ym] = teamRankings;
+        }
+      } catch (_) {
+        // Silent prefetch errors
+      }
+    }
+
+    final ymPrev = DateFormat('yyyy-MM').format(prev);
+    final ymNext = DateFormat('yyyy-MM').format(next);
+    // Run in background
+    // ignore: discarded_futures
+    Future.microtask(() => warm(ymPrev));
+    // ignore: discarded_futures
+    Future.microtask(() => warm(ymNext));
   }
 }

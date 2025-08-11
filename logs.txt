@@ -1,44 +1,49 @@
-Restarted application in 473ms.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/3527aa6d-d5ad-47eb-9366-5d40bd0bc2bc' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+Restarted application in 410ms.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/74dd1957-37d1-4a73-8da8-a11a1c771c32' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/41db1674-2bc1-48f6-ac5e-95a0f5a44fcb' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/120e5733-596a-4192-adb5-cc4de6b1838b' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/af360fbe-8354-45d0-a59e-c2e4d9343d9b' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/dfc375ae-5149-4971-91fe-bdbbef66683f' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/ea5b55dd-2b23-4f0f-a98c-38dc8e39a0aa' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/42d7c2b2-5a5f-4a4b-9ce5-16afe9de0811' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-➕ CLIENT: added - 0777888222 → Hector
 🎯 CLIENT_SERVICE: notifyListeners called
 🎯 CLIENT_SERVICE: Current focused client: null
+➕ CLIENT: added - 0721933445 → Claudiu
+➕ CLIENT: added - 0777888333 → Robi
 🎯 CLIENT_SERVICE: notifyListeners called
 🎯 CLIENT_SERVICE: Current focused client: null
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 269ms
+[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 148ms
 📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
 📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 174ms
-📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
-📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 147ms
 🎯 CLIENT_SERVICE: Client found at index: 0
+🎯 CLIENT_SERVICE: Cleared focus from: Robi
 🎯 CLIENT_SERVICE: All focus states cleared
-✅ CLIENT_SERVICE: Client focused successfully: 0777888222
-✅ CLIENT_SERVICE: New focused client: Hector
+✅ CLIENT_SERVICE: Client focused successfully: 0777888333
+✅ CLIENT_SERVICE: New focused client: Robi
 🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Hector
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
 ✅ GOOGLE_DRIVE_SERVICE: Token is still valid, no refresh needed
+MATCHER: Using clientKey="0777888333" for income cache and lookups
 ✅ [FIREBASE_SUCCESS] getClient found matching client
-[FIREBASE] GD_VERIFY: getClientForms called for 0777888222
-[FIREBASE] GD_VERIFY: loaded 1 forms for 0777888222
+[FIREBASE] GD_VERIFY: getClientForms called for 0777888333
+[FIREBASE] GD_VERIFY: loaded 1 forms for 0777888333
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
 📊 SPLASH_SERVICE: Performance Metrics:
-  Initializare servicii...: 18ms
-  Preincarcare date...: 1762ms
-  Sincronizare servicii...: 32ms
-  Optimizare cache...: 3ms
+  Initializare servicii...: 16ms
+  Preincarcare date...: 1786ms
+  Sincronizare servicii...: 26ms
+  Optimizare cache...: 2ms
   Finalizare...: 0ms
 🔍 Checking for updates...
 ✅ No updates available | Current: 0.1.5
@@ -49,97 +54,185 @@ SPLASH: Current role: Consultant
 🔄 SPLASH: Reloading services for new consultant
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/0c28061d-cae7-48fb-a931-a361b88b15bd' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/1fc5feca-8404-4e20-afc6-15f6422715df' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/4092238f-2489-429b-bc19-4c580aa78f48' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/c5a9086c-8bc3-4b65-8d02-3b90dee2b18a' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-➕ CLIENT: added - 0777888222 → Hector
+➕ CLIENT: added - 0721933445 → Claudiu
+➕ CLIENT: added - 0777888333 → Robi
 🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Hector
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Hector
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Hector
-[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 193ms
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 111ms
 🔄 SPLASH: Invalidating cache with enhanced state management
 ✅ SPLASH: Cache invalidation completed successfully
-📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
-📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
 ✅ SPLASH: Services reloaded successfully for new consultant
 ✅ SPLASH: Consultant reset completed successfully
+🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (2 messages)
 SPLASH: Current role: Consultant
 ✅ SPLASH: Consultant/team unchanged, no reset needed
-🔄 FORM: Found focused client at initialization: 0777888222
-GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
+🔄 FORM: Found focused client at initialization: 0777888333
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
 SPLASH: Current role: Consultant
 ✅ SPLASH: Consultant/team unchanged, no reset needed
 🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Hector
-⚡ CLIENTS: Preloading form data for 1 clients
-GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
-GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Hector
-GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🔍 MEETING_DATA: Constructor called
-🔍 MEETING_DATA: clientName = "Hector"
-🔍 MEETING_DATA: phoneNumber = "0777888222"
-🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
-🔍 MEETING_DATA: consultantName = "Ionut"
-🔍 MEETING_DATA: dateTime = 2025-08-12 11:30:00.000
-🔍 MEETING_DATA: type = MeetingType.meeting
-✅ MEETING_DATA: Constructor completed successfully
-🔍 STATUS_POPUP: Creating meeting for accepted client | Hector | 2025-08-12 11:30:00.000
-🔍 MEETING_SERVICE: Starting createMeeting | Client: Hector | Date: 2025-08-12 11:30:00.000 | Type: MeetingType.meeting
-🔍 MEETING_SERVICE: Starting optimized parallel operations
-🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0777888222
-📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0777888222
+🎯 CLIENT_SERVICE: Current focused client: Robi
+⚡ CLIENTS: Preloading form data for 2 clients
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
 ✅ [FIREBASE_SUCCESS] getClient found matching client
-🔄 CLIENT: category_change - 0777888222 → recente
-! DASHBOARD_SERVICE: Client 0777888222 already counted for meetings, skipping increment
-✅ MEETING_SERVICE: Dashboard notified successfully
-✅ MEETING_SERVICE: Meeting created successfully | Client: Hector | Date: 2025-08-12 11:30:00.000
-📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Hector
-! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
-✅ STATUS_POPUP: Meeting saved successfully | Hector | 2025-08-12 11:30:00.000
-✅ STATUS_POPUP: Meeting creation handled by MeetingService, skipping duplicate client move
-✅ Client mutat cu succes: Hector - Status: Acceptat
-🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE START ==========
-🔧 STATUS_POPUP: Client: Hector (0777888222)
-🔧 STATUS_POPUP: Status: Acceptat
-🔧 STATUS_POPUP: Additional info: feafaef
-🔧 STATUS_POPUP: Scheduled date: 2025-08-12 11:30:00.000
-🔧 STATUS_POPUP: Step 1 - Updating Firebase...
-✅ STATUS_POPUP: Step 1 COMPLETED - Updated discussionStatus and additionalInfo in Firebase
-🔧 STATUS_POPUP: Step 2 - Retrieving complete client data...
+[FIREBASE] GD_VERIFY: getClientForms called for 0721933445
+[FIREBASE] GD_VERIFY: loaded 1 forms for 0721933445
+DEBUG: Credit bank selected: Banca Romaneasca
+🔄 FORM: Credit toggle button pressed
+🔄 FORM: Current isShowingClient: true
+🔄 FORM: Client phone: 0777888333
+🔄 FORM: Calling toggleLoanFormType for: 0777888333
+FormService: schedule autosave for 0777888333 in 600ms
+🔄 FORM: toggleLoanFormType completed
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+FormService: commit autosave start for 0777888333
+[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
 ✅ [FIREBASE_SUCCESS] getClient found matching client
-✅ STATUS_POPUP: Step 2 COMPLETED - Retrieved complete client data from Firebase
-🔧 STATUS_POPUP: DEBUG additionalInfo from Firebase: feafaef
-GD_VERIFY: status_popup completeClient keys: [additionalInfo, category, coDebitorName, consultantToken, createdAt, discussionStatus, isCompleted, name, phoneNumber, phoneNumber2, scheduledDateTime, status, updatedAt]
-GD_VERIFY: GoogleDriveService will fetch forms via NewFirebaseService.getClientForms(0777888222)
-🔧 STATUS_POPUP: Step 3 - Saving to Google Sheets...
-🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx START ==========
-🔧 GOOGLE_DRIVE_SERVICE: Client: Hector (0777888222)
-🔧 GOOGLE_DRIVE_SERVICE: Client type: _Map<String, dynamic>
-🔧 GOOGLE_DRIVE_SERVICE: Authentication status: true
-🔧 GOOGLE_DRIVE_SERVICE: Drive API: OK
-🔧 GOOGLE_DRIVE_SERVICE: Sheets API: OK
-🔧 GOOGLE_DRIVE_SERVICE: Step 0 - Enhanced client data validation...
-✅ GOOGLE_DRIVE_SERVICE: Enhanced client data validation passed
-🔧 GOOGLE_DRIVE_SERVICE: Step 1 - Enhanced token validation...
-✅ GOOGLE_DRIVE_SERVICE: Enhanced token validation successful
-✅ GOOGLE_DRIVE_SERVICE: Authentication check passed
-🔧 GOOGLE_DRIVE_SERVICE: Service readiness: true (auth: true, drive: true, sheets: true)
-✅ GOOGLE_DRIVE_SERVICE: Enhanced service readiness check passed
-🔧 GOOGLE_DRIVE_SERVICE: Step 4 - Enhanced spreadsheet finding/creation...
---- FREEZE & RESTART ---
-🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSpreadsheet START - Name: clienti
-GD_TRACE: _findOrCreateSpreadsheet entering
-🔧 GOOGLE_DRIVE_SERVICE: Search query: mimeType='application/vnd.google-apps.spreadsheet' and name='clienti' and trashed=false
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+🔄 CLIENT: category_change - 0777888333 → clienti
+✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 149ms
+FormService: commit autosave success for 0777888333 in 150ms
 🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Hector
+🎯 CLIENT_SERVICE: Current focused client: Robi
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+DEBUG: Income type selected: Salariu
+🔄 FORM: Income toggle button pressed
+🔄 FORM: Current isShowingClient: false
+🔄 FORM: Client phone: 0777888333
+🔄 FORM: Calling toggleIncomeFormType for: 0777888333
+FormService: schedule autosave for 0777888333 in 600ms
+🔄 FORM: toggleIncomeFormType completed
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+FormService: commit autosave start for 0777888333
+[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
+🔄 CLIENT: category_change - 0777888333 → clienti
+✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 86ms
+FormService: commit autosave success for 0777888333 in 86ms
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+DEBUG: Credit type selected: Nevoi personale
+DEBUG: Both credit fields completed, transforming...
+DEBUG: Transforming credit form - Bank: Banca Romaneasca, Type: Nevoi personale, IsClient: false
+🔧 FORM_SERVICE: Added new credit form while preserving existing forms for client 0777888333
+FormService: schedule autosave for 0777888333 in 600ms
+DEBUG: Created new credit form with clean state
+DEBUG: Resetting credit form selections
+DEBUG: Credit selections reset to null
+🔧 FORM_AREA: Cleared 0 controllers for 0777888333 client credit
+🔧 FORM_AREA: Cleared 0 controllers for 0777888333 coborrower credit
+DEBUG: Credit form selections reset
+[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
+🔄 CLIENT: category_change - 0777888333 → clienti
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 153ms
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+FormService: commit autosave start for 0777888333
+FormService: skip commit (no changes) for 0777888333
+🔄 FORM: Credit toggle button pressed
+🔄 FORM: Current isShowingClient: false
+🔄 FORM: Client phone: 0777888333
+🔄 FORM: Calling toggleLoanFormType for: 0777888333
+FormService: schedule autosave for 0777888333 in 600ms
+🔄 FORM: toggleLoanFormType completed
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+FormService: commit autosave start for 0777888333
+[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
+🔄 CLIENT: category_change - 0777888333 → clienti
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+🔄 FORM: Credit toggle button pressed
+🔄 FORM: Current isShowingClient: true
+🔄 FORM: Client phone: 0777888333
+🔄 FORM: Calling toggleLoanFormType for: 0777888333
+FormService: schedule autosave for 0777888333 in 600ms
+🔄 FORM: toggleLoanFormType completed
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 125ms
+FormService: commit autosave success for 0777888333 in 125ms
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+FormService: commit autosave start for 0777888333
+🔧 FORM_SERVICE: Removed credit form at index 0 for client 0777888333, remaining forms: 1
+FormService: schedule autosave for 0777888333 in 600ms
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+FormService: commit autosave start for 0777888333
+[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
+🔄 CLIENT: category_change - 0777888333 → clienti
+✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 94ms
+FormService: commit autosave success for 0777888333 in 94ms
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Robi
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+MATCHER: Using clientKey="0777888333" for income cache and lookups
+GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
+GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat

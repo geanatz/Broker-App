@@ -86,6 +86,9 @@ class LLMService extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     
+    // Salveaza automat conversatia
+    saveConversation();
+    
     // Trimite mesajul catre LLM
     _sendMessageToLLM(content.trim());
   }
@@ -173,6 +176,9 @@ class LLMService extends ChangeNotifier {
         
         _messages.add(message);
         debugPrint('🤖 AI_DEBUG: Raspuns adaugat cu succes');
+        
+        // Salveaza automat conversatia dupa raspunsul AI
+        saveConversation();
       } else {
         final errorData = jsonDecode(response.body);
         final errorMsg = 'Eroare API: ${errorData['error']['message'] ?? 'Eroare necunoscuta'}';
@@ -219,6 +225,48 @@ class LLMService extends ChangeNotifier {
     _messages.clear();
     _errorMessage = null;
     notifyListeners();
+    
+    // Salveaza conversatia goala
+    saveConversation();
+  }
+
+  /// Reseteaza conversatia pentru noul consultant
+  Future<void> resetForNewConsultant() async {
+    try {
+      // Curata mesajele din memorie
+      _messages.clear();
+      _errorMessage = null;
+      
+      // Incarca conversatia pentru noul consultant
+      await loadConversation();
+      
+      notifyListeners();
+      debugPrint('🤖 LLM_SERVICE: Reset completed for new consultant');
+    } catch (e) {
+      debugPrint('❌ LLM_SERVICE: Error resetting for new consultant: $e');
+    }
+  }
+
+  /// Curata conversatiile vechi din SharedPreferences (pentru cleanup)
+  Future<void> clearOldConversations() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      
+      // Cauta toate cheile de conversatii
+      final conversationKeys = keys.where((key) => key.startsWith('gemini_chatbot_conversation_')).toList();
+      
+      // Sterge conversatiile vechi (pastreaza doar ultimele 5 consultant activi)
+      if (conversationKeys.length > 5) {
+        // Sorteaza dupa timestamp de acces (daca exista) sau sterge cele mai vechi
+        for (int i = 5; i < conversationKeys.length; i++) {
+          await prefs.remove(conversationKeys[i]);
+          debugPrint('🧹 LLM_SERVICE: Cleaned old conversation: ${conversationKeys[i]}');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ LLM_SERVICE: Error cleaning old conversations: $e');
+    }
   }
 
   /// Sterge ultimul mesaj
@@ -226,6 +274,9 @@ class LLMService extends ChangeNotifier {
     if (_messages.isNotEmpty) {
       _messages.removeLast();
       notifyListeners();
+      
+      // Salveaza conversatia actualizata
+      saveConversation();
     }
   }
 
@@ -253,8 +304,15 @@ class LLMService extends ChangeNotifier {
   Future<void> saveConversation() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final consultantData = await ConsultantService().getCurrentConsultantData();
+      final consultantToken = consultantData?['token'] ?? 'unknown';
+      
+      // Salveaza conversatia cu cheia specifica consultantului
+      final conversationKey = 'gemini_chatbot_conversation_$consultantToken';
       final messagesJson = _messages.map((msg) => msg.toJson()).toList();
-      await prefs.setString('gemini_chatbot_conversation', jsonEncode(messagesJson));
+      await prefs.setString(conversationKey, jsonEncode(messagesJson));
+      
+      debugPrint('🤖 LLM_SERVICE: Conversation saved for consultant: ${consultantToken.substring(0, 8)}...');
     } catch (e) {
       debugPrint('❌ LLM_SERVICE: Error saving conversation: $e');
     }
@@ -264,7 +322,12 @@ class LLMService extends ChangeNotifier {
   Future<void> loadConversation() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final conversationJson = prefs.getString('gemini_chatbot_conversation');
+      final consultantData = await ConsultantService().getCurrentConsultantData();
+      final consultantToken = consultantData?['token'] ?? 'unknown';
+      
+      // Incarca conversatia cu cheia specifica consultantului
+      final conversationKey = 'gemini_chatbot_conversation_$consultantToken';
+      final conversationJson = prefs.getString(conversationKey);
       
       if (conversationJson != null) {
         final messagesList = jsonDecode(conversationJson) as List;
@@ -272,9 +335,18 @@ class LLMService extends ChangeNotifier {
             .map((json) => ChatMessage.fromJson(json))
             .toList();
         notifyListeners();
+        debugPrint('🤖 LLM_SERVICE: Conversation loaded for consultant: ${consultantToken.substring(0, 8)}... (${_messages.length} messages)');
+      } else {
+        // Nu exista conversatie salvata pentru acest consultant
+        _messages.clear();
+        notifyListeners();
+        debugPrint('🤖 LLM_SERVICE: No saved conversation found for consultant: ${consultantToken.substring(0, 8)}...');
       }
     } catch (e) {
       debugPrint('❌ LLM_SERVICE: Error loading conversation: $e');
+      // In caz de eroare, curata mesajele
+      _messages.clear();
+      notifyListeners();
     }
   }
 

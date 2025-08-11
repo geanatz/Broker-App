@@ -422,9 +422,8 @@ class FormService extends ChangeNotifier {
     
     _showingClientLoanForm[clientId] = !isShowingClientLoanForm(clientId);
     
-    // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
-    _formDataCache.remove(clientId);
-    debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after toggling loan form type');
+    // UI update debounced to avoid heavy rebuilds
+    _debounceNotifyListeners();
     
     // Automatically save UI state to Firebase
     _autoSaveToFirebaseForClient(clientId);
@@ -435,9 +434,8 @@ class FormService extends ChangeNotifier {
     
     _showingClientIncomeForm[clientId] = !isShowingClientIncomeForm(clientId);
     
-    // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
-    _formDataCache.remove(clientId);
-    debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after toggling income form type');
+    // UI update debounced to avoid heavy rebuilds
+    _debounceNotifyListeners();
     
     // Automatically save UI state to Firebase
     _autoSaveToFirebaseForClient(clientId);

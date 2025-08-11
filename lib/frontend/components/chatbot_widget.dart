@@ -38,6 +38,14 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
     _llmService = SplashService().llmService;
     _llmService.loadConversation();
     _loadConsultantName();
+    
+    // Adauga listener pentru schimbarea consultantului
+    _llmService.addListener(_onLLMServiceChanged);
+    
+    // Adauga listener pentru schimbarea consultantului din SplashService
+    final splashService = SplashService();
+    splashService.addListener(_onSplashServiceChanged);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startQuickActionsAutoScroll();
     });
@@ -57,11 +65,60 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
 
   @override
   void dispose() {
+    _llmService.removeListener(_onLLMServiceChanged);
+    
+    // Sterge listener-ul pentru SplashService
+    final splashService = SplashService();
+    splashService.removeListener(_onSplashServiceChanged);
+    
     _messageController.dispose();
     _scrollController.dispose();
     _quickActionsTimer?.cancel();
     _quickActionsController.dispose();
     super.dispose();
+  }
+
+  /// Callback pentru schimbarile din LLMService
+  void _onLLMServiceChanged() {
+    if (mounted) {
+      setState(() {
+        // UI-ul se va actualiza automat datorita setState
+      });
+    }
+  }
+
+  /// Callback pentru schimbarile din SplashService (schimbarea consultantului)
+  void _onSplashServiceChanged() {
+    if (mounted) {
+      // Reseteaza conversatia pentru noul consultant
+      _resetForNewConsultant();
+    }
+  }
+
+  /// Reseteaza conversatia pentru noul consultant
+  Future<void> _resetForNewConsultant() async {
+    try {
+      // Reseteaza conversatia in LLMService
+      await _llmService.resetForNewConsultant();
+      
+      // Actualizeaza numele consultantului
+      await _loadConsultantName();
+      
+      // Scroll la inceput
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+      
+      debugPrint('🤖 CHATBOT_WIDGET: Reset completed for new consultant');
+    } catch (e) {
+      debugPrint('❌ CHATBOT_WIDGET: Error resetting for new consultant: $e');
+    }
   }
 
   @override
