@@ -707,7 +707,8 @@ class NewFirebaseService {
   // OPTIMIZARE: Cache pentru all clients list
   List<Map<String, dynamic>>? _allClientsCache;
   DateTime? _allClientsCacheTime;
-  static const Duration _allClientsCacheDuration = Duration(seconds: 30);
+  // Extend list cache TTL to reduce redundant reads; rely on RT listeners for freshness
+  static const Duration _allClientsCacheDuration = Duration(minutes: 2);
   String? _allClientsCacheToken; // consultantToken that the list belongs to
 
   /// OPTIMIZARE: Curata cache-ul pentru client data

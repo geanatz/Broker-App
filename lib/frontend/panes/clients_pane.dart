@@ -67,6 +67,11 @@ class _ClientsPaneState extends State<ClientsPane> {
   bool _reveniriCollapseInitialized = false;
   bool _recenteCollapseInitialized = false;
 
+  // Lazy render for 'Clienti' (Apeluri) — show first N, then grow on scroll
+  static const int _pageSizeApeluri = 100;
+  int _visibleApeluriCount = _pageSizeApeluri;
+  bool _isLoadingMoreApeluri = false;
+
   /// OPTIMIZATION: Track last tapped client to prevent redundant operations
   String? _lastTappedClientId;
   DateTime? _lastTapTime;
@@ -93,6 +98,16 @@ class _ClientsPaneState extends State<ClientsPane> {
     
     // OPTIMIZARE: Incarca imediat din cache pentru loading instant
     _loadFromCacheInstantly();
+
+    // Attach lazy-load listener for 'Clienti' list
+    _apelurieScrollController.addListener(() {
+      // Trigger when close to bottom and there are more clients to render
+      if (_apelurieScrollController.position.pixels >=
+              _apelurieScrollController.position.maxScrollExtent - 120 &&
+          !_isLoadingMoreApeluri) {
+        _loadMoreApeluriIfNeeded();
+      }
+    });
     
     PerformanceMonitor.endTimer('clientsPaneInit');
   }
@@ -151,6 +166,22 @@ class _ClientsPaneState extends State<ClientsPane> {
     } catch (e) {
       debugPrint('❌ CLIENTS: Error preloading form data: $e');
     }
+  }
+
+  void _loadMoreApeluriIfNeeded() {
+    final totalApeluri = _clientService.clientsWithTemporary
+        .where((c) => c.category == ClientCategory.apeluri && !c.id.startsWith('temp_'))
+        .length;
+    if (_visibleApeluriCount >= totalApeluri) return;
+    _isLoadingMoreApeluri = true;
+    // small micro-delay to coalesce bursts
+    Future.microtask(() {
+      final newCount = _visibleApeluriCount + _pageSizeApeluri;
+      setState(() {
+        _visibleApeluriCount = newCount > totalApeluri ? totalApeluri : newCount;
+      });
+      _isLoadingMoreApeluri = false;
+    });
   }
 
 
@@ -241,6 +272,9 @@ class _ClientsPaneState extends State<ClientsPane> {
     final bool isApeluri = category == ClientCategory.apeluri;
     
     if (isApeluri) {
+      final int itemCount = clients.length < _visibleApeluriCount
+          ? clients.length
+          : _visibleApeluriCount;
       return SmoothScrollWrapper(
         controller: _apelurieScrollController,
         scrollSpeed: 80.0,
@@ -248,9 +282,26 @@ class _ClientsPaneState extends State<ClientsPane> {
         child: ListView.separated(
           controller: _apelurieScrollController,
           physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
-          itemCount: clients.length,
+          itemCount: itemCount + (itemCount < clients.length ? 1 : 0),
           separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
-          itemBuilder: (context, index) => _buildClientItem(clients[index]),
+          itemBuilder: (context, index) {
+            if (index < itemCount) {
+              return _buildClientItem(clients[index]);
+            }
+            // Loader row to hint there are more items (appears as last separator item)
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Center(
+                child: Text(
+                  'Se incarca mai multi clienti...',
+                  style: TextStyle(
+                    color: AppTheme.elementColor1,
+                    fontSize: AppTheme.fontSizeTiny,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     } else {

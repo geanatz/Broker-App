@@ -293,26 +293,20 @@ class MeetingService {
     }
   }
 
-  /// OPTIMIZAT: Creeaza o noua intalnire cu performanta imbunatatita si feedback instant
-  Future<Map<String, dynamic>> createMeeting(MeetingData meetingData) async {
-    debugPrint('🔍 MEETING_SERVICE: Starting createMeeting | Client: ${meetingData.clientName} | Date: ${meetingData.dateTime} | Type: ${meetingData.type}');
-    
+  /// OPTIMIZAT: Creeaza o intalnire noua
+  Future<Map<String, dynamic>> createMeeting(MeetingData meetingData, {bool skipClientNotification = false}) async {
     try {
-      // OPTIMIZARE: Verificare rapida de disponibilitate din cache
+      // OPTIMIZARE: Verifica disponibilitatea slot-ului cu cache
       final isAvailable = await _isTimeSlotAvailable(meetingData.dateTime);
       if (!isAvailable) {
-        debugPrint('❌ MEETING_SERVICE: Time slot not available');
         return {
           'success': false,
           'error': 'Slot-ul de timp nu este disponibil',
         };
       }
 
-      debugPrint('🔍 MEETING_SERVICE: Starting optimized parallel operations');
-      
-      // OPTIMIZARE: Operatii paralele optimizate cu feedback instant
+      // OPTIMIZARE: Operatii paralele pentru crearea intalnirii
       final results = await Future.wait([
-        // Operatia principala - crearea intalnirii
         _firebaseService.createMeeting(
           phoneNumber: meetingData.phoneNumber,
           dateTime: meetingData.dateTime,
@@ -335,7 +329,12 @@ class MeetingService {
         debugPrint('✅ MEETING_SERVICE: Meeting created successfully | Client: ${meetingData.clientName} | Date: ${meetingData.dateTime}');
         
         // OPTIMIZARE: Notificare optimizata pentru client cu delay redus
-        _notifyClientMeetingCreated(meetingData.phoneNumber, meetingData.dateTime);
+        // IMPORTANT: Nu notifica clientul daca este apelat din status_popup (skipClientNotification = true)
+        if (!skipClientNotification) {
+          _notifyClientMeetingCreated(meetingData.phoneNumber, meetingData.dateTime);
+        } else {
+          debugPrint('📱 MEETING_SERVICE: Skipping client notification (called from status_popup)');
+        }
         
           return {
             'success': true,

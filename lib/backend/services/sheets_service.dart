@@ -64,6 +64,10 @@ class GoogleDriveService extends ChangeNotifier {
   final Map<String, Set<String>> _sheetPhonesCache = <String, Set<String>>{};
   final Map<String, DateTime> _sheetPhonesCacheTime = <String, DateTime>{};
   static const Duration _sheetPhonesTtl = Duration(days: 31);
+
+  // Cache local pentru spreadsheetId per consultant+name, evitat Drive.files.list frecvent
+  // Persistam in SharedPreferences pentru sesiuni viitoare
+  static String _sheetIdPrefsKey(String consultantToken, String name) => 'gds_sheet_id_${consultantToken}_$name';
   /// WATCHDOG: logs periodically while a long-running async step is pending
   Timer _startWatch(String stepLabel, {Duration interval = const Duration(seconds: 2)}) {
     int seconds = 0;
@@ -1044,11 +1048,13 @@ class GoogleDriveService extends ChangeNotifier {
         return exists;
       }
 
-      // Incarca toate valorile o singura data si construieste setul de telefoane normalizate
-      final response = await _sheetsApi!.spreadsheets.values.get(
-        spreadsheetId,
-        '$sheetTitle!A:Z',
-      );
+      // Incarca DOAR coloana "Contact" (B) o singura data si construieste setul de telefoane normalizate
+      final response = await _sheetsApi!.spreadsheets.values
+          .get(
+            spreadsheetId,
+            '$sheetTitle!B:B',
+          )
+          .timeout(const Duration(seconds: 20));
       final values = response.values ?? const [];
       final phones = <String>{};
       for (final row in values) {
@@ -1064,6 +1070,10 @@ class GoogleDriveService extends ChangeNotifier {
       final exists = phones.contains(normalizedPhone);
       debugPrint('GD_CACHE: phones membership (loaded=$exists)');
       return exists;
+    } on TimeoutException catch (e) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Timeout in _checkIfClientExistsInSheet: $e');
+      // In caz de timeout la duplicate-check, nu bloca salvarea: trateaza ca si cum nu exista si lasa append-ul sa mearga
+      return false;
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: Error checking if client exists: $e');
       // In caz de eroare, permitem salvarea pentru a nu bloca procesul
@@ -1084,11 +1094,36 @@ class GoogleDriveService extends ChangeNotifier {
       }
       
       final query = "mimeType='application/vnd.google-apps.spreadsheet' and name='$name' and trashed=false";
+
+      // 0) Incearca cache-ul local pentru spreadsheetId (validare rapida)
+      if (_currentConsultantToken != null) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final cachedId = prefs.getString(_sheetIdPrefsKey(_currentConsultantToken!, name));
+          if (cachedId != null && cachedId.isNotEmpty) {
+            // Validare minima: spreadsheets.get cu timeout scurt
+            final wdGetCached = _startWatch('Sheets.spreadsheets.get(cached)');
+            await _sheetsApi!
+                .spreadsheets
+                .get(cachedId, includeGridData: false)
+                .timeout(const Duration(seconds: 8))
+                .whenComplete(() => wdGetCached.cancel());
+            debugPrint('✅ GOOGLE_DRIVE_SERVICE: Using cached spreadsheetId: $cachedId');
+            return cachedId;
+          }
+        } catch (e) {
+          debugPrint('⚠️ GOOGLE_DRIVE_SERVICE: Cached spreadsheetId invalid, will re-query: $e');
+        }
+      }
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Search query: $query');
       
       final swList = Stopwatch()..start();
       final wdList = _startWatch('Drive.files.list');
-      final response = await _driveApi!.files.list(q: query, $fields: 'files(id, name)').whenComplete(() => wdList.cancel());
+      final response = await _driveApi!
+          .files
+          .list(q: query, $fields: 'files(id,name)', pageSize: 1)
+          .timeout(const Duration(seconds: 15))
+          .whenComplete(() => wdList.cancel());
       swList.stop();
       debugPrint('GD_TRACE: Drive files.list took ${swList.elapsedMilliseconds}ms');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Search response: ${response.files?.length ?? 0} files found');
@@ -1096,6 +1131,13 @@ class GoogleDriveService extends ChangeNotifier {
       if (response.files != null && response.files!.isNotEmpty) {
         final fileId = response.files!.first.id!;
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Found existing spreadsheet: $fileId');
+        // Cache pentru sesiuni viitoare
+        try {
+          if (_currentConsultantToken != null) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_sheetIdPrefsKey(_currentConsultantToken!, name), fileId);
+          }
+        } catch (_) {}
         return fileId;
       } else {
         debugPrint('🔧 GOOGLE_DRIVE_SERVICE: No existing spreadsheet found, creating new one...');
@@ -1106,13 +1148,28 @@ class GoogleDriveService extends ChangeNotifier {
         
         final swCreate = Stopwatch()..start();
         final wdCreate = _startWatch('Sheets.spreadsheets.create');
-        final createdSheet = await _sheetsApi!.spreadsheets.create(newSheet).whenComplete(() => wdCreate.cancel());
+        final createdSheet = await _sheetsApi!
+            .spreadsheets
+            .create(newSheet)
+            .timeout(const Duration(seconds: 20))
+            .whenComplete(() => wdCreate.cancel());
         swCreate.stop();
         debugPrint('GD_TRACE: Sheets.spreadsheets.create took ${swCreate.elapsedMilliseconds}ms');
         final fileId = createdSheet.spreadsheetId!;
         debugPrint('✅ GOOGLE_DRIVE_SERVICE: Created new spreadsheet: $fileId');
+        // Cache id nou creat
+        try {
+          if (_currentConsultantToken != null) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_sheetIdPrefsKey(_currentConsultantToken!, name), fileId);
+          }
+        } catch (_) {}
         return fileId;
       }
+    } on TimeoutException catch (e) {
+      _lastError = 'Timeout la cautarea/crearea fisierului Sheets';
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Timeout in _findOrCreateSpreadsheet: $e');
+      return null;
     } catch (e) {
       _lastError = 'Eroare la cautarea sau crearea fisierului: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _findOrCreateSpreadsheet: $_lastError');
@@ -1140,7 +1197,11 @@ class GoogleDriveService extends ChangeNotifier {
 
       final swGet = Stopwatch()..start();
       final wdGet = _startWatch('Sheets.spreadsheets.get');
-      final spreadsheet = await _sheetsApi!.spreadsheets.get(spreadsheetId, includeGridData: false).whenComplete(() => wdGet.cancel());
+      final spreadsheet = await _sheetsApi!
+          .spreadsheets
+          .get(spreadsheetId, includeGridData: false)
+          .timeout(const Duration(seconds: 20))
+          .whenComplete(() => wdGet.cancel());
       swGet.stop();
       debugPrint('GD_TRACE: Sheets.spreadsheets.get took ${swGet.elapsedMilliseconds}ms');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Retrieved spreadsheet with ${spreadsheet.sheets?.length ?? 0} sheets');
@@ -1162,10 +1223,13 @@ class GoogleDriveService extends ChangeNotifier {
         
         final swBatchUpdate = Stopwatch()..start();
         final wdBatch = _startWatch('Sheets.spreadsheets.batchUpdate(addSheet)');
-        await _sheetsApi!.spreadsheets.batchUpdate(
+        await _sheetsApi!.spreadsheets
+            .batchUpdate(
           sheets.BatchUpdateSpreadsheetRequest(requests: [sheets.Request(addSheet: addSheetRequest)]),
           spreadsheetId,
-        ).whenComplete(() => wdBatch.cancel());
+        )
+            .timeout(const Duration(seconds: 20))
+            .whenComplete(() => wdBatch.cancel());
         swBatchUpdate.stop();
         debugPrint('GD_TRACE: Sheets.spreadsheets.batchUpdate(addSheet) took ${swBatchUpdate.elapsedMilliseconds}ms');
 
@@ -1182,6 +1246,10 @@ class GoogleDriveService extends ChangeNotifier {
         
         return sheetTitle;
       }
+    } on TimeoutException catch (e) {
+      _lastError = 'Timeout la cautarea/crearea foii de calcul';
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Timeout in _findOrCreateSheet: $e');
+      return null;
     } catch (e) {
       _lastError = 'Eroare la cautarea sau crearea foii de calcul: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _findOrCreateSheet: $_lastError');
@@ -1197,14 +1265,19 @@ class GoogleDriveService extends ChangeNotifier {
       final valueRange = sheets.ValueRange()..values = [headers];
       final range = "'$sheetTitle'!A1";
       final swHeaderUpdate = Stopwatch()..start();
-      await _sheetsApi!.spreadsheets.values.update(
+      await _sheetsApi!.spreadsheets.values
+          .update(
         valueRange,
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
-      );
+      )
+          .timeout(const Duration(seconds: 15));
       swHeaderUpdate.stop();
       debugPrint('GD_TRACE: Sheets.values.update(header) took ${swHeaderUpdate.elapsedMilliseconds}ms');
+    } on TimeoutException catch (e) {
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Timeout in _addHeaderToSheet: $e');
+      rethrow;
     } catch (e) {
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _addHeaderToSheet: $e');
       rethrow; // Re-arunca eroarea pentru ca functia apelanta sa o poata gestiona
@@ -1233,13 +1306,16 @@ class GoogleDriveService extends ChangeNotifier {
 
       final swAppend = Stopwatch()..start();
       final wdAppend = _startWatch('Sheets.values.append(INSERT_ROWS)');
-      final appendResponse = await _sheetsApi!.spreadsheets.values.append(
+      final appendResponse = await _sheetsApi!.spreadsheets.values
+          .append(
         valueRange,
         spreadsheetId,
         "'$sheetTitle'!A:Z",
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
-      ).whenComplete(() => wdAppend.cancel());
+      )
+          .timeout(const Duration(seconds: 20))
+          .whenComplete(() => wdAppend.cancel());
       swAppend.stop();
       debugPrint('GD_TRACE: Sheets.values.append took ${swAppend.elapsedMilliseconds}ms');
 
@@ -1252,6 +1328,10 @@ class GoogleDriveService extends ChangeNotifier {
       _lastError = 'Google Sheets append did not update any rows';
       return false;
       
+    } on TimeoutException catch (e) {
+      _lastError = 'Timeout la adaugarea randului in Google Sheets';
+      debugPrint('❌ GOOGLE_DRIVE_SERVICE: Timeout in _appendRowToSheet: $e');
+      return false;
     } catch (e) {
       _lastError = 'Eroare la adaugarea randului: $e';
       debugPrint('❌ GOOGLE_DRIVE_SERVICE: EROARE in _appendRowToSheet: $_lastError');
@@ -1319,7 +1399,9 @@ class GoogleDriveService extends ChangeNotifier {
       final String contact = ([formattedPhone1, formattedPhone2].where((p) => p.isNotEmpty).join('/'));
       final String coDebitorName = client['coDebitorName'] ?? '';
       final String ziua = DateTime.now().day.toString();
-      final String status = client['additionalInfo'] ?? client['discussionStatus'] ?? '';
+      // IMPORTANT: Status-ul în Google Sheets trebuie să fie doar additionalInfo
+      // Dacă additionalInfo este gol, nu afișa nimic (nu discussionStatus)
+      final String status = client['additionalInfo'] ?? '';
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG additionalInfo: ${client['additionalInfo']}');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG discussionStatus: ${client['discussionStatus']}');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG status (to be saved in sheet): $status');
@@ -1574,7 +1656,7 @@ class GoogleDriveService extends ChangeNotifier {
       case 'pensie':
         return 'pen';
       case 'pensie mai':
-        return 'pen_mai';
+        return 'penMAI';
       case 'indemnizatie':
         return 'ind';
       default:

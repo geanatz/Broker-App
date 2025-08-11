@@ -1,38 +1,44 @@
-Restarted application in 412ms.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/e157fb98-b42e-4234-b242-6f60c09d6fff' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+Restarted application in 473ms.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/3527aa6d-d5ad-47eb-9366-5d40bd0bc2bc' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/7c47ae35-46dc-4eac-b4a3-1d46117107a0' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/41db1674-2bc1-48f6-ac5e-95a0f5a44fcb' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/460b71d4-3be4-4056-88f2-37565df09bba' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/af360fbe-8354-45d0-a59e-c2e4d9343d9b' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/3729453d-b498-4015-9ff5-11eede478deb' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/ea5b55dd-2b23-4f0f-a98c-38dc8e39a0aa' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
+➕ CLIENT: added - 0777888222 → Hector
 🎯 CLIENT_SERVICE: notifyListeners called
 🎯 CLIENT_SERVICE: Current focused client: null
 🎯 CLIENT_SERVICE: notifyListeners called
 🎯 CLIENT_SERVICE: Current focused client: null
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 0 in 147ms
+[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 269ms
 📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
 📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 0 in 150ms
-📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
+[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 174ms
 📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
 📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
-! GOOGLE_DRIVE_SERVICE: No saved tokens found for current consultant
-! GOOGLE_DRIVE_SERVICE: Missing access token: true
-! GOOGLE_DRIVE_SERVICE: Missing email: true
+📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
+🎯 CLIENT_SERVICE: Client found at index: 0
+🎯 CLIENT_SERVICE: All focus states cleared
+✅ CLIENT_SERVICE: Client focused successfully: 0777888222
+✅ CLIENT_SERVICE: New focused client: Hector
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Hector
+✅ GOOGLE_DRIVE_SERVICE: Token is still valid, no refresh needed
+✅ [FIREBASE_SUCCESS] getClient found matching client
+[FIREBASE] GD_VERIFY: getClientForms called for 0777888222
+[FIREBASE] GD_VERIFY: loaded 1 forms for 0777888222
 📊 SPLASH_SERVICE: Performance Metrics:
-  Initializare servicii...: 8ms
-  Preincarcare date...: 1395ms
-  Sincronizare servicii...: 0ms
-  Optimizare cache...: 0ms
+  Initializare servicii...: 18ms
+  Preincarcare date...: 1762ms
+  Sincronizare servicii...: 32ms
+  Optimizare cache...: 3ms
   Finalizare...: 0ms
 🔍 Checking for updates...
 ✅ No updates available | Current: 0.1.5
@@ -43,23 +49,97 @@ SPLASH: Current role: Consultant
 🔄 SPLASH: Reloading services for new consultant
 📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/b6cb73ff-f4b1-4ce7-ab95-8f7489a3207d' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/0c28061d-cae7-48fb-a931-a361b88b15bd' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/beefe36f-d240-48af-9db8-f95d29968bee' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/4092238f-2489-429b-bc19-4c580aa78f48' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
 See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+➕ CLIENT: added - 0777888222 → Hector
 🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
+🎯 CLIENT_SERVICE: Current focused client: Hector
 🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-[FIREBASE] MEETINGS: getAllMeetings loaded 0 in 98ms
+🎯 CLIENT_SERVICE: Current focused client: Hector
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Hector
+[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 193ms
+🔄 SPLASH: Invalidating cache with enhanced state management
+✅ SPLASH: Cache invalidation completed successfully
 📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
 📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
 📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
 ✅ SPLASH: Services reloaded successfully for new consultant
 ✅ SPLASH: Consultant reset completed successfully
-🔄 SPLASH: Invalidating cache with enhanced state management
-✅ SPLASH: Cache invalidation completed successfully
 SPLASH: Current role: Consultant
 ✅ SPLASH: Consultant/team unchanged, no reset needed
+🔄 FORM: Found focused client at initialization: 0777888222
+GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Hector
+⚡ CLIENTS: Preloading form data for 1 clients
+GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
+GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Hector
+GD_VERIFY: UI item for 0777888222 | focused=true | category=ClientCategory.recente | status=Acceptat
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🔍 MEETING_DATA: Constructor called
+🔍 MEETING_DATA: clientName = "Hector"
+🔍 MEETING_DATA: phoneNumber = "0777888222"
+🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
+🔍 MEETING_DATA: consultantName = "Ionut"
+🔍 MEETING_DATA: dateTime = 2025-08-12 11:30:00.000
+🔍 MEETING_DATA: type = MeetingType.meeting
+✅ MEETING_DATA: Constructor completed successfully
+🔍 STATUS_POPUP: Creating meeting for accepted client | Hector | 2025-08-12 11:30:00.000
+🔍 MEETING_SERVICE: Starting createMeeting | Client: Hector | Date: 2025-08-12 11:30:00.000 | Type: MeetingType.meeting
+🔍 MEETING_SERVICE: Starting optimized parallel operations
+🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0777888222
+📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0777888222
+✅ [FIREBASE_SUCCESS] getClient found matching client
+🔄 CLIENT: category_change - 0777888222 → recente
+! DASHBOARD_SERVICE: Client 0777888222 already counted for meetings, skipping increment
+✅ MEETING_SERVICE: Dashboard notified successfully
+✅ MEETING_SERVICE: Meeting created successfully | Client: Hector | Date: 2025-08-12 11:30:00.000
+📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Hector
+! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
+✅ STATUS_POPUP: Meeting saved successfully | Hector | 2025-08-12 11:30:00.000
+✅ STATUS_POPUP: Meeting creation handled by MeetingService, skipping duplicate client move
+✅ Client mutat cu succes: Hector - Status: Acceptat
+🔧🔧 STATUS_POPUP: ========== GOOGLE SHEETS SAVE START ==========
+🔧 STATUS_POPUP: Client: Hector (0777888222)
+🔧 STATUS_POPUP: Status: Acceptat
+🔧 STATUS_POPUP: Additional info: feafaef
+🔧 STATUS_POPUP: Scheduled date: 2025-08-12 11:30:00.000
+🔧 STATUS_POPUP: Step 1 - Updating Firebase...
+✅ STATUS_POPUP: Step 1 COMPLETED - Updated discussionStatus and additionalInfo in Firebase
+🔧 STATUS_POPUP: Step 2 - Retrieving complete client data...
+✅ [FIREBASE_SUCCESS] getClient found matching client
+✅ STATUS_POPUP: Step 2 COMPLETED - Retrieved complete client data from Firebase
+🔧 STATUS_POPUP: DEBUG additionalInfo from Firebase: feafaef
+GD_VERIFY: status_popup completeClient keys: [additionalInfo, category, coDebitorName, consultantToken, createdAt, discussionStatus, isCompleted, name, phoneNumber, phoneNumber2, scheduledDateTime, status, updatedAt]
+GD_VERIFY: GoogleDriveService will fetch forms via NewFirebaseService.getClientForms(0777888222)
+🔧 STATUS_POPUP: Step 3 - Saving to Google Sheets...
+🔧🔧 GOOGLE_DRIVE_SERVICE: ========== saveClientToXlsx START ==========
+🔧 GOOGLE_DRIVE_SERVICE: Client: Hector (0777888222)
+🔧 GOOGLE_DRIVE_SERVICE: Client type: _Map<String, dynamic>
+🔧 GOOGLE_DRIVE_SERVICE: Authentication status: true
+🔧 GOOGLE_DRIVE_SERVICE: Drive API: OK
+🔧 GOOGLE_DRIVE_SERVICE: Sheets API: OK
+🔧 GOOGLE_DRIVE_SERVICE: Step 0 - Enhanced client data validation...
+✅ GOOGLE_DRIVE_SERVICE: Enhanced client data validation passed
+🔧 GOOGLE_DRIVE_SERVICE: Step 1 - Enhanced token validation...
+✅ GOOGLE_DRIVE_SERVICE: Enhanced token validation successful
+✅ GOOGLE_DRIVE_SERVICE: Authentication check passed
+🔧 GOOGLE_DRIVE_SERVICE: Service readiness: true (auth: true, drive: true, sheets: true)
+✅ GOOGLE_DRIVE_SERVICE: Enhanced service readiness check passed
+🔧 GOOGLE_DRIVE_SERVICE: Step 4 - Enhanced spreadsheet finding/creation...
+--- FREEZE & RESTART ---
+🔧 GOOGLE_DRIVE_SERVICE: _findOrCreateSpreadsheet START - Name: clienti
+GD_TRACE: _findOrCreateSpreadsheet entering
+🔧 GOOGLE_DRIVE_SERVICE: Search query: mimeType='application/vnd.google-apps.spreadsheet' and name='clienti' and trashed=false
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Hector

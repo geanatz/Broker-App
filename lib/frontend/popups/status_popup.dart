@@ -416,7 +416,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
         debugPrint('🔍 STATUS_POPUP: Creating meeting for accepted client | ${widget.client.name} | $finalDateTime');
         
-        final result = await _meetingService.createMeeting(meetingData);
+        final result = await _meetingService.createMeeting(meetingData, skipClientNotification: true);
         
         if (!result['success']) {
           final errorMessage = result['message'] ?? 'Eroare la salvarea intalnirii';
@@ -440,9 +440,13 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           debugPrint('❌ STATUS_POPUP: Error invalidating cache: $e');
         }
         
-        // IMPORTANT: Nu mai apeleaza moveClientToRecente daca intalnirea a fost creata cu succes
-        // MeetingService deja gestioneaza mutarea clientului si incrementarea statisticilor
-        debugPrint('✅ STATUS_POPUP: Meeting creation handled by MeetingService, skipping duplicate client move');
+        // IMPORTANT: Mutarea clientului se face manual pentru a păstra informațiile adiționale introduse de utilizator
+        await _clientService.moveClientToRecente(
+          widget.client.phoneNumber,
+          additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
+          scheduledDateTime: finalDateTime,
+        );
+        debugPrint('✅ STATUS_POPUP: Client moved manually to preserve user input in additionalInfo');
       } else {
         // Doar daca nu s-a creat intalnire (ex: Acceptat fara data programata), muta clientul manual
         switch (_selectedStatus) {
