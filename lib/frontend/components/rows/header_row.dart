@@ -1,4 +1,4 @@
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+﻿// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 // lib/components/rows/dynamic_text_header_row.dart
 
 import 'package:flutter/material.dart';
@@ -124,3 +124,4 @@ class DynamicTextHeaderRow extends StatelessWidget {
     );
   }
 }
+

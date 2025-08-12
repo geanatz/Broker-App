@@ -1,11 +1,11 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:broker_app/backend/services/matcher_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/llm_service.dart';
-import 'package:broker_app/frontend/components/headers/widget_header1.dart';
-import 'package:broker_app/backend/services/role_service.dart';
+import 'package:mat_finance/backend/services/matcher_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
+import 'package:mat_finance/backend/services/llm_service.dart';
+import 'package:mat_finance/frontend/components/headers/widget_header1.dart';
+import 'package:mat_finance/backend/services/role_service.dart';
 
 /// Area pentru setari care urmeaza exact design-ul specificat
 /// Permite gestionarea Google Drive si alte setari

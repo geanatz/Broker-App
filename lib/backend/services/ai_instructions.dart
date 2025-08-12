@@ -1,4 +1,4 @@
-class AIInstructions {
+﻿class AIInstructions {
   /// Instructiunile principale pentru asistentul AI
   static const String systemPrompt = '''
 Esti un asistent AI specializat in usurarea muncii consultantilor financiari. 

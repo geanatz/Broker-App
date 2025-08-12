@@ -1,22 +1,22 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
-import 'package:broker_app/utils/smooth_scroll_behavior.dart';
+import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
 
 
-import 'package:broker_app/frontend/popups/meeting_popup.dart';
-import 'package:broker_app/backend/services/calendar_service.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/frontend/components/texts/text2.dart';
-import 'package:broker_app/backend/services/firebase_service.dart';
+import 'package:mat_finance/frontend/popups/meeting_popup.dart';
+import 'package:mat_finance/backend/services/calendar_service.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
+import 'package:mat_finance/frontend/components/texts/text2.dart';
+import 'package:mat_finance/backend/services/firebase_service.dart';
 
 // Import the required components
-import 'package:broker_app/frontend/components/headers/widget_header6.dart';
-import 'package:broker_app/frontend/components/items/outlined_item6.dart';
-import 'package:broker_app/frontend/components/items/dark_item4.dart';
-import 'package:broker_app/frontend/components/items/dark_item2.dart';
+import 'package:mat_finance/frontend/components/headers/widget_header6.dart';
+import 'package:mat_finance/frontend/components/items/outlined_item6.dart';
+import 'package:mat_finance/frontend/components/items/dark_item4.dart';
+import 'package:mat_finance/frontend/components/items/dark_item2.dart';
 
 /// Area pentru calendar care va fi afisata in cadrul ecranului principal.
 /// OPTIMIZAT: Implementare avansata cu cache inteligent si loading instant
@@ -877,3 +877,4 @@ class CalendarAreaState extends State<CalendarArea> {
     }
   }
 }
+

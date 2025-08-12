@@ -1,4 +1,4 @@
-import '../../../app_theme.dart';
+﻿import '../../../app_theme.dart';
 // lib/frontend/common/components/forms/form2.dart
 
 import 'package:flutter/material.dart';
@@ -261,3 +261,4 @@ class _Form2State extends State<Form2> {
     );
   }
 }
+

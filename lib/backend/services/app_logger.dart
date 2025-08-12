@@ -1,3 +1,4 @@
+﻿import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 /// Centralized logging system for the entire application
@@ -5,6 +6,10 @@ import 'package:flutter/foundation.dart';
 class AppLogger {
   static bool _isEnabled = true;
   static bool _verboseMode = false;
+  static bool _useEmojis = false; // default to no emojis per preferences
+  static bool _fileLoggingEnabled = false;
+  static IOSink? _logSink;
+  static String? _logFilePath;
   static final Set<String> _loggedOperations = <String>{};
   static final Map<String, DateTime> _lastLogTime = <String, DateTime>{};
   
@@ -18,61 +23,113 @@ class AppLogger {
     _verboseMode = enabled;
   }
   
+  /// Enable/disable emoji prefix in console logs
+  static void setUseEmojis(bool enabled) {
+    _useEmojis = enabled;
+  }
+
+  /// Initialize file logging to given absolute path. Creates file if missing.
+  /// Rotates if file exceeds ~5 MB by truncating.
+  static Future<void> initFileLogging(String absoluteFilePath) async {
+    try {
+      final file = File(absoluteFilePath);
+      if (await file.exists()) {
+        final length = await file.length();
+        if (length > 5 * 1024 * 1024) {
+          await file.writeAsString('', mode: FileMode.write);
+        }
+      } else {
+        await file.create(recursive: true);
+      }
+      _logSink = file.openWrite(mode: FileMode.append);
+      _logFilePath = absoluteFilePath;
+      _fileLoggingEnabled = true;
+      _writeHeader();
+    } catch (e) {
+      _fileLoggingEnabled = false;
+      debugPrint('AppLogger: failed to init file logging: $e');
+    }
+  }
+
+  /// Close file logging sink
+  static Future<void> closeFileLogging() async {
+    try {
+      await _logSink?.flush();
+      await _logSink?.close();
+    } catch (_) {}
+    _logSink = null;
+    _fileLoggingEnabled = false;
+  }
+  
   /// Log lifecycle events (app start, screen transitions, etc.)
   static void lifecycle(String component, String event, [Map<String, dynamic>? data]) {
     if (!_isEnabled) return;
-    final message = _formatMessage('🚀', component, event, data);
+    final message = _formatMessage(_useEmojis ? '🚀' : '', component, event, data);
     debugPrint(message);
+    _writeToFile(_formatPlainMessage(component, event, data));
   }
   
   /// Log critical data changes (client added, updated, deleted)
   static void dataChange(String component, String operation, String entity, [Map<String, dynamic>? data]) {
     if (!_isEnabled) return;
-    final emoji = _getEmojiForOperation(operation);
+    final emoji = _useEmojis ? _getEmojiForOperation(operation) : '';
     final message = _formatMessage(emoji, component, '$operation $entity', data);
     debugPrint(message);
+    _writeToFile(_formatPlainMessage(component, '$operation $entity', data));
   }
   
   /// Log errors and exceptions
   static void error(String component, String message, [dynamic error, StackTrace? stackTrace]) {
     if (!_isEnabled) return;
-    final errorMessage = _formatMessage('❌', component, message, {'error': error?.toString()});
+    final emoji = _useEmojis ? '❌' : '';
+    final errorMessage = _formatMessage(emoji, component, message, {'error': error?.toString()});
     debugPrint(errorMessage);
+    _writeToFile(_formatPlainMessage(component, message, {'error': error?.toString()}));
     
     if (_verboseMode && error != null) {
       debugPrint('Error details: $error');
+      _writeToFile('  details: $error');
     }
     if (_verboseMode && stackTrace != null) {
       debugPrint('Stack trace: $stackTrace');
+      _writeToFile('  stack: $stackTrace');
     }
   }
   
   /// Log warnings
   static void warning(String component, String message, [Map<String, dynamic>? data]) {
     if (!_isEnabled) return;
-    final warningMessage = _formatMessage('⚠️', component, message, data);
+    final emoji = _useEmojis ? '⚠️' : '';
+    final warningMessage = _formatMessage(emoji, component, message, data);
     debugPrint(warningMessage);
+    _writeToFile(_formatPlainMessage(component, message, data));
   }
   
   /// Log success operations
   static void success(String component, String message, [Map<String, dynamic>? data]) {
     if (!_isEnabled) return;
-    final successMessage = _formatMessage('✅', component, message, data);
+    final emoji = _useEmojis ? '✅' : '';
+    final successMessage = _formatMessage(emoji, component, message, data);
     debugPrint(successMessage);
+    _writeToFile(_formatPlainMessage(component, message, data));
   }
   
   /// Log sync and stream events
   static void sync(String component, String event, [Map<String, dynamic>? data]) {
     if (!_isEnabled) return;
-    final syncMessage = _formatMessage('🔄', component, event, data);
+    final emoji = _useEmojis ? '🔄' : '';
+    final syncMessage = _formatMessage(emoji, component, event, data);
     debugPrint(syncMessage);
+    _writeToFile(_formatPlainMessage(component, event, data));
   }
   
   /// Log UI state transitions
   static void uiState(String component, String state, [Map<String, dynamic>? data]) {
     if (!_isEnabled) return;
-    final uiMessage = _formatMessage('🔧', component, state, data);
+    final emoji = _useEmojis ? '🔧' : '';
+    final uiMessage = _formatMessage(emoji, component, state, data);
     debugPrint(uiMessage);
+    _writeToFile(_formatPlainMessage(component, state, data));
   }
   
   /// Log with deduplication to prevent spam
@@ -83,8 +140,10 @@ class AppLogger {
     final now = DateTime.now();
     
     if (_shouldLogOperation(key, now)) {
-      final logMessage = _formatMessage('📝', component, message, data);
+      final emoji = _useEmojis ? '📝' : '';
+      final logMessage = _formatMessage(emoji, component, message, data);
       debugPrint(logMessage);
+      _writeToFile(_formatPlainMessage(component, message, data));
       _loggedOperations.add(key);
       _lastLogTime[key] = now;
     }
@@ -127,7 +186,7 @@ class AppLogger {
     DateTime.now().toString().substring(11, 19); // HH:MM:SS
     final componentUpper = component.toUpperCase();
     
-    var logMessage = '$emoji $componentUpper: $message';
+    var logMessage = emoji.isNotEmpty ? '$emoji $componentUpper: $message' : '$componentUpper: $message';
     
     if (data != null && data.isNotEmpty) {
       final dataStr = data.entries.map((e) => '${e.key}=${e.value}').join(', ');
@@ -135,6 +194,33 @@ class AppLogger {
     }
     
     return logMessage;
+  }
+
+  static String _formatPlainMessage(String component, String message, Map<String, dynamic>? data) {
+    final ts = DateTime.now().toIso8601String();
+    final componentUpper = component.toUpperCase();
+    var logMessage = '[$ts] $componentUpper: $message';
+    if (data != null && data.isNotEmpty) {
+      final dataStr = data.entries.map((e) => '${e.key}=${e.value}').join(', ');
+      logMessage += ' | $dataStr';
+    }
+    return logMessage;
+  }
+
+  static void _writeHeader() {
+    if (!_fileLoggingEnabled || _logSink == null) return;
+    _logSink!.writeln('');
+    _logSink!.writeln('================================');
+    _logSink!.writeln('[${DateTime.now().toIso8601String()}] LOG START');
+    _logSink!.writeln('File: ${_logFilePath ?? ''}');
+    _logSink!.writeln('================================');
+  }
+
+  static void _writeToFile(String line) {
+    if (!_fileLoggingEnabled || _logSink == null) return;
+    try {
+      _logSink!.writeln(line);
+    } catch (_) {}
   }
   
   /// Clear logged operations cache

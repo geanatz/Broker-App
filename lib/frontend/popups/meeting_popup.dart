@@ -1,17 +1,17 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:broker_app/frontend/components/headers/widget_header1.dart';
-import 'package:broker_app/frontend/components/fields/input_field3.dart';
-import 'package:broker_app/frontend/components/fields/dropdown_field1.dart';
-import 'package:broker_app/frontend/components/buttons/flex_buttons1.dart';
-import 'package:broker_app/frontend/components/buttons/flex_buttons2.dart';
-import 'package:broker_app/backend/services/meeting_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/backend/services/auth_service.dart';
-import 'package:broker_app/backend/services/firebase_service.dart';
+import 'package:mat_finance/frontend/components/headers/widget_header1.dart';
+import 'package:mat_finance/frontend/components/fields/input_field3.dart';
+import 'package:mat_finance/frontend/components/fields/dropdown_field1.dart';
+import 'package:mat_finance/frontend/components/buttons/flex_buttons1.dart';
+import 'package:mat_finance/frontend/components/buttons/flex_buttons2.dart';
+import 'package:mat_finance/backend/services/meeting_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
+import 'package:mat_finance/backend/services/auth_service.dart';
+import 'package:mat_finance/backend/services/firebase_service.dart';
 
 /// Custom TextInputFormatter for automatic colon insertion in time format
 class TimeInputFormatter extends TextInputFormatter {
@@ -613,4 +613,5 @@ class _MeetingPopupState extends State<MeetingPopup> {
     );
   }
 }
+
 

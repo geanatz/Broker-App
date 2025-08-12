@@ -1,7 +1,7 @@
-import 'package:broker_app/app_theme.dart';
-import 'package:broker_app/backend/services/dashboard_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/role_service.dart';
+﻿import 'package:mat_finance/app_theme.dart';
+import 'package:mat_finance/backend/services/dashboard_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
+import 'package:mat_finance/backend/services/role_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../components/chatbot_widget.dart';
@@ -832,3 +832,4 @@ class _DashboardAreaState extends State<DashboardArea> {
     );
   }
 }
+

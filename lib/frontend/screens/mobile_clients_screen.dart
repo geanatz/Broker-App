@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/firebase_service.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
+import 'package:mat_finance/backend/services/firebase_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';

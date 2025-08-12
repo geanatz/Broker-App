@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 /// User roles supported by the app
@@ -87,6 +87,7 @@ class RoleService {
     return _currentRole;
   }
 }
+
 
 
 

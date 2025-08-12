@@ -1,10 +1,10 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
-import 'package:broker_app/frontend/components/items/light_item7.dart';
-import 'package:broker_app/frontend/components/items/dark_item7.dart';
+import 'package:mat_finance/frontend/components/items/light_item7.dart';
+import 'package:mat_finance/frontend/components/items/dark_item7.dart';
 
 import '../../backend/services/clients_service.dart';
 import '../../backend/services/splash_service.dart';
@@ -544,3 +544,4 @@ class MeetingsPaneState extends State<MeetingsPane> {
     );
   }
 }
+

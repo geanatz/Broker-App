@@ -1,4 +1,4 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../backend/services/calculator_service.dart';
@@ -398,7 +398,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                           children: [
                             // Monthly Payment
                             LightItem3(
-                              title: 'Rata lunara',
+                              title: 'Rata 15',
                               description: _monthlyPayment > 0 ? _monthlyPayment.toStringAsFixed(1) : '0.0',
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,
@@ -509,4 +509,5 @@ class _CalculatorPaneState extends State<CalculatorPane> {
 }
   
   
+
 

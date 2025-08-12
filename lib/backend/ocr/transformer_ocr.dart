@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 
 /// Service pentru transformarea si curatarea textului OCR
 class TransformerOCR {

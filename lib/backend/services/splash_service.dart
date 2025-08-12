@@ -1,18 +1,18 @@
-import 'package:flutter/widgets.dart';
+﻿import 'package:flutter/widgets.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:broker_app/backend/services/calendar_service.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/backend/services/form_service.dart';
-import 'package:broker_app/backend/services/dashboard_service.dart';
-import 'package:broker_app/backend/services/matcher_service.dart';
-import 'package:broker_app/backend/services/firebase_service.dart';
-import 'package:broker_app/backend/services/sheets_service.dart';
-import 'package:broker_app/backend/services/connection_service.dart';
-import 'package:broker_app/backend/services/llm_service.dart';
-import 'package:broker_app/backend/services/role_service.dart';
+import 'package:mat_finance/backend/services/calendar_service.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
+import 'package:mat_finance/backend/services/form_service.dart';
+import 'package:mat_finance/backend/services/dashboard_service.dart';
+import 'package:mat_finance/backend/services/matcher_service.dart';
+import 'package:mat_finance/backend/services/firebase_service.dart';
+import 'package:mat_finance/backend/services/sheets_service.dart';
+import 'package:mat_finance/backend/services/connection_service.dart';
+import 'package:mat_finance/backend/services/llm_service.dart';
+import 'package:mat_finance/backend/services/role_service.dart';
 
 /// Service pentru gestionarea incarcarilor de pe splash screen si cache-ul aplicatiei
 /// OPTIMIZAT: Implementare avansata cu preloading paralel si cache inteligent

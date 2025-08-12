@@ -1,26 +1,28 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:broker_app/backend/services/sidebar_service.dart';
-import 'package:broker_app/frontend/popups/consultant_popup.dart';
-import 'package:broker_app/frontend/components/headers/widget_header3.dart';
-import 'package:broker_app/frontend/components/buttons/spaced_buttons1.dart';
-import 'package:broker_app/frontend/components/items/light_item7.dart';
-import 'package:broker_app/frontend/areas/dashboard_area.dart';
-import 'package:broker_app/frontend/areas/form_area.dart';
-import 'package:broker_app/frontend/areas/calendar_area.dart';
-import 'package:broker_app/frontend/areas/settings_area.dart';
-import 'package:broker_app/frontend/panes/meetings_pane.dart';
-import 'package:broker_app/frontend/panes/calculator_pane.dart';
-import 'package:broker_app/frontend/panes/clients_pane.dart';
-import 'package:broker_app/frontend/panes/matcher_pane.dart';
-import 'package:broker_app/frontend/popups/clients_popup.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/update_service.dart';
-import 'package:broker_app/frontend/components/update_notification.dart';
+import 'package:mat_finance/backend/services/sidebar_service.dart';
+import 'package:mat_finance/frontend/popups/consultant_popup.dart';
+import 'package:mat_finance/frontend/components/headers/widget_header3.dart';
+import 'package:mat_finance/frontend/components/buttons/spaced_buttons1.dart';
+import 'package:mat_finance/frontend/components/items/light_item7.dart';
+import 'package:mat_finance/frontend/areas/dashboard_area.dart';
+import 'package:mat_finance/frontend/areas/form_area.dart';
+import 'package:mat_finance/frontend/areas/calendar_area.dart';
+import 'package:mat_finance/frontend/areas/settings_area.dart';
+import 'package:mat_finance/frontend/panes/meetings_pane.dart';
+import 'package:mat_finance/frontend/panes/calculator_pane.dart';
+import 'package:mat_finance/frontend/panes/clients_pane.dart';
+import 'package:mat_finance/frontend/panes/matcher_pane.dart';
+import 'package:mat_finance/frontend/popups/clients_popup.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
+import 'package:mat_finance/backend/services/update_service.dart';
+import 'package:mat_finance/backend/services/app_logger.dart';
+import 'package:mat_finance/frontend/components/update_notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:broker_app/backend/services/firebase_service.dart';
-import 'package:broker_app/frontend/screens/mobile_clients_screen.dart';
+// import removed
+import 'package:google_fonts/google_fonts.dart';
+import 'package:mat_finance/frontend/screens/mobile_clients_screen.dart';
 import 'dart:io';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
@@ -79,6 +81,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   // Performance monitoring
   int _buildCount = 0;
+  bool _whatsNewChecked = false;
   
 
   
@@ -92,6 +95,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.initState();
 
     PerformanceMonitor.startTimer('mainScreenInit');
+    AppLogger.uiState('main_screen', 'init_state');
     
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
@@ -132,6 +136,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     PerformanceMonitor.endTimer('mainScreenInit');
 
+    // Check and show What's New after first frame to ensure UI is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppLogger.uiState('main_screen', 'post_frame_callback');
+      _checkAndShowWhatsNew();
+    });
   }
 
   /// FIX: Initializeaza aplicatia pentru consultantul curent
@@ -151,6 +160,86 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _clientService.removeListener(_onClientServiceChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _checkAndShowWhatsNew() async {
+    if (_whatsNewChecked || !mounted) return;
+    _whatsNewChecked = true;
+    try {
+      if (Platform.isWindows) {
+        AppLogger.uiState('main_screen', 'whats_new_check_start');
+        final service = UpdateService();
+        final info = await service.readPersistedReleaseInfo();
+        AppLogger.uiState('main_screen', 'whats_new_info_result', {
+          'is_null': info == null,
+        });
+        if (info == null) {
+          AppLogger.uiState('main_screen', 'whats_new_missing');
+          return;
+        }
+        final version = (info['version'] ?? '').toString();
+        final desc = (info['description'] ?? '').toString();
+        AppLogger.uiState('main_screen', 'whats_new_found', {
+          'version': version,
+          'desc_len': desc.length,
+        });
+        if (version.isEmpty) {
+          AppLogger.uiState('main_screen', 'whats_new_empty_version');
+        }
+        if (!mounted) {
+          AppLogger.uiState('main_screen', 'not_mounted_abort');
+          return;
+        }
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (ctx) => _buildWhatsNewDialog(version, desc),
+        );
+        AppLogger.uiState('main_screen', 'whats_new_shown');
+      }
+    } catch (e) {
+      AppLogger.error('main_screen', 'whats_new_exception', e);
+    }
+  }
+
+  Widget _buildWhatsNewDialog(String version, String description) {
+    return AlertDialog(
+      backgroundColor: AppTheme.widgetBackground,
+      title: Text(
+        'Ce este nou in $version',
+        style: GoogleFonts.outfit(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.elementColor2,
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Text(
+          description.isNotEmpty
+              ? description
+              : '• Imbunatatiri de performanta\n• Corectari de bug-uri',
+          style: GoogleFonts.outfit(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: AppTheme.elementColor1,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'OK',
+            style: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.elementColor2,
+            ),
+          ),
+        ),
+      ],
+    );
   }
   
   
@@ -315,6 +404,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    AppLogger.logWithDedup('main_screen', 'build_called');
     // Detect platform and show mobile screen for Android/iOS
     if (Platform.isAndroid || Platform.isIOS) {
       return const MobileClientsScreen();
@@ -331,7 +421,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _buildCount++;
     if (_buildCount % 10 == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        PerformanceMonitor.printComprehensiveReport();
+        PerformanceMonitor.printPerformanceReport();
       });
     }
     
@@ -911,3 +1001,4 @@ class PlaceholderWidget extends StatelessWidget {
     );
   }
 }
+

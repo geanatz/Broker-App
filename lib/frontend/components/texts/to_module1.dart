@@ -1,4 +1,4 @@
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+﻿// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 // lib/components/rows/fixed_title_expanded_alt_text.dart
 
 import 'package:flutter/material.dart';
@@ -110,3 +110,4 @@ class FixedTitleExpandedAltText extends StatelessWidget {
     );
   }
 }
+

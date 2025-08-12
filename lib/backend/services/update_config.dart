@@ -1,4 +1,4 @@
-class UpdateConfig {
+﻿class UpdateConfig {
   // GitHub Repository Configuration
   static const String githubOwner = 'geanatz';
   static const String githubRepo = 'Broker-App';
@@ -16,11 +16,22 @@ class UpdateConfig {
   static const int maxRetries = 5; // Mai multe retry-uri pentru stabilitate
   static const bool autoUpdateEnabled = true; // Activeaza update-ul automat
   static const bool forcedUpdateEnabled = false; // Forteaza update-ul (opreste aplicatia daca nu se updateaza)
+  static const bool preferInstallerAsset = true; // Prefer .exe installer when available
+  static const bool preLaunchUpdaterEnabled = false; // Updater screen disabled; headless prelaunch flow used
   
   // Windows-specific Settings
-  static const String windowsAssetName = 'broker-app-windows.zip';
-  static const String windowsExecutableName = 'broker_app.exe';
-  static const String windowsInstallerName = 'BrokerAppInstaller.exe';
+  static const String windowsAssetName = 'mat-finance-windows.zip';
+  static const String windowsExecutableName = 'mat_finance.exe';
+  static const String windowsInstallerName = 'MATFinanceInstaller.exe';
+  // Inno Setup silent upgrade flags (fully unattended)
+  static const List<String> windowsInstallerSilentArgs = [
+    '/VERYSILENT',            // no UI at all
+    '/SUPPRESSMSGBOXES',      // suppress message boxes
+    '/NORESTART',             // do not auto-restart OS
+    '/SP-',                   // disable startup prompt
+    '/CLOSEAPPLICATIONS',     // request closing apps using files
+    '/RESTARTAPPLICATIONS',   // restart closed apps if supported
+  ];
   static const String windowsUpdateDir = 'updates'; // Director pentru update-uri temporare
   
   // Download Settings

@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:broker_app/backend/services/auth_service.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:mat_finance/backend/services/auth_service.dart';
 
 class MobileAuthScreen extends StatefulWidget {
   const MobileAuthScreen({super.key});

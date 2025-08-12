@@ -1,6 +1,6 @@
-import 'dart:math';
-import 'package:broker_app/backend/services/form_service.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
+﻿import 'dart:math';
+import 'package:mat_finance/backend/services/form_service.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
 
 /// Serviciul pentru calculare credite
 /// 
@@ -171,3 +171,4 @@ class AmortizationEntry {
     required this.remainingBalance,
   });
 }
+

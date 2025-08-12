@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/backend/ocr/scanner_ocr.dart';
-import 'package:broker_app/backend/ocr/enchance_ocr.dart';
-import 'package:broker_app/backend/ocr/parser_ocr.dart';
-import 'package:broker_app/backend/ocr/transformer_ocr.dart';
-import 'package:broker_app/backend/ocr/ocr_logger.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
+import 'package:mat_finance/backend/ocr/scanner_ocr.dart';
+import 'package:mat_finance/backend/ocr/enchance_ocr.dart';
+import 'package:mat_finance/backend/ocr/parser_ocr.dart';
+import 'package:mat_finance/backend/ocr/transformer_ocr.dart';
+import 'package:mat_finance/backend/ocr/ocr_logger.dart';
 
 /// Service principal pentru procesarea OCR completa
 class OcrService {

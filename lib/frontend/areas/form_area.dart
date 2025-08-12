@@ -1,16 +1,16 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:broker_app/app_theme.dart';
-import 'package:broker_app/utils/smooth_scroll_behavior.dart';
-import 'package:broker_app/backend/services/form_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:mat_finance/app_theme.dart';
+import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
+import 'package:mat_finance/backend/services/form_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:broker_app/backend/services/clients_service.dart';
-import 'package:broker_app/frontend/components/forms/form1.dart';
-import 'package:broker_app/frontend/components/forms/form3.dart';
-import 'package:broker_app/frontend/components/forms/form_new.dart';
-import 'package:broker_app/frontend/components/headers/widget_header2.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
+import 'package:mat_finance/frontend/components/forms/form1.dart';
+import 'package:mat_finance/frontend/components/forms/form3.dart';
+import 'package:mat_finance/frontend/components/forms/form_new.dart';
+import 'package:mat_finance/frontend/components/headers/widget_header2.dart';
 import 'package:intl/intl.dart';
 import '../../backend/services/app_logger.dart' as app_log;
 
@@ -1722,3 +1722,4 @@ class _FormAreaState extends State<FormArea> {
     debugPrint('DEBUG: Income form selections reset');
   }
 }
+

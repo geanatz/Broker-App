@@ -1,11 +1,11 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:broker_app/backend/services/auth_service.dart';
-import 'package:broker_app/frontend/modules/login_module.dart';
-import 'package:broker_app/frontend/modules/register_module.dart';
-import 'package:broker_app/frontend/modules/verify_module.dart';
-import 'package:broker_app/frontend/modules/recovery__module.dart';
-import 'package:broker_app/frontend/modules/token_module.dart';
+import 'package:mat_finance/backend/services/auth_service.dart';
+import 'package:mat_finance/frontend/modules/login_module.dart';
+import 'package:mat_finance/frontend/modules/register_module.dart';
+import 'package:mat_finance/frontend/modules/verify_module.dart';
+import 'package:mat_finance/frontend/modules/recovery__module.dart';
+import 'package:mat_finance/frontend/modules/token_module.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -170,3 +170,4 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 }
+

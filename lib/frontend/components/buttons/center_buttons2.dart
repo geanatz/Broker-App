@@ -1,4 +1,4 @@
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder
+﻿// import 'package:your_app/theme/app_theme.dart'; // Placeholder
 // lib/components/buttons/centered_buttons2.dart
 
 import 'package:flutter/material.dart';
@@ -149,3 +149,4 @@ class CenteredButtons2 extends StatelessWidget {
     );
   }
 }
+

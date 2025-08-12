@@ -1,4 +1,4 @@
-import 'package:broker_app/backend/services/clients_service.dart';
+﻿import 'package:mat_finance/backend/services/clients_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -492,5 +492,6 @@ class MeetingService {
     _pendingNotifications.clear();
   }
 }
+
 
 

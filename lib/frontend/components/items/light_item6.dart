@@ -1,8 +1,8 @@
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+﻿// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 // lib/components/items/light_item6.dart
 
 import 'package:flutter/material.dart';
-import 'package:broker_app/app_theme.dart';
+import 'package:mat_finance/app_theme.dart';
 
 /// A customizable light-themed item component with a primary title on the left
 /// and an optional icon on the right, housed within a differently colored padded square container.
@@ -143,3 +143,4 @@ class _LightItem6State extends State<LightItem6> {
     return result;
   }
 }
+

@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 
-import 'package:broker_app/app_theme.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
-import 'package:broker_app/backend/services/update_service.dart';
-import 'package:broker_app/frontend/screens/main_screen.dart';
+import 'package:mat_finance/app_theme.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
+import 'package:mat_finance/backend/services/update_service.dart';
+import 'package:mat_finance/frontend/screens/main_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Splash screen care pre-incarca toate serviciile aplicatiei pentru o experienta fluida
@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _initializeAnimations();
     _startPreloading();
   }
-
+  
   @override
   void dispose() {
     _fadeController?.dispose();
@@ -97,16 +97,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       // Listen to splash service changes
       _splashService.addListener(_onSplashServiceChanged);
       
-      // Initialize update service
+      // Updater flow now happens pre-launch; keep only background checks if desired
       await _updateService.initialize();
-      
-      // Verifica daca exista un update gata pentru instalare
-      final hasReadyUpdate = await _updateService.checkForReadyUpdate();
-      if (hasReadyUpdate) {
-        debugPrint('📦 SPLASH_SCREEN: Found ready update, will show notification in main screen');
-      }
-      
-      // Porneste verificarea periodica in background
       _updateService.startBackgroundUpdateCheck();
       
       // Start preloading
@@ -114,9 +106,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       
       if (success) {
         await Future.delayed(const Duration(milliseconds: 500));
-        
-        // Check for updates after preloading
-        await _checkForUpdates();
         
         await _navigateToMainScreen();
       } else {
@@ -126,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       }
       
     } catch (e) {
-      debugPrint('❌ SPLASH_SCREEN: Error during preloading: $e');
+      debugPrint('SPLASH_SCREEN: Error during preloading: $e');
       // In case of error, still navigate to main screen
       await Future.delayed(const Duration(milliseconds: 500));
       await _navigateToMainScreen();
@@ -176,378 +165,26 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
 
-  Future<void> _checkForUpdates() async {
-    try {
-      debugPrint('🔍 Checking for updates...');
-      
-      final hasUpdate = await _updateService.checkForUpdates();
-      
-      if (hasUpdate && mounted) {
-        debugPrint('✅ Update found | Current: ${_updateService.currentVersion} | Latest: ${_updateService.latestVersion}');
-        
-        // Show update dialog
-        final shouldDownload = await _showUpdateDialog();
-        
-        if (shouldDownload) {
-          debugPrint('📥 Starting download...');
-          await _showUpdateDownloadDialog();
-        }
-      } else {
-        debugPrint('✅ No updates available | Current: ${_updateService.currentVersion}');
-      }
-      
-    } catch (e) {
-      debugPrint('❌ SPLASH_SCREEN: Error checking for updates: $e');
-    }
-  }
+  // Removed updater dialogs; handled by pre-launch UpdaterScreen
   
-  Future<bool> _showUpdateDialog() async {
-    return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.widgetBackground,
-        title: Text(
-          'Update disponibil',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.elementColor2,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _updateService.getUpdateMessage(),
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: AppTheme.elementColor1,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_updateService.latestVersion != null && _updateService.currentVersion != null) ...[
-              Text(
-                'Versiune curenta: ${_updateService.currentVersion}',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: AppTheme.elementColor1.withAlpha(150),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Versiune noua: ${_updateService.latestVersion}',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.elementColor2,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            Text(
-              'Ce este nou in aceasta versiune:',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.elementColor1,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.widgetBackground,
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
-                border: Border.all(color: AppTheme.elementColor2.withAlpha(30)),
-              ),
-              child: Text(
-                _getReleaseDescription(),
-                style: GoogleFonts.outfit(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  color: AppTheme.elementColor1,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Mai tarziu',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.elementColor1,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop(true);
-              _startCompleteUpdate();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.elementColor2,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(
-              'Actualizeaza',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ) ?? false;
-  }
+  // Legacy update dialog removed (pre-launch updater handles updates)
   
-  Future<void> _showUpdateDownloadDialog() async {
-    double downloadProgress = 0.0;
-    String statusText = 'Se descarca update-ul...';
-    bool isDownloadComplete = false;
-    
-    // Setup callbacks
-    _updateService.setDownloadProgressCallback((progress) {
-      if (mounted) {
-        setState(() {
-          downloadProgress = progress;
-        });
-      }
-    });
-    
-    _updateService.setStatusChangeCallback((status) {
-      if (mounted) {
-        setState(() {
-          statusText = status;
-        });
-      }
-    });
-    
-    _updateService.setUpdateReadyCallback((ready) {
-      if (mounted && ready) {
-        setState(() {
-          isDownloadComplete = true;
-          statusText = 'Update gata de instalare';
-        });
-      }
-    });
-    
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: AppTheme.widgetBackground,
-          title: Text(
-            'Se descarca update-ul',
-            style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.elementColor2,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!isDownloadComplete) ...[
-                LinearProgressIndicator(
-                  value: downloadProgress,
-                  backgroundColor: AppTheme.elementColor2.withAlpha(30),
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.elementColor2),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  '${(downloadProgress * 100).round()}%',
-                  style: GoogleFonts.outfit(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.elementColor2,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _updateService.downloadProgressText,
-                  style: GoogleFonts.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: AppTheme.elementColor1,
-                  ),
-                ),
-              ] else ...[
-                Icon(
-                  Icons.download_done,
-                  size: 48,
-                  color: AppTheme.elementColor2,
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Update descarcat cu succes!',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.elementColor2,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              Text(
-                statusText,
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: AppTheme.elementColor1,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: isDownloadComplete ? [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Mai tarziu',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.elementColor1,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _showInstallDialog();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.elementColor2,
-                foregroundColor: Colors.white,
-              ),
-              child: Text(
-                'Instaleaza acum',
-                style: GoogleFonts.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ] : null,
-        ),
-      ),
-    );
-    
-    try {
-      final success = await _updateService.startDownload();
-      
-      if (!success && mounted) {
-        Navigator.of(context).pop(); // Close download dialog
-        _showUpdateFailedDialog();
-      }
-    } catch (e) {
-      debugPrint('❌ Error during download: $e');
-      if (mounted) {
-        Navigator.of(context).pop(); // Close download dialog
-        _showUpdateFailedDialog();
-      }
-    }
-  }
+  // Legacy download dialog removed (pre-launch updater handles updates)
   
-  void _showInstallDialog() {
-    // This dialog is no longer needed - the main update popup handles everything
-    // Keeping empty method for compatibility
-  }
+  // Legacy install dialog removed
   
-  String _getReleaseDescription() {
-    // Get release description from update service
-    final updateInfo = _updateService.getUpdateInfo();
-    final releaseDescription = updateInfo['releaseDescription'];
-    
-    if (releaseDescription != null && releaseDescription.isNotEmpty) {
-      return releaseDescription;
-    }
-    
-    // Fallback to default description
-    return '• Imbunatatiri de performanta\n• Corectari de bug-uri\n• Functionalitati noi\n• Securitate imbunatatita';
-  }
+  // Removed release notes composition (handled pre-launch if needed)
 
-  void _startCompleteUpdate() async {
-    // First, download the update if not already downloaded
-    final updateInfo = _updateService.getUpdateInfo();
-    bool hasUpdate = updateInfo['hasUpdate'] ?? false;
-    
-    if (!hasUpdate) {
-      // Check for updates first
-      hasUpdate = await _updateService.checkForUpdates();
-    }
-    
-    if (hasUpdate) {
-      // Start download if not already downloaded
-      final isUpdateReady = updateInfo['isUpdateReady'] ?? false;
-      if (!isUpdateReady) {
-        await _updateService.startDownload();
-      }
-      
-      // Now install the update
-      await _updateService.installUpdate();
-    }
-  }
+  // Removed legacy _startCompleteUpdate to avoid double-trigger flow
   
-  void _showUpdateFailedDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Update esuat',
-          style: GoogleFonts.outfit(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.elementColor2,
-          ),
-        ),
-        content: Text(
-          'Nu s-a putut actualiza aplicatia. Va rugam incercati din nou mai tarziu.',
-          style: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            color: AppTheme.elementColor1,
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.elementColor2,
-              foregroundColor: AppTheme.elementColor2,
-            ),
-            child: Text(
-              'OK',
-              style: GoogleFonts.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.elementColor2,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Removed failed-update dialog (pre-launch updater decides UX)
   
   Future<void> _navigateToMainScreen() async {
     // FIX: Reseteaza cache-ul pentru noul consultant inainte de navigare
     try {
       await _splashService.resetForNewConsultant();
     } catch (e) {
-      debugPrint('❌ SPLASH_SCREEN: Error resetting cache: $e');
+      debugPrint('SPLASH_SCREEN: Error resetting cache: $e');
     }
     
     if (!mounted) return;
@@ -608,7 +245,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
                   // Subtitle Text
                   Text(
-                    'Aplicatie de Consultanta Financiara',
+                    'MAT Finance',
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w400,

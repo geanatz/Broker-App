@@ -1,7 +1,7 @@
-import 'package:broker_app/app_theme.dart'; // Ajusteaza calea daca e necesar
+﻿import 'package:mat_finance/app_theme.dart'; // Ajusteaza calea daca e necesar
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import pentru SVG
-import 'package:broker_app/backend/services/auth_service.dart'; // Pentru getConsultantNames
+import 'package:mat_finance/backend/services/auth_service.dart'; // Pentru getConsultantNames
 
 // Custom InkWell Button for consistent styling and hover effects
 class AuthPopupButton extends StatefulWidget {
@@ -519,3 +519,4 @@ class _LoginPopupState extends State<LoginPopup> {
     );
   }
 }
+

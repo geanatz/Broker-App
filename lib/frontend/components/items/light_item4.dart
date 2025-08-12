@@ -1,4 +1,4 @@
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+﻿// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 // lib/components/items/light_item4.dart
 
 import 'package:flutter/material.dart';
@@ -124,3 +124,4 @@ class LightItem4 extends StatelessWidget {
     return content;
   }
 }
+

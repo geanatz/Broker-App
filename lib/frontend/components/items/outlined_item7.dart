@@ -1,4 +1,4 @@
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+﻿// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 // lib/components/items/outlined_item7.dart
 
 import 'package:flutter/material.dart';
@@ -193,3 +193,4 @@ class OutlinedItem7 extends StatelessWidget {
     return content;
   }
 }
+

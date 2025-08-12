@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -346,9 +346,7 @@ class DashboardService extends ChangeNotifier {
 
         Map<String, int>? counters = monthlyTotals[consultantToken];
         // Fallback only if fields are absent in monthly doc
-        if (counters == null) {
-          counters = await _readMonthlyCountersForToken(yearMonth, consultantToken);
-        }
+        counters ??= await _readMonthlyCountersForToken(yearMonth, consultantToken);
 
         final forms = counters['forms'] ?? 0;
         final meetings = counters['meetings'] ?? 0;
@@ -1169,3 +1167,4 @@ extension _ShardedCounters on DashboardService {
     Future.microtask(() => warm(ymNext));
   }
 }
+

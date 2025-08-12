@@ -1,11 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:broker_app/app_theme.dart';
-import 'package:broker_app/backend/services/llm_service.dart';
-import 'package:broker_app/backend/services/consultant_service.dart';
-import 'package:broker_app/backend/services/splash_service.dart';
+import 'package:mat_finance/app_theme.dart';
+import 'package:mat_finance/backend/services/llm_service.dart';
+import 'package:mat_finance/backend/services/consultant_service.dart';
+import 'package:mat_finance/backend/services/splash_service.dart';
 import 'headers/widget_header2.dart';
 
 /// Widget pentru chatbot AI integrat in dashboard

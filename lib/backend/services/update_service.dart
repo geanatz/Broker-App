@@ -1,12 +1,13 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:archive/archive.dart';
 import 'update_config.dart';
+import 'app_logger.dart';
 import 'dart:async';
+import 'package:crypto/crypto.dart';
 
 class UpdateService {
   static final UpdateService _instance = UpdateService._internal();
@@ -21,6 +22,8 @@ class UpdateService {
   String? _latestVersion;
   String? _currentVersion;
   String? _downloadUrl;
+  String? _downloadAssetName;
+  String? _checksumUrl;
   String? _updateFilePath;
   String? _releaseDescription; // Adaug variabila pentru descrierea release-ului
   double _downloadProgress = 0.0;
@@ -48,10 +51,17 @@ class UpdateService {
     '${(_downloadedBytes / 1024 / 1024).toStringAsFixed(1)} MB';
   
   // Callback setters pentru UI
-  void setDownloadProgressCallback(Function(double) callback) => _onDownloadProgress = callback;
-  void setStatusChangeCallback(Function(String) callback) => _onStatusChange = callback;
-  void setUpdateReadyCallback(Function(bool) callback) => _onUpdateReady = callback;
-  void setErrorCallback(Function(String) callback) => _onError = callback;
+  void setDownloadProgressCallback(Function(double)? callback) => _onDownloadProgress = callback;
+  void setStatusChangeCallback(Function(String)? callback) => _onStatusChange = callback;
+  void setUpdateReadyCallback(Function(bool)? callback) => _onUpdateReady = callback;
+  void setErrorCallback(Function(String)? callback) => _onError = callback;
+
+  void clearUICallbacks() {
+    _onDownloadProgress = null;
+    _onStatusChange = null;
+    _onUpdateReady = null;
+    _onError = null;
+  }
   
   /// Initializeaza serviciul si obtine versiunea curenta
   Future<void> initialize() async {
@@ -62,12 +72,33 @@ class UpdateService {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       _currentVersion = packageInfo.version;
-      
+
+      // Initialize file logging sink at app directory
+      try {
+        final appDir = Directory.current;
+        final logPath = '${appDir.path}/logs.txt';
+        await AppLogger.initFileLogging(logPath);
+        AppLogger.setUseEmojis(false);
+        AppLogger.setVerboseMode(true);
+        AppLogger.lifecycle('update_service', 'initialized', {
+          'version': _currentVersion,
+          'dir': appDir.path,
+        });
+        AppLogger.sync('update_service', 'env_snapshot', {
+          'cwd': appDir.path,
+          'exe': Platform.resolvedExecutable,
+          'os': Platform.operatingSystemVersion,
+          'dart': Platform.version,
+        });
+      } catch (e) {
+        debugPrint('UPDATE_SERVICE: failed to init file logging: $e');
+      }
+
       // Curata scripturile ramase de la update-uri anterioare
       await cleanupRemainingScripts();
   
     } catch (e) {
-      debugPrint('❌ Error initializing UpdateService: $e');
+      AppLogger.error('update_service', 'initialize failed', e);
     }
   }
   
@@ -81,6 +112,10 @@ class UpdateService {
     
     _isChecking = true;
     _updateStatus('Verificare update-uri...');
+    AppLogger.sync('update_service', 'check_for_updates_start', {
+      'current': _currentVersion,
+      'url': UpdateConfig.githubApiUrl,
+    });
     
     int retryCount = 0;
     
@@ -92,36 +127,65 @@ class UpdateService {
           headers: {'Accept': 'application/vnd.github.v3+json'},
         ).timeout(UpdateConfig.timeoutDuration);
         
-        if (response.statusCode == 200) {
+          if (response.statusCode == 200) {
           final data = json.decode(response.body);
           _latestVersion = data['tag_name']?.toString().replaceAll('v', '');
           _releaseDescription = data['body']; // Preia descrierea
+            AppLogger.sync('update_service', 'github_release_ok', {
+              'latest': _latestVersion,
+            });
           
           if (_latestVersion != null) {
             
             if (hasUpdate) {
+               AppLogger.sync('update_service', 'has_update', {
+                 'current': _currentVersion,
+                 'latest': _latestVersion,
+               });
+               final assets = data['assets'] as List<dynamic>? ?? const [];
+               _downloadUrl = _getDownloadUrl(assets);
+               _downloadAssetName = _getSelectedAssetName(assets, _downloadUrl);
+               _checksumUrl = _getChecksumUrl(assets, _downloadAssetName);
               
-              _downloadUrl = _getDownloadUrl(data['assets']);
-              
-              if (_downloadUrl != null) {
-                return true;
+                if (_downloadUrl != null) {
+                  // Persist release info for showing after restart
+                  try {
+                    await _persistReleaseInfo();
+                  } catch (e) {
+                    AppLogger.error('update_service', 'persist_release_info_exception', e);
+                  }
+                  _isChecking = false;
+                  _updateStatus('');
+                  AppLogger.sync('update_service', 'asset_selected', {
+                    'url': _downloadUrl,
+                    'name': _downloadAssetName,
+                  });
+                  if (UpdateConfig.validateChecksums) {
+                    AppLogger.sync('update_service', 'checksum_asset', {
+                      'url': _checksumUrl ?? 'missing',
+                    });
+                  }
+                  return true;
               } else {
-                debugPrint('❌ No Windows asset found in release');
+                  AppLogger.warning('update_service', 'no_windows_asset_found');
               }
             } else {
-              
+                AppLogger.sync('update_service', 'no_update', {
+                  'current': _currentVersion,
+                  'latest': _latestVersion,
+                });
             }
           }
           break; // Success, exit retry loop
         } else {
-          debugPrint('❌ Failed to check updates: ${response.statusCode}');
+          AppLogger.error('update_service', 'check_updates_failed_status', response.statusCode);
           if (response.statusCode == 403) {
-            debugPrint('❌ Rate limited by GitHub API');
+            AppLogger.warning('update_service', 'rate_limited');
             break; // Don't retry on rate limit
           }
         }
       } catch (e) {
-        debugPrint('❌ Error checking for updates (attempt ${retryCount + 1}): $e');
+        AppLogger.error('update_service', 'check_for_updates_exception_attempt_${retryCount + 1}', e);
         if (retryCount < UpdateConfig.maxRetries - 1) {
           await Future.delayed(Duration(seconds: (retryCount + 1) * 2));
         }
@@ -131,7 +195,61 @@ class UpdateService {
     
     _isChecking = false;
     _updateStatus('');
+    AppLogger.sync('update_service', 'check_for_updates_end', {
+      'result': false,
+    });
     return false;
+  }
+
+  Future<void> _persistReleaseInfo() async {
+    try {
+      final supportDir = await getApplicationSupportDirectory();
+      final updateDir = Directory('${supportDir.path}/${UpdateConfig.getUpdateDirectory()}');
+      if (!await updateDir.exists()) {
+        await updateDir.create(recursive: true);
+      }
+      final file = File('${updateDir.path}/last_release.json');
+      final map = {
+        'version': _latestVersion,
+        'description': _releaseDescription,
+        'ts': DateTime.now().toIso8601String(),
+      };
+      await file.writeAsString(jsonEncode(map));
+      AppLogger.sync('update_service', 'release_info_persisted', {'file': file.path});
+    } catch (e) {
+      AppLogger.error('update_service', 'release_info_persist_exception', e);
+    }
+  }
+
+  /// Reads persisted release info (version, description) and optionally clears it.
+  Future<Map<String, String>?> readPersistedReleaseInfo({bool clearAfterRead = true}) async {
+    try {
+      final supportDir = await getApplicationSupportDirectory();
+      final updateDir = Directory('${supportDir.path}/${UpdateConfig.getUpdateDirectory()}');
+      final file = File('${updateDir.path}/last_release.json');
+      if (!await file.exists()) {
+        AppLogger.sync('update_service', 'release_info_missing', {'path': file.path});
+        return null;
+      }
+      final content = await file.readAsString();
+      final data = jsonDecode(content) as Map<String, dynamic>;
+      final version = (data['version'] ?? '').toString();
+      final description = (data['description'] ?? '').toString();
+      AppLogger.sync('update_service', 'release_info_read', {
+        'version': version,
+        'desc_len': description.length,
+      });
+      if (clearAfterRead) {
+        try { await file.delete(); AppLogger.sync('update_service', 'release_info_cleared'); } catch (_) {}
+      }
+      return {
+        'version': version,
+        'description': description,
+      };
+    } catch (e) {
+      AppLogger.error('update_service', 'read_release_info_exception', e);
+      return null;
+    }
   }
   
   /// Porneste download-ul update-ului (Discord-style)
@@ -144,6 +262,9 @@ class UpdateService {
     try {
       
       _updateStatus('Se descarca update-ul...');
+      AppLogger.sync('update_service', 'download_start', {
+        'url': _downloadUrl,
+      });
       
       final success = await _downloadUpdate();
       
@@ -151,15 +272,19 @@ class UpdateService {
         _isUpdateReady = true;
         _onUpdateReady?.call(true);
         _updateStatus('Update gata de instalare');
+        AppLogger.success('update_service', 'download_success', {
+          'size_bytes': _downloadedBytes,
+        });
         
       } else {
         _onError?.call('Eroare la descarcarea update-ului');
+        AppLogger.error('update_service', 'download_failed');
         
       }
       
       return success;
     } catch (e) {
-      debugPrint('❌ Error during update download: $e');
+      AppLogger.error('update_service', 'download_exception', e);
       _onError?.call('Eroare neasteptata la download: $e');
       return false;
     } finally {
@@ -176,37 +301,182 @@ class UpdateService {
     try {
       
       _updateStatus('Incepand instalarea update-ului...');
+      AppLogger.sync('update_service', 'install_start');
       
       // Verifica fisierul de update
       _updateStatus('Verificare fisier update...');
       final updateFile = File(_updateFilePath!);
       if (!await updateFile.exists()) {
         _onError?.call('Fisierul de update nu exista');
+        AppLogger.error('update_service', 'update_file_missing', {'path': _updateFilePath});
         return false;
       }
       
       final fileSize = await updateFile.length();
+      final modified = await updateFile.lastModified();
       _updateStatus('Fisier update gasit: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+      AppLogger.sync('update_service', 'update_file_info', {
+        'path': _updateFilePath,
+        'size': fileSize,
+        'modified': modified.toIso8601String(),
+      });
       
-      final success = await _installWindowsUpdate(_updateFilePath!);
+      bool success;
+      if (_updateFilePath!.toLowerCase().endsWith('.exe')) {
+        success = await _installViaInstaller(_updateFilePath!);
+      } else {
+        _onError?.call('Asset nesuportat pentru instalare (numai installer este acceptat)');
+        AppLogger.error('update_service', 'unsupported_asset_for_install');
+        return false;
+      }
       
       if (success) {
         
         _updateStatus('Instalare finalizata cu succes!');
+        AppLogger.success('update_service', 'install_success');
         // Application will restart automatically
       } else {
         _onError?.call('Eroare la instalarea update-ului');
+        AppLogger.error('update_service', 'install_failed');
         
       }
       
       return success;
     } catch (e) {
-      debugPrint('❌ Error during update installation: $e');
+      AppLogger.error('update_service', 'install_exception', e);
       _onError?.call('Eroare neasteptata la instalare: $e');
       return false;
     } finally {
       _isInstalling = false;
     }
+  }
+
+  /// Ruleaza installer-ul (preferat) fara CMD si lasa installer-ul sa gestioneze restartul
+  Future<bool> _installViaInstaller(String installerPath) async {
+    try {
+      final exists = await File(installerPath).exists();
+      final size = exists ? await File(installerPath).length() : -1;
+      final modified = exists ? await File(installerPath).lastModified() : null;
+      AppLogger.sync('update_service', 'installer_precheck', {
+        'exists': exists,
+        'size': size,
+        'modified': modified?.toIso8601String() ?? 'n/a',
+        'cwd': Directory.current.path,
+        'exe': Platform.resolvedExecutable,
+      });
+      // Build silent args and force installer log file into app support dir
+      final appSupportDir = await getApplicationSupportDirectory();
+      final installerLogPath = '${appSupportDir.path}/${UpdateConfig.getUpdateDirectory()}/Installer.log';
+      final args = <String>[
+        ...UpdateConfig.windowsInstallerSilentArgs,
+        '/LOG="$installerLogPath"',
+      ];
+      AppLogger.sync('update_service', 'installer_launch', {
+        'path': installerPath,
+        'args': args.join(' '),
+        'log': installerLogPath,
+      });
+      _updateStatus('Pornire installer...');
+      // Run the installer as a separate process; no cmd window
+      final process = await Process.start(
+        installerPath,
+        args,
+        runInShell: false,
+        workingDirectory: Directory.current.path,
+      );
+      AppLogger.sync('update_service', 'installer_started', {'pid': process.pid});
+
+      // New strategy: wait for installer to finish, then launch installed app ourselves.
+      // This avoids relying on Inno [Run] in silent mode and guarantees relaunch.
+      _updateStatus('Se asteapta finalizarea installer-ului...');
+      AppLogger.sync('update_service', 'installer_wait_start');
+
+      int exitCode = -1;
+      try {
+        // Safety timeout: 10 minutes
+        exitCode = await process.exitCode.timeout(const Duration(minutes: 10));
+      } on TimeoutException {
+        AppLogger.error('update_service', 'installer_timeout');
+      }
+
+      AppLogger.sync('update_service', 'installer_finished', {'exit_code': exitCode});
+
+      // Try to start the newly installed app from common install locations
+      final localAppData = Platform.environment['LOCALAPPDATA'] ?? '';
+      final programFiles = Platform.environment['ProgramFiles'] ?? '';
+      final programFilesX86 = Platform.environment['ProgramFiles(x86)'] ?? '';
+
+      String buildWinPath(String base, List<String> segments) {
+        if (base.isEmpty) return '';
+        final buf = StringBuffer(base);
+        for (final s in segments) {
+          buf.write('\\');
+          buf.write(s);
+        }
+        return buf.toString();
+      }
+
+      final candidates = <String>[
+        // New naming
+        buildWinPath(localAppData, ['MAT Finance', UpdateConfig.getExecutableName()]),
+        buildWinPath(programFiles, ['MAT Finance', UpdateConfig.getExecutableName()]),
+        buildWinPath(programFilesX86, ['MAT Finance', UpdateConfig.getExecutableName()]),
+        // New folder with legacy exe name
+        buildWinPath(localAppData, ['MAT Finance', 'broker_app.exe']),
+        buildWinPath(programFiles, ['MAT Finance', 'broker_app.exe']),
+        buildWinPath(programFilesX86, ['MAT Finance', 'broker_app.exe']),
+        // Legacy folder with legacy exe name
+        buildWinPath(localAppData, ['Broker App', 'broker_app.exe']),
+        buildWinPath(programFiles, ['Broker App', 'broker_app.exe']),
+        buildWinPath(programFilesX86, ['Broker App', 'broker_app.exe']),
+        // Legacy folder with new exe name
+        buildWinPath(localAppData, ['Broker App', UpdateConfig.getExecutableName()]),
+        buildWinPath(programFiles, ['Broker App', UpdateConfig.getExecutableName()]),
+        buildWinPath(programFilesX86, ['Broker App', UpdateConfig.getExecutableName()]),
+      ];
+
+      AppLogger.sync('update_service', 'installed_path_candidates', {
+        'LOCALAPPDATA': localAppData,
+        'ProgramFiles': programFiles,
+        'ProgramFiles(x86)': programFilesX86,
+        'candidates': candidates.join(' | '),
+      });
+
+      bool started = false;
+      for (final candidate in candidates) {
+        try {
+          if (candidate.isNotEmpty && await File(candidate).exists()) {
+            _updateStatus('Pornire versiune actualizata...');
+            await Process.start(candidate, [], runInShell: false);
+            AppLogger.success('update_service', 'installed_app_started', {'path': candidate});
+            started = true;
+            break;
+          }
+        } catch (e) {
+          AppLogger.error('update_service', 'installed_start_exception', {'path': candidate, 'error': e.toString()});
+        }
+      }
+      if (!started) {
+        AppLogger.error('update_service', 'installed_exe_missing_all');
+      }
+
+      // Close current process only if relaunch succeeded; otherwise keep app running
+      if (started) {
+        try {
+          await AppLogger.closeFileLogging();
+        } catch (_) {}
+        exit(0);
+      } else {
+        _updateStatus('Nu s-a putut relansa aplicatia dupa instalare');
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('update_service', 'installer_launch_exception', e);
+      _onError?.call('Eroare la rularea installer-ului: $e');
+      return false;
+    }
+    // Note: code below is theoretically unreachable because of exit(0).
+    // Keeping a return for static analysis.
   }
   
   /// Metoda legacy pentru compatibilitate - porneste download automat
@@ -234,25 +504,37 @@ class UpdateService {
   /// Compara doua versiuni
   bool _isNewerVersion(String latest, String current) {
     try {
-      final latestParts = latest.split('.').map(int.parse).toList();
-      final currentParts = current.split('.').map(int.parse).toList();
-      
-      // Normalizeaza lungimea
+      String stripSuffix(String v) {
+        final dash = v.indexOf('-');
+        final plus = v.indexOf('+');
+        int cut = v.length;
+        if (dash != -1) cut = dash;
+        if (plus != -1 && plus < cut) cut = plus;
+        return v.substring(0, cut);
+      }
+
+      final latestCore = stripSuffix(latest);
+      final currentCore = stripSuffix(current);
+
+      List<int> toParts(String v) => v.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+      final latestParts = toParts(latestCore);
+      final currentParts = toParts(currentCore);
+
       while (latestParts.length < currentParts.length) {
         latestParts.add(0);
       }
       while (currentParts.length < latestParts.length) {
         currentParts.add(0);
       }
-      
+
       for (int i = 0; i < latestParts.length; i++) {
         if (latestParts[i] > currentParts[i]) return true;
         if (latestParts[i] < currentParts[i]) return false;
       }
-      
       return false;
     } catch (e) {
-      debugPrint('❌ Error comparing versions: $e');
+      debugPrint('Error comparing versions: $e');
       return false;
     }
   }
@@ -260,16 +542,75 @@ class UpdateService {
   /// Obtine URL-ul de download pentru Windows
   String? _getDownloadUrl(List<dynamic> assets) {
     if (assets.isEmpty) return null;
-    
-    final targetName = UpdateConfig.getWindowsAssetName();
-    
+
+    String? exactMatch(String name) {
+      for (final asset in assets) {
+        final assetName = asset['name']?.toString() ?? '';
+        if (assetName == name) {
+          return asset['browser_download_url']?.toString();
+        }
+      }
+      return null;
+    }
+
+    // Preferred new installer name
+    final preferred = UpdateConfig.getInstallerName();
+    final legacyNames = <String>[
+      'BrokerAppInstaller.exe',
+      'broker_app_installer.exe',
+    ];
+
+    // 1) Try preferred exact match
+    final preferredUrl = exactMatch(preferred);
+    if (preferredUrl != null) return preferredUrl;
+
+    // 2) Try legacy exact matches
+    for (final legacy in legacyNames) {
+      final url = exactMatch(legacy);
+      if (url != null) return url;
+    }
+
+    // 3) Heuristic fallback: any .exe asset that contains 'Installer'
     for (final asset in assets) {
-      final assetName = asset['name']?.toString() ?? '';
-      if (assetName.contains(targetName.split('.').first)) {
-        return asset['browser_download_url'];
+      final assetName = (asset['name']?.toString() ?? '').toLowerCase();
+      if (assetName.endsWith('.exe') && assetName.contains('installer')) {
+        return asset['browser_download_url']?.toString();
       }
     }
-    
+
+    // No acceptable asset found (ZIP fallback disabled)
+    AppLogger.warning('update_service', 'no_installer_asset_found');
+    return null;
+  }
+
+  String? _getSelectedAssetName(List<dynamic> assets, String? url) {
+    if (url == null) return null;
+    for (final asset in assets) {
+      final browserUrl = asset['browser_download_url']?.toString();
+      if (browserUrl == url) {
+        return asset['name']?.toString();
+      }
+    }
+    return null;
+  }
+
+  String? _getChecksumUrl(List<dynamic> assets, String? selectedAssetName) {
+    if (assets.isEmpty || selectedAssetName == null) return null;
+    final expected1 = '$selectedAssetName.sha256';
+    for (final asset in assets) {
+      final assetName = asset['name']?.toString() ?? '';
+      if (assetName == expected1) {
+        return asset['browser_download_url']?.toString();
+      }
+    }
+    // fallback: any .sha256 containing base name
+    final base = selectedAssetName.split('.').first;
+    for (final asset in assets) {
+      final assetName = asset['name']?.toString() ?? '';
+      if (assetName.endsWith('.sha256') && assetName.contains(base)) {
+        return asset['browser_download_url']?.toString();
+      }
+    }
     return null;
   }
   
@@ -290,7 +631,21 @@ class UpdateService {
         await updateDir.create(recursive: true);
       }
       
-      _updateFilePath = '${updateDir.path}/broker_app_update.zip';
+      final isInstaller = _downloadUrl!.toLowerCase().endsWith('.exe');
+      // Save using the actual asset name when available, otherwise fall back to configured/new name,
+      // and finally to the legacy name to preserve compatibility.
+      final fallbackNames = <String>[
+        _downloadAssetName ?? '',
+        UpdateConfig.getInstallerName(),
+        'BrokerAppInstaller.exe',
+      ].where((e) => e.isNotEmpty).toList();
+      final saveName = isInstaller ? fallbackNames.first : 'broker_app_update.unsupported';
+      _updateFilePath = '${updateDir.path}/$saveName';
+      AppLogger.sync('update_service', 'download_paths', {
+        'target_dir': updateDir.path,
+        'target_file': _updateFilePath,
+        'url': _downloadUrl,
+      });
       
       
       final request = http.Request('GET', Uri.parse(_downloadUrl!));
@@ -302,7 +657,11 @@ class UpdateService {
         final sink = file.openWrite();
         
         _downloadedBytes = 0;
-        int lastLoggedProgress = 0;
+        int lastLoggedProgress = -1;
+        AppLogger.sync('update_service', 'download_response', {
+          'status': response.statusCode,
+          'content_length': _totalBytes,
+        });
         
         await response.stream.listen((chunk) {
           _downloadedBytes += chunk.length;
@@ -315,446 +674,125 @@ class UpdateService {
             // Update UI callback
             _onDownloadProgress?.call(_downloadProgress);
             
-            if (progressPercent > lastLoggedProgress && progressPercent % 10 == 0) {
-              
+            if (progressPercent % 10 == 0 && progressPercent != lastLoggedProgress) {
+              AppLogger.sync('update_service', 'download_progress', {
+                'percent': progressPercent,
+                'downloaded': _downloadedBytes,
+                'total': _totalBytes,
+              });
               lastLoggedProgress = progressPercent;
             }
           }
         }).asFuture();
         
         await sink.close();
-        (_downloadedBytes / 1024 / 1024).toStringAsFixed(2);
-        
-        // Valideaza fisierul descarcat
-        return await _validateDownload(_updateFilePath!);
-      } else {
-        
-        return false;
-      }
-    } catch (e) {
-      debugPrint('❌ Error downloading update: $e');
-      return false;
-    }
-  }
-  
-  /// Valideaza fisierul descarcat
-  Future<bool> _validateDownload(String filePath) async {
-    try {
-      final file = File(filePath);
-      if (!await file.exists()) {
-        debugPrint('❌ Downloaded file does not exist');
-        return false;
-      }
-      
-      final fileSize = await file.length();
-      if (fileSize < 1024) { // Minim 1KB
-        debugPrint('❌ Downloaded file is too small: $fileSize bytes');
-        return false;
-      }
-      
-      // Verifica daca e un fisier ZIP valid
-      try {
-        final bytes = await file.readAsBytes();
-        final archive = ZipDecoder().decodeBytes(bytes);
-        if (archive.isEmpty) {
-          debugPrint('❌ Downloaded ZIP file is empty');
-          return false;
-        }
-        return true;
-      } catch (e) {
-        debugPrint('❌ Downloaded file is not a valid ZIP: $e');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('❌ Error validating download: $e');
-      return false;
-    }
-  }
-  
-  /// Instaleaza update-ul pe Windows
-  Future<bool> _installWindowsUpdate(String zipPath) async {
-    try {
-      
-      _updateStatus('Citire fisier ZIP...');
-      
-      // Extract ZIP
-      final bytes = await File(zipPath).readAsBytes();
-      _updateStatus('Decodare arhiva ZIP...');
-      final archive = ZipDecoder().decodeBytes(bytes);
-      _updateStatus('Arhiva decodata: ${archive.length} fisiere gasite');
-      
-      // Get application directory
-      final appDir = Directory.current;
-      _updateStatus('Director aplicatie: ${appDir.path}');
-      
-      // Create backup if enabled
-      if (UpdateConfig.createBackup) {
-        _updateStatus('Creare backup...');
-        final backupSuccess = await _createBackup(appDir);
-        if (!backupSuccess) {
-          debugPrint('❌ Failed to create backup, aborting update');
-          _onError?.call('Eroare la crearea backup-ului');
-          return false;
-        }
-      }
-      
-      // Extract new files with smart replacement strategy
-      _updateStatus('Extragere fisiere (strategie inteligenta)...');
-      int filesInstalled = 0;
-      int filesSkipped = 0;
-      int totalFiles = archive.where((file) => file.isFile).length;
-      
-      for (final file in archive) {
-        final filename = file.name;
-        if (file.isFile) {
-          final data = file.content as List<int>;
-          final newFile = File('${appDir.path}/$filename');
-          
-          // Create directory if needed
-          final parentDir = newFile.parent;
-          if (!await parentDir.exists()) {
-            await parentDir.create(recursive: true);
-          }
-          
-          // Check if file is in use (only for DLL and EXE files)
-          bool shouldSkip = false;
-          if (filename.endsWith('.dll') || filename.endsWith('.exe')) {
-            try {
-              // Try to open file for writing to check if it's in use
-              final testFile = await newFile.open(mode: FileMode.write);
-              await testFile.close();
-            } catch (e) {
-              _updateStatus('Fisier in uz, va fi actualizat la restart: $filename');
-              shouldSkip = true;
-              filesSkipped++;
-            }
-          }
-          
-          if (!shouldSkip) {
-            try {
-              await newFile.writeAsBytes(data);
-              filesInstalled++;
-            } catch (e) {
-              _updateStatus('Eroare la scrierea fisierului $filename: $e');
-              filesSkipped++;
-            }
-          }
-          
-          if ((filesInstalled + filesSkipped) % 10 == 0 || (filesInstalled + filesSkipped) == totalFiles) {
-            _updateStatus('Fisiere procesate: ${filesInstalled + filesSkipped}/$totalFiles (instalate: $filesInstalled, sarite: $filesSkipped)');
-          }
-        }
-      }
-      
-      _updateStatus('Instalare finalizata: $filesInstalled fisiere instalate, $filesSkipped sarite');
-      
-      // Create update script for files that couldn't be replaced
-      if (filesSkipped > 0) {
-        _updateStatus('Creare script pentru fisierele ramase...');
-        await _createUpdateScript(appDir, archive, filesSkipped);
-      }
-      
-      // Cleanup download file
-      _updateStatus('Curatare fisiere temporare...');
-      await _cleanupDownload(zipPath);
-      
-      // Restart application
-      _updateStatus('Pregatire restart aplicatie...');
-      await _restartApplication();
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error installing Windows update: $e');
-      _onError?.call('Eroare la instalare: $e');
-      await _rollbackUpdate();
-      return false;
-    }
-  }
-  
-  /// Creaza backup inainte de update
-  Future<bool> _createBackup(Directory appDir) async {
-    if (kIsWeb) {
-      debugPrint('⚠️ Backup not supported on web platform');
-      return false;
-    }
-    
-    try {
-      
-      _updateStatus('Creare backup...');
-      
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final backupDir = Directory('${appDir.path}${UpdateConfig.backupSuffix}_$timestamp');
-      _updateStatus('Backup path: ${backupDir.path}');
-      
-      // Sterge backup-uri vechi
-      _updateStatus('Curatare backup-uri vechi...');
-      await _cleanupOldBackups(appDir.parent);
-      
-      // Creaza backup nou
-      _updateStatus('Copiere fisiere in backup...');
-      await _copyDirectory(appDir, backupDir);
-      
-      return true;
-    } catch (e) {
-      debugPrint('❌ Error creating backup: $e');
-      _onError?.call('Eroare la crearea backup-ului: $e');
-      return false;
-    }
-  }
-  
-  /// Sterge backup-uri vechi
-  Future<void> _cleanupOldBackups(Directory parentDir) async {
-    try {
-      final backupDirs = <Directory>[];
-      
-      await for (final entity in parentDir.list()) {
-        if (entity is Directory && entity.path.contains(UpdateConfig.backupSuffix)) {
-          backupDirs.add(entity);
-        }
-      }
-      
-      // Sorteaza dupa data
-      backupDirs.sort((a, b) => a.path.compareTo(b.path));
-      
-      // Sterge backup-uri in plus
-      while (backupDirs.length > UpdateConfig.maxBackups) {
-        final oldBackup = backupDirs.removeAt(0);
-        await oldBackup.delete(recursive: true);
-      }
-    } catch (e) {
-      debugPrint('❌ Error cleaning up old backups: $e');
-    }
-  }
-  
-  /// Copiaza un director recursiv
-  Future<void> _copyDirectory(Directory source, Directory destination) async {
-    await destination.create(recursive: true);
-    
-    await for (final entity in source.list(recursive: false)) {
-      if (entity is Directory) {
-        final newDirectory = Directory('${destination.path}/${entity.uri.pathSegments.last}');
-        await _copyDirectory(entity, newDirectory);
-      } else if (entity is File) {
-        final newFile = File('${destination.path}/${entity.uri.pathSegments.last}');
-        try {
-          await entity.copy(newFile.path);
-        } catch (e) {
-          // Daca fisierul este in uz, incearca sa-l copiezi cu nume temporar
-          if (e.toString().contains('being used by another process')) {
-            final tempFile = File('${newFile.path}.tmp');
-            await entity.copy(tempFile.path);
-            // Rename-ul se va face la restart
-          } else {
-            rethrow;
-          }
-        }
-      }
-    }
-  }
-  
-  /// Sterge fisierul de download
-  Future<void> _cleanupDownload(String filePath) async {
-    try {
-      final file = File(filePath);
-      if (await file.exists()) {
-        await file.delete();
-      }
-    } catch (e) {
-      debugPrint('❌ Error cleaning up download: $e');
-    }
-  }
-  
-  /// Rollback la versiunea anterioara
-  Future<bool> _rollbackUpdate() async {
-    if (kIsWeb) {
-      debugPrint('⚠️ Rollback not supported on web platform');
-      return false;
-    }
-    
-    try {
-      
-      _updateStatus('Rollback la versiunea anterioara...');
-      
-      final appDir = Directory.current;
-      final parentDir = appDir.parent;
-      _updateStatus('Cautare backup...');
-      
-      // Gaseste cel mai recent backup
-      Directory? latestBackup;
-      int latestTimestamp = 0;
-      
-      await for (final entity in parentDir.list()) {
-        if (entity is Directory && entity.path.contains(UpdateConfig.backupSuffix)) {
-          final timestampStr = entity.path.split('${UpdateConfig.backupSuffix}_').last;
-          final timestamp = int.tryParse(timestampStr) ?? 0;
-          if (timestamp > latestTimestamp) {
-            latestTimestamp = timestamp;
-            latestBackup = entity;
-          }
-        }
-      }
-      
-      if (latestBackup != null) {
-        _updateStatus('Backup gasit: ${latestBackup.path}');
-        
-        // In loc sa stergem directorul curent (care poate fi in uz),
-        // copiem fisierele din backup peste cele existente
-        _updateStatus('Restaurare fisiere din backup...');
-        
-        try {
-          await _copyDirectory(latestBackup, appDir);
-          return true;
-        } catch (e) {
-          _updateStatus('Eroare la restaurare, se incearca stergerea...');
-          
-          // Daca copierea esueaza, incearca stergerea
-          try {
-            await appDir.delete(recursive: true);
-            await _copyDirectory(latestBackup, appDir);
-            return true;
-          } catch (deleteError) {
-            debugPrint('❌ Error during rollback deletion: $deleteError');
-            _onError?.call('Eroare la stergerea fisierelor: $deleteError');
+        final mb = (_downloadedBytes / 1024 / 1024).toStringAsFixed(2);
+        AppLogger.sync('update_service', 'download_complete', {
+          'downloaded_mb': mb,
+          'file': _updateFilePath,
+        });
+
+        // Optional checksum validation
+        if (UpdateConfig.validateChecksums && _checksumUrl != null) {
+          final ok = await _validateChecksum(_updateFilePath!, _checksumUrl!);
+          if (!ok) {
+            AppLogger.error('update_service', 'checksum_mismatch_delete_file');
+            try { await File(_updateFilePath!).delete(); } catch (_) {}
             return false;
           }
         }
+        
+        // Validate downloaded file (only installer supported)
+        if (isInstaller) {
+          return await _validateInstallerDownload(_updateFilePath!);
+        } else {
+          AppLogger.error('update_service', 'non_installer_asset_downloaded');
+          try { await File(_updateFilePath!).delete(); } catch (_) {}
+          return false;
+        }
       } else {
-        debugPrint('❌ No backup found for rollback');
-        _onError?.call('Nu s-a gasit backup pentru rollback');
+        AppLogger.error('update_service', 'download_http_error', {
+          'status': response.statusCode,
+        });
         return false;
       }
     } catch (e) {
-      debugPrint('❌ Error during rollback: $e');
-      _onError?.call('Eroare la rollback: $e');
+      AppLogger.error('update_service', 'download_exception', e);
+      return false;
+    }
+  }
+
+  Future<bool> _validateChecksum(String filePath, String checksumUrl) async {
+    try {
+      AppLogger.sync('update_service', 'checksum_start', {'url': checksumUrl});
+      final resp = await http.get(Uri.parse(checksumUrl)).timeout(UpdateConfig.timeoutDuration);
+      if (resp.statusCode != 200) {
+        AppLogger.error('update_service', 'checksum_download_failed', resp.statusCode);
+        return false;
+      }
+      final content = resp.body.trim();
+      // common formats: "<sha256>  filename" or just "<sha256>"
+      final expected = (content.split(RegExp(r'\s+')).first).toLowerCase();
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+      final digest = sha256.convert(bytes).toString();
+      final match = digest.toLowerCase() == expected;
+      AppLogger.sync('update_service', 'checksum_result', {'match': match, 'expected': expected, 'actual': digest});
+      return match;
+    } catch (e) {
+      AppLogger.error('update_service', 'checksum_exception', e);
+      return false;
+    }
+  }
+
+  Future<bool> _validateInstallerDownload(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        AppLogger.error('update_service', 'installer_missing_after_download');
+        return false;
+      }
+      final fileSize = await file.length();
+      if (fileSize < 1024 * 1024) {
+        AppLogger.error('update_service', 'installer_too_small', {'size': fileSize});
+        return false;
+      }
+      final modified = await file.lastModified();
+      AppLogger.sync('update_service', 'installer_file_info', {
+        'path': filePath,
+        'size': fileSize,
+        'modified': modified.toIso8601String(),
+      });
+      return true;
+    } catch (e) {
+      AppLogger.error('update_service', 'validate_installer_exception', e);
       return false;
     }
   }
   
+  // ZIP validation removed (installer-only updates)
+  
+  // ZIP install path removed (installer-only updates)
+  
+  // Backup logic removed (installer-only updates)
+  
+  /// Sterge backup-uri vechi
+  // Backup cleanup removed (installer-only updates)
+  
+  /// Copiaza un director recursiv
+  // Directory copy helper removed (installer-only updates)
+  
+  /// Sterge fisierul de download
+  // Download cleanup removed (installer-only updates)
+  
+  /// Rollback la versiunea anterioara
+  // Rollback removed (installer-only updates)
+  
   /// Creeaza script pentru actualizarea fisierelor ramase
-  Future<void> _createUpdateScript(Directory appDir, Archive archive, int skippedFiles) async {
-    try {
-      _updateStatus('Creare script batch pentru fisierele ramase...');
-      
-      final scriptPath = '${appDir.path}/update_remaining.bat';
-      final tempDir = '${appDir.path}/temp_update';
-      
-      // Extract remaining files to temp directory
-      _updateStatus('Extragere fisiere in director temporar...');
-      final tempDirObj = Directory(tempDir);
-      if (!await tempDirObj.exists()) {
-        await tempDirObj.create(recursive: true);
-      }
-      
-      // Extract files that were skipped
-      int extractedCount = 0;
-      for (final file in archive) {
-        if (file.isFile) {
-          final filename = file.name;
-          if (filename.endsWith('.dll') || filename.endsWith('.exe')) {
-            final data = file.content as List<int>;
-            final tempFile = File('$tempDir/$filename');
-            await tempFile.writeAsBytes(data);
-            extractedCount++;
-            _updateStatus('Extras in temp: $filename');
-          }
-        }
-      }
-      
-      final scriptContent = StringBuffer();
-      scriptContent.writeln('@echo off');
-      scriptContent.writeln('echo ========================================');
-      scriptContent.writeln('echo ACTUALIZARE BROKER APP');
-      scriptContent.writeln('echo ========================================');
-      scriptContent.writeln('echo Se actualizeaza aplicatia...');
-      scriptContent.writeln('echo Nu inchide aceasta fereastra!');
-      scriptContent.writeln('echo ========================================');
-      scriptContent.writeln('timeout /t 2 /nobreak > nul');
-      
-              // Copy files from temp directory
-        int fileCount = 0;
-        int totalFiles = archive.where((file) => file.isFile && (file.name.endsWith('.dll') || file.name.endsWith('.exe'))).length;
-        for (final file in archive) {
-          if (file.isFile) {
-            final filename = file.name;
-            if (filename.endsWith('.dll') || filename.endsWith('.exe')) {
-              fileCount++;
-              scriptContent.writeln('echo Actualizare fisier $fileCount/$totalFiles...');
-              scriptContent.writeln('copy /Y "$tempDir\\$filename" "$filename" > nul 2>&1');
-              scriptContent.writeln('if errorlevel 1 (');
-              scriptContent.writeln('  echo Eroare la actualizarea: $filename');
-              scriptContent.writeln(') else (');
-              scriptContent.writeln('  echo Fisier actualizat: $filename');
-              scriptContent.writeln(')');
-            }
-          }
-        }
-      
-      scriptContent.writeln('echo.');
-      scriptContent.writeln('echo ========================================');
-      scriptContent.writeln('echo Curatare fisiere temporare...');
-      scriptContent.writeln('rmdir /S /Q "$tempDir" > nul 2>&1');
-      scriptContent.writeln('echo ========================================');
-      scriptContent.writeln('echo Pornire aplicatie...');
-      scriptContent.writeln('timeout /t 1 /nobreak > nul');
-      scriptContent.writeln('start "" "${appDir.path}\\broker_app.exe"');
-      scriptContent.writeln('echo ========================================');
-      scriptContent.writeln('echo ACTUALIZARE FINALIZATA!');
-      scriptContent.writeln('echo Aplicatia a fost actualizata si pornita cu succes.');
-      scriptContent.writeln('echo ========================================');
-      scriptContent.writeln('del "%~f0" > nul 2>&1');
-      scriptContent.writeln(':end');
-      
-      final scriptFile = File(scriptPath);
-      await scriptFile.writeAsString(scriptContent.toString());
-      
-      // Verify script was created
-      if (await scriptFile.exists()) {
-        final scriptSize = await scriptFile.length();
-        _updateStatus('Script creat cu succes: $scriptPath ($scriptSize bytes)');
-        _updateStatus('Fisiere extrase in temp: $extractedCount');
-      } else {
-        throw Exception('Script file was not created');
-      }
-    } catch (e) {
-      _updateStatus('Eroare la crearea script-ului: $e');
-    }
-  }
+  // Remaining-files script removed (installer-only updates)
   
   /// Restarteaza aplicatia
-  Future<void> _restartApplication() async {
-    if (kIsWeb) {
-      debugPrint('⚠️ Restart not supported on web platform');
-      return;
-    }
-    
-    try {
-      
-      _updateStatus('Restart aplicatie...');
-      
-      final executablePath = Platform.resolvedExecutable;
-      _updateStatus('Executable path: $executablePath');
-      
-      // Check if we have an update script
-      final updateScript = File('${Directory.current.path}/update_remaining.bat');
-      if (await updateScript.exists()) {
-        _updateStatus('Executare script pentru fisierele ramase...');
-        await Process.start('cmd', ['/c', 'start', '', updateScript.path], runInShell: true);
-        
-        // Don't start the app here, let the script do it
-        _updateStatus('Script pornit, inchidere aplicatie curenta...');
-        await Future.delayed(const Duration(milliseconds: 1000));
-        exit(0);
-      } else {
-        // No update script, start normally
-        await Process.start('cmd', ['/c', 'start', '', executablePath], runInShell: true);
-        _updateStatus('Aplicatie noua pornita, inchidere aplicatie curenta...');
-        await Future.delayed(const Duration(milliseconds: 500));
-        exit(0);
-      }
-    } catch (e) {
-      debugPrint('❌ Error restarting application: $e');
-      _onError?.call('Eroare la restart: $e');
-    }
-  }
+  // Restart helper removed (installer handles restart)
   
   
   /// Reseteaza starea serviciului
@@ -779,22 +817,47 @@ class UpdateService {
     try {
       final appSupportDir = await getApplicationSupportDirectory();
       final updateDir = Directory('${appSupportDir.path}/${UpdateConfig.getUpdateDirectory()}');
-      final updateFile = File('${updateDir.path}/broker_app_update.zip');
+      AppLogger.sync('update_service', 'ready_check_paths', {
+        'support_dir': appSupportDir.path,
+        'update_dir': updateDir.path,
+      });
+      // Look for any known installer file names
+      final candidates = <String>[
+        '${updateDir.path}/${UpdateConfig.getInstallerName()}',
+        '${updateDir.path}/BrokerAppInstaller.exe',
+      ];
+      File? installerFile;
+      for (final path in candidates) {
+        final f = File(path);
+        if (await f.exists()) { installerFile = f; break; }
+      }
       
-      if (await updateFile.exists()) {
-        // Verifica daca fisierul este valid
-        final isValid = await _validateDownload(updateFile.path);
-        if (isValid) {
-          _updateFilePath = updateFile.path;
+      if (installerFile != null && await installerFile.exists()) {
+        // Validare minimala installer
+        final size = await installerFile.length();
+        final modified = await installerFile.lastModified();
+        AppLogger.sync('update_service', 'ready_installer_found', {
+          'path': installerFile.path,
+          'size': size,
+          'modified': modified.toIso8601String(),
+        });
+        final ok = await _validateInstallerDownload(installerFile.path);
+        if (ok) {
+          _updateFilePath = installerFile.path;
           _isUpdateReady = true;
+          AppLogger.sync('update_service', 'ready_update_found', {'type': 'installer'});
           return true;
         } else {
-          // Sterge fisierul corupt
-          await updateFile.delete();
+          try {
+            await installerFile.delete();
+            AppLogger.sync('update_service', 'ready_delete_invalid_installer');
+          } catch (e) {
+            AppLogger.error('update_service', 'ready_delete_invalid_installer_exception', e);
+          }
         }
       }
     } catch (e) {
-      debugPrint('❌ Error checking for ready update: $e');
+      AppLogger.error('update_service', 'ready_check_exception', e);
     }
     
     return false;

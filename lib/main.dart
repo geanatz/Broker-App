@@ -1,21 +1,22 @@
-import 'package:broker_app/app_theme.dart';
+﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:broker_app/backend/services/firebase_service.dart';
+import 'package:mat_finance/backend/services/firebase_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
-import 'package:broker_app/frontend/screens/auth_screen.dart';
-import 'package:broker_app/frontend/screens/splash_screen.dart';
-import 'package:broker_app/frontend/screens/mobile_auth_screen.dart';
+import 'package:mat_finance/frontend/screens/auth_screen.dart';
+import 'package:mat_finance/backend/services/update_service.dart';
+import 'package:mat_finance/frontend/screens/splash_screen.dart';
+import 'package:mat_finance/frontend/screens/mobile_auth_screen.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:broker_app/backend/services/consultant_service.dart';
-import 'package:broker_app/backend/services/connection_service.dart';
+import 'package:mat_finance/backend/services/consultant_service.dart';
+import 'package:mat_finance/backend/services/connection_service.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:broker_app/utils/smooth_scroll_behavior.dart';
+import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -140,6 +141,31 @@ void main() async {
   await runZonedGuarded(() async {
     // Initialize Flutter binding as early as possible
     WidgetsFlutterBinding.ensureInitialized();
+    // Headless pre-launch update on Windows before any window is shown
+    if (!kIsWeb && Platform.isWindows) {
+      try {
+        final updater = UpdateService();
+        await updater.initialize();
+        // If an installer is cached, fetch release info to persist then install
+        final ready = await updater.checkForReadyUpdate();
+        if (ready) {
+          try { await updater.checkForUpdates(); } catch (_) {}
+          await updater.installUpdate();
+          return; // process exits inside installUpdate
+        }
+        // Else check online
+        final has = await updater.checkForUpdates();
+        if (has) {
+          final ok = await updater.startDownload();
+          if (ok) {
+            await updater.installUpdate();
+            return; // process exits inside installUpdate
+          }
+        }
+      } catch (e) {
+        debugPrint('PRELAUNCH: update exception: $e');
+      }
+    }
     
     // Configure window manager for desktop platforms
     if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
@@ -259,7 +285,7 @@ class _MyAppState extends State<MyApp> {
         gradient: AppTheme.appBackground,
       ),
       child: MaterialApp(
-        title: 'Aplicatie de Consultanta Financiara',
+        title: 'MAT Finance',
         debugShowCheckedModeBanner: false,
         scrollBehavior: SmoothScrollBehavior(),
         locale: const Locale('ro', 'RO'),
@@ -468,3 +494,4 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     );
   }
 }
+

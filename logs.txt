@@ -1,238 +1,37 @@
-Restarted application in 410ms.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/74dd1957-37d1-4a73-8da8-a11a1c771c32' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/120e5733-596a-4192-adb5-cc4de6b1838b' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/dfc375ae-5149-4971-91fe-bdbbef66683f' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/42d7c2b2-5a5f-4a4b-9ce5-16afe9de0811' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-➕ CLIENT: added - 0721933445 → Claudiu
-➕ CLIENT: added - 0777888333 → Robi
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 148ms
-📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
-📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 147ms
-🎯 CLIENT_SERVICE: Client found at index: 0
-🎯 CLIENT_SERVICE: Cleared focus from: Robi
-🎯 CLIENT_SERVICE: All focus states cleared
-✅ CLIENT_SERVICE: Client focused successfully: 0777888333
-✅ CLIENT_SERVICE: New focused client: Robi
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-✅ GOOGLE_DRIVE_SERVICE: Token is still valid, no refresh needed
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-✅ [FIREBASE_SUCCESS] getClient found matching client
-[FIREBASE] GD_VERIFY: getClientForms called for 0777888333
-[FIREBASE] GD_VERIFY: loaded 1 forms for 0777888333
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-📊 SPLASH_SERVICE: Performance Metrics:
-  Initializare servicii...: 16ms
-  Preincarcare date...: 1786ms
-  Sincronizare servicii...: 26ms
-  Optimizare cache...: 2ms
-  Finalizare...: 0ms
-🔍 Checking for updates...
-✅ No updates available | Current: 0.1.5
-SPLASH: Current role: Consultant
-🔄 SPLASH: Consultant/team changed, resetting state
-🔧 SPLASH: Old consultant: null, New: 2363377c-c1d5-4578-9596-52e9cb303683
-🔧 SPLASH: Old team: null, New: Echipa Andreea
-🔄 SPLASH: Reloading services for new consultant
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/1fc5feca-8404-4e20-afc6-15f6422715df' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/c5a9086c-8bc3-4b65-8d02-3b90dee2b18a' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-➕ CLIENT: added - 0721933445 → Claudiu
-➕ CLIENT: added - 0777888333 → Robi
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 111ms
-🔄 SPLASH: Invalidating cache with enhanced state management
-✅ SPLASH: Cache invalidation completed successfully
-✅ SPLASH: Services reloaded successfully for new consultant
-✅ SPLASH: Consultant reset completed successfully
-🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (2 messages)
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🔄 FORM: Found focused client at initialization: 0777888333
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-⚡ CLIENTS: Preloading form data for 2 clients
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-✅ [FIREBASE_SUCCESS] getClient found matching client
-[FIREBASE] GD_VERIFY: getClientForms called for 0721933445
-[FIREBASE] GD_VERIFY: loaded 1 forms for 0721933445
-DEBUG: Credit bank selected: Banca Romaneasca
-🔄 FORM: Credit toggle button pressed
-🔄 FORM: Current isShowingClient: true
-🔄 FORM: Client phone: 0777888333
-🔄 FORM: Calling toggleLoanFormType for: 0777888333
-FormService: schedule autosave for 0777888333 in 600ms
-🔄 FORM: toggleLoanFormType completed
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-FormService: commit autosave start for 0777888333
-[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
-✅ [FIREBASE_SUCCESS] getClient found matching client
-🔄 CLIENT: category_change - 0777888333 → clienti
-✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 149ms
-FormService: commit autosave success for 0777888333 in 150ms
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-DEBUG: Income type selected: Salariu
-🔄 FORM: Income toggle button pressed
-🔄 FORM: Current isShowingClient: false
-🔄 FORM: Client phone: 0777888333
-🔄 FORM: Calling toggleIncomeFormType for: 0777888333
-FormService: schedule autosave for 0777888333 in 600ms
-🔄 FORM: toggleIncomeFormType completed
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-FormService: commit autosave start for 0777888333
-[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
-🔄 CLIENT: category_change - 0777888333 → clienti
-✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 86ms
-FormService: commit autosave success for 0777888333 in 86ms
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-DEBUG: Credit type selected: Nevoi personale
-DEBUG: Both credit fields completed, transforming...
-DEBUG: Transforming credit form - Bank: Banca Romaneasca, Type: Nevoi personale, IsClient: false
-🔧 FORM_SERVICE: Added new credit form while preserving existing forms for client 0777888333
-FormService: schedule autosave for 0777888333 in 600ms
-DEBUG: Created new credit form with clean state
-DEBUG: Resetting credit form selections
-DEBUG: Credit selections reset to null
-🔧 FORM_AREA: Cleared 0 controllers for 0777888333 client credit
-🔧 FORM_AREA: Cleared 0 controllers for 0777888333 coborrower credit
-DEBUG: Credit form selections reset
-[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
-🔄 CLIENT: category_change - 0777888333 → clienti
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 153ms
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-FormService: commit autosave start for 0777888333
-FormService: skip commit (no changes) for 0777888333
-🔄 FORM: Credit toggle button pressed
-🔄 FORM: Current isShowingClient: false
-🔄 FORM: Client phone: 0777888333
-🔄 FORM: Calling toggleLoanFormType for: 0777888333
-FormService: schedule autosave for 0777888333 in 600ms
-🔄 FORM: toggleLoanFormType completed
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-FormService: commit autosave start for 0777888333
-[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
-🔄 CLIENT: category_change - 0777888333 → clienti
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-🔄 FORM: Credit toggle button pressed
-🔄 FORM: Current isShowingClient: true
-🔄 FORM: Client phone: 0777888333
-🔄 FORM: Calling toggleLoanFormType for: 0777888333
-FormService: schedule autosave for 0777888333 in 600ms
-🔄 FORM: toggleLoanFormType completed
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 125ms
-FormService: commit autosave success for 0777888333 in 125ms
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
-FormService: commit autosave start for 0777888333
-🔧 FORM_SERVICE: Removed credit form at index 0 for client 0777888333, remaining forms: 1
-FormService: schedule autosave for 0777888333 in 600ms
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-FormService: commit autosave start for 0777888333
-[FIREBASE] FORMS: saveAllFormDataBatched start for 0777888333
-🔄 CLIENT: category_change - 0777888333 → clienti
-✅ [FIREBASE_SUCCESS] FORMS: saveAllFormDataBatched success for 0777888333 in 94ms
-FormService: commit autosave success for 0777888333 in 94ms
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Robi
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-MATCHER: Using clientKey="0777888333" for income cache and lookups
-GD_VERIFY: UI item for 0777888333 | focused=true | category=ClientCategory.apeluri | status=null
-GD_VERIFY: UI item for 0721933445 | focused=false | category=ClientCategory.recente | status=Acceptat
+
+================================
+[2025-08-12T17:42:17.463178] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-12T17:42:17.470213] UPDATE_SERVICE: initialized | version=0.1.5, dir=D:\Repositories\Broker-App
+[2025-08-12T17:42:17.471214] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\broker_app.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-12T17:42:17.505514] UPDATE_SERVICE: ready_check_paths | support_dir=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara, update_dir=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates
+[2025-08-12T17:42:17.507516] UPDATE_SERVICE: ready_installer_found | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
+[2025-08-12T17:42:17.509023] UPDATE_SERVICE: installer_file_info | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
+[2025-08-12T17:42:17.510031] UPDATE_SERVICE: ready_update_found | type=installer
+[2025-08-12T17:42:17.511034] UPDATE_SERVICE: check_for_updates_start | current=0.1.5, url=https://api.github.com/repos/geanatz/Broker-App/releases/latest
+[2025-08-12T17:42:17.867450] UPDATE_SERVICE: github_release_ok | latest=0.1.6
+[2025-08-12T17:42:17.868956] UPDATE_SERVICE: has_update | current=0.1.5, latest=0.1.6
+[2025-08-12T17:42:17.872961] UPDATE_SERVICE: release_info_persisted | file=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/last_release.json
+[2025-08-12T17:42:17.872961] UPDATE_SERVICE: asset_selected | url=https://github.com/geanatz/Broker-App/releases/download/v0.1.6/BrokerAppInstaller.exe, name=BrokerAppInstaller.exe
+[2025-08-12T17:42:17.872961] UPDATE_SERVICE: checksum_asset | url=https://github.com/geanatz/Broker-App/releases/download/v0.1.6/BrokerAppInstaller.exe.sha256
+[2025-08-12T17:42:17.873962] UPDATE_SERVICE: install_start
+[2025-08-12T17:42:17.875962] UPDATE_SERVICE: update_file_info | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
+[2025-08-12T17:42:17.877965] UPDATE_SERVICE: installer_precheck | exists=true, size=15835624, modified=2025-08-12T15:13:03.000, cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\broker_app.exe
+[2025-08-12T17:42:17.879466] UPDATE_SERVICE: installer_launch | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, args=/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /LOG="C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/Installer.log", log=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/Installer.log
+[2025-08-12T17:42:17.895504] UPDATE_SERVICE: installer_started | pid=25428
+[2025-08-12T17:42:17.895504] UPDATE_SERVICE: installer_wait_start
+[2025-08-12T17:42:18.750937] UPDATE_SERVICE: installer_finished | exit_code=1
+[2025-08-12T17:42:18.750937] UPDATE_SERVICE: installed_path_candidates | LOCALAPPDATA=C:\Users\Home\AppData\Local, ProgramFiles=C:\Program Files, ProgramFiles(x86)=C:\Program Files (x86), candidates=C:\Users\Home\AppData\Local\Broker App\broker_app.exe | C:\Program Files\Broker App\broker_app.exe | C:\Program Files (x86)\Broker App\broker_app.exe
+[2025-08-12T17:42:18.754937] UPDATE_SERVICE: installed_app_started | path=C:\Program Files\Broker App\broker_app.exe
+
+================================
+[2025-08-12T17:42:19.420721] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-12T17:42:19.420721] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-12T17:42:19.421730] UPDATE_SERVICE: ready_update_found | type=installer
+[2025-08-12T17:42:22.085758] UPDATE_SERVICE: check_for_updates_start | current=0.1.6, url=https://api.github.com/repos/geanatz/Broker-App/releases/latest
+[2025-08-12T17:42:22.236232] UPDATE_SERVICE: github_release_ok | latest=0.1.6
+[2025-08-12T17:42:22.236232] UPDATE_SERVICE: no_update | current=0.1.6, latest=0.1.6
+[2025-08-12T17:42:22.236232] UPDATE_SERVICE: check_for_updates_end | result=false

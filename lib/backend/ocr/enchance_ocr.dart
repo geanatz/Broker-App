@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 /// Service pentru imbunatatirea imaginilor inainte de procesarea OCR
@@ -170,3 +170,4 @@ class EnhancementException implements Exception {
   @override
   String toString() => 'EnhancementException: $message';
 }
+

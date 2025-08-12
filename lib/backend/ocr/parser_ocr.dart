@@ -1,7 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:broker_app/backend/services/clients_service.dart';
+import 'package:mat_finance/backend/services/clients_service.dart';
 
 /// Parser inteligent pentru extragerea contactelor din textul OCR
 class ParserOCR {
@@ -867,6 +867,7 @@ class ParseResult {
   @override
   String toString() => 'ParseResult(contacts: ${contacts.length}, type: $documentType, confidence: $confidence)';
 }
+
 
 
 

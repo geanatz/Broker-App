@@ -1,5 +1,5 @@
-name: broker_app
-description: "Aplicatie de consultanta financiara pentru gestionarea clientilor si proceselor de creditare."
+name: mat_finance
+description: "MAT Finance - gestionarea clientilor si proceselor de creditare."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
@@ -57,6 +57,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -124,3 +125,23 @@ flutter:
     - assets/sendIcon.svg
     - assets/chatIcon.svg
     - lib/backend/ocr/names.json
+
+# Launcher icons configuration (do not run generation here; user executes the command)
+flutter_launcher_icons:
+  image_path: "assets/logo_mat.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/logo_mat.png"
+    background_color: "#00000000"
+  windows:
+    generate: true
+    image_path: "assets/logo_mat.ico"
+  macos:
+    generate: true
+    image_path: "assets/logo_mat.png"
+  linux:
+    generate: true
+    image_path: "assets/logo_mat.png"

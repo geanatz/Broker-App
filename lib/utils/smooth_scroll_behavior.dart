@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
 /// Custom scroll behavior pentru smooth scrolling cu mouse wheel

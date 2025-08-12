@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image/image.dart' as img;
@@ -229,3 +229,4 @@ class ScannerException implements Exception {
   @override
   String toString() => 'ScannerException: $message';
 }
+

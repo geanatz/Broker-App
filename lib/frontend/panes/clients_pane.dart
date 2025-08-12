@@ -1,4 +1,4 @@
-import '../../app_theme.dart';
+﻿import '../../app_theme.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../utils/smooth_scroll_behavior.dart';
@@ -585,3 +585,4 @@ class _ClientsPaneState extends State<ClientsPane> {
   }
 
 }
+

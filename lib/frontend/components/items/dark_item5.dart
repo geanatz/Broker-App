@@ -1,4 +1,4 @@
-// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
+﻿// import 'package:your_app/theme/app_theme.dart'; // Placeholder for AppTheme
 // lib/components/items/dark_item5.dart
 
 import 'package:flutter/material.dart';
@@ -132,3 +132,4 @@ class DarkItem5 extends StatelessWidget {
     return content;
   }
 }
+
