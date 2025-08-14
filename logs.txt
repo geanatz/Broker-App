@@ -1,549 +1,405 @@
+
 ================================
-[2025-08-14T17:28:38.274894] LOG START
+[2025-08-14T17:48:50.219745] LOG START
 File: D:\Repositories\Broker-App/logs.txt
 ================================
-[2025-08-14T17:28:38.278434] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
-[2025-08-14T17:28:38.279442] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
-[2025-08-14T17:28:38.395217] CLIENTS_SERVICE: load_clients_ms | ms=62
-[2025-08-14T17:28:38.687130] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=398
-[2025-08-14T17:28:40.929250] CLIENTS_SERVICE: load_clients_ms | ms=73
-[2025-08-14T17:28:41.198112] MAIN_SCREEN: init_state
-[2025-08-14T17:28:41.203979] MAIN_SCREEN: build_called
-[2025-08-14T17:28:41.379045] MAIN_SCREEN: post_frame_callback
-[2025-08-14T17:28:41.388135] MAIN_SCREEN: whats_new_check_start
-[2025-08-14T17:28:41.416707] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
-[2025-08-14T17:28:41.416707] MAIN_SCREEN: whats_new_info_result | is_null=true
-[2025-08-14T17:28:41.416707] MAIN_SCREEN: whats_new_missing
-[2025-08-14T17:28:54.535284] CLIENTS_SERVICE: load_clients_ms | ms=52
-[2025-08-14T17:28:54.570722] MAIN_SCREEN: build_called
-[2025-08-14T17:28:54.813368] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=188
-[2025-08-14T17:29:12.619873] MAIN_SCREEN: build_called
-[2025-08-14T17:29:16.472255] MAIN_SCREEN: build_called
-[2025-08-14T17:29:17.039196] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=303
-[2025-08-14T17:29:17.125935] CLIENTS_SERVICE: load_clients_ms | ms=0
-[2025-08-14T17:29:19.633034] MAIN_SCREEN: build_called
-[2025-08-14T17:29:19.932957] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=249
-[2025-08-14T17:29:19.965305] CLIENTS_SERVICE: load_clients_ms | ms=0
-[2025-08-14T17:29:22.873606] MAIN_SCREEN: build_called
-[2025-08-14T17:29:23.176470] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=224
-[2025-08-14T17:29:23.188486] CLIENTS_SERVICE: load_clients_ms | ms=0
-[2025-08-14T17:29:25.071798] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=252
-[2025-08-14T17:29:25.096983] CLIENTS_SERVICE: load_clients_ms | ms=0
-[2025-08-14T17:29:27.289016] MAIN_SCREEN: build_called
-[2025-08-14T17:29:27.598742] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=231
-[2025-08-14T17:29:27.628139] CLIENTS_SERVICE: load_clients_ms | ms=0
-
----
-
-Restarted application in 434ms.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/81db05a1-c833-4d0a-8716-1e50ecf82260' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
-UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/bb66a9b0-2aea-4efd-989b-48d885457d54' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/0111b7d2-a4ce-41a1-be1e-ddfa765517a9' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/d6cde1e1-db59-4a8a-9cf7-229a7cb1d682' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-CLIENTS_SERVICE: load_clients_ms | ms=62
-➕ CLIENT: added - 0733 → Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: null
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-SPLASH_SERVICE: refresh_meetings_cache_ms | ms=398
-[FIREBASE] MEETINGS: getAllMeetings loaded 1 in 138ms
-📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
-📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 1 in 122ms
-🎯 CLIENT_SERVICE: Client found at index: 0
-🎯 CLIENT_SERVICE: All focus states cleared
-✅ CLIENT_SERVICE: Client focused successfully: 0733
-✅ CLIENT_SERVICE: New focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-! GOOGLE_DRIVE_SERVICE: No saved tokens found for current consultant
-! GOOGLE_DRIVE_SERVICE: Missing access token: true
-! GOOGLE_DRIVE_SERVICE: Missing email: true
-MATCHER: Using clientKey="0733" for income cache and lookups
-✅ [FIREBASE_SUCCESS] getClient found matching client
-[FIREBASE] GD_VERIFY: getClientForms called for 0733
-[FIREBASE] GD_VERIFY: loaded 0 forms for 0733
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-📊 SPLASH_SERVICE: Performance Metrics:
-  Initializare servicii...: 10ms
-  Preincarcare date...: 1578ms
-  Sincronizare servicii...: 7ms
-  Optimizare cache...: 0ms
-  Finalizare...: 0ms
-SPLASH: Current role: Consultant
-🔄 SPLASH: Consultant/team changed, resetting state
-🔧 SPLASH: Old consultant: null, New: 2363377c-c1d5-4578-9596-52e9cb303683
-🔧 SPLASH: Old team: null, New: Echipa Andreea
-🔄 SPLASH: Reloading services for new consultant
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/eb58e545-2c11-44b4-9d34-ead6b8b1628d' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/5c1d771c-8006-4ed7-8839-0e9edb6915ad' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
-See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
-➕ CLIENT: added - 0733 → Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-CLIENTS_SERVICE: load_clients_ms | ms=73
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-[FIREBASE] MEETINGS: getAllMeetings loaded 1 in 83ms
-✅ SPLASH: Services reloaded successfully for new consultant
-✅ SPLASH: Consultant reset completed successfully
-MAIN_SCREEN: init_state
-MAIN_SCREEN: build_called
-MAIN_SCREEN: post_frame_callback
-MAIN_SCREEN: whats_new_check_start
-🔄 SPLASH: Invalidating cache with enhanced state management
-✅ SPLASH: Cache invalidation completed successfully
-UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
-MAIN_SCREEN: whats_new_info_result | is_null=true
-MAIN_SCREEN: whats_new_missing
-🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (2 messages)
-🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (2 messages)
-🤖 LLM_SERVICE: Reset completed for new consultant
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🤖 CHATBOT_WIDGET: Reset completed for new consultant
-🤖 AI_DEBUG: Incepe procesarea intrebarii: "Ce intalniri am astazi?"
-🤖 AI_DEBUG: Construire prompt cu context (cache-first)...
-🤖 AI_DEBUG: Extragere context consultant...
-🤖 LLM_SERVICE: Conversation saved for consultant: 2363377c...
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🤖 AI_DEBUG: Clienti extrasi: 1
-🤖 AI_DEBUG: Client 1 - Dan:
-  - clientCredits: null
-  - coDebitorCredits: null
-  - clientIncomes: null
-  - coDebitorIncomes: null
-🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (3 messages)
-🤖 LLM_SERVICE: Reset completed for new consultant
-CLIENTS_SERVICE: load_clients_ms | ms=52
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MAIN_SCREEN: build_called
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-🤖 CHATBOT_WIDGET: Reset completed for new consultant
-SPLASH_SERVICE: refresh_meetings_cache_ms | ms=188
-🤖 AI_DEBUG: Intalniri extrase: 1
-🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (3 messages)
-🤖 LLM_SERVICE: Reset completed for new consultant
-🤖 CHATBOT_WIDGET: Reset completed for new consultant
-🤖 AI_DEBUG: Statistici calculate pentru consultant: Ionut
-🤖 AI_DEBUG: Agent serviciu: Supervisor
-🤖 AI_DEBUG: Context extras cu succes
-🤖 AI_DEBUG: Procesare intrebare: "Ce intalniri am astazi?"
-🤖 AI_DEBUG: Consultant: Ionut (2363377c-c1d5-4578-9596-52e9cb303683)
-🤖 AI_DEBUG: Total clienti: 1
-🤖 AI_DEBUG: Total intalniri: 1
-🤖 AI_DEBUG: Data curenta: 14/8/2025
-🤖 AI_DEBUG: Luna trecuta: Iulie 2025
-🤖 AI_DEBUG: Saptamana curenta: 11/8 - 17/8
-🤖 AI_DEBUG: Saptamana viitoare: 18/8 - 24/8
-🤖 AI_DEBUG: Procesare 1 intalniri
-🤖 AI_DEBUG: Intalniri viitoare: 0
-🤖 AI_DEBUG: Intalniri din trecut: 1
-🤖 AI_DEBUG: Intalniri viitoare formatate: 1
-🤖 AI_DEBUG: Intalniri din trecut formatate: 1
-🤖 AI_DEBUG: Statistici: {formsCompleted: 10, meetingsScheduled: 10}
-🤖 AI_DEBUG: Prompt generat cu succes (1017 caractere)
-🤖 AI_DEBUG: Istoric conversatie: 2 mesaje
-🤖 AI_DEBUG: Trimitere cerere (4 mesaje)...
-🤖 AI_DEBUG: Raspuns API status: 200
-🤖 AI_DEBUG: Raspuns AI generat: "Astazi, 14 August 2025, ai avut o intalnire cu Dan la ora 11:00.
-..."
-🤖 AI_DEBUG: Raspuns adaugat cu succes
-🤖 AI_DEBUG: Procesare finalizata
-🤖 LLM_SERVICE: Conversation saved for consultant: 2363377c...
-MAIN_SCREEN: build_called
-CALENDAR_METRICS: filterWeek offset=0 total=1 week=1 filterMs=0
-CALENDAR_METRICS: loadFromCacheInstantly totalMs=0 cacheMs=0 filterMs=0 allMeetings=1 weekMeetings=1
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-⚡ CLIENTS: Preloading form data for 1 clients
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🔍 MEETING_DATA: Constructor called
-🔍 MEETING_DATA: clientName = "Dan"
-🔍 MEETING_DATA: phoneNumber = "0733"
-🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
-🔍 MEETING_DATA: consultantName = "Ionut"
-🔍 MEETING_DATA: dateTime = 2025-08-13 11:00:00.000
-🔍 MEETING_DATA: type = MeetingType.meeting
-✅ MEETING_DATA: Constructor completed successfully
-🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
-📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
-✅ [FIREBASE_SUCCESS] getClient found matching client
-🔄 CLIENT: category_change - 0733 → recente
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
-✅ MEETING_SERVICE: Dashboard notified successfully
-MAIN_SCREEN: build_called
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-13 11:00:00.000
-📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
-! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 96ms
-CALENDAR_METRICS: filterWeek offset=0 total=2 week=2 filterMs=0
-SPLASH_SERVICE: refresh_meetings_cache_ms | ms=303
-CALENDAR_METRICS: filterWeek offset=0 total=2 week=2 filterMs=0
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-CALENDAR_METRICS: filterWeek offset=0 total=2 week=2 filterMs=0
-CALENDAR_METRICS: loadWeek totalMs=192 fetchMs=191 filter+setStateMs=0 allMeetings=2 weekMeetings=2
-CLIENTS_SERVICE: load_clients_ms | ms=0
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🔍 MEETING_DATA: Constructor called
-🔍 MEETING_DATA: clientName = "Dan"
-🔍 MEETING_DATA: phoneNumber = "0733"
-🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
-🔍 MEETING_DATA: consultantName = "Ionut"
-🔍 MEETING_DATA: dateTime = 2025-08-12 11:00:00.000
-🔍 MEETING_DATA: type = MeetingType.meeting
-✅ MEETING_DATA: Constructor completed successfully
-🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
-🔄 CLIENT: category_change - 0733 → recente
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-MAIN_SCREEN: build_called
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-[PERF] PERFORMANCE REPORT:
-=====================================
-⚡ resetForNewConsultant: 263.00ms avg
-⚡ mainScreenInit: 3.00ms avg
-=====================================
-Total operations tracked: 2
-Active timers: 0
-📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
-✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-12 11:00:00.000
-📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
-! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
-✅ MEETING_SERVICE: Dashboard notified successfully
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
-SPLASH_SERVICE: refresh_meetings_cache_ms | ms=249
-CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-CLIENTS_SERVICE: load_clients_ms | ms=0
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 3 in 96ms
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🔍 MEETING_DATA: Constructor called
-🔍 MEETING_DATA: clientName = "Dan"
-🔍 MEETING_DATA: phoneNumber = "0733"
-🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
-🔍 MEETING_DATA: consultantName = "Ionut"
-🔍 MEETING_DATA: dateTime = 2025-08-11 11:00:00.000
-🔍 MEETING_DATA: type = MeetingType.meeting
-✅ MEETING_DATA: Constructor completed successfully
-🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
-🔄 CLIENT: category_change - 0733 → recente
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-MAIN_SCREEN: build_called
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
-✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-11 11:00:00.000
-📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
-! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
-! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
-✅ MEETING_SERVICE: Dashboard notified successfully
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
-SPLASH_SERVICE: refresh_meetings_cache_ms | ms=224
-CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-CLIENTS_SERVICE: load_clients_ms | ms=0
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-SPLASH: Current role: Consultant
-✅ SPLASH: Consultant/team unchanged, no reset needed
-CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
-CALENDAR_METRICS: loadWeek totalMs=146 fetchMs=146 filter+setStateMs=0 allMeetings=4 weekMeetings=4
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 97ms
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-📉 Meeting deleted - dashboard notified
-CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
-CALENDAR_METRICS: filterWeek offset=0 total=0 week=0 filterMs=0
-✅ MEETING_SERVICE: Meeting deleted successfully
-CALENDAR_METRICS: filterWeek offset=0 total=0 week=0 filterMs=0
-CALENDAR_METRICS: loadWeek totalMs=0 fetchMs=0 filter+setStateMs=0 allMeetings=0 weekMeetings=0
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-[PERF] PERFORMANCE REPORT:
-=====================================
-⚡ resetForNewConsultant: 243.50ms avg
-⚡ mainScreenInit: 3.00ms avg
-=====================================
-Total operations tracked: 2
-Active timers: 0
-CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
-SPLASH_SERVICE: refresh_meetings_cache_ms | ms=252
-CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-CLIENTS_SERVICE: load_clients_ms | ms=0
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🔍 MEETING_DATA: Constructor called
-🔍 MEETING_DATA: clientName = "Dan"
-🔍 MEETING_DATA: phoneNumber = "0733"
-🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
-🔍 MEETING_DATA: consultantName = "Ionut"
-🔍 MEETING_DATA: dateTime = 2025-08-12 11:00:00.000
-🔍 MEETING_DATA: type = MeetingType.meeting
-✅ MEETING_DATA: Constructor completed successfully
-🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
-🔄 CLIENT: category_change - 0733 → recente
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Using clientKey="0733" for income cache and lookups
-MAIN_SCREEN: build_called
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
-✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-12 11:00:00.000
-📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
-! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
-✅ MEETING_SERVICE: Dashboard notified successfully
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
-SPLASH_SERVICE: refresh_meetings_cache_ms | ms=231
-CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-CLIENTS_SERVICE: load_clients_ms | ms=0
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
-🎯 CLIENT_SERVICE: notifyListeners called
-🎯 CLIENT_SERVICE: Current focused client: Dan
-MATCHER: Using clientKey="0733" for income cache and lookups
-MATCHER: Found income forms client=1, coborrower=1
-MATCHER: Using clientKey="0733" for income cache and lookups
-📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
-📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
-[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 82ms
-GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+[2025-08-14T17:48:50.223746] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T17:48:50.224745] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T17:48:50.473927] CLIENTS_SERVICE: load_clients_ms | ms=184
+[2025-08-14T17:48:50.660154] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=406
+[2025-08-14T17:48:53.175396] CLIENTS_SERVICE: load_clients_ms | ms=142
+[2025-08-14T17:48:53.345859] MAIN_SCREEN: init_state
+[2025-08-14T17:48:53.349357] MAIN_SCREEN: build_called
+[2025-08-14T17:48:53.490544] MAIN_SCREEN: post_frame_callback
+[2025-08-14T17:48:53.491545] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T17:48:53.509183] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T17:48:53.509183] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T17:48:53.509183] MAIN_SCREEN: whats_new_missing
+[2025-08-14T17:49:13.207204] MAIN_SCREEN: build_called
+[2025-08-14T17:49:13.564489] CLIENTS_SERVICE: load_clients_ms | ms=1
+[2025-08-14T17:49:13.727047] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=497
+[2025-08-14T17:49:18.045024] MAIN_SCREEN: build_called
+[2025-08-14T17:49:21.226492] MAIN_SCREEN: build_called
+[2025-08-14T17:49:24.664309] MAIN_SCREEN: build_called
+[2025-08-14T17:49:35.046479] MAIN_SCREEN: build_called
+[2025-08-14T17:49:58.376782] MAIN_SCREEN: build_called
+[2025-08-14T17:50:11.053892] MAIN_SCREEN: build_called
+[2025-08-14T17:54:59.055446] MAIN_SCREEN: build_called
 
 ================================
-[2025-08-14T17:34:14.141347] LOG START
+[2025-08-14T17:55:31.146405] LOG START
 File: D:\Repositories\Broker-App/logs.txt
 ================================
-[2025-08-14T17:34:14.144364] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
-[2025-08-14T17:34:14.145365] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
-[2025-08-14T17:34:14.321615] CLIENTS_SERVICE: load_clients_ms | ms=113
-[2025-08-14T17:34:14.498589] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=343
-[2025-08-14T17:34:16.977910] CLIENTS_SERVICE: load_clients_ms | ms=198
-[2025-08-14T17:34:17.109865] MAIN_SCREEN: init_state
-[2025-08-14T17:34:17.112872] MAIN_SCREEN: build_called
-[2025-08-14T17:34:17.248393] MAIN_SCREEN: post_frame_callback
-[2025-08-14T17:34:17.249395] MAIN_SCREEN: whats_new_check_start
-[2025-08-14T17:34:17.263443] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
-[2025-08-14T17:34:17.264442] MAIN_SCREEN: whats_new_info_result | is_null=true
-[2025-08-14T17:34:17.264442] MAIN_SCREEN: whats_new_missing
-[2025-08-14T17:34:29.385483] MAIN_SCREEN: build_called
-[2025-08-14T17:34:29.655492] CLIENTS_SERVICE: load_clients_ms | ms=0
-[2025-08-14T17:34:36.201568] MAIN_SCREEN: build_called
-[2025-08-14T17:34:36.628339] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=418
-[2025-08-14T17:34:42.055268] MAIN_SCREEN: build_called
-[2025-08-14T17:34:42.608398] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=276
-[2025-08-14T17:34:42.698648] CLIENTS_SERVICE: load_clients_ms | ms=0
-[2025-08-14T17:34:45.778636] MAIN_SCREEN: build_called
+[2025-08-14T17:55:31.150417] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T17:55:31.152404] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T17:55:31.410238] CLIENTS_SERVICE: load_clients_ms | ms=182
+[2025-08-14T17:55:31.713197] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=530
+[2025-08-14T17:55:34.040971] CLIENTS_SERVICE: load_clients_ms | ms=175
+[2025-08-14T17:55:34.173794] MAIN_SCREEN: init_state
+[2025-08-14T17:55:34.177313] MAIN_SCREEN: build_called
+[2025-08-14T17:55:34.301961] MAIN_SCREEN: post_frame_callback
+[2025-08-14T17:55:34.301961] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T17:55:34.316988] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T17:55:34.316988] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T17:55:34.316988] MAIN_SCREEN: whats_new_missing
+[2025-08-14T17:55:36.791344] CLIENTS_SERVICE: load_clients_ms | ms=1
+[2025-08-14T17:55:36.914950] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=496
+[2025-08-14T17:55:37.914960] MAIN_SCREEN: build_called
+[2025-08-14T17:55:41.690482] MAIN_SCREEN: build_called
+[2025-08-14T17:55:44.332185] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T17:55:45.119827] MAIN_SCREEN: build_called
+[2025-08-14T17:55:51.282906] MAIN_SCREEN: build_called
+[2025-08-14T17:55:51.517720] CLIENTS_SERVICE: load_clients_ms | ms=53
+[2025-08-14T17:55:51.647526] CLIENTS_SERVICE: load_clients_ms | ms=88
+[2025-08-14T17:55:51.782048] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=265
+[2025-08-14T17:55:51.823860] CLIENTS_SERVICE: load_clients_ms | ms=0
 
 ================================
-[2025-08-14T17:36:38.370775] LOG START
+[2025-08-14T18:13:55.767040] LOG START
 File: D:\Repositories\Broker-App/logs.txt
 ================================
-[2025-08-14T17:36:38.374281] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
-[2025-08-14T17:36:38.376265] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
-[2025-08-14T17:36:38.470991] CLIENTS_SERVICE: load_clients_ms | ms=37
-[2025-08-14T17:36:38.725199] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=346
-[2025-08-14T17:36:41.074572] CLIENTS_SERVICE: load_clients_ms | ms=96
-[2025-08-14T17:36:41.324582] MAIN_SCREEN: init_state
-[2025-08-14T17:36:41.324582] MAIN_SCREEN: build_called
-[2025-08-14T17:36:41.514525] MAIN_SCREEN: post_frame_callback
-[2025-08-14T17:36:41.514525] MAIN_SCREEN: whats_new_check_start
-[2025-08-14T17:36:41.544259] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
-[2025-08-14T17:36:41.544259] MAIN_SCREEN: whats_new_info_result | is_null=true
-[2025-08-14T17:36:41.544259] MAIN_SCREEN: whats_new_missing
+[2025-08-14T18:13:55.770041] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T18:13:55.771041] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T18:13:55.989403] CLIENTS_SERVICE: load_clients_ms | ms=158
+[2025-08-14T18:13:56.295259] FIREBASE_SERVICE: team_meetings_ms | ms=312, tokens=1
+[2025-08-14T18:13:56.296763] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=515
+[2025-08-14T18:13:58.725247] CLIENTS_SERVICE: load_clients_ms | ms=185
+[2025-08-14T18:13:58.896182] MAIN_SCREEN: init_state
+[2025-08-14T18:13:58.900249] MAIN_SCREEN: build_called
+[2025-08-14T18:13:59.023153] MAIN_SCREEN: post_frame_callback
+[2025-08-14T18:13:59.024146] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T18:13:59.040203] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T18:13:59.040203] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T18:13:59.040203] MAIN_SCREEN: whats_new_missing
+
+================================
+[2025-08-14T18:16:22.503657] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T18:16:22.507173] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T18:16:22.508168] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T18:16:22.642301] CLIENTS_SERVICE: load_clients_ms | ms=77
+[2025-08-14T18:16:22.972268] FIREBASE_SERVICE: team_meetings_ms | ms=248, tokens=1
+[2025-08-14T18:16:22.974270] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=456
+[2025-08-14T18:16:25.285739] CLIENTS_SERVICE: load_clients_ms | ms=68
+[2025-08-14T18:16:25.609355] MAIN_SCREEN: init_state
+[2025-08-14T18:16:25.612359] MAIN_SCREEN: build_called
+[2025-08-14T18:16:25.715827] MAIN_SCREEN: post_frame_callback
+[2025-08-14T18:16:25.716829] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T18:16:25.785086] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T18:16:25.785086] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T18:16:25.785086] MAIN_SCREEN: whats_new_missing
+[2025-08-14T18:16:40.633898] MAIN_SCREEN: build_called
+[2025-08-14T18:16:41.017017] CLIENTS_SERVICE: load_clients_ms | ms=1
+[2025-08-14T18:16:41.198314] FIREBASE_SERVICE: team_meetings_ms | ms=247, tokens=1
+[2025-08-14T18:16:41.199315] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=544
+
+================================
+[2025-08-14T18:23:24.297187] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T18:23:24.301256] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T18:23:24.302256] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T18:23:24.527576] CLIENTS_SERVICE: load_clients_ms | ms=167
+[2025-08-14T18:23:24.696158] FIREBASE_SERVICE: team_meetings_ms | ms=173, tokens=1
+[2025-08-14T18:23:24.697158] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=372
+[2025-08-14T18:23:27.066150] CLIENTS_SERVICE: load_clients_ms | ms=134
+[2025-08-14T18:23:27.373670] MAIN_SCREEN: init_state
+[2025-08-14T18:23:27.375710] MAIN_SCREEN: build_called
+[2025-08-14T18:23:27.498969] MAIN_SCREEN: post_frame_callback
+[2025-08-14T18:23:27.498969] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T18:23:27.513832] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T18:23:27.513832] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T18:23:27.513832] MAIN_SCREEN: whats_new_missing
+[2025-08-14T18:23:51.487666] MAIN_SCREEN: build_called
+[2025-08-14T18:23:51.941258] CLIENTS_SERVICE: load_clients_ms | ms=1
+[2025-08-14T18:23:51.978960] FIREBASE_SERVICE: team_meetings_ms | ms=195, tokens=1
+[2025-08-14T18:23:51.981780] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=469
+[2025-08-14T18:23:56.271597] MAIN_SCREEN: build_called
+[2025-08-14T18:23:56.530423] MEETING_SERVICE: create_meeting_ms | ms=537
+
+================================
+[2025-08-14T18:24:33.617994] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T18:24:33.621522] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T18:24:33.623528] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T18:24:34.078790] CLIENTS_SERVICE: load_clients_ms | ms=387
+[2025-08-14T18:24:34.363540] FIREBASE_SERVICE: team_meetings_ms | ms=466, tokens=1
+[2025-08-14T18:24:34.364524] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=715
+[2025-08-14T18:24:36.885828] CLIENTS_SERVICE: load_clients_ms | ms=200
+[2025-08-14T18:24:37.031836] MAIN_SCREEN: init_state
+[2025-08-14T18:24:37.035838] MAIN_SCREEN: build_called
+[2025-08-14T18:24:37.193092] MAIN_SCREEN: post_frame_callback
+[2025-08-14T18:24:37.193092] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T18:24:37.218132] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T18:24:37.218132] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T18:24:37.218132] MAIN_SCREEN: whats_new_missing
+[2025-08-14T18:25:35.564335] MAIN_SCREEN: build_called
+[2025-08-14T18:25:35.956137] CLIENTS_SERVICE: load_clients_ms | ms=148
+[2025-08-14T18:25:36.086615] CLIENTS_SERVICE: load_clients_ms | ms=1
+[2025-08-14T18:25:36.225319] FIREBASE_SERVICE: team_meetings_ms | ms=262, tokens=1
+[2025-08-14T18:25:36.227318] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=643
+[2025-08-14T18:25:40.857356] MAIN_SCREEN: build_called
+[2025-08-14T18:25:44.454636] MAIN_SCREEN: build_called
+[2025-08-14T18:25:46.403282] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T18:25:49.454937] MAIN_SCREEN: build_called
+[2025-08-14T18:25:54.436286] MAIN_SCREEN: build_called
+[2025-08-14T18:25:54.497938] MEETING_SERVICE: create_meeting_ms | ms=257
+
+================================
+[2025-08-14T18:29:34.579173] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T18:29:34.583177] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T18:29:34.585174] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T18:29:34.873152] CLIENTS_SERVICE: load_clients_ms | ms=225
+[2025-08-14T18:29:35.174481] FIREBASE_SERVICE: team_meetings_ms | ms=305, tokens=1
+[2025-08-14T18:29:35.176480] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=566
+[2025-08-14T18:29:39.043075] CLIENTS_SERVICE: load_clients_ms | ms=164
+[2025-08-14T18:29:39.575565] MAIN_SCREEN: init_state
+[2025-08-14T18:29:39.578087] MAIN_SCREEN: build_called
+[2025-08-14T18:29:39.719514] MAIN_SCREEN: post_frame_callback
+[2025-08-14T18:29:39.719514] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T18:29:39.737526] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T18:29:39.738532] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T18:29:39.738532] MAIN_SCREEN: whats_new_missing
+[2025-08-14T18:29:42.672677] MAIN_SCREEN: build_called
+[2025-08-14T18:29:43.016178] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T18:29:43.205804] FIREBASE_SERVICE: team_meetings_ms | ms=191, tokens=1
+[2025-08-14T18:29:43.207308] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=513
+[2025-08-14T18:29:46.305524] MAIN_SCREEN: build_called
+[2025-08-14T18:29:49.373149] MAIN_SCREEN: build_called
+[2025-08-14T18:29:50.758023] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T18:29:55.148254] MAIN_SCREEN: build_called
+[2025-08-14T18:29:55.200422] MEETING_SERVICE: create_meeting_ms | ms=243
+
+================================
+[2025-08-14T18:34:37.791139] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T18:34:37.795672] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T18:34:37.796673] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T18:34:38.071711] CLIENTS_SERVICE: load_clients_ms | ms=243
+[2025-08-14T18:34:38.383764] FIREBASE_SERVICE: team_meetings_ms | ms=319, tokens=1
+[2025-08-14T18:34:38.386060] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=566
+[2025-08-14T18:34:42.168249] CLIENTS_SERVICE: load_clients_ms | ms=174
+[2025-08-14T18:34:42.757411] MAIN_SCREEN: init_state
+[2025-08-14T18:34:42.760410] MAIN_SCREEN: build_called
+[2025-08-14T18:34:42.889928] MAIN_SCREEN: post_frame_callback
+[2025-08-14T18:34:42.889928] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T18:34:42.906523] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T18:34:42.906523] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T18:34:42.906523] MAIN_SCREEN: whats_new_missing
+[2025-08-14T18:34:57.056652] MAIN_SCREEN: build_called
+[2025-08-14T18:34:57.308999] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T18:35:02.082433] MAIN_SCREEN: build_called
+[2025-08-14T18:35:05.770197] MAIN_SCREEN: build_called
+[2025-08-14T18:35:09.207834] MAIN_SCREEN: build_called
+[2025-08-14T18:35:09.364732] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T18:35:11.949702] FIREBASE_SERVICE: team_meetings_ms | ms=183, tokens=1
+[2025-08-14T18:35:11.950694] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=394
+[2025-08-14T18:35:15.548098] MAIN_SCREEN: build_called
+[2025-08-14T18:35:15.648656] MEETING_SERVICE: create_meeting_ms | ms=226
+[2025-08-14T18:35:16.031998] FIREBASE_SERVICE: team_meetings_ms | ms=216, tokens=1
+[2025-08-14T18:35:16.031998] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=355
+[2025-08-14T18:35:16.073165] CLIENTS_SERVICE: load_clients_ms | ms=39
+[2025-08-14T18:36:51.188672] MAIN_SCREEN: build_called
+[2025-08-14T18:37:01.887150] MAIN_SCREEN: build_called
+[2025-08-14T18:39:56.652041] MAIN_SCREEN: build_called
+[2025-08-14T18:40:03.294151] MAIN_SCREEN: build_called
+[2025-08-14T18:41:32.571290] MAIN_SCREEN: build_called
+[2025-08-14T18:41:38.943594] MAIN_SCREEN: build_called
+[2025-08-14T18:41:47.263172] MAIN_SCREEN: build_called
+[2025-08-14T18:41:57.244314] MAIN_SCREEN: build_called
+[2025-08-14T18:42:07.982774] MAIN_SCREEN: build_called
+
+================================
+[2025-08-14T18:58:47.871368] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T18:58:47.875901] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T18:58:47.876905] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T18:58:48.475614] CLIENTS_SERVICE: load_clients_ms | ms=498
+[2025-08-14T18:58:48.742132] FIREBASE_SERVICE: team_meetings_ms | ms=268, tokens=1
+[2025-08-14T18:58:48.742132] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=830
+[2025-08-14T18:58:51.683574] CLIENTS_SERVICE: load_clients_ms | ms=227
+[2025-08-14T18:58:52.218006] MAIN_SCREEN: init_state
+[2025-08-14T18:58:52.220006] MAIN_SCREEN: build_called
+[2025-08-14T18:58:52.339744] MAIN_SCREEN: post_frame_callback
+[2025-08-14T18:58:52.340739] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T18:58:52.355312] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T18:58:52.355312] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T18:58:52.355312] MAIN_SCREEN: whats_new_missing
+[2025-08-14T18:58:54.180889] CLIENTS_SERVICE: load_clients_ms | ms=18
+[2025-08-14T18:58:54.270157] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T18:58:55.392987] FIREBASE_SERVICE: team_meetings_ms | ms=188, tokens=1
+[2025-08-14T18:58:55.393997] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=443
+[2025-08-14T18:58:56.570270] MAIN_SCREEN: build_called
+[2025-08-14T19:02:15.511425] MAIN_SCREEN: build_called
+[2025-08-14T19:02:29.479467] MAIN_SCREEN: build_called
+
+================================
+[2025-08-14T19:28:00.688479] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T19:28:00.691480] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T19:28:00.693480] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T19:28:00.779757] CLIENTS_SERVICE: load_clients_ms | ms=39
+[2025-08-14T19:28:01.104365] FIREBASE_SERVICE: team_meetings_ms | ms=257, tokens=1
+[2025-08-14T19:28:01.104365] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=403
+[2025-08-14T19:28:03.732687] CLIENTS_SERVICE: load_clients_ms | ms=131
+[2025-08-14T19:28:04.415736] MAIN_SCREEN: init_state
+[2025-08-14T19:28:04.418731] MAIN_SCREEN: build_called
+[2025-08-14T19:28:04.540114] MAIN_SCREEN: post_frame_callback
+[2025-08-14T19:28:04.541114] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T19:28:04.557153] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T19:28:04.557153] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T19:28:04.557153] MAIN_SCREEN: whats_new_missing
+[2025-08-14T19:28:09.464448] MAIN_SCREEN: build_called
+[2025-08-14T19:28:09.525872] CLIENTS_SERVICE: load_clients_ms | ms=8
+[2025-08-14T19:28:09.611754] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:28:12.997727] MAIN_SCREEN: build_called
+[2025-08-14T19:28:16.106750] MAIN_SCREEN: build_called
+[2025-08-14T19:28:19.055412] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:28:19.335278] MAIN_SCREEN: build_called
+[2025-08-14T19:28:23.963389] MAIN_SCREEN: build_called
+[2025-08-14T19:28:27.670964] MAIN_SCREEN: build_called
+[2025-08-14T19:28:31.245269] MAIN_SCREEN: build_called
+[2025-08-14T19:28:31.354715] CLIENTS_SERVICE: load_clients_ms | ms=18
+[2025-08-14T19:28:34.752343] MAIN_SCREEN: build_called
+[2025-08-14T19:28:35.199365] FIREBASE_SERVICE: team_meetings_ms | ms=162, tokens=1
+[2025-08-14T19:28:35.200364] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=441
+[2025-08-14T19:28:39.955422] MAIN_SCREEN: build_called
+[2025-08-14T19:28:40.006298] MEETING_SERVICE: create_meeting_ms | ms=387
+[2025-08-14T19:28:40.256407] FIREBASE_SERVICE: team_meetings_ms | ms=150, tokens=1
+[2025-08-14T19:28:40.257409] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=227
+[2025-08-14T19:28:40.262408] CLIENTS_SERVICE: load_clients_ms | ms=3
+[2025-08-14T19:28:45.183451] MAIN_SCREEN: build_called
+[2025-08-14T19:28:45.224604] MEETING_SERVICE: create_meeting_ms | ms=398
+[2025-08-14T19:28:45.512540] FIREBASE_SERVICE: team_meetings_ms | ms=188, tokens=1
+[2025-08-14T19:28:45.512540] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=263
+[2025-08-14T19:28:45.514046] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:28:50.171309] MAIN_SCREEN: build_called
+[2025-08-14T19:28:50.211460] MEETING_SERVICE: create_meeting_ms | ms=286
+[2025-08-14T19:28:50.453455] FIREBASE_SERVICE: team_meetings_ms | ms=163, tokens=1
+[2025-08-14T19:28:50.454460] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=227
+[2025-08-14T19:28:50.455465] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:28:53.466434] MAIN_SCREEN: build_called
+[2025-08-14T19:28:57.606938] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:28:57.654073] MAIN_SCREEN: build_called
+[2025-08-14T19:29:01.002961] MAIN_SCREEN: build_called
+[2025-08-14T19:32:27.231350] MAIN_SCREEN: build_called
+[2025-08-14T19:32:56.324466] MAIN_SCREEN: build_called
+
+================================
+[2025-08-14T19:39:01.151459] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T19:39:01.155459] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T19:39:01.156459] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T19:39:02.189133] CLIENTS_SERVICE: load_clients_ms | ms=972
+[2025-08-14T19:39:02.395392] FIREBASE_SERVICE: team_meetings_ms | ms=210, tokens=1
+[2025-08-14T19:39:02.396392] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=1230
+[2025-08-14T19:39:04.750918] CLIENTS_SERVICE: load_clients_ms | ms=167
+[2025-08-14T19:39:05.053229] MAIN_SCREEN: init_state
+[2025-08-14T19:39:05.056229] MAIN_SCREEN: build_called
+[2025-08-14T19:39:05.198527] MAIN_SCREEN: post_frame_callback
+[2025-08-14T19:39:05.199032] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T19:39:05.221124] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T19:39:05.221124] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T19:39:05.222125] MAIN_SCREEN: whats_new_missing
+[2025-08-14T19:39:07.034813] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:39:08.005817] FIREBASE_SERVICE: team_meetings_ms | ms=131, tokens=1
+[2025-08-14T19:39:08.006818] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=394
+[2025-08-14T19:39:08.423592] MAIN_SCREEN: build_called
+[2025-08-14T19:40:02.736645] MAIN_SCREEN: build_called
+[2025-08-14T19:40:05.791245] MAIN_SCREEN: build_called
+[2025-08-14T19:42:55.420221] MAIN_SCREEN: build_called
+[2025-08-14T19:42:55.575523] CLIENTS_SERVICE: load_clients_ms | ms=2
+[2025-08-14T19:42:57.994460] FIREBASE_SERVICE: team_meetings_ms | ms=158, tokens=1
+[2025-08-14T19:42:57.994460] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=320
+[2025-08-14T19:42:58.461582] MAIN_SCREEN: build_called
+
+================================
+[2025-08-14T19:43:19.796430] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T19:43:19.796430] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T19:43:19.797436] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T19:43:21.087575] CLIENTS_SERVICE: load_clients_ms | ms=553
+[2025-08-14T19:43:22.504914] MAIN_SCREEN: init_state
+[2025-08-14T19:43:22.506421] MAIN_SCREEN: build_called
+[2025-08-14T19:43:22.539181] MAIN_SCREEN: post_frame_callback
+[2025-08-14T19:43:22.539181] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T19:43:22.542175] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T19:43:22.542175] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T19:43:22.542175] MAIN_SCREEN: whats_new_missing
+[2025-08-14T19:43:32.580210] MAIN_SCREEN: build_called
+[2025-08-14T19:43:32.715039] CLIENTS_SERVICE: load_clients_ms | ms=114
+[2025-08-14T19:43:32.779878] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:43:33.612045] FIREBASE_SERVICE: team_meetings_ms | ms=200, tokens=1
+[2025-08-14T19:43:33.612045] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=335
+[2025-08-14T19:43:37.129194] MAIN_SCREEN: build_called
+[2025-08-14T19:43:40.249321] MAIN_SCREEN: build_called
+[2025-08-14T19:43:43.577186] MAIN_SCREEN: build_called
+[2025-08-14T19:43:45.561918] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:43:50.347211] MAIN_SCREEN: build_called
+[2025-08-14T19:43:50.404799] MEETING_SERVICE: create_meeting_ms | ms=380
+[2025-08-14T19:43:50.658298] FIREBASE_SERVICE: team_meetings_ms | ms=154, tokens=1
+[2025-08-14T19:43:50.658298] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=223
+[2025-08-14T19:43:50.661297] CLIENTS_SERVICE: load_clients_ms | ms=2
+[2025-08-14T19:43:53.386901] MAIN_SCREEN: build_called
+
+================================
+[2025-08-14T19:43:58.743332] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T19:43:58.743332] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T19:43:58.743332] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T19:43:59.751044] CLIENTS_SERVICE: load_clients_ms | ms=143
+[2025-08-14T19:44:00.058672] MAIN_SCREEN: init_state
+[2025-08-14T19:44:00.060675] MAIN_SCREEN: build_called
+[2025-08-14T19:44:00.080835] MAIN_SCREEN: post_frame_callback
+[2025-08-14T19:44:00.080835] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T19:44:00.083834] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T19:44:00.083834] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T19:44:00.083834] MAIN_SCREEN: whats_new_missing
+[2025-08-14T19:44:05.726021] MAIN_SCREEN: build_called
+[2025-08-14T19:44:05.881033] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:44:06.991735] FIREBASE_SERVICE: team_meetings_ms | ms=140, tokens=1
+[2025-08-14T19:44:06.992723] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=249
+[2025-08-14T19:44:10.918089] MAIN_SCREEN: build_called
+
+================================
+[2025-08-14T19:44:39.957792] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-14T19:44:39.957792] UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+[2025-08-14T19:44:39.957792] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-14T19:44:41.151293] CLIENTS_SERVICE: load_clients_ms | ms=449
+[2025-08-14T19:44:42.492604] MAIN_SCREEN: init_state
+[2025-08-14T19:44:42.494611] MAIN_SCREEN: build_called
+[2025-08-14T19:44:42.518951] MAIN_SCREEN: post_frame_callback
+[2025-08-14T19:44:42.518951] MAIN_SCREEN: whats_new_check_start
+[2025-08-14T19:44:42.520953] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-14T19:44:42.520953] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-14T19:44:42.520953] MAIN_SCREEN: whats_new_missing
+[2025-08-14T19:44:44.214737] CLIENTS_SERVICE: load_clients_ms | ms=65
+[2025-08-14T19:44:44.279845] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:44:45.202412] FIREBASE_SERVICE: team_meetings_ms | ms=204, tokens=2
+[2025-08-14T19:44:45.203412] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=308
+[2025-08-14T19:46:38.149192] MAIN_SCREEN: build_called
+[2025-08-14T19:46:38.432250] FIREBASE_SERVICE: team_meetings_ms | ms=178, tokens=2
+[2025-08-14T19:46:38.433242] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=265
+[2025-08-14T19:46:41.240214] MAIN_SCREEN: build_called
+[2025-08-14T19:46:41.317307] CLIENTS_SERVICE: load_clients_ms | ms=60
+[2025-08-14T19:46:41.384970] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:46:46.811960] MAIN_SCREEN: build_called
+[2025-08-14T19:47:15.778485] MAIN_SCREEN: build_called
+[2025-08-14T19:47:15.791002] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:47:19.338552] MAIN_SCREEN: build_called
+[2025-08-14T19:47:22.434106] MAIN_SCREEN: build_called
+[2025-08-14T19:47:25.429235] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-14T19:47:25.437268] MAIN_SCREEN: build_called
+[2025-08-14T19:47:45.151237] MAIN_SCREEN: build_called

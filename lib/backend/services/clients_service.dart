@@ -977,19 +977,17 @@ class ClientUIService extends ChangeNotifier {
   
   /// Obtine clientii inclusiv cel temporar pentru afisare
   List<ClientModel> get clientsWithTemporary {
-    // Sorteaza dupa createdAt crescator (prima data cel mai vechi)
-    final creationOrderClients = List<ClientModel>.from(_clients);
-    creationOrderClients.sort((a, b) {
+    // Returneaza lista unificata, deduplicata pe phoneNumber, sortata dupa createdAt
+    final deduped = _deduplicateByPhone(_clients);
+    deduped.sort((a, b) {
       final aTime = a.createdAt;
       final bTime = b.createdAt;
       if (aTime == null && bTime == null) return 0;
       if (aTime == null) return 1;
       if (bTime == null) return -1;
-      return aTime.compareTo(bTime); // crescator
+      return aTime.compareTo(bTime);
     });
-    for (int i = 0; i < creationOrderClients.length; i++) {
-    }
-    return List.unmodifiable(creationOrderClients);
+    return List.unmodifiable(deduped);
   }
   
   /// Helper pentru sortarea clientilor dupa ultima modificare
@@ -1216,8 +1214,8 @@ class ClientUIService extends ChangeNotifier {
 
   /// OPTIMIZAT: Incarca clientii din Firebase pentru consultantul curent cu caching si debouncing
   Future<void> loadClientsFromFirebase() async {
-    // OPTIMIZARE: Verifica cache-ul mai intai
-    if (_lastLoadTime != null && 
+    // OPTIMIZARE: Verifica cache-ul mai intai, dar lasa primul fetch sa treaca imediat dupa creare sau schimbare consultant
+    if (_lastLoadTime != null &&
         DateTime.now().difference(_lastLoadTime!).inMinutes < _cacheValidityMinutes &&
         _clients.isNotEmpty) {
       return;
@@ -1229,8 +1227,9 @@ class ClientUIService extends ChangeNotifier {
     // Daca deja se incarca, nu mai face alt request
     if (_isLoading) return;
     
-    // CRITICAL FIX: Near-instant debouncing for immediate sync
-    _loadDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
+    // CRITICAL FIX: first paint faster - 0ms pentru primul fetch; 50ms pentru cele ulterioare
+    final delay = (_lastLoadTime == null || _clients.isEmpty) ? Duration.zero : const Duration(milliseconds: 50);
+    _loadDebounceTimer = Timer(delay, () async {
       await _performLoadClients();
     });
   }
@@ -1287,6 +1286,7 @@ class ClientUIService extends ChangeNotifier {
         }
         
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          _clients = _deduplicateByPhone(_clients);
           notifyListeners();
         });
       }
@@ -1635,8 +1635,8 @@ class ClientUIService extends ChangeNotifier {
         // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
         _sortClientsByUpdatedAt(dedupedUpdated);
         
-        // Actualizeaza lista de clienti, pastrand clientii temporari
-        _clients = [...dedupedUpdated, ...temporaryClients];
+        // Actualizeaza lista de clienti, pastrand clientii temporari si deduplicand pe phone
+        _clients = _deduplicateByPhone([...dedupedUpdated, ...temporaryClients]);
         
         // FIX: Preserve focus on the same client if it still exists
         if (currentlyFocusedPhone != null) {
@@ -1656,6 +1656,7 @@ class ClientUIService extends ChangeNotifier {
         
         // FIX: Ensure proper notification to all listeners
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          _clients = _deduplicateByPhone(_clients);
           notifyListeners();
         });
       }
@@ -1797,8 +1798,9 @@ class ClientUIService extends ChangeNotifier {
         // Focuseaza clientul real
         _focusedClient = realClient;
         
-        // Sorteaza lista
+        // Sorteaza lista si deduplica pe phoneNumber pentru a preveni dubluri vizuale
         _sortClientsByUpdatedAt(_clients);
+        _clients = _deduplicateByPhone(_clients);
         
         debugPrint('🔵 TEMP_CLIENT: Client finalized successfully');
         
@@ -1896,6 +1898,7 @@ class ClientUIService extends ChangeNotifier {
       // Deduplicate existing before add
       _clients = _deduplicateByPhone(_clients);
       _clients.add(clientWithPhoneId);
+      _clients = _deduplicateByPhone(_clients);
       
       // FIX: Sorteaza lista dupa adaugarea noului client
       _sortClientsByUpdatedAt(_clients);
@@ -1908,6 +1911,7 @@ class ClientUIService extends ChangeNotifier {
       
       // Notifica UI-ul imediat pentru feedback instant
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        _clients = _deduplicateByPhone(_clients);
         notifyListeners();
       });
       

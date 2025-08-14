@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform, kDebugMode;
 import 'clients_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'app_logger.dart';
 
 /// Custom logging utility for Firebase operations
 class FirebaseLogger {
@@ -346,9 +347,11 @@ class FirebaseThreadHandler {
       controller.close();
     };
 
-    // Execute on platform thread
+    // Execute on platform thread, dar amanam atasarea pana dupa primul frame pentru siguranta pe desktop
     executeOnPlatformThread<void>(() async {
       try {
+        // Delay scurt pentru a garanta ca suntem pe platform thread
+        await Future<void>.delayed(const Duration(milliseconds: 1));
         // Start the query
         subscription = queryStream().listen(
           (snapshot) {
@@ -395,6 +398,8 @@ class FirebaseThreadHandler {
 
     executeOnPlatformThread<void>(() async {
       try {
+        // Delay scurt pentru a garanta ca suntem pe platform thread
+        await Future<void>.delayed(const Duration(milliseconds: 1));
         subscription = documentStream().listen(
           (snapshot) {
             if (!controller.isClosed) {
@@ -854,6 +859,7 @@ class NewFirebaseService {
     if (consultantToken == null) return false;
 
     try {
+      final compositeId = _buildCompositeClientId(consultantToken, phoneNumber);
       final clientData = {
         'consultantToken': consultantToken,
         'name': name,
@@ -866,12 +872,8 @@ class NewFirebaseService {
         ...?additionalData,
       };
 
-      await _threadHandler.executeOnPlatformThread(
-        () => _firestore
-            .collection(_clientsCollection)
-            .doc(phoneNumber)
-            .set(clientData),
-      );
+      await _threadHandler.executeOnPlatformThread(() =>
+          _firestore.collection(_clientsCollection).doc(compositeId).set(clientData));
       return true;
     } catch (e) {
       FirebaseLogger.error('Error creating client: $e');
@@ -900,9 +902,8 @@ class NewFirebaseService {
     }
 
     try {
-      final doc = await _threadHandler.executeOnPlatformThread(
-        () => _firestore.collection(_clientsCollection).doc(phoneNumber).get(),
-      );
+      final ref = await _resolveClientDocRef(phoneNumber);
+      final doc = await _threadHandler.executeOnPlatformThread(() => ref.get());
 
       final data = doc.data();
 
@@ -972,13 +973,9 @@ class NewFirebaseService {
       return;
     }
 
-    // Creeaza query-ul pentru clientul specific
-    final query = _threadHandler.createSafeDocumentStream(
-      () => _firestore
-          .collection(_clientsCollection)
-          .doc(phoneNumber)
-          .snapshots(),
-    );
+    // Creeaza stream pe doc rezolvat (composite/legacy)
+    final ref = await _resolveClientDocRef(phoneNumber);
+    final query = _threadHandler.createSafeDocumentStream(() => ref.snapshots());
 
     // Returneaza stream-ul de snapshots
     yield* query.map((snapshot) {
@@ -1230,12 +1227,10 @@ class NewFirebaseService {
       updates['updatedAt'] = FieldValue.serverTimestamp();
 
       try {
-        await _threadHandler.executeOnPlatformThread(
-          () => _firestore
-              .collection(_clientsCollection)
-              .doc(phoneNumber)
-              .update(updates),
-        );
+        await _threadHandler.executeOnPlatformThread(() async {
+          final clientRef = await _resolveClientDocRef(phoneNumber);
+          await clientRef.update(updates);
+        });
       } on FirebaseException catch (fe) {
         if (fe.code == 'not-found') {
           // Ignore benign not-found updates (ex: a fost sters intre timp)
@@ -1274,9 +1269,7 @@ class NewFirebaseService {
       }
 
       final batch = _firestore.batch();
-      final clientRef = _firestore
-          .collection(_clientsCollection)
-          .doc(phoneNumber);
+      final clientRef = await _resolveClientDocRef(phoneNumber);
 
       // Sterge toate formularele
       final formsSnapshot =
@@ -1334,14 +1327,13 @@ class NewFirebaseService {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      await _threadHandler.executeOnPlatformThread(
-        () => _firestore
-            .collection(_clientsCollection)
-            .doc(phoneNumber)
+      await _threadHandler.executeOnPlatformThread(() async {
+        final clientRef = await _resolveClientDocRef(phoneNumber);
+        await clientRef
             .collection(_formsSubcollection)
             .doc(formId)
-            .set(formDoc),
-      );
+            .set(formDoc);
+      });
 
       // OPTIMIZARE: Invalideaza cache-ul pentru form data
       invalidateFormCache(phoneNumber);
@@ -1375,9 +1367,7 @@ class NewFirebaseService {
       final existingClient = await getClient(phoneNumber);
       if (existingClient == null) return false;
 
-      final clientRef = _firestore
-          .collection(_clientsCollection)
-          .doc(phoneNumber);
+      final clientRef = await _resolveClientDocRef(phoneNumber);
       final formRef = clientRef
           .collection(_formsSubcollection)
           .doc('unified_form');
@@ -1429,19 +1419,11 @@ class NewFirebaseService {
     }
 
     try {
-      // Verifica daca clientul apartine consultantului curent
       final existingClient = await getClient(phoneNumber);
       if (existingClient == null) return [];
-
-      final snapshot = await _threadHandler.executeOnPlatformThread(
-        () =>
-            _firestore
-                .collection(_clientsCollection)
-                .doc(phoneNumber)
-                .collection(_formsSubcollection)
-                .orderBy('updatedAt', descending: true)
-                .get(),
-      );
+      final clientRef = await _resolveClientDocRef(phoneNumber);
+      final snapshot = await _threadHandler.executeOnPlatformThread(() =>
+          clientRef.collection(_formsSubcollection).orderBy('updatedAt', descending: true).get());
 
       final forms =
           snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
@@ -1485,7 +1467,7 @@ class NewFirebaseService {
 
       // Creeaza intalnirea si actualizeaza updatedAt in acelasi WriteBatch
       final success = await _threadHandler.executeOnPlatformThread(() async {
-        final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
+        final clientRef = await _resolveClientDocRef(phoneNumber);
         final meetingRef = clientRef.collection(_meetingsSubcollection).doc();
 
         final meetingDoc = {
@@ -1582,13 +1564,10 @@ class NewFirebaseService {
               final phoneNumber = client['phoneNumber'] as String? ?? client['id'] as String? ?? '';
               if (phoneNumber.isEmpty) continue;
 
-              final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
-                () => _firestore
-                    .collection(_clientsCollection)
-                    .doc(phoneNumber)
-                    .collection(_meetingsSubcollection)
-                    .get(),
-              );
+              final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(() async {
+                final clientRef = await _resolveClientDocRef(phoneNumber);
+                return clientRef.collection(_meetingsSubcollection).get();
+              });
 
               for (final doc in meetingsSnapshot.docs) {
                 final meetingData = doc.data();
@@ -1639,6 +1618,7 @@ class NewFirebaseService {
     }
 
     try {
+      final swTeam = Stopwatch()..start();
       // Obtine toti consultantii din echipa si colecteaza token-urile
       final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(
         () => _firestore
@@ -1691,6 +1671,8 @@ class NewFirebaseService {
       }
 
       // Sortare deja facuta pe server
+      swTeam.stop();
+      try { AppLogger.sync('firebase_service', 'team_meetings_ms', { 'ms': swTeam.elapsedMilliseconds, 'tokens': teamTokens.length }); } catch (_) {}
       return teamMeetings;
     } catch (e) {
       FirebaseLogger.error('Error getting team meetings: $e');
@@ -1724,15 +1706,12 @@ class NewFirebaseService {
               );
 
               for (final clientDoc in clientsSnapshot.docs) {
-                final phoneNumber = clientDoc.id;
                 final clientData = clientDoc.data();
-                final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(
-                  () => _firestore
-                      .collection(_clientsCollection)
-                      .doc(phoneNumber)
-                      .collection(_meetingsSubcollection)
-                      .get(),
-                );
+                final phoneNumber = clientData['phoneNumber'] as String? ?? clientDoc.id;
+                final meetingsSnapshot = await _threadHandler.executeOnPlatformThread(() async {
+                  final clientRef = await _resolveClientDocRef(phoneNumber);
+                  return clientRef.collection(_meetingsSubcollection).get();
+                });
 
                 for (final meetingDoc in meetingsSnapshot.docs) {
                   final meetingData = meetingDoc.data();
@@ -1804,7 +1783,7 @@ class NewFirebaseService {
 
       // Update meeting and client.updatedAt in a single batch
       await _threadHandler.executeOnPlatformThread(() async {
-        final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
+        final clientRef = await _resolveClientDocRef(phoneNumber);
         final meetingRef = clientRef.collection(_meetingsSubcollection).doc(meetingId);
         final batch = _firestore.batch();
         batch.update(meetingRef, updates);
@@ -1835,7 +1814,7 @@ class NewFirebaseService {
 
       // Delete meeting and update client.updatedAt in a single batch
       await _threadHandler.executeOnPlatformThread(() async {
-        final clientRef = _firestore.collection(_clientsCollection).doc(phoneNumber);
+        final clientRef = await _resolveClientDocRef(phoneNumber);
         final meetingRef = clientRef.collection(_meetingsSubcollection).doc(meetingId);
         final batch = _firestore.batch();
         batch.delete(meetingRef);
@@ -1864,15 +1843,13 @@ class NewFirebaseService {
       final existingClient = await getClient(phoneNumber);
       if (existingClient == null) return false;
 
-      await _threadHandler.executeOnPlatformThread(
-        () =>
-            _firestore
-                .collection(_clientsCollection)
-                .doc(phoneNumber)
-                .collection(_formsSubcollection)
-                .doc(formId)
-                .delete(),
-      );
+      await _threadHandler.executeOnPlatformThread(() async {
+        final clientRef = await _resolveClientDocRef(phoneNumber);
+        await clientRef
+            .collection(_formsSubcollection)
+            .doc(formId)
+            .delete();
+      });
 
       // Actualizeaza timestamp-ul clientului
       await updateClient(phoneNumber, {
@@ -1989,6 +1966,29 @@ class NewFirebaseService {
     _allClientsCache = null;
     _allClientsCacheTime = null;
     _allClientsCacheToken = null;
+  }
+
+  // =================== CLIENT ID HELPERS (Faza 5) ===================
+
+  /// Build composite client id: ${token}__${phone}
+  String _buildCompositeClientId(String token, String phoneNumber) => '${token}__${phoneNumber}';
+
+  /// Resolve the document ref for a client by phone for the current consultant.
+  /// Prefers composite id `${token}__${phone}` when it exists; otherwise falls back to legacy id = phone.
+  Future<DocumentReference<Map<String, dynamic>>> _resolveClientDocRef(String phoneNumber) async {
+    final token = await getCurrentConsultantToken();
+    if (token == null || token.isEmpty) {
+      return _firestore.collection(_clientsCollection).doc(phoneNumber);
+    }
+    final compositeId = _buildCompositeClientId(token, phoneNumber);
+    final compositeRef = _firestore.collection(_clientsCollection).doc(compositeId);
+    try {
+      final snap = await _threadHandler.executeOnPlatformThread(() => compositeRef.get());
+      if (snap.exists) {
+        return compositeRef;
+      }
+    } catch (_) {}
+    return _firestore.collection(_clientsCollection).doc(phoneNumber);
   }
 }
 

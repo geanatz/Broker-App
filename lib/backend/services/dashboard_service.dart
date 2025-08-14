@@ -1,5 +1,6 @@
 ﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'clients_service.dart';
@@ -743,10 +744,10 @@ class DashboardService extends ChangeNotifier {
       final now = DateTime.now();
       final yearMonth = DateFormat('yyyy-MM').format(now);
       final today = DateFormat('yyyy-MM-dd').format(now);
-      
+
       debugPrint('📈 DASHBOARD_SERVICE: Recording meeting for consultant ${consultantToken.substring(0, 8)}... in $yearMonth for client $clientPhoneNumber');
-      
-      // Verifica daca clientul a fost deja contorizat pentru intalniri
+
+      // Refs
       final monthlyDocRef = _firestore
           .collection('data')
           .doc('stats')
@@ -754,39 +755,8 @@ class DashboardService extends ChangeNotifier {
           .doc(yearMonth)
           .collection('consultants')
           .doc(consultantToken);
-          
-      final monthlyDoc = await monthlyDocRef.get();
-      final monthlyData = monthlyDoc.data() ?? {};
-      final completedClientsForMeetings = List<String>.from(monthlyData['completedClientsForMeetings'] ?? []);
-      
-      if (completedClientsForMeetings.contains(clientPhoneNumber)) {
-        debugPrint('⚠️ DASHBOARD_SERVICE: Client $clientPhoneNumber already counted for meetings, skipping increment');
-        return;
-      }
-      
-      // IMPORTANT: Adauga clientul la lista inainte de increment pentru a preveni race conditions
-      completedClientsForMeetings.add(clientPhoneNumber);
-      
-      await monthlyDocRef.set({
-        'meetingsHeld': FieldValue.increment(1),
-        'completedClientsForMeetings': completedClientsForMeetings,
-        'lastUpdated': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      final monthlyCountedRef = monthlyDocRef.collection('countedMeetings').doc(clientPhoneNumber);
 
-      // Dual-write (nou sistem): dedup marker + sharded counter
-      // 1) Dedup marker per client (monthly)
-      await monthlyDocRef
-          .collection('countedMeetings')
-          .doc(clientPhoneNumber)
-          .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
-
-      // 2) Sharded counter (monthly)
-      await _incrementShardedCounter(
-        parentDoc: monthlyDocRef,
-        counterGroup: 'meetings',
-      );
-      
-      // Salveaza si statistici zilnice pentru tracking detaliat
       final dailyDocRef = _firestore
           .collection('data')
           .doc('stats')
@@ -794,43 +764,72 @@ class DashboardService extends ChangeNotifier {
           .doc(today)
           .collection('consultants')
           .doc(consultantToken);
-          
-      final dailyDoc = await dailyDocRef.get();
-      final dailyData = dailyDoc.data() ?? {};
-      final dailyCompletedClientsForMeetings = List<String>.from(dailyData['completedClientsForMeetings'] ?? []);
-      
-      if (!dailyCompletedClientsForMeetings.contains(clientPhoneNumber)) {
-        dailyCompletedClientsForMeetings.add(clientPhoneNumber);
-        
-        await dailyDocRef.set({
-          'meetingsHeld': FieldValue.increment(1),
-          'completedClientsForMeetings': dailyCompletedClientsForMeetings,
-          'lastUpdated': FieldValue.serverTimestamp(),
-          // Optional: TTL field; configure TTL on this field in console
-          'expireAt': Timestamp.fromDate(DateTime.now().add(const Duration(days: 32))),
-        }, SetOptions(merge: true));
+      final dailyCountedRef = dailyDocRef.collection('countedMeetings').doc(clientPhoneNumber);
 
-        // Dual-write (daily): dedup marker + sharded counter
-        await dailyDocRef
-            .collection('countedMeetings')
-            .doc(clientPhoneNumber)
-            .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      // Atomic dedup + increments via transaction
+      // On desktop platforms avoid Firestore transactions due to plugin instability; use safe fallback
+      final useFallback = !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
+      if (useFallback) {
+        debugPrint('DASHBOARD_SERVICE: desktop detected → using non-transactional path for meetings');
+        await _recordMeetingWithoutTransaction(consultantToken, clientPhoneNumber, yearMonth, today, now);
+      } else {
+        try {
+          debugPrint('DASHBOARD_SERVICE: starting transaction for meetings');
+          await _threadHandler.executeTransaction((transaction) async {
+          debugPrint('DASHBOARD_SERVICE: txn read monthlyCountedRef');
+        final monthlyCountedSnap = await transaction.get(monthlyCountedRef);
+        if (!monthlyCountedSnap.exists) {
+            debugPrint('DASHBOARD_SERVICE: txn write monthly increments');
+          transaction.set(monthlyCountedRef, {'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+          transaction.set(monthlyDocRef, {
+            'meetingsHeld': FieldValue.increment(1),
+            'lastUpdated': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+          // Increment sharded counter (monthly)
+          final shardId = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+          final monthlyShardRef = monthlyDocRef
+              .collection('counters')
+              .doc('meetings')
+              .collection('shards')
+              .doc(shardId);
+          transaction.set(monthlyShardRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+        }
 
-        await _incrementShardedCounter(
-          parentDoc: dailyDocRef,
-          counterGroup: 'meetings',
-        );
+          debugPrint('DASHBOARD_SERVICE: txn read dailyCountedRef');
+          final dailyCountedSnap = await transaction.get(dailyCountedRef);
+        if (!dailyCountedSnap.exists) {
+            debugPrint('DASHBOARD_SERVICE: txn write daily increments');
+          transaction.set(dailyCountedRef, {'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+          transaction.set(dailyDocRef, {
+            'meetingsHeld': FieldValue.increment(1),
+            'lastUpdated': FieldValue.serverTimestamp(),
+            'expireAt': Timestamp.fromDate(now.add(const Duration(days: 32))),
+          }, SetOptions(merge: true));
+          // Increment sharded counter (daily)
+          final shardId2 = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+          final dailyShardRef = dailyDocRef
+              .collection('counters')
+              .doc('meetings')
+              .collection('shards')
+              .doc(shardId2);
+          transaction.set(dailyShardRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+        }
+        return null;
+          });
+          debugPrint('DASHBOARD_SERVICE: transaction for meetings completed');
+        } catch (e) {
+          debugPrint('⚠️ DASHBOARD_SERVICE: Transaction failed for meetings, attempting non-transactional fallback: $e');
+          await _recordMeetingWithoutTransaction(consultantToken, clientPhoneNumber, yearMonth, today, now);
+        }
       }
-      
-      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in $yearMonth for client $clientPhoneNumber');
-      
-      // FIX: Invalideaza cache-ul pentru acest consultant si refresh complet
+
+      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented meetings for consultant in $yearMonth');
+
+      // Invalidate caches and refresh
       _consultantsRankingCache.remove(consultantToken);
-      _teamsRankingCache.remove(consultantToken);  
+      _teamsRankingCache.remove(consultantToken);
       _consultantStatsCache.remove(consultantToken);
-      
-      // IMPORTANT: Reincarca clasamentele coalesced (debounced)
-      debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after meeting creation...');
+
       _refreshDebounce?.cancel();
       _refreshDebounce = Timer(const Duration(milliseconds: 200), () async {
         try {
@@ -838,7 +837,6 @@ class DashboardService extends ChangeNotifier {
           await _loadConsultantStats();
           Future.microtask(() {
             notifyListeners();
-            debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified');
           });
         } catch (e) {
           debugPrint('❌ DASHBOARD_SERVICE: Error in async refresh after meeting creation: $e');
@@ -848,17 +846,15 @@ class DashboardService extends ChangeNotifier {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onMeetingCreated: $e');
     }
   }
-  
-  /// Notifica serviciul ca un formular a fost finalizat (FIX: robust cu tracking clienti contorizati)
-  Future<void> onFormCompleted(String consultantToken, String clientPhoneNumber) async {
+
+  Future<void> _recordMeetingWithoutTransaction(
+    String consultantToken,
+    String clientPhoneNumber,
+    String yearMonth,
+    String today,
+    DateTime now,
+  ) async {
     try {
-      final now = DateTime.now();
-      final yearMonth = DateFormat('yyyy-MM').format(now);
-      final today = DateFormat('yyyy-MM-dd').format(now);
-      
-      debugPrint('📈 DASHBOARD_SERVICE: Recording form completion for consultant ${consultantToken.substring(0, 8)}... in $yearMonth for client $clientPhoneNumber');
-      
-      // Verifica daca clientul a fost deja contorizat pentru formulare
       final monthlyDocRef = _firestore
           .collection('data')
           .doc('stats')
@@ -866,39 +862,8 @@ class DashboardService extends ChangeNotifier {
           .doc(yearMonth)
           .collection('consultants')
           .doc(consultantToken);
-          
-      final monthlyDoc = await monthlyDocRef.get();
-      final monthlyData = monthlyDoc.data() ?? {};
-      final completedClientsForForms = List<String>.from(monthlyData['completedClientsForForms'] ?? []);
-      
-      if (completedClientsForForms.contains(clientPhoneNumber)) {
-        debugPrint('⚠️ DASHBOARD_SERVICE: Client $clientPhoneNumber already counted for forms, skipping increment');
-        return;
-      }
-      
-      // IMPORTANT: Adauga clientul la lista inainte de increment pentru a preveni race conditions
-      completedClientsForForms.add(clientPhoneNumber);
-      
-      await monthlyDocRef.set({
-        'formsCompleted': FieldValue.increment(1),
-        'completedClientsForForms': completedClientsForForms,
-        'lastUpdated': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      final monthlyCountedRef = monthlyDocRef.collection('countedMeetings').doc(clientPhoneNumber);
 
-      // Dual-write (nou sistem): dedup marker + sharded counter
-      // 1) Dedup marker per client (monthly)
-      await monthlyDocRef
-          .collection('countedForms')
-          .doc(clientPhoneNumber)
-          .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
-
-      // 2) Sharded counter (monthly)
-      await _incrementShardedCounter(
-        parentDoc: monthlyDocRef,
-        counterGroup: 'forms',
-      );
-      
-      // Salveaza si statistici zilnice pentru tracking detaliat
       final dailyDocRef = _firestore
           .collection('data')
           .doc('stats')
@@ -906,43 +871,134 @@ class DashboardService extends ChangeNotifier {
           .doc(today)
           .collection('consultants')
           .doc(consultantToken);
-          
-      final dailyDoc = await dailyDocRef.get();
-      final dailyData = dailyDoc.data() ?? {};
-      final dailyCompletedClientsForForms = List<String>.from(dailyData['completedClientsForForms'] ?? []);
-      
-      if (!dailyCompletedClientsForForms.contains(clientPhoneNumber)) {
-        dailyCompletedClientsForForms.add(clientPhoneNumber);
-        
-        await dailyDocRef.set({
-          'formsCompleted': FieldValue.increment(1),
-          'completedClientsForForms': dailyCompletedClientsForForms,
-          'lastUpdated': FieldValue.serverTimestamp(),
-          // Optional: TTL field; configure TTL on this field in console
-          'expireAt': Timestamp.fromDate(DateTime.now().add(const Duration(days: 32))),
-        }, SetOptions(merge: true));
+      final dailyCountedRef = dailyDocRef.collection('countedMeetings').doc(clientPhoneNumber);
 
-        // Dual-write (daily): dedup marker + sharded counter
-        await dailyDocRef
-            .collection('countedForms')
-            .doc(clientPhoneNumber)
-            .set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
-
-        await _incrementShardedCounter(
-          parentDoc: dailyDocRef,
-          counterGroup: 'forms',
-        );
+      final monthlyCounted = await _threadHandler.executeOnPlatformThread(() => monthlyCountedRef.get());
+      if (!monthlyCounted.exists) {
+        await _threadHandler.executeOnPlatformThread(() => monthlyCountedRef.set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+        await _threadHandler.executeOnPlatformThread(() => monthlyDocRef.set({
+              'meetingsHeld': FieldValue.increment(1),
+              'lastUpdated': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true)));
+        final shardId = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+        final monthlyShardRef = monthlyDocRef
+            .collection('counters')
+            .doc('meetings')
+            .collection('shards')
+            .doc(shardId);
+        await _threadHandler.executeOnPlatformThread(() => monthlyShardRef.set({'count': FieldValue.increment(1)}, SetOptions(merge: true)));
       }
-      
-      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in $yearMonth for client $clientPhoneNumber');
-      
-      // FIX: Invalideaza cache-ul pentru acest consultant si refresh complet
+
+      final dailyCounted = await _threadHandler.executeOnPlatformThread(() => dailyCountedRef.get());
+      if (!dailyCounted.exists) {
+        await _threadHandler.executeOnPlatformThread(() => dailyCountedRef.set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true)));
+        await _threadHandler.executeOnPlatformThread(() => dailyDocRef.set({
+              'meetingsHeld': FieldValue.increment(1),
+              'lastUpdated': FieldValue.serverTimestamp(),
+              'expireAt': Timestamp.fromDate(now.add(const Duration(days: 32))),
+            }, SetOptions(merge: true)));
+        final shardId2 = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+        final dailyShardRef = dailyDocRef
+            .collection('counters')
+            .doc('meetings')
+            .collection('shards')
+            .doc(shardId2);
+        await _threadHandler.executeOnPlatformThread(() => dailyShardRef.set({'count': FieldValue.increment(1)}, SetOptions(merge: true)));
+      }
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Fallback record meeting failed: $e');
+    }
+  }
+  
+  /// Notifica serviciul ca un formular a fost finalizat (FIX: robust cu tracking clienti contorizati)
+  Future<void> onFormCompleted(String consultantToken, String clientPhoneNumber) async {
+    try {
+      final now = DateTime.now();
+      final yearMonth = DateFormat('yyyy-MM').format(now);
+      final today = DateFormat('yyyy-MM-dd').format(now);
+
+      debugPrint('📈 DASHBOARD_SERVICE: Recording form completion for consultant ${consultantToken.substring(0, 8)}... in $yearMonth for client $clientPhoneNumber');
+
+      final monthlyDocRef = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('monthly')
+          .doc(yearMonth)
+          .collection('consultants')
+          .doc(consultantToken);
+      final monthlyCountedRef = monthlyDocRef.collection('countedForms').doc(clientPhoneNumber);
+
+      final dailyDocRef = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('daily')
+          .doc(today)
+          .collection('consultants')
+          .doc(consultantToken);
+      final dailyCountedRef = dailyDocRef.collection('countedForms').doc(clientPhoneNumber);
+
+      // Atomic dedup + increments via transaction
+      final useFallbackForms = !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
+      if (useFallbackForms) {
+        debugPrint('DASHBOARD_SERVICE: desktop detected → using non-transactional path for forms');
+        await _recordFormWithoutTransaction(consultantToken, clientPhoneNumber, yearMonth, today, now);
+      } else {
+        try {
+          debugPrint('DASHBOARD_SERVICE: starting transaction for forms');
+          await _threadHandler.executeTransaction((transaction) async {
+          debugPrint('DASHBOARD_SERVICE: txn read monthlyCountedRef (forms)');
+        final monthlyCountedSnap = await transaction.get(monthlyCountedRef);
+        if (!monthlyCountedSnap.exists) {
+            debugPrint('DASHBOARD_SERVICE: txn write monthly increments (forms)');
+          transaction.set(monthlyCountedRef, {'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+          transaction.set(monthlyDocRef, {
+            'formsCompleted': FieldValue.increment(1),
+            'lastUpdated': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+          // Increment sharded counter (monthly)
+          final shardId = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+          final monthlyShardRef = monthlyDocRef
+              .collection('counters')
+              .doc('forms')
+              .collection('shards')
+              .doc(shardId);
+          transaction.set(monthlyShardRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+        }
+
+          debugPrint('DASHBOARD_SERVICE: txn read dailyCountedRef (forms)');
+          final dailyCountedSnap = await transaction.get(dailyCountedRef);
+        if (!dailyCountedSnap.exists) {
+            debugPrint('DASHBOARD_SERVICE: txn write daily increments (forms)');
+          transaction.set(dailyCountedRef, {'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+          transaction.set(dailyDocRef, {
+            'formsCompleted': FieldValue.increment(1),
+            'lastUpdated': FieldValue.serverTimestamp(),
+            'expireAt': Timestamp.fromDate(now.add(const Duration(days: 32))),
+          }, SetOptions(merge: true));
+          // Increment sharded counter (daily)
+          final shardId2 = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+          final dailyShardRef = dailyDocRef
+              .collection('counters')
+              .doc('forms')
+              .collection('shards')
+              .doc(shardId2);
+          transaction.set(dailyShardRef, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+        }
+        return null;
+          });
+          debugPrint('DASHBOARD_SERVICE: transaction for forms completed');
+        } catch (e) {
+          debugPrint('⚠️ DASHBOARD_SERVICE: Transaction failed for forms, attempting non-transactional fallback: $e');
+          await _recordFormWithoutTransaction(consultantToken, clientPhoneNumber, yearMonth, today, now);
+        }
+      }
+
+      debugPrint('✅ DASHBOARD_SERVICE: Successfully incremented forms for consultant in $yearMonth');
+
       _consultantsRankingCache.remove(consultantToken);
       _teamsRankingCache.remove(consultantToken);
       _consultantStatsCache.remove(consultantToken);
-      
-      // IMPORTANT: Reincarca clasamentele coalesced (debounced)
-      debugPrint('🔄 DASHBOARD_SERVICE: Refreshing rankings after form completion...');
+
       _refreshDebounce?.cancel();
       _refreshDebounce = Timer(const Duration(milliseconds: 200), () async {
         try {
@@ -950,7 +1006,6 @@ class DashboardService extends ChangeNotifier {
           await _loadConsultantStats();
           Future.microtask(() {
             notifyListeners();
-            debugPrint('✅ DASHBOARD_SERVICE: Rankings refreshed and UI notified after form completion');
           });
         } catch (e) {
           debugPrint('❌ DASHBOARD_SERVICE: Error in async refresh after form completion: $e');
@@ -960,26 +1015,72 @@ class DashboardService extends ChangeNotifier {
       debugPrint('❌ DASHBOARD_SERVICE: Error in onFormCompleted: $e');
     }
   }
+
+  Future<void> _recordFormWithoutTransaction(
+    String consultantToken,
+    String clientPhoneNumber,
+    String yearMonth,
+    String today,
+    DateTime now,
+  ) async {
+    try {
+      final monthlyDocRef = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('monthly')
+          .doc(yearMonth)
+          .collection('consultants')
+          .doc(consultantToken);
+      final monthlyCountedRef = monthlyDocRef.collection('countedForms').doc(clientPhoneNumber);
+
+      final dailyDocRef = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('daily')
+          .doc(today)
+          .collection('consultants')
+          .doc(consultantToken);
+      final dailyCountedRef = dailyDocRef.collection('countedForms').doc(clientPhoneNumber);
+
+      final monthlyCounted = await monthlyCountedRef.get();
+      if (!monthlyCounted.exists) {
+        await monthlyCountedRef.set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+        await monthlyDocRef.set({
+          'formsCompleted': FieldValue.increment(1),
+          'lastUpdated': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        final shardId = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+        await monthlyDocRef
+            .collection('counters')
+            .doc('forms')
+            .collection('shards')
+            .doc(shardId)
+            .set({'count': FieldValue.increment(1)}, SetOptions(merge: true));
+      }
+
+      final dailyCounted = await dailyCountedRef.get();
+      if (!dailyCounted.exists) {
+        await dailyCountedRef.set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+        await dailyDocRef.set({
+          'formsCompleted': FieldValue.increment(1),
+          'lastUpdated': FieldValue.serverTimestamp(),
+          'expireAt': Timestamp.fromDate(now.add(const Duration(days: 32))),
+        }, SetOptions(merge: true));
+        final shardId2 = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
+        await dailyDocRef
+            .collection('counters')
+            .doc('forms')
+            .collection('shards')
+            .doc(shardId2)
+            .set({'count': FieldValue.increment(1)}, SetOptions(merge: true));
+      }
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Fallback record form failed: $e');
+    }
+  }
 }
 
 extension _ShardedCounters on DashboardService {
-  Future<void> _incrementShardedCounter({
-    required DocumentReference<Map<String, dynamic>> parentDoc,
-    required String counterGroup, // 'forms' | 'meetings'
-  }) async {
-    try {
-      final shardId = (DateTime.now().microsecondsSinceEpoch % DashboardService._counterShards).toString();
-      final shardRef = parentDoc
-          .collection('counters')
-          .doc(counterGroup)
-          .collection('shards')
-          .doc(shardId);
-      await shardRef.set({'count': FieldValue.increment(1)}, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('❌ DASHBOARD_SERVICE: Error incrementing sharded counter $counterGroup: $e');
-    }
-  }
-
   /// Helper: reads monthly counters for a consultant token via shards with fallback
   Future<Map<String, int>> _readMonthlyCountersForToken(String yearMonth, String consultantToken) async {
     try {

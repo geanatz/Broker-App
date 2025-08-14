@@ -169,6 +169,8 @@ class MatcherService extends ChangeNotifier {
   final Map<String, double> _incomeCache = {};
   final Map<String, DateTime> _incomeCacheTime = {};
   Timer? _incomeCacheCleanupTimer;
+  // Dedup for verbose logs
+  final Map<String, DateTime> _logDebounce = {};
 
   // Map pentru iconitele bancilor
   final Map<String, String> bankIcons = {
@@ -289,7 +291,7 @@ class MatcherService extends ChangeNotifier {
           ? currentClient.phoneNumber1
           : currentClient.phoneNumber;
 
-      debugPrint('MATCHER: Using clientKey="$clientKey" for income cache and lookups');
+      _logOnce('income_key_$clientKey', 'MATCHER: Using clientKey="$clientKey" for income cache and lookups');
 
       // OPTIMIZARE: Verifica cache-ul pentru calculul veniturilor
       final cacheKey = clientKey;
@@ -315,7 +317,7 @@ class MatcherService extends ChangeNotifier {
       final clientIncomeForms = _formService.getClientIncomeForms(clientKey);
       final coborrowerIncomeForms = _formService.getCoborrowerIncomeForms(clientKey);
 
-      debugPrint('MATCHER: Found income forms client=${clientIncomeForms.length}, coborrower=${coborrowerIncomeForms.length}');
+      _logOnce('income_forms_$clientKey', 'MATCHER: Found income forms client=${clientIncomeForms.length}, coborrower=${coborrowerIncomeForms.length}');
       
       // Loading income forms for calculation
       
@@ -1043,7 +1045,7 @@ class MatcherService extends ChangeNotifier {
         ? currentClient.phoneNumber1
         : currentClient.phoneNumber;
 
-    debugPrint('MATCHER: Using clientKey="$clientKey" for loan extraction');
+    _logOnce('loan_key_$clientKey', 'MATCHER: Using clientKey="$clientKey" for loan extraction');
 
     final clientCreditForms = _formService.getClientCreditForms(clientKey);
     final coborrowerCreditForms = _formService.getCoborrowerCreditForms(clientKey);
@@ -1086,7 +1088,7 @@ class MatcherService extends ChangeNotifier {
         ? currentClient.phoneNumber1
         : currentClient.phoneNumber;
 
-    debugPrint('MATCHER: Calculating total income using clientKey="$clientKey"');
+    _logOnce('income_calc_$clientKey', 'MATCHER: Calculating total income using clientKey="$clientKey"');
 
     double salary = 0;
     final clientIncomeForms = _formService.getClientIncomeForms(clientKey);
@@ -1104,6 +1106,14 @@ class MatcherService extends ChangeNotifier {
     }
 
     return salary;
+  }
+
+  void _logOnce(String key, String message, {int ms = 1000}) {
+    final now = DateTime.now();
+    final last = _logDebounce[key];
+    if (last != null && now.difference(last).inMilliseconds < ms) return;
+    _logDebounce[key] = now;
+    debugPrint(message);
   }
 
   /// Calculeaza suma acordabila pentru tipul Fresh (credit nou fara modificarea creditelor existente)

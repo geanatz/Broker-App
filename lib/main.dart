@@ -24,6 +24,8 @@ class DebugOptions {
   static bool showMaterialGrid = false;
   static bool showSemanticsDebugger = false;
   static bool showWidgetInspector = false;
+  // Control AI debug verbosity globally (affects '🤖 AI_DEBUG' logs)
+  static bool aiDebugEnabled = false;
 
   static void toggleMaterialGrid() {
     showMaterialGrid = !showMaterialGrid;
@@ -142,6 +144,29 @@ void main() async {
   await runZonedGuarded(() async {
     // Initialize Flutter binding as early as possible
     WidgetsFlutterBinding.ensureInitialized();
+    // Setup filtered debugPrint to reduce noisy logs in debug without affecting business logic
+    if (kDebugMode) {
+      final originalDebugPrint = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message == null) return;
+        // Hide AI_DEBUG logs when disabled
+        if (!DebugOptions.aiDebugEnabled && message.startsWith('🤖 AI_DEBUG')) {
+          return;
+        }
+        // Hide GoogleDrive verbose logs when AI debug disabled
+        if (!DebugOptions.aiDebugEnabled && (message.startsWith('GD_VERIFY') || message.contains('GOOGLE_DRIVE_SERVICE'))) {
+          return;
+        }
+        // Filter known Firestore desktop warnings about non-platform thread (cosmetic only)
+        if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+          if (message.contains("plugins.flutter.io/firebase_firestore") &&
+              message.contains("non-platform thread")) {
+            return; // ignore cosmetic plugin warning in debug
+          }
+        }
+        originalDebugPrint(message, wrapWidth: wrapWidth);
+      };
+    }
     // Headless pre-launch update on Windows before any window is shown
     if (!kIsWeb && Platform.isWindows && UpdateConfig.preLaunchUpdaterEnabled && !kDebugMode) {
       try {
@@ -417,14 +442,27 @@ class MainAppWrapper extends StatefulWidget {
 class _MainAppWrapperState extends State<MainAppWrapper> { 
   Map<String, dynamic>? _consultantData;
   bool _isLoading = true;
+  bool _startedFetch = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchConsultantData();
+    // Amanam fetch-ul pana dupa primul frame pentru a evita mesaje de platform thread pe desktop
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (_startedFetch) return;
+      _startedFetch = true;
+      // Mic delay pe desktop pentru stabilitate plugin Firestore
+      if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+        await Future<void>.delayed(const Duration(milliseconds: 1));
+      }
+      if (!mounted) return;
+      await _fetchConsultantData();
+    });
   }
 
   Future<void> _fetchConsultantData() async {
+    if (!mounted) return;
     final currentUser = FirebaseAuth.instance.currentUser;
     
     if (currentUser == null) {

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'dashboard_service.dart';
+import 'app_logger.dart';
 import 'firebase_service.dart';
 import 'splash_service.dart';
 
@@ -150,62 +151,11 @@ class MeetingService {
   /// OPTIMIZAT: Notifica clientul despre intalnirea creata cu performanta imbunatatita
   Future<void> _notifyClientMeetingCreated(String phoneNumber, DateTime dateTime) async {
     try {
-      final clientService = SplashService().clientUIService;
-
-      // OPTIMIZARE: Verificare rapida din cache in loc de reload complet
-      var client = _clientCache[phoneNumber];
-      
-      if (client == null) {
-        // OPTIMIZARE: Cauta in lista existenta inainte de a reincarca
-        final clientsWithPhone = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
-        if (clientsWithPhone.isNotEmpty) {
-          client = clientsWithPhone.first;
-          // OPTIMIZARE: Salveaza in cache pentru viitor
-          _clientCache[phoneNumber] = client;
-          _resetClientCache();
-        } else {
-          // OPTIMIZARE: Doar daca nu e in lista existenta, reincarca
-          debugPrint('🔄 MEETING_SERVICE: Client not in current list, refreshing...');
-          await clientService.loadClientsFromFirebase();
-          
-          final clientsRetry = clientService.clients.where((c) => c.phoneNumber == phoneNumber);
-          if (clientsRetry.isNotEmpty) {
-            client = clientsRetry.first;
-            _clientCache[phoneNumber] = client;
-            _resetClientCache();
-          }
-        }
-      }
-      
-      // Verifica daca clientul a fost gasit inainte de a-l folosi
-      if (client != null) {
-        debugPrint('📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: ${client.name}');
-        
-        // VERIFICARE: Nu incrementeaza statisticile daca clientul a fost deja contorizat
-        if (!client.isCompleted) {
-          debugPrint('📱 MEETING_SERVICE: Client not completed, proceeding with move and statistics increment');
-          
-          // OPTIMIZARE: Operatie paralela pentru mutarea clientului cu delay redus
-          await Future.wait([
-            clientService.moveClientToRecente(
-              phoneNumber,
-              scheduledDateTime: dateTime,
-              additionalInfo: 'Intalnire programata din calendar',
-            ),
-            // OPTIMIZARE: Invalideaza cache-ul in paralel cu delay redus
-            _invalidateCacheWithDelay(),
-          ]);
-          
-          debugPrint('✅ MEETING_SERVICE: Client moved to Recente successfully');
-        } else {
-          debugPrint('⚠️ MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates');
-          
-          // Doar invalideaza cache-ul fara a incrementa statisticile
-          await _invalidateCacheWithDelay();
-        }
-      } else {
-        debugPrint('⚠️ MEETING_SERVICE: Client not found for phone: $phoneNumber');
-      }
+      // Schimbare comportament: nu mai mutam clientul automat in Recente.
+      // Motiv: mutarea declansa statistici de formular si tranzactii suplimentare care pot cauza crash-uri.
+      // In schimb, invalidam cache-urile pentru a reflecta meeting-ul in UI rapid.
+      await _invalidateCacheWithDelay();
+      debugPrint('📱 MEETING_SERVICE: Skipped auto-move client after meeting creation; caches invalidated');
     } catch (e) {
       debugPrint('❌ MEETING_SERVICE: Error notifying client meeting created: $e');
     }
@@ -228,14 +178,7 @@ class MeetingService {
     }
   }
 
-  /// OPTIMIZARE: Reseteaza cache-ul de clienti dupa 30 secunde
-  void _resetClientCache() {
-    _clientCacheTimer?.cancel();
-    _clientCacheTimer = Timer(const Duration(seconds: 30), () {
-      _clientCache.clear();
-      debugPrint('🧹 MEETING_SERVICE: Client cache cleared');
-    });
-  }
+  // removed unused _resetClientCache
 
   /// OPTIMIZARE: Reseteaza cache-ul de disponibilitate dupa 10 minute
   void _resetAvailabilityCache() {
@@ -318,6 +261,7 @@ class MeetingService {
   /// OPTIMIZAT: Creeaza o intalnire noua
   Future<Map<String, dynamic>> createMeeting(MeetingData meetingData, {bool skipClientNotification = false}) async {
     try {
+      final sw = Stopwatch()..start();
       // OPTIMIZARE: Verifica disponibilitatea slot-ului cu cache
       final isAvailable = await _isTimeSlotAvailable(meetingData.dateTime);
       if (!isAvailable) {
@@ -327,28 +271,30 @@ class MeetingService {
         };
       }
 
-      // OPTIMIZARE: Operatii paralele pentru crearea intalnirii
-      final results = await Future.wait([
-        _firebaseService.createMeeting(
-          phoneNumber: meetingData.phoneNumber,
-          dateTime: meetingData.dateTime,
-          type: meetingData.type == MeetingType.meeting ? 'meeting' : 'bureauDelete',
-          description: meetingData.type == MeetingType.meeting ? 'Intalnire programata' : 'Stergere birou credit',
-          additionalData: {
-            'clientName': meetingData.clientName,
-            'consultantName': meetingData.consultantName,
-            'consultantToken': meetingData.consultantToken,
-            'consultantId': FirebaseAuth.instance.currentUser?.uid,
-          },
-        ),
-        // OPTIMIZARE: Operatii secundare in paralel pentru performanta
-        _notifyMeetingCreated(meetingData.phoneNumber),
-      ]);
-
-      final meetingCreated = results[0] as bool;
+      // Creeaza intalnirea mai intai (sequential pentru a evita conflicte si crash-uri pe desktop)
+      final meetingCreated = await _firebaseService.createMeeting(
+        phoneNumber: meetingData.phoneNumber,
+        dateTime: meetingData.dateTime,
+        type: meetingData.type == MeetingType.meeting ? 'meeting' : 'bureauDelete',
+        description: meetingData.type == MeetingType.meeting ? 'Intalnire programata' : 'Stergere birou credit',
+        additionalData: {
+          'clientName': meetingData.clientName,
+          'consultantName': meetingData.consultantName,
+          'consultantToken': meetingData.consultantToken,
+          'consultantId': FirebaseAuth.instance.currentUser?.uid,
+        },
+      );
       
       if (meetingCreated) {
         debugPrint('✅ MEETING_SERVICE: Meeting created successfully | Client: ${meetingData.clientName} | Date: ${meetingData.dateTime}');
+        sw.stop();
+        // Notifica dashboard (sequential, try/catch pentru robustete)
+        try {
+          await _notifyMeetingCreated(meetingData.phoneNumber);
+        } catch (e) {
+          debugPrint('⚠️ MEETING_SERVICE: notifyMeetingCreated failed: $e');
+        }
+        try { AppLogger.sync('meeting_service', 'create_meeting_ms', { 'ms': sw.elapsedMilliseconds }); } catch (_) {}
         
         // OPTIMIZARE: Notificare optimizata pentru client cu delay redus
         // IMPORTANT: Nu notifica clientul daca este apelat din status_popup (skipClientNotification = true)
@@ -364,6 +310,8 @@ class MeetingService {
           };
       } else {
         debugPrint('❌ MEETING_SERVICE: Failed to create meeting');
+        sw.stop();
+        try { AppLogger.sync('meeting_service', 'create_meeting_ms', { 'ms': sw.elapsedMilliseconds, 'error': 1 }); } catch (_) {}
         return {
           'success': false,
           'error': 'Nu s-a putut crea intalnirea',
@@ -372,6 +320,7 @@ class MeetingService {
     } catch (e) {
       debugPrint('❌ MEETING_SERVICE: Error creating meeting: $e');
       debugPrint('❌ MEETING_SERVICE: Stack trace: ${StackTrace.current}');
+      try { AppLogger.sync('meeting_service', 'create_meeting_exception', { 'message': 'exception' }); } catch (_) {}
       return {
         'success': false,
         'error': 'Eroare la crearea intalnirii: $e',

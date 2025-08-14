@@ -10,6 +10,8 @@ import 'consultant_service.dart'; // pentru ConsultantService
 import 'package:cloud_firestore/cloud_firestore.dart'; // pentru Timestamp
 import 'splash_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import '../../main.dart' show DebugOptions;
 
 /// Model pentru un mesaj in conversatia cu chatbot-ul
 class ChatMessage {
@@ -108,7 +110,9 @@ class LLMService extends ChangeNotifier {
 
     try {
       // OPTIMIZARE: Construieste promptul extins cu context din cache-ul SplashService (evita fetch live)
-    debugPrint('🤖 AI_DEBUG: Construire prompt cu context (cache-first)...');
+    if (DebugOptions.aiDebugEnabled) {
+      debugPrint('🤖 AI_DEBUG: Construire prompt cu context (cache-first)...');
+    }
     final extendedPrompt = await buildPromptWithContext(userMessage);
       
       // Construieste contextul pentru LLM
@@ -140,7 +144,9 @@ class LLMService extends ChangeNotifier {
         'parts': [{'text': extendedPrompt}],
       });
       
+    if (DebugOptions.aiDebugEnabled) {
       debugPrint('🤖 AI_DEBUG: Trimitere cerere (${messages.length} mesaje)...');
+    }
 
       // Always route via backend proxy (no API key in client) with Firebase ID token
       String? idToken;
@@ -162,7 +168,9 @@ class LLMService extends ChangeNotifier {
         }),
       );
 
-      debugPrint('🤖 AI_DEBUG: Raspuns API status: ${response.statusCode}');
+      if (DebugOptions.aiDebugEnabled) {
+        debugPrint('🤖 AI_DEBUG: Raspuns API status: ${response.statusCode}');
+      }
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -174,7 +182,9 @@ class LLMService extends ChangeNotifier {
           assistantMessage = data['candidates'][0]['content']['parts'][0]['text'];
         }
         
-        debugPrint('🤖 AI_DEBUG: Raspuns AI generat: "${assistantMessage.substring(0, assistantMessage.length > 100 ? 100 : assistantMessage.length)}..."');
+        if (DebugOptions.aiDebugEnabled) {
+          debugPrint('🤖 AI_DEBUG: Raspuns AI generat: "${assistantMessage.substring(0, assistantMessage.length > 100 ? 100 : assistantMessage.length)}..."');
+        }
         
         final message = ChatMessage(
           content: assistantMessage,
@@ -183,7 +193,9 @@ class LLMService extends ChangeNotifier {
         );
         
         _messages.add(message);
-        debugPrint('🤖 AI_DEBUG: Raspuns adaugat cu succes');
+        if (DebugOptions.aiDebugEnabled) {
+          debugPrint('🤖 AI_DEBUG: Raspuns adaugat cu succes');
+        }
         
         // Salveaza automat conversatia dupa raspunsul AI
         saveConversation();
@@ -198,7 +210,9 @@ class LLMService extends ChangeNotifier {
       _errorMessage = 'Eroare de conexiune: $e';
     } finally {
       _setLoading(false);
-      debugPrint('🤖 AI_DEBUG: Procesare finalizata');
+      if (DebugOptions.aiDebugEnabled) {
+        debugPrint('🤖 AI_DEBUG: Procesare finalizata');
+      }
     }
   }
 

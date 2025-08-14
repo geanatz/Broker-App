@@ -28,20 +28,20 @@ Testare:
 - Deschide Chat si trimite un mesaj scurt; confirma in logs function `llmGenerate` ca token-ul este validat (200) si ca raspunsul vine.
 
 ### Faza 3 — Corectitudine meeting conflicts (quick guard)
-- [ ] Verificare remote a conflictului inainte de creare: collectionGroup('meetings') cu isEqualTo pe dateTime + consultantToken
+ - [x] Verificare remote a conflictului inainte de creare: collectionGroup('meetings') cu isEqualTo pe dateTime + consultantToken
 
 Testare:
 - Programeaza doua intalniri pe acelasi minut; a doua trebuie sa esueze cu mesaj de conflict (log clar) si fara scriere.
 
 ### Faza 4 — Performanta si curatenie
-- [ ] Opreste arrays legacy `completedClientsFor*` (ramane dedup + sharded counters)
-- [ ] Reduce verbose logs ramase (AI_DEBUG/GOOGLE_DRIVE_SERVICE) la nivel redus via AppLogger
+ - [x] Opreste arrays legacy `completedClientsFor*` (ramane dedup + sharded counters)
+ - [x] Reduce verbose logs ramase (AI_DEBUG/GOOGLE_DRIVE_SERVICE) la nivel redus via AppLogger
 
 Testare:
 - Navigheaza Dashboard; confirma ca scrierile merg doar in dedup + shards (loguri + inspectie Firestore) si ca nu se mai logheaza PII.
 
 ### Faza 5 — Migrare incrementala optionala
-- [ ] ID compus pentru clienti noi: `${token}__${phone}` (citire fallback pentru vechi)
+- [x] ID compus pentru clienti noi: `${token}__${phone}` (citire fallback pentru vechi)
 
 Testare:
 - Creeaza client nou; verifica id compus si acces corect in UI si Firestore.
