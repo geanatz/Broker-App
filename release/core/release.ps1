@@ -11,13 +11,42 @@ $installerDir = "$projectRoot\installer"
 $outputDir    = "$installerDir\Output"
 $issFile      = "$coreDir\MATFinanceInstaller.iss"
 
-# Citește versiunea din .iss
-$version = Select-String -Path $issFile -Pattern "^AppVersion=(.+)$" |
+# Read version from pubspec.yaml and sync into .iss before build
+$pubspec = Join-Path $projectRoot 'pubspec.yaml'
+$version = Select-String -Path $pubspec -Pattern '^\s*version:\s*([^\s#]+)' |
            ForEach-Object { $_.Matches.Groups[1].Value.Trim() }
 
 if (-not $version) {
-    Write-Error "Nu am putut citi AppVersion din $issFile"
+    Write-Error "Nu am putut citi versiunea din pubspec.yaml"
 }
+
+# Ensure .iss AppVersion matches the version from pubspec.yaml
+$issContent = Get-Content -Raw $issFile
+
+# 0) Normalize possibly escaped [Setup] header (e.g., "\[Setup]")
+$issNormalized = [System.Text.RegularExpressions.Regex]::Replace(
+	$issContent,
+	'(?m)^\s*\\\s*\[\s*Setup\s*\]\s*$',
+	'[Setup]'
+)
+
+# 1) Remove any existing AppVersion lines (multiline-safe)
+$issWithoutVersion = [System.Text.RegularExpressions.Regex]::Replace(
+	$issNormalized,
+	'(?m)^\s*AppVersion=.*\r?\n',
+	''
+)
+
+# 2) Insert AppVersion right after the first [Setup] header
+$newIssContent = [System.Text.RegularExpressions.Regex]::Replace(
+	$issWithoutVersion,
+	'(?m)^\[Setup\]\s*\r?\n',
+	"[Setup]`r`nAppVersion=$version`r`n",
+	1
+)
+
+$newIssContent | Out-File -FilePath $issFile -Encoding ascii
+Write-Host "Versiune citita din pubspec.yaml: $version"
 
 $versionFolder  = "$projectRoot\release\v$version"
 $exeName        = "MATFinanceInstaller.exe"
@@ -73,9 +102,16 @@ if (-not $token) {
     Write-Error "Nu există GITHUB_TOKEN în variabilele de mediu!"
 }
 
-# Verifică dacă există deja release-ul cu acest tag
-$existingRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" `
-    -Headers @{ Authorization = "token $token" } -ErrorAction SilentlyContinue
+# Verifică dacă există deja release-ul cu acest tag (trateaza 404 ca 'nu exista')
+$existingRelease = $null
+try {
+    $existingRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/tags/$tag" `
+        -Headers @{ Authorization = "token $token"; 'User-Agent' = 'MATFinanceReleaseScript'; Accept = 'application/vnd.github+json' } -ErrorAction Stop
+} catch {
+    $statusCode = $null
+    try { $statusCode = $_.Exception.Response.StatusCode.value__ } catch {}
+    if ($statusCode -ne 404) { throw }
+}
 
 if ($existingRelease) {
     Write-Host "ℹ Release $tag există deja – îl actualizez..."
@@ -88,7 +124,7 @@ if ($existingRelease) {
             try {
                 $deleteUrl = "https://api.github.com/repos/$repo/releases/assets/$($asset.id)"
                 Invoke-RestMethod -Uri $deleteUrl -Method Delete `
-                    -Headers @{ Authorization = "token $token" } -ErrorAction Stop
+                    -Headers @{ Authorization = "token $token"; 'User-Agent' = 'MATFinanceReleaseScript'; Accept = 'application/vnd.github+json' } -ErrorAction Stop
                 Write-Host "      ✅ Șters: $($asset.name)"
             } catch {
                 Write-Host "      ⚠️ Nu s-a putut șterge $($asset.name): $($_.Exception.Message)"
@@ -106,7 +142,7 @@ if ($existingRelease) {
     } | ConvertTo-Json
 
     Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/$($release.id)" `
-        -Method Patch -Headers @{ Authorization = "token $token" } `
+        -Method Patch -Headers @{ Authorization = "token $token"; 'User-Agent' = 'MATFinanceReleaseScript'; Accept = 'application/vnd.github+json' } `
         -Body $updateData
 
 } else {
@@ -119,7 +155,7 @@ if ($existingRelease) {
         prerelease = $false
     } | ConvertTo-Json
     $release = Invoke-RestMethod -Uri $releaseUrl -Method Post `
-        -Headers @{ Authorization = "token $token" } `
+        -Headers @{ Authorization = "token $token"; 'User-Agent' = 'MATFinanceReleaseScript'; Accept = 'application/vnd.github+json' } `
         -Body $releaseData
 }
 
@@ -131,6 +167,8 @@ foreach ($file in Get-ChildItem $versionFolder) {
         Invoke-RestMethod -Uri $uploadUrl -Method Post `
             -Headers @{
                 Authorization  = "token $token"
+                'User-Agent'   = 'MATFinanceReleaseScript'
+                Accept         = 'application/vnd.github+json'
                 "Content-Type" = "application/octet-stream"
             } -InFile $file.FullName -ErrorAction Stop
         Write-Host "      ✅ Upload: $($file.Name)"
