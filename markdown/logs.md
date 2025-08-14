@@ -1,74 +1,470 @@
-
-================================
-[2025-08-12T16:33:15.810159] LOG START
-File: C:\Users\Home\Downloads\Broker App/logs.txt
-================================
-[2025-08-12T16:33:15.810159] UPDATE_SERVICE: initialized | version=0.1.5, dir=C:\Users\Home\Downloads\Broker App
-[2025-08-12T16:33:15.810159] UPDATE_SERVICE: env_snapshot | cwd=C:\Users\Home\Downloads\Broker App, exe=C:\Users\Home\Downloads\Broker App\broker_app.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
-[2025-08-12T16:33:15.811160] UPDATE_SERVICE: ready_check_paths | support_dir=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara, update_dir=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates
-[2025-08-12T16:33:15.811160] UPDATE_SERVICE: ready_installer_found | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
-[2025-08-12T16:33:15.811160] UPDATE_SERVICE: installer_file_info | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
-[2025-08-12T16:33:15.811160] UPDATE_SERVICE: ready_update_found | type=installer
-[2025-08-12T16:33:15.811160] UPDATE_SERVICE: check_for_updates_start | current=0.1.5, url=https://api.github.com/repos/geanatz/Broker-App/releases/latest
-[2025-08-12T16:33:16.128696] UPDATE_SERVICE: github_release_ok | latest=0.1.6
-[2025-08-12T16:33:16.128696] UPDATE_SERVICE: has_update | current=0.1.5, latest=0.1.6
-[2025-08-12T16:33:16.129704] UPDATE_SERVICE: release_info_persisted | file=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/last_release.json
-[2025-08-12T16:33:16.129704] UPDATE_SERVICE: asset_selected | url=https://github.com/geanatz/Broker-App/releases/download/v0.1.6/BrokerAppInstaller.exe, name=BrokerAppInstaller.exe
-[2025-08-12T16:33:16.129704] UPDATE_SERVICE: checksum_asset | url=https://github.com/geanatz/Broker-App/releases/download/v0.1.6/BrokerAppInstaller.exe.sha256
-[2025-08-12T16:33:16.129704] UPDATE_SERVICE: install_start
-[2025-08-12T16:33:16.129704] UPDATE_SERVICE: update_file_info | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
-[2025-08-12T16:33:16.130705] UPDATE_SERVICE: installer_precheck | exists=true, size=15835624, modified=2025-08-12T15:13:03.000, cwd=C:\Users\Home\Downloads\Broker App, exe=C:\Users\Home\Downloads\Broker App\broker_app.exe
-[2025-08-12T16:33:16.130705] UPDATE_SERVICE: installer_launch | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, args=/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /LOG="C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/Installer.log", log=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/Installer.log
-[2025-08-12T16:33:16.135235] UPDATE_SERVICE: installer_started | pid=6704
-[2025-08-12T16:33:16.135235] UPDATE_SERVICE: installer_wait_start
-[2025-08-12T16:33:16.967184] UPDATE_SERVICE: installer_finished | exit_code=1
-[2025-08-12T16:33:16.967184] UPDATE_SERVICE: installed_path_candidates | LOCALAPPDATA=C:\Users\Home\AppData\Local, ProgramFiles=C:\Program Files, ProgramFiles(x86)=C:\Program Files (x86), candidates=C:\Users\Home\AppData\Local\Broker App\broker_app.exe | C:\Program Files\Broker App\broker_app.exe | C:\Program Files (x86)\Broker App\broker_app.exe
-[2025-08-12T16:33:16.970186] UPDATE_SERVICE: installed_app_started | path=C:\Program Files\Broker App\broker_app.exe
-
-================================
-[2025-08-12T16:33:17.539306] LOG START
-File: C:\Users\Home\Downloads\Broker App/logs.txt
-================================
-[2025-08-12T16:33:17.539306] UPDATE_SERVICE: initialized | version=0.1.6, dir=C:\Users\Home\Downloads\Broker App
-[2025-08-12T16:33:17.540307] UPDATE_SERVICE: ready_update_found | type=installer
-[2025-08-12T16:33:20.362456] UPDATE_SERVICE: check_for_updates_start | current=0.1.6, url=https://api.github.com/repos/geanatz/Broker-App/releases/latest
-[2025-08-12T16:33:20.523205] UPDATE_SERVICE: github_release_ok | latest=0.1.6
-[2025-08-12T16:33:20.523205] UPDATE_SERVICE: no_update | current=0.1.6, latest=0.1.6
-[2025-08-12T16:33:20.523205] UPDATE_SERVICE: check_for_updates_end | result=false
-
-================================
-[2025-08-12T16:33:28.109197] LOG START
-File: C:\Users\Home\Downloads\Broker App/logs.txt
-================================
-[2025-08-12T16:33:28.109197] UPDATE_SERVICE: initialized | version=0.1.5, dir=C:\Users\Home\Downloads\Broker App
-[2025-08-12T16:33:28.109197] UPDATE_SERVICE: env_snapshot | cwd=C:\Users\Home\Downloads\Broker App, exe=C:\Users\Home\Downloads\Broker App\broker_app.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
-[2025-08-12T16:33:28.109197] UPDATE_SERVICE: ready_check_paths | support_dir=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara, update_dir=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates
-[2025-08-12T16:33:28.110199] UPDATE_SERVICE: ready_installer_found | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
-[2025-08-12T16:33:28.110199] UPDATE_SERVICE: installer_file_info | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
-[2025-08-12T16:33:28.110199] UPDATE_SERVICE: ready_update_found | type=installer
-[2025-08-12T16:33:28.110199] UPDATE_SERVICE: check_for_updates_start | current=0.1.5, url=https://api.github.com/repos/geanatz/Broker-App/releases/latest
-[2025-08-12T16:33:28.269554] UPDATE_SERVICE: github_release_ok | latest=0.1.6
-[2025-08-12T16:33:28.269554] UPDATE_SERVICE: has_update | current=0.1.5, latest=0.1.6
-[2025-08-12T16:33:28.270583] UPDATE_SERVICE: release_info_persisted | file=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/last_release.json
-[2025-08-12T16:33:28.270583] UPDATE_SERVICE: asset_selected | url=https://github.com/geanatz/Broker-App/releases/download/v0.1.6/BrokerAppInstaller.exe, name=BrokerAppInstaller.exe
-[2025-08-12T16:33:28.270583] UPDATE_SERVICE: checksum_asset | url=https://github.com/geanatz/Broker-App/releases/download/v0.1.6/BrokerAppInstaller.exe.sha256
-[2025-08-12T16:33:28.270583] UPDATE_SERVICE: install_start
-[2025-08-12T16:33:28.270583] UPDATE_SERVICE: update_file_info | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, size=15835624, modified=2025-08-12T15:13:03.000
-[2025-08-12T16:33:28.271582] UPDATE_SERVICE: installer_precheck | exists=true, size=15835624, modified=2025-08-12T15:13:03.000, cwd=C:\Users\Home\Downloads\Broker App, exe=C:\Users\Home\Downloads\Broker App\broker_app.exe
-[2025-08-12T16:33:28.271582] UPDATE_SERVICE: installer_launch | path=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/BrokerAppInstaller.exe, args=/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /LOG="C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/Installer.log", log=C:\Users\Home\AppData\Roaming\com.example\Aplicatie de Consultanta Financiara/updates/Installer.log
-[2025-08-12T16:33:28.275583] UPDATE_SERVICE: installer_started | pid=14804
-[2025-08-12T16:33:28.275583] UPDATE_SERVICE: installer_wait_start
-[2025-08-12T16:33:28.925990] UPDATE_SERVICE: installer_finished | exit_code=1
-[2025-08-12T16:33:28.925990] UPDATE_SERVICE: installed_path_candidates | LOCALAPPDATA=C:\Users\Home\AppData\Local, ProgramFiles=C:\Program Files, ProgramFiles(x86)=C:\Program Files (x86), candidates=C:\Users\Home\AppData\Local\Broker App\broker_app.exe | C:\Program Files\Broker App\broker_app.exe | C:\Program Files (x86)\Broker App\broker_app.exe
-[2025-08-12T16:33:28.927991] UPDATE_SERVICE: installed_app_started | path=C:\Program Files\Broker App\broker_app.exe
-
-================================
-[2025-08-12T16:33:29.531080] LOG START
-File: C:\Users\Home\Downloads\Broker App/logs.txt
-================================
-[2025-08-12T16:33:29.531080] UPDATE_SERVICE: initialized | version=0.1.6, dir=C:\Users\Home\Downloads\Broker App
-[2025-08-12T16:33:29.532059] UPDATE_SERVICE: ready_update_found | type=installer
-[2025-08-12T16:33:32.077928] UPDATE_SERVICE: check_for_updates_start | current=0.1.6, url=https://api.github.com/repos/geanatz/Broker-App/releases/latest
-[2025-08-12T16:33:32.226468] UPDATE_SERVICE: github_release_ok | latest=0.1.6
-[2025-08-12T16:33:32.226468] UPDATE_SERVICE: no_update | current=0.1.6, latest=0.1.6
-[2025-08-12T16:33:32.226468] UPDATE_SERVICE: check_for_updates_end | result=false
+Restarted application in 434ms.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/81db05a1-c833-4d0a-8716-1e50ecf82260' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+UPDATE_SERVICE: initialized | version=0.1.6, dir=D:\Repositories\Broker-App
+UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/document/bb66a9b0-2aea-4efd-989b-48d885457d54' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/0111b7d2-a4ce-41a1-be1e-ddfa765517a9' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/d6cde1e1-db59-4a8a-9cf7-229a7cb1d682' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+CLIENTS_SERVICE: load_clients_ms | ms=62
+➕ CLIENT: added - 0733 → Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: null
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: null
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+SPLASH_SERVICE: refresh_meetings_cache_ms | ms=398
+[FIREBASE] MEETINGS: getAllMeetings loaded 1 in 138ms
+📊 DASHBOARD_SERVICE: Found teams (with base): [Echipa Andreea, Echipa Cristina, Echipa Scarlat]
+📊 DASHBOARD_SERVICE: Loaded 3 teams | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 4 consultants | isSupervisor: false | Teams excluded: 2
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+[FIREBASE] MEETINGS: getAllMeetings loaded 1 in 122ms
+🎯 CLIENT_SERVICE: Client found at index: 0
+🎯 CLIENT_SERVICE: All focus states cleared
+✅ CLIENT_SERVICE: Client focused successfully: 0733
+✅ CLIENT_SERVICE: New focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+! GOOGLE_DRIVE_SERVICE: No saved tokens found for current consultant
+! GOOGLE_DRIVE_SERVICE: Missing access token: true
+! GOOGLE_DRIVE_SERVICE: Missing email: true
+MATCHER: Using clientKey="0733" for income cache and lookups
+✅ [FIREBASE_SUCCESS] getClient found matching client
+[FIREBASE] GD_VERIFY: getClientForms called for 0733
+[FIREBASE] GD_VERIFY: loaded 0 forms for 0733
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+📊 SPLASH_SERVICE: Performance Metrics:
+  Initializare servicii...: 10ms
+  Preincarcare date...: 1578ms
+  Sincronizare servicii...: 7ms
+  Optimizare cache...: 0ms
+  Finalizare...: 0ms
+SPLASH: Current role: Consultant
+🔄 SPLASH: Consultant/team changed, resetting state
+🔧 SPLASH: Old consultant: null, New: 2363377c-c1d5-4578-9596-52e9cb303683
+🔧 SPLASH: Old team: null, New: Echipa Andreea
+🔄 SPLASH: Reloading services for new consultant
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/eb58e545-2c11-44b4-9d34-ead6b8b1628d' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+[ERROR:flutter/shell/common/shell.cc(1064)] The 'plugins.flutter.io/firebase_firestore/query/5c1d771c-8006-4ed7-8839-0e9edb6915ad' channel sent a message from native to Flutter on a non-platform thread. Platform channel messages must be sent on the platform thread. Failure to do so may result in data loss or crashes, and must be fixed in the plugin or application code creating that channel.
+See https://docs.flutter.dev/platform-integration/platform-channels#channels-and-platform-threading for more information.
+➕ CLIENT: added - 0733 → Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+CLIENTS_SERVICE: load_clients_ms | ms=73
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+[FIREBASE] MEETINGS: getAllMeetings loaded 1 in 83ms
+✅ SPLASH: Services reloaded successfully for new consultant
+✅ SPLASH: Consultant reset completed successfully
+MAIN_SCREEN: init_state
+MAIN_SCREEN: build_called
+MAIN_SCREEN: post_frame_callback
+MAIN_SCREEN: whats_new_check_start
+🔄 SPLASH: Invalidating cache with enhanced state management
+✅ SPLASH: Cache invalidation completed successfully
+UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+MAIN_SCREEN: whats_new_info_result | is_null=true
+MAIN_SCREEN: whats_new_missing
+🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (2 messages)
+🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (2 messages)
+🤖 LLM_SERVICE: Reset completed for new consultant
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🤖 CHATBOT_WIDGET: Reset completed for new consultant
+🤖 AI_DEBUG: Incepe procesarea intrebarii: "Ce intalniri am astazi?"
+🤖 AI_DEBUG: Construire prompt cu context (cache-first)...
+🤖 AI_DEBUG: Extragere context consultant...
+🤖 LLM_SERVICE: Conversation saved for consultant: 2363377c...
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🤖 AI_DEBUG: Clienti extrasi: 1
+🤖 AI_DEBUG: Client 1 - Dan:
+  - clientCredits: null
+  - coDebitorCredits: null
+  - clientIncomes: null
+  - coDebitorIncomes: null
+🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (3 messages)
+🤖 LLM_SERVICE: Reset completed for new consultant
+CLIENTS_SERVICE: load_clients_ms | ms=52
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MAIN_SCREEN: build_called
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+🤖 CHATBOT_WIDGET: Reset completed for new consultant
+SPLASH_SERVICE: refresh_meetings_cache_ms | ms=188
+🤖 AI_DEBUG: Intalniri extrase: 1
+🤖 LLM_SERVICE: Conversation loaded for consultant: 2363377c... (3 messages)
+🤖 LLM_SERVICE: Reset completed for new consultant
+🤖 CHATBOT_WIDGET: Reset completed for new consultant
+🤖 AI_DEBUG: Statistici calculate pentru consultant: Ionut
+🤖 AI_DEBUG: Agent serviciu: Supervisor
+🤖 AI_DEBUG: Context extras cu succes
+🤖 AI_DEBUG: Procesare intrebare: "Ce intalniri am astazi?"
+🤖 AI_DEBUG: Consultant: Ionut (2363377c-c1d5-4578-9596-52e9cb303683)
+🤖 AI_DEBUG: Total clienti: 1
+🤖 AI_DEBUG: Total intalniri: 1
+🤖 AI_DEBUG: Data curenta: 14/8/2025
+🤖 AI_DEBUG: Luna trecuta: Iulie 2025
+🤖 AI_DEBUG: Saptamana curenta: 11/8 - 17/8
+🤖 AI_DEBUG: Saptamana viitoare: 18/8 - 24/8
+🤖 AI_DEBUG: Procesare 1 intalniri
+🤖 AI_DEBUG: Intalniri viitoare: 0
+🤖 AI_DEBUG: Intalniri din trecut: 1
+🤖 AI_DEBUG: Intalniri viitoare formatate: 1
+🤖 AI_DEBUG: Intalniri din trecut formatate: 1
+🤖 AI_DEBUG: Statistici: {formsCompleted: 10, meetingsScheduled: 10}
+🤖 AI_DEBUG: Prompt generat cu succes (1017 caractere)
+🤖 AI_DEBUG: Istoric conversatie: 2 mesaje
+🤖 AI_DEBUG: Trimitere cerere (4 mesaje)...
+🤖 AI_DEBUG: Raspuns API status: 200
+🤖 AI_DEBUG: Raspuns AI generat: "Astazi, 14 August 2025, ai avut o intalnire cu Dan la ora 11:00.
+..."
+🤖 AI_DEBUG: Raspuns adaugat cu succes
+🤖 AI_DEBUG: Procesare finalizata
+🤖 LLM_SERVICE: Conversation saved for consultant: 2363377c...
+MAIN_SCREEN: build_called
+CALENDAR_METRICS: filterWeek offset=0 total=1 week=1 filterMs=0
+CALENDAR_METRICS: loadFromCacheInstantly totalMs=0 cacheMs=0 filterMs=0 allMeetings=1 weekMeetings=1
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+⚡ CLIENTS: Preloading form data for 1 clients
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🔍 MEETING_DATA: Constructor called
+🔍 MEETING_DATA: clientName = "Dan"
+🔍 MEETING_DATA: phoneNumber = "0733"
+🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
+🔍 MEETING_DATA: consultantName = "Ionut"
+🔍 MEETING_DATA: dateTime = 2025-08-13 11:00:00.000
+🔍 MEETING_DATA: type = MeetingType.meeting
+✅ MEETING_DATA: Constructor completed successfully
+🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
+📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
+✅ [FIREBASE_SUCCESS] getClient found matching client
+🔄 CLIENT: category_change - 0733 → recente
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
+✅ MEETING_SERVICE: Dashboard notified successfully
+MAIN_SCREEN: build_called
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-13 11:00:00.000
+📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
+! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+[FIREBASE] MEETINGS: getAllMeetings loaded 2 in 96ms
+CALENDAR_METRICS: filterWeek offset=0 total=2 week=2 filterMs=0
+SPLASH_SERVICE: refresh_meetings_cache_ms | ms=303
+CALENDAR_METRICS: filterWeek offset=0 total=2 week=2 filterMs=0
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+CALENDAR_METRICS: filterWeek offset=0 total=2 week=2 filterMs=0
+CALENDAR_METRICS: loadWeek totalMs=192 fetchMs=191 filter+setStateMs=0 allMeetings=2 weekMeetings=2
+CLIENTS_SERVICE: load_clients_ms | ms=0
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🔍 MEETING_DATA: Constructor called
+🔍 MEETING_DATA: clientName = "Dan"
+🔍 MEETING_DATA: phoneNumber = "0733"
+🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
+🔍 MEETING_DATA: consultantName = "Ionut"
+🔍 MEETING_DATA: dateTime = 2025-08-12 11:00:00.000
+🔍 MEETING_DATA: type = MeetingType.meeting
+✅ MEETING_DATA: Constructor completed successfully
+🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
+🔄 CLIENT: category_change - 0733 → recente
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+MAIN_SCREEN: build_called
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+[PERF] PERFORMANCE REPORT:
+=====================================
+⚡ resetForNewConsultant: 263.00ms avg
+⚡ mainScreenInit: 3.00ms avg
+=====================================
+Total operations tracked: 2
+Active timers: 0
+📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
+✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-12 11:00:00.000
+📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
+! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
+✅ MEETING_SERVICE: Dashboard notified successfully
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
+SPLASH_SERVICE: refresh_meetings_cache_ms | ms=249
+CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+CLIENTS_SERVICE: load_clients_ms | ms=0
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+[FIREBASE] MEETINGS: getAllMeetings loaded 3 in 96ms
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🔍 MEETING_DATA: Constructor called
+🔍 MEETING_DATA: clientName = "Dan"
+🔍 MEETING_DATA: phoneNumber = "0733"
+🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
+🔍 MEETING_DATA: consultantName = "Ionut"
+🔍 MEETING_DATA: dateTime = 2025-08-11 11:00:00.000
+🔍 MEETING_DATA: type = MeetingType.meeting
+✅ MEETING_DATA: Constructor completed successfully
+🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
+🔄 CLIENT: category_change - 0733 → recente
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+MAIN_SCREEN: build_called
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
+✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-11 11:00:00.000
+📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
+! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
+! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
+✅ MEETING_SERVICE: Dashboard notified successfully
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
+SPLASH_SERVICE: refresh_meetings_cache_ms | ms=224
+CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+CLIENTS_SERVICE: load_clients_ms | ms=0
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+SPLASH: Current role: Consultant
+✅ SPLASH: Consultant/team unchanged, no reset needed
+CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
+CALENDAR_METRICS: loadWeek totalMs=146 fetchMs=146 filter+setStateMs=0 allMeetings=4 weekMeetings=4
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 97ms
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+📉 Meeting deleted - dashboard notified
+CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
+CALENDAR_METRICS: filterWeek offset=0 total=0 week=0 filterMs=0
+✅ MEETING_SERVICE: Meeting deleted successfully
+CALENDAR_METRICS: filterWeek offset=0 total=0 week=0 filterMs=0
+CALENDAR_METRICS: loadWeek totalMs=0 fetchMs=0 filter+setStateMs=0 allMeetings=0 weekMeetings=0
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+[PERF] PERFORMANCE REPORT:
+=====================================
+⚡ resetForNewConsultant: 243.50ms avg
+⚡ mainScreenInit: 3.00ms avg
+=====================================
+Total operations tracked: 2
+Active timers: 0
+CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
+SPLASH_SERVICE: refresh_meetings_cache_ms | ms=252
+CALENDAR_METRICS: filterWeek offset=0 total=3 week=3 filterMs=0
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+CLIENTS_SERVICE: load_clients_ms | ms=0
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🔍 MEETING_DATA: Constructor called
+🔍 MEETING_DATA: clientName = "Dan"
+🔍 MEETING_DATA: phoneNumber = "0733"
+🔍 MEETING_DATA: consultantToken = "2363377c-c1d5-4578-9596-52e9cb303683"
+🔍 MEETING_DATA: consultantName = "Ionut"
+🔍 MEETING_DATA: dateTime = 2025-08-12 11:00:00.000
+🔍 MEETING_DATA: type = MeetingType.meeting
+✅ MEETING_DATA: Constructor completed successfully
+🔔 MEETING_SERVICE: Notifying meeting created for consultant: 2363377c for client: 0733
+🔄 CLIENT: category_change - 0733 → recente
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Using clientKey="0733" for income cache and lookups
+MAIN_SCREEN: build_called
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+📈 DASHBOARD_SERVICE: Recording meeting for consultant 2363377c... in 2025-08 for client 0733
+✅ MEETING_SERVICE: Meeting created successfully | Client: Dan | Date: 2025-08-12 11:00:00.000
+📱 MEETING_SERVICE: Moving client to Recente with Acceptat status: Dan
+! MEETING_SERVICE: Client already completed, skipping statistics increment to prevent duplicates
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+! DASHBOARD_SERVICE: Client 0733 already counted for meetings, skipping increment
+✅ MEETING_SERVICE: Dashboard notified successfully
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
+SPLASH_SERVICE: refresh_meetings_cache_ms | ms=231
+CALENDAR_METRICS: filterWeek offset=0 total=4 week=4 filterMs=0
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+CLIENTS_SERVICE: load_clients_ms | ms=0
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat
+🎯 CLIENT_SERVICE: notifyListeners called
+🎯 CLIENT_SERVICE: Current focused client: Dan
+MATCHER: Using clientKey="0733" for income cache and lookups
+MATCHER: Found income forms client=1, coborrower=1
+MATCHER: Using clientKey="0733" for income cache and lookups
+📊 DASHBOARD_SERVICE: Loading consultants ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loading teams ranking | isSupervisor: false
+📊 DASHBOARD_SERVICE: Loaded 3 teams from cache | isSupervisor: false
+[FIREBASE] MEETINGS: getAllMeetings loaded 4 in 82ms
+GD_VERIFY: UI item for 0733 | focused=true | category=ClientCategory.recente | status=Acceptat

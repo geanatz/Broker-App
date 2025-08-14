@@ -24,6 +24,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mat_finance/frontend/screens/mobile_clients_screen.dart';
 import 'dart:io';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -169,7 +170,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       if (Platform.isWindows) {
         AppLogger.uiState('main_screen', 'whats_new_check_start');
         final service = UpdateService();
-        final info = await service.readPersistedReleaseInfo();
+        final info = await service.readPersistedReleaseInfo(clearAfterRead: false);
         AppLogger.uiState('main_screen', 'whats_new_info_result', {
           'is_null': info == null,
         });
@@ -179,6 +180,21 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         }
         final version = (info['version'] ?? '').toString();
         final desc = (info['description'] ?? '').toString();
+        // Compare with current running app version to ensure update actually applied
+        String currentVersion = 'unknown';
+        try {
+          final pkg = await PackageInfo.fromPlatform();
+          currentVersion = pkg.version;
+        } catch (e) {
+          AppLogger.error('main_screen', 'package_info_exception', e);
+        }
+        if (currentVersion != version) {
+          AppLogger.uiState('main_screen', 'whats_new_version_mismatch', {
+            'persisted': version,
+            'current': currentVersion,
+          });
+          return;
+        }
         AppLogger.uiState('main_screen', 'whats_new_found', {
           'version': version,
           'desc_len': desc.length,
@@ -196,6 +212,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           barrierDismissible: true,
           builder: (ctx) => _buildWhatsNewDialog(version, desc),
         );
+        // After the dialog is shown, clear the persisted info
+        try {
+          await UpdateService().clearPersistedReleaseInfo();
+        } catch (e) {
+          AppLogger.error('main_screen', 'clear_release_info_exception', e);
+        }
         AppLogger.uiState('main_screen', 'whats_new_shown');
       }
     } catch (e) {

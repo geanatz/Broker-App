@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_service.dart' as dashboard;
 import 'firebase_service.dart';
 import 'splash_service.dart';
+import 'app_logger.dart';
 
 // =================== CLIENT MODELS ===================
 
@@ -1004,6 +1005,16 @@ class ClientUIService extends ChangeNotifier {
       return bTime.compareTo(aTime); // descending
     });
   }
+
+  /// Deduplicate clients by primary phone number (last occurrence wins)
+  List<ClientModel> _deduplicateByPhone(List<ClientModel> source) {
+    final Map<String, ClientModel> unique = {};
+    for (final c in source) {
+      final key = c.phoneNumber;
+      unique[key] = c;
+    }
+    return unique.values.toList();
+  }
   
   /// Obtine clientii dintr-o anumita categorie inclusiv cel temporar
   /// FIX: Sorteaza clientii dupa ultima modificare pentru a preveni shuffling-ul in UI
@@ -1231,7 +1242,9 @@ class ClientUIService extends ChangeNotifier {
     _isLoading = true;
     
     try {
-      final List<ClientModel> newClients = await _firebaseService.getAllClients();
+      final sw = Stopwatch()..start();
+      final List<ClientModel> fetchedClients = await _firebaseService.getAllClients();
+      final List<ClientModel> newClients = _deduplicateByPhone(fetchedClients);
       
       // FIX: Check if data actually changed before updating
       final hasChanged = _clients.length != newClients.length ||
@@ -1248,8 +1261,8 @@ class ClientUIService extends ChangeNotifier {
         // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
         _sortClientsByUpdatedAt(newClients);
         
-        // Actualizeaza lista de clienti
-        _clients = newClients;
+        // Actualizeaza lista de clienti (unic pe phoneNumber)
+        _clients = _deduplicateByPhone(newClients);
         
         // FIX: Restore focus to the previously focused client if it still exists
         if (currentFocusedPhone != null) {
@@ -1277,6 +1290,10 @@ class ClientUIService extends ChangeNotifier {
           notifyListeners();
         });
       }
+      sw.stop();
+      try {
+        AppLogger.sync('clients_service', 'load_clients_ms', { 'ms': sw.elapsedMilliseconds });
+      } catch (_) {}
     } catch (e) {
       // In caz de eroare, initializeaza cu lista goala
       _clients = [];
@@ -1596,10 +1613,16 @@ class ClientUIService extends ChangeNotifier {
 
       // FIX: Preserve temporary clients during real-time updates
       final temporaryClients = _clients.where((client) => client.id.startsWith('temp_')).toList();
+      // Deduplicate by phone number (defensive)
+      final Map<String, ClientModel> uniqueByPhone = {};
+      for (final c in updatedClients) {
+        uniqueByPhone[c.phoneNumber] = c;
+      }
+      final dedupedUpdated = uniqueByPhone.values.toList();
       
       // FIX: Check if data actually changed before updating
-      final hasChanged = _clients.length != updatedClients.length ||
-          !_clients.every((client) => updatedClients.any((newClient) => 
+      final hasChanged = _clients.length != dedupedUpdated.length ||
+          !_clients.every((client) => dedupedUpdated.any((newClient) => 
               newClient.phoneNumber == client.phoneNumber &&
               newClient.category == client.category &&
               newClient.status == client.status &&
@@ -1610,10 +1633,10 @@ class ClientUIService extends ChangeNotifier {
         final currentlyFocusedPhone = _focusedClient?.phoneNumber;
         
         // FIX: Sorteaza clientii dupa ultima modificare pentru ordine consistenta
-        _sortClientsByUpdatedAt(updatedClients);
+        _sortClientsByUpdatedAt(dedupedUpdated);
         
         // Actualizeaza lista de clienti, pastrand clientii temporari
-        _clients = [...updatedClients, ...temporaryClients];
+        _clients = [...dedupedUpdated, ...temporaryClients];
         
         // FIX: Preserve focus on the same client if it still exists
         if (currentlyFocusedPhone != null) {
@@ -1870,6 +1893,8 @@ class ClientUIService extends ChangeNotifier {
       );
       
       // OPTIMISTIC UPDATE: Adauga imediat in lista locala pentru UI instant
+      // Deduplicate existing before add
+      _clients = _deduplicateByPhone(_clients);
       _clients.add(clientWithPhoneId);
       
       // FIX: Sorteaza lista dupa adaugarea noului client
@@ -1903,6 +1928,7 @@ class ClientUIService extends ChangeNotifier {
       if (!success) {
         // Rollback daca salvarea a esuat
         _clients.removeWhere((c) => c.phoneNumber == clientWithPhoneId.phoneNumber);
+        _clients = _deduplicateByPhone(_clients);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
         });
@@ -1927,6 +1953,7 @@ class ClientUIService extends ChangeNotifier {
       
       // OPTIMISTIC UPDATE: Elimina imediat din lista locala pentru UI instant
       _clients.removeWhere((client) => client.phoneNumber == clientPhoneNumber);
+      _clients = _deduplicateByPhone(_clients);
 
       // NEW: Curata instant toate intalnirile clientului din cache-uri pentru a evita orfane in calendar
       final splashService = SplashService();
@@ -1998,6 +2025,7 @@ class ClientUIService extends ChangeNotifier {
       if (results.every((r) => r)) {
         // 3. Remove from local list
         _clients.removeWhere((client) => clientPhoneNumbers.contains(client.phoneNumber));
+        _clients = _deduplicateByPhone(_clients);
 
         // NEW: Curata instant intalnirile pentru toti clientii din lista din cache-uri
         final splashService = SplashService();
@@ -2049,6 +2077,7 @@ class ClientUIService extends ChangeNotifier {
       
       // OPTIMISTIC UPDATE: Actualizeaza imediat in lista locala pentru UI instant
       _clients[clientIndex] = clientWithPhoneId;
+      _clients = _deduplicateByPhone(_clients);
       
       // Daca clientul actualizat este cel focusat, actualizeaza si referinta
       if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
@@ -2079,6 +2108,7 @@ class ClientUIService extends ChangeNotifier {
       if (!success) {
         // Rollback daca actualizarea a esuat
         _clients[clientIndex] = previousClient;
+        _clients = _deduplicateByPhone(_clients);
         if (_focusedClient?.phoneNumber == updatedClient.phoneNumber) {
           _focusedClient = previousClient;
         }

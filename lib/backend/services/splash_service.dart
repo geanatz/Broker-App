@@ -8,11 +8,12 @@ import 'package:mat_finance/backend/services/clients_service.dart';
 import 'package:mat_finance/backend/services/form_service.dart';
 import 'package:mat_finance/backend/services/dashboard_service.dart';
 import 'package:mat_finance/backend/services/matcher_service.dart';
-import 'package:mat_finance/backend/services/firebase_service.dart';
+import 'package:mat_finance/backend/services/firebase_service.dart' hide PerformanceMonitor;
 import 'package:mat_finance/backend/services/sheets_service.dart';
 import 'package:mat_finance/backend/services/connection_service.dart';
 import 'package:mat_finance/backend/services/llm_service.dart';
 import 'package:mat_finance/backend/services/role_service.dart';
+import 'app_logger.dart';
 
 /// Service pentru gestionarea incarcarilor de pe splash screen si cache-ul aplicatiei
 /// OPTIMIZAT: Implementare avansata cu preloading paralel si cache inteligent
@@ -68,6 +69,12 @@ class SplashService extends ChangeNotifier {
   // OPTIMIZARE: Performance monitoring
   final Map<String, DateTime> _taskStartTimes = {};
   final Map<String, Duration> _taskDurations = {};
+  
+  // OPTIMIZARE: Coalescing pentru refresh-uri duplicate
+  bool _isRefreshingMeetings = false;
+  bool _isRefreshingClients = false;
+  DateTime? _lastMeetingsRefresh;
+  DateTime? _lastClientsRefresh;
   
   // Getters
   bool get isInitialized => _isInitialized;
@@ -271,6 +278,15 @@ class SplashService extends ChangeNotifier {
 
   /// OPTIMIZAT: Refresh cache-ul de meetings cu timeout si retry
   Future<void> _refreshMeetingsCache() async {
+    // Throttle: evita refresh-uri mai dese de 300ms
+    final now = DateTime.now();
+    if (_lastMeetingsRefresh != null && now.difference(_lastMeetingsRefresh!).inMilliseconds < 300) {
+      return;
+    }
+    if (_isRefreshingMeetings) {
+      return;
+    }
+    _isRefreshingMeetings = true;
     try {
       final firebaseService = _clientUIService?.firebaseService;
       if (firebaseService == null) {
@@ -279,6 +295,7 @@ class SplashService extends ChangeNotifier {
       }
 
       // OPTIMIZARE: Timeout pentru operatiunea de refresh (redus pentru a evita FREEZE)
+      final sw = Stopwatch()..start();
       final meetingsData = await firebaseService.getTeamMeetings()
           .timeout(const Duration(seconds: 3));
       
@@ -300,15 +317,27 @@ class SplashService extends ChangeNotifier {
         _teamMeetingsCache[_currentTeam!] = List.from(meetings);
       }
       notifyListeners();
-      
-  
+      sw.stop();
+      try { AppLogger.sync('splash_service', 'refresh_meetings_cache_ms', { 'ms': sw.elapsedMilliseconds }); } catch (_) {}
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error refreshing meetings cache: $e');
+    } finally {
+      _isRefreshingMeetings = false;
+      _lastMeetingsRefresh = DateTime.now();
     }
   }
 
   /// OPTIMIZAT: Refresh cache-ul de clienti cu timeout si retry
   Future<void> _refreshClientsCache() async {
+    // Throttle: evita refresh-uri mai dese de 300ms
+    final now = DateTime.now();
+    if (_lastClientsRefresh != null && now.difference(_lastClientsRefresh!).inMilliseconds < 300) {
+      return;
+    }
+    if (_isRefreshingClients) {
+      return;
+    }
+    _isRefreshingClients = true;
     try {
       final clientService = _clientUIService;
       if (clientService == null) {
@@ -328,10 +357,11 @@ class SplashService extends ChangeNotifier {
         _teamClientsCache[_currentTeam!] = List.from(_cachedClients);
       }
       notifyListeners();
-      
-  
     } catch (e) {
       debugPrint('❌ SPLASH_SERVICE: Error refreshing clients cache: $e');
+    } finally {
+      _isRefreshingClients = false;
+      _lastClientsRefresh = DateTime.now();
     }
   }
 

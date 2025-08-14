@@ -9,6 +9,7 @@ import 'dashboard_service.dart';
 import 'consultant_service.dart'; // pentru ConsultantService
 import 'package:cloud_firestore/cloud_firestore.dart'; // pentru Timestamp
 import 'splash_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Model pentru un mesaj in conversatia cu chatbot-ul
 class ChatMessage {
@@ -141,11 +142,18 @@ class LLMService extends ChangeNotifier {
       
       debugPrint('🤖 AI_DEBUG: Trimitere cerere (${messages.length} mesaje)...');
 
-      // Always route via backend proxy (no API key in client)
+      // Always route via backend proxy (no API key in client) with Firebase ID token
+      String? idToken;
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        idToken = await user?.getIdToken();
+      } catch (_) {}
+
       final response = await http.post(
         Uri.parse(_proxyEndpoint),
         headers: {
           'Content-Type': 'application/json',
+          if (idToken != null && idToken.isNotEmpty) 'Authorization': 'Bearer $idToken',
         },
         body: jsonEncode({
           'contents': messages,

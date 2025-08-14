@@ -1,5 +1,6 @@
 ﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'firebase_service.dart';
@@ -86,35 +87,41 @@ class ConnectionService extends ChangeNotifier {
   /// Monitorizeaza conexiunea Firebase
   void _monitorFirebaseConnection() {
     try {
-      // FIX: Monitor Firebase connection status via platform-thread safe wrapper
-      final thread = FirebaseThreadHandler.instance;
-      final stream = thread.createSafeDocumentStream(
-        () => FirebaseFirestore.instance
-            .collection('_health')
-            .doc('connection')
-            .snapshots(),
-      );
-
-      _firebaseConnectionSubscription = stream.listen(
-        (snapshot) {
-          final wasConnected = _isFirebaseConnected;
-          _isFirebaseConnected = snapshot.exists;
-
-          if (wasConnected && !_isFirebaseConnected) {
-            _handleFirebaseConnectionLoss();
-          } else if (!wasConnected && _isFirebaseConnected) {
-            _handleFirebaseConnectionRestored();
-          }
-
-          notifyListeners();
-        },
-        onError: (error) {
-          debugPrint('❌ CONNECTION_SERVICE: Firebase connection monitoring error: $error');
+      // FIX: Ataseaza stream-ul dupa primul frame pentru a garanta platform thread
+      // si foloseste wrapper-ul de platform thread pentru siguranta
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          final thread = FirebaseThreadHandler.instance;
+          final stream = thread.createSafeDocumentStream(
+            () => FirebaseFirestore.instance
+                .collection('_health')
+                .doc('connection')
+                .snapshots(),
+          );
+          _firebaseConnectionSubscription = stream.listen(
+            (snapshot) {
+              final wasConnected = _isFirebaseConnected;
+              _isFirebaseConnected = snapshot.exists;
+              if (wasConnected && !_isFirebaseConnected) {
+                _handleFirebaseConnectionLoss();
+              } else if (!wasConnected && _isFirebaseConnected) {
+                _handleFirebaseConnectionRestored();
+              }
+              notifyListeners();
+            },
+            onError: (error) {
+              debugPrint('❌ CONNECTION_SERVICE: Firebase connection monitoring error: $error');
+              _isFirebaseConnected = false;
+              _handleFirebaseConnectionLoss();
+              notifyListeners();
+            },
+          );
+        } catch (e) {
+          debugPrint('❌ CONNECTION_SERVICE: Error attaching Firebase connection stream: $e');
           _isFirebaseConnected = false;
-          _handleFirebaseConnectionLoss();
           notifyListeners();
-        },
-      );
+        }
+      });
     } catch (e) {
       debugPrint('❌ CONNECTION_SERVICE: Error monitoring Firebase connection: $e');
       _isFirebaseConnected = false;

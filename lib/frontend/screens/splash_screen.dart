@@ -97,9 +97,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       // Listen to splash service changes
       _splashService.addListener(_onSplashServiceChanged);
       
-      // Updater flow now happens pre-launch; keep only background checks if desired
+      // Initialize updater (no background checks; updates happen pre-launch only)
       await _updateService.initialize();
-      _updateService.startBackgroundUpdateCheck();
+
+      // What's New se afiseaza in MainScreen pentru a evita dublura si pentru UI gata
       
       // Start preloading
       final success = await _splashService.startPreloading();
@@ -121,6 +122,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       await _navigateToMainScreen();
     }
   }
+
 
   void _onSplashServiceChanged() {
     if (mounted) {

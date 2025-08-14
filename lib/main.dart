@@ -17,6 +17,7 @@ import 'package:mat_finance/backend/services/consultant_service.dart';
 import 'package:mat_finance/backend/services/connection_service.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
+import 'package:mat_finance/backend/services/update_config.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -142,18 +143,23 @@ void main() async {
     // Initialize Flutter binding as early as possible
     WidgetsFlutterBinding.ensureInitialized();
     // Headless pre-launch update on Windows before any window is shown
-    if (!kIsWeb && Platform.isWindows) {
+    if (!kIsWeb && Platform.isWindows && UpdateConfig.preLaunchUpdaterEnabled && !kDebugMode) {
       try {
         final updater = UpdateService();
         await updater.initialize();
-        // If an installer is cached, fetch release info to persist then install
+        // If a cached installer exists, only install if a newer version is available
         final ready = await updater.checkForReadyUpdate();
         if (ready) {
-          try { await updater.checkForUpdates(); } catch (_) {}
-          await updater.installUpdate();
-          return; // process exits inside installUpdate
+          final has = await updater.checkForUpdates();
+          if (has) {
+            await updater.installUpdate();
+            return; // process exits inside installUpdate
+          } else {
+            // Stale installer, clean up and continue normal startup
+            await updater.cancelUpdate();
+          }
         }
-        // Else check online
+        // Online check: download+install only when newer version exists
         final has = await updater.checkForUpdates();
         if (has) {
           final ok = await updater.startDownload();

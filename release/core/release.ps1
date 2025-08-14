@@ -1,5 +1,5 @@
 ﻿# ===============================
-#  Release Script - Broker App
+#  Release Script - MAT Finance
 # ===============================
 
 $ErrorActionPreference = "Stop"
@@ -9,7 +9,7 @@ $projectRoot  = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $coreDir      = "$projectRoot\release\core"
 $installerDir = "$projectRoot\installer"
 $outputDir    = "$installerDir\Output"
-$issFile      = "$coreDir\BrokerAppInstaller.iss"
+$issFile      = "$coreDir\MATFinanceInstaller.iss"
 
 # Citește versiunea din .iss
 $version = Select-String -Path $issFile -Pattern "^AppVersion=(.+)$" |
@@ -20,22 +20,21 @@ if (-not $version) {
 }
 
 $versionFolder  = "$projectRoot\release\v$version"
-$exeName        = "BrokerAppInstaller.exe"
+$exeName        = "MATFinanceInstaller.exe"
 $exeReleasePath = "$versionFolder\$exeName"
 $checksumPath   = "$versionFolder\$exeName.sha256"
-$zipPath        = "$versionFolder\BrokerAppInstaller-v$version.zip"
 
 # Creează folderul versiunii dacă nu există
 if (!(Test-Path $versionFolder)) {
     New-Item -ItemType Directory -Path $versionFolder | Out-Null
 }
 
-Write-Host "[1/7] Building Flutter Windows..."
+Write-Host "[1/6] Building Flutter Windows..."
 pushd $projectRoot
 flutter build windows --release
 popd
 
-Write-Host "[2/7] Căutare ISCC.exe..."
+Write-Host "[2/6] Căutare ISCC.exe..."
 $cmd = Get-Command ISCC.exe -ErrorAction SilentlyContinue
 if ($cmd) {
     $innoExe = $cmd.Source
@@ -43,7 +42,7 @@ if ($cmd) {
     Write-Error "Nu am găsit ISCC.exe (Inno Setup Compiler) în PATH."
 }
 
-Write-Host "[3/7] Compiling installer..."
+Write-Host "[3/6] Compiling installer..."
 & $innoExe $issFile 1> $null
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Compilarea installer-ului a eșuat!"
@@ -53,24 +52,21 @@ if (!(Test-Path "$outputDir\$exeName")) {
     Write-Error "Installer nu a fost găsit în $outputDir"
 }
 
-Write-Host "[4/7] Mutare installer în folder versiune..."
+Write-Host "[4/6] Mutare installer în folder versiune..."
 Move-Item -Path "$outputDir\$exeName" -Destination $exeReleasePath -Force
 if (Test-Path $outputDir) { Remove-Item -Path $outputDir -Recurse -Force }
 
-Write-Host "[5/7] Generating SHA256..."
+Write-Host "[5/6] Generating SHA256..."
 Get-FileHash -Algorithm SHA256 $exeReleasePath |
     Select-Object -ExpandProperty Hash |
     Out-File -Encoding ascii -NoNewline $checksumPath
 
-Write-Host "[6/7] Creare arhivă ZIP..."
-Compress-Archive -Path $exeReleasePath -DestinationPath $zipPath -Force
-
 # --- UPLOAD PE GITHUB ---
-Write-Host "[7/7] Creare/actualizare release și upload fișiere pe GitHub..."
+Write-Host "[6/6] Creare/actualizare release și upload fișiere pe GitHub..."
 
-$repo = "geanatz/Broker-App"
+$repo = "geanatz/MAT-Finance"
 $tag  = "v$version"
-$releaseName = "BrokerApp $version"
+$releaseName = "MAT Finance $version"
 $token = $env:GITHUB_TOKEN
 
 if (-not $token) {
@@ -86,11 +82,20 @@ if ($existingRelease) {
     $release = $existingRelease
 
     # Șterge asset-urile existente cu același nume
-    foreach ($asset in $release.assets) {
-        $deleteUrl = "https://api.github.com/repos/$repo/releases/assets/$($asset.id)"
-        Invoke-RestMethod -Uri $deleteUrl -Method Delete `
-            -Headers @{ Authorization = "token $token" }
-        Write-Host "   🗑 Șters asset: $($asset.name)"
+    if ($release.assets.Count -gt 0) {
+        Write-Host "   🗑 Ștergere asset-uri existente..."
+        foreach ($asset in $release.assets) {
+            try {
+                $deleteUrl = "https://api.github.com/repos/$repo/releases/assets/$($asset.id)"
+                Invoke-RestMethod -Uri $deleteUrl -Method Delete `
+                    -Headers @{ Authorization = "token $token" } -ErrorAction Stop
+                Write-Host "      ✅ Șters: $($asset.name)"
+            } catch {
+                Write-Host "      ⚠️ Nu s-a putut șterge $($asset.name): $($_.Exception.Message)"
+            }
+        }
+    } else {
+        Write-Host "   ℹ Nu există asset-uri de șters"
     }
 
     # Update metadata (opțional)
@@ -119,14 +124,20 @@ if ($existingRelease) {
 }
 
 # Încarcă fiecare fișier din folderul versiunii
+Write-Host "   📤 Upload fișiere..."
 foreach ($file in Get-ChildItem $versionFolder) {
-    $uploadUrl = $release.upload_url.Split('{')[0] + "?name=$($file.Name)"
-    Invoke-RestMethod -Uri $uploadUrl -Method Post `
-        -Headers @{
-            Authorization  = "token $token"
-            "Content-Type" = "application/octet-stream"
-        } -InFile $file.FullName
-    Write-Host "   ✅ Upload: $($file.Name)"
+    try {
+        $uploadUrl = $release.upload_url.Split('{')[0] + "?name=$($file.Name)"
+        Invoke-RestMethod -Uri $uploadUrl -Method Post `
+            -Headers @{
+                Authorization  = "token $token"
+                "Content-Type" = "application/octet-stream"
+            } -InFile $file.FullName -ErrorAction Stop
+        Write-Host "      ✅ Upload: $($file.Name)"
+    } catch {
+        Write-Host "      ❌ Eroare upload $($file.Name): $($_.Exception.Message)"
+        # Continuă cu următorul fișier în loc să se oprească
+    }
 }
 
 Write-Host ""

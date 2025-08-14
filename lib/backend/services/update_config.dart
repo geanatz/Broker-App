@@ -6,7 +6,7 @@
   
   // In-App Update Settings (Discord-style)
   static const bool inAppUpdatesEnabled = true; // Activeaza update-uri in-app
-  static const bool backgroundDownloadEnabled = true; // Download in background
+  static const bool backgroundDownloadEnabled = false; // Download in background (disabled: updates only at startup)
   static const bool autoInstallEnabled = true; // Instaleaza automat dupa download
   static const bool silentInstallEnabled = false; // Instaleaza fara notificare (doar pentru update-uri mici)
   
@@ -17,7 +17,7 @@
   static const bool autoUpdateEnabled = true; // Activeaza update-ul automat
   static const bool forcedUpdateEnabled = false; // Forteaza update-ul (opreste aplicatia daca nu se updateaza)
   static const bool preferInstallerAsset = true; // Prefer .exe installer when available
-  static const bool preLaunchUpdaterEnabled = false; // Updater screen disabled; headless prelaunch flow used
+  static const bool preLaunchUpdaterEnabled = true; // Enable pre-launch headless updater (updates only at startup)
   
   // Windows-specific Settings
   static const String windowsAssetName = 'mat-finance-windows.zip';

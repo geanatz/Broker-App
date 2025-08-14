@@ -147,13 +147,9 @@ class UpdateService {
                _downloadAssetName = _getSelectedAssetName(assets, _downloadUrl);
                _checksumUrl = _getChecksumUrl(assets, _downloadAssetName);
               
-                if (_downloadUrl != null) {
-                  // Persist release info for showing after restart
-                  try {
-                    await _persistReleaseInfo();
-                  } catch (e) {
-                    AppLogger.error('update_service', 'persist_release_info_exception', e);
-                  }
+               if (_downloadUrl != null) {
+                  // Defer persisting release info until after successful installation
+                  AppLogger.sync('update_service', 'release_info_deferred');
                   _isChecking = false;
                   _updateStatus('');
                   AppLogger.sync('update_service', 'asset_selected', {
@@ -218,6 +214,21 @@ class UpdateService {
       AppLogger.sync('update_service', 'release_info_persisted', {'file': file.path});
     } catch (e) {
       AppLogger.error('update_service', 'release_info_persist_exception', e);
+    }
+  }
+
+  /// Clears the persisted release info file if it exists
+  Future<void> clearPersistedReleaseInfo() async {
+    try {
+      final supportDir = await getApplicationSupportDirectory();
+      final updateDir = Directory('${supportDir.path}/${UpdateConfig.getUpdateDirectory()}');
+      final file = File('${updateDir.path}/last_release.json');
+      if (await file.exists()) {
+        await file.delete();
+        AppLogger.sync('update_service', 'release_info_cleared_manual');
+      }
+    } catch (e) {
+      AppLogger.error('update_service', 'release_info_clear_exception', e);
     }
   }
 
@@ -462,6 +473,16 @@ class UpdateService {
 
       // Close current process only if relaunch succeeded; otherwise keep app running
       if (started) {
+        // Persist release info only after we successfully started the installed app
+        if (_latestVersion != null) {
+          try {
+            await _persistReleaseInfo();
+          } catch (e) {
+            AppLogger.error('update_service', 'persist_release_info_exception_post_install', e);
+          }
+        } else {
+          AppLogger.warning('update_service', 'skip_persist_release_info_missing_version');
+        }
         try {
           await AppLogger.closeFileLogging();
         } catch (_) {}

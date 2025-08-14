@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
+import * as admin from 'firebase-admin';
 import fetch from 'node-fetch';
 
 // Initialize Admin SDK
@@ -37,11 +38,19 @@ export const llmGenerate = functions
         return;
       }
 
-      // Optional: verify Firebase ID token if you want stricter access control
-      // const authHeader = req.headers.authorization || '';
-      // if (!authHeader.startsWith('Bearer ')) { return res.status(401).json({ error: 'Missing token' }); }
-      // const idToken = authHeader.substring(7);
-      // await admin.auth().verifyIdToken(idToken);
+      // Verify Firebase ID token (required)
+      const authHeader = req.headers.authorization || '';
+      if (!authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ error: 'Missing token' });
+        return;
+      }
+      const idToken = authHeader.substring(7);
+      try {
+        await admin.auth().verifyIdToken(idToken);
+      } catch (e) {
+        res.status(401).json({ error: 'Invalid token' });
+        return;
+      }
 
       const { contents, generationConfig, model } = req.body || {};
       if (!Array.isArray(contents) || contents.length === 0) {

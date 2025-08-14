@@ -280,7 +280,29 @@ class MeetingService {
                meetingDate.minute == dateTime.minute;
       });
       
-      final isAvailable = !hasConflict;
+      var isAvailable = !hasConflict;
+
+      // Remote double-check: ensure no concurrent booking exists in Firestore
+      if (isAvailable) {
+        try {
+          final token = await NewFirebaseService().getCurrentConsultantToken();
+          if (token != null && token.isNotEmpty) {
+            final firestore = FirebaseFirestore.instance;
+            final start = DateTime(dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.minute);
+            final end = start.add(const Duration(minutes: 1));
+            final snap = await firestore
+                .collectionGroup('meetings')
+                .where('consultantToken', isEqualTo: token)
+                .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+                .where('dateTime', isLessThan: Timestamp.fromDate(end))
+                .limit(1)
+                .get();
+            if (snap.docs.isNotEmpty) {
+              isAvailable = false;
+            }
+          }
+        } catch (_) {}
+      }
       
       // OPTIMIZARE: Salveaza in cache
       _availabilityCache[timeKey] = isAvailable;
