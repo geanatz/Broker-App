@@ -125,21 +125,21 @@ class AppTheme extends ChangeNotifier {
   // ======== CULORI FIXE LIGHT MODE CU PALETA ALBASTRA ========
 
   // Culori pentru background gradient
-  static const Color backgroundStart = Color(0xFFA4C2C2);
-  static const Color backgroundEnd = Color(0xFFC2A4C2);
+  static const Color backgroundStart = Color(0xFFB0C9CF);
+  static const Color backgroundEnd = Color(0xFFB0B5CF);
 
   // Culori pentru containere
-  static const Color containerColor1 = Color(0xFFC4C4D4);
-  static const Color containerColor2 = Color(0xFFACACD3);
+  static const Color containerColor1 = Color(0xFFC4CCD4);
+  static const Color containerColor2 = Color(0xFF9AB2CB);
 
   // Culori pentru elemente
-  static const Color elementColor1 = Color(0xFF8A8AA8);
-  static const Color elementColor2 = Color(0xFF666699);
-  static const Color elementColor3 = Color(0xFF4D4D80);
+  static const Color elementColor1 = Color(0xFF70808F);
+  static const Color elementColor2 = Color(0xFF5E666E);
+  static const Color elementColor3 = Color(0xFF494D50);
 
   // Culori pentru widget-uri
-  static const Color widgetBackground = Color(0xFFD9D9D9);
-  static const Color popupBackground = Color(0xFFD9D9D9);
+  static const Color widgetBackground = Color(0xFFD6D9DC);
+  static const Color popupBackground = Color(0xFFD6D9DC);
 
   // ======== UMBRELE ========
   static BoxShadow get widgetShadow => BoxShadow(
