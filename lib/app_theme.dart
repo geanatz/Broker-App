@@ -38,6 +38,9 @@ class AppTheme extends ChangeNotifier {
   static const double largeGap = 24.0;
   static const double hugeGap = 32.0;
   
+  // Padding specific pentru header-uri (redus cu 8px din mediumGap)
+  static const double headerPadding = 8.0;
+
   // Alte dimensiuni
   static const double slotBorderThickness = 4.0;
   static const double iconBorderThickness = 2.0;
@@ -210,8 +213,16 @@ class AppTheme extends ChangeNotifier {
 
   // ======== DECORATIUNI ========
   
-  // Background gradient pentru ecran
+  // Background solid (vizual) pentru ecran – implementat ca gradient cu aceeasi culoare la ambele capete
   static Gradient get appBackground => LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [widgetBackground, widgetBackground],
+    stops: const [0.0, 1.0],
+  );
+
+  // Box gradient (fostul gradient din appBackground)
+  static Gradient get boxColor => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [backgroundStart, backgroundEnd],
@@ -221,20 +232,20 @@ class AppTheme extends ChangeNotifier {
   // Decoratiune pentru widget-uri
   static BoxDecoration get widgetDecoration => BoxDecoration(
     color: widgetBackground,
-    borderRadius: BorderRadius.circular(borderRadiusLarge),
+    borderRadius: BorderRadius.circular(borderRadiusMedium),
     boxShadow: [widgetShadow],
   );
 
   // Decoratiune pentru popup-uri
   static BoxDecoration get popupDecoration => BoxDecoration(
     color: popupBackground,
-    borderRadius: BorderRadius.circular(borderRadiusLarge),
+    borderRadius: BorderRadius.circular(borderRadiusMedium),
   );
 
   // Decoratiune pentru container-ul principal (de nivel 1)
   static BoxDecoration get container1Decoration => BoxDecoration(
     color: containerColor1,
-    borderRadius: BorderRadius.circular(borderRadiusMedium),
+    borderRadius: BorderRadius.circular(borderRadiusSmall),
   );
 
   // Decoratiune pentru container-ul secundar (de nivel 2) 

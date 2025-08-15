@@ -70,7 +70,7 @@ class FormNew extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color effectiveContainerColor = containerColor ?? AppTheme.containerColor1;
-    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusSmall;
     final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.all(8.0);
     final double effectiveFieldSpacing = fieldSpacing ?? AppTheme.smallGap;
 

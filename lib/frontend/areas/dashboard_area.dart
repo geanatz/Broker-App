@@ -1,10 +1,11 @@
 ﻿import 'package:mat_finance/app_theme.dart';
 import 'package:mat_finance/backend/services/dashboard_service.dart';
 import 'package:mat_finance/backend/services/splash_service.dart';
-import 'package:mat_finance/backend/services/role_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../components/chatbot_widget.dart';
+import '../components/headers/widget_header1.dart';
+import '../components/headers/widget_header6.dart';
 
 
 /// Area pentru dashboard care afiseaza statistici si clasamente pentru consultanti.
@@ -50,24 +51,24 @@ class _DashboardAreaState extends State<DashboardArea> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Coloana stanga - Chatbot AI - latime mai mare
-        Expanded(
-          flex: 1, // Latime mai mare pentru chatbot
-          child: const ChatbotWidget(),
-        ),
-        const SizedBox(width: AppTheme.mediumGap),
-        // Coloana dreapta - Statistici si clasament combinat
+        // Coloana stanga - Statistici si clasament combinat
         Expanded(
           flex: 2,
           child: Column(
             children: [
               // Widget statistici - fill pe orizontala
               _buildCombinedMeetingsAndStatsWidget(),
-              const SizedBox(height: AppTheme.mediumGap),
+              const SizedBox(height: AppTheme.smallGap),
               // Clasament combinat - fill pe inaltime
               Expanded(child: _buildCombinedLeaderboard()),
             ],
           ),
+        ),
+        const SizedBox(width: AppTheme.smallGap),
+        // Coloana dreapta - Chatbot AI
+        Expanded(
+          flex: 1,
+          child: const ChatbotWidget(),
         ),
       ],
     );
@@ -81,7 +82,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
       child: Column(
@@ -103,144 +104,19 @@ class _DashboardAreaState extends State<DashboardArea> {
         ? 'Clasament' 
         : _getTeamName(_selectedTeamId!);
     
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Titlu + back button daca e in modul consultanti
-          Expanded(
-            child: Container(
-              height: 24,
-              clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                spacing: 10,
-                children: [
-                  if (_selectedTeamId != null)
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedTeamId = null),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          size: 19,
-                          color: AppTheme.elementColor1,
-                        ),
-                      ),
-                    ),
-                  Text(
-                    title,
-                    style: AppTheme.safeOutfit(
-                      color: AppTheme.elementColor1,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  // Indicator pentru supervisor
-                  if (RoleService().isSupervisor)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.elementColor3,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'SUPERVISOR',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          // Navigare luna
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Săgeată stânga
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: InkWell(
-                  onTap: _dashboardService.goToPreviousMonth,
-                  customBorder: const CircleBorder(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Icon(
-                        Icons.chevron_left,
-                        color: AppTheme.elementColor1,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Text data
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: InkWell(
-                  onTap: _dashboardService.goToCurrentMonth,
-                  customBorder: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Container(
-                    width: 80,
-                    height: 24,
-                    alignment: Alignment.center,
-                    child: Text(
-                      _formatMonthYear(_dashboardService.selectedMonth),
-                      textAlign: TextAlign.center,
-                      style: AppTheme.safeOutfit(
-                        color: _isCurrentMonth() 
-                            ? AppTheme.elementColor1 
-                            : AppTheme.elementColor2,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ),
-              // Săgeată dreapta
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: InkWell(
-                  onTap: _dashboardService.goToNextMonth,
-                  customBorder: const CircleBorder(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Icon(
-                        Icons.chevron_right,
-                        color: AppTheme.elementColor1,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return WidgetHeader6(
+      title: title,
+      dateText: _formatMonthYear(_dashboardService.selectedMonth),
+      prevDateIcon: Icons.chevron_left,
+      nextDateIcon: Icons.chevron_right,
+      onPrevDateTap: _dashboardService.goToPreviousMonth,
+      onNextDateTap: _dashboardService.goToNextMonth,
+      onDateTextTap: _dashboardService.goToCurrentMonth,
+      titleColor: AppTheme.elementColor1,
+      dateTextColor: _isCurrentMonth() 
+          ? AppTheme.elementColor1 
+          : AppTheme.elementColor2,
+      dateNavIconColor: AppTheme.elementColor1,
     );
   }
 
@@ -267,7 +143,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
       ),
       child: LayoutBuilder(
@@ -358,7 +234,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
       child: Column(
@@ -373,7 +249,7 @@ class _DashboardAreaState extends State<DashboardArea> {
               clipBehavior: Clip.antiAlias,
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                 ),
               ),
               child: Column(
@@ -489,7 +365,7 @@ class _DashboardAreaState extends State<DashboardArea> {
         decoration: ShapeDecoration(
           color: AppTheme.containerColor2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),
         ),
         child: Row(
@@ -624,38 +500,9 @@ class _DashboardAreaState extends State<DashboardArea> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 24,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: const BoxDecoration(),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Astazi',
-                          style: AppTheme.safeOutfit(
-                            color: AppTheme.elementColor1,
-                            fontSize: 19,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          WidgetHeader1(
+            title: 'Astazi',
+            titleColor: AppTheme.elementColor1,
           ),
           const SizedBox(height: 8),
           
@@ -692,7 +539,7 @@ class _DashboardAreaState extends State<DashboardArea> {
         decoration: ShapeDecoration(
           color: AppTheme.containerColor1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),
         ),
         child: Column(

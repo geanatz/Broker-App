@@ -6,6 +6,7 @@ import '../../backend/services/splash_service.dart';
 import '../components/headers/widget_header1.dart';
 import '../components/fields/dropdown_field1.dart';
 import '../popups/bank_popup.dart';
+import '../components/dialog_utils.dart';
 import 'package:intl/intl.dart';
 
 /// Pane pentru afisarea recomandarilor de banci
@@ -111,7 +112,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
       }
     });
     
-    showDialog(
+    showBlurredDialog(
       context: context,
       builder: (context) => BankPopup(
         bankCriteria: bankCriteria,
@@ -166,7 +167,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
               decoration: ShapeDecoration(
                 color: AppTheme.containerColor2,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: TextField(
@@ -236,7 +237,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: const [
           BoxShadow(
@@ -254,7 +255,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
         children: [
           // Header using WidgetHeader1 component (same as calculatorPane)
           WidgetHeader1(
-            title: 'Recomandare',
+            title: 'Recomandare banca',
             titleColor: AppTheme.elementColor1,
           ),
           
@@ -275,7 +276,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                   decoration: ShapeDecoration(
                     color: AppTheme.containerColor1,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                     ),
                   ),
                   child: Column(
@@ -352,7 +353,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                               clipBehavior: Clip.antiAlias,
                               decoration: ShapeDecoration(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                                 ),
                               ),
                               child: ListView.separated(
@@ -375,7 +376,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                                       decoration: ShapeDecoration(
                                         color: AppTheme.containerColor1,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(24),
+                                          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                                         ),
                                       ),
                                       child: Column(

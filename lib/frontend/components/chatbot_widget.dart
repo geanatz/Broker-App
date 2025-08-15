@@ -432,7 +432,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
       ),
       child: Row(

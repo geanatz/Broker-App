@@ -30,7 +30,7 @@ class _CenteredIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFC4C4D4);
     final Color effectiveIconColor = iconColor ?? const Color(0xFF666699);
-    final double effectiveBorderRadius = borderRadius ?? 24.0;
+    final double effectiveBorderRadius = borderRadius ?? 16.0;
     final double effectiveButtonHeight = buttonHeight ?? 48.0;
     final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
     final double effectiveIconSize = iconSize ?? 24.0;

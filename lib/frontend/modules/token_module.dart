@@ -71,7 +71,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
         decoration: AppTheme.popupDecoration.copyWith(
           color: AppTheme.popupBackground,
           boxShadow: [AppTheme.widgetShadow],
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app_theme.dart';
+import 'package:mat_finance/frontend/components/dialog_utils.dart';
 import '../../backend/services/update_service.dart';
 
 class UpdateNotification extends StatefulWidget {
@@ -49,7 +50,7 @@ class _UpdateNotificationWrapperState extends State<UpdateNotificationWrapper> {
     final currentVersion = updateInfo['currentVersion'] ?? 'Necunoscuta';
     final latestVersion = updateInfo['latestVersion'] ?? 'Necunoscuta';
     
-    showDialog(
+    showBlurredDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(

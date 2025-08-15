@@ -842,7 +842,7 @@ class _FormAreaState extends State<FormArea> {
                     flex: 10,
                     child: _buildCreditSection(client),
                   ),
-                  const SizedBox(width: AppTheme.mediumGap),
+                  const SizedBox(width: AppTheme.smallGap),
                   Expanded(
                     flex: 7,
                     child: _buildIncomeSection(client),
@@ -865,7 +865,7 @@ class _FormAreaState extends State<FormArea> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: [
           BoxShadow(
@@ -923,7 +923,7 @@ class _FormAreaState extends State<FormArea> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: [
           BoxShadow(
@@ -1029,7 +1029,7 @@ class _FormAreaState extends State<FormArea> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: [
           BoxShadow(
@@ -1092,7 +1092,7 @@ class _FormAreaState extends State<FormArea> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: [
           BoxShadow(
@@ -1150,7 +1150,7 @@ class _FormAreaState extends State<FormArea> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: [
           BoxShadow(
@@ -1272,7 +1272,7 @@ class _FormAreaState extends State<FormArea> {
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
       ),
       child: SmoothScrollWrapper(
@@ -1366,7 +1366,7 @@ class _FormAreaState extends State<FormArea> {
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
       ),
       child: SmoothScrollWrapper(

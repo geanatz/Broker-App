@@ -1,5 +1,5 @@
 [Setup]
-AppVersion=0.1.7
+AppVersion=0.1.8
 AppName=MAT Finance
 AppPublisher=Your Company
 AppPublisherURL=https://yourwebsite.com
@@ -70,5 +70,8 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
 end;
+
+
+
 
 

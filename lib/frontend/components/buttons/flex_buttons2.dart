@@ -57,7 +57,7 @@ class _TextIconButtonState extends State<_TextIconButton> {
         (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
     final Color effectiveIconColor = widget.iconColor ?? 
         (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
-    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusSmall;
     final double effectiveButtonHeight = widget.buttonHeight ?? 48.0;
     final EdgeInsetsGeometry effectivePadding = widget.padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
     final double effectiveIconSize = widget.iconSize ?? AppTheme.iconSizeMedium;
@@ -170,7 +170,7 @@ class _IconOnlyButtonState extends State<_IconOnlyButton> {
         (isInteractive ? AppTheme.containerColor2 : AppTheme.containerColor1);
     final Color effectiveIconColor = widget.iconColor ?? 
         (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
-    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusSmall;
     final double effectiveButtonSize = widget.buttonSize ?? 48.0;
     final EdgeInsetsGeometry effectivePadding = widget.padding ?? const EdgeInsets.all(AppTheme.smallGap + 4); // 12px
     final double effectiveIconSize = widget.iconSize ?? AppTheme.iconSizeMedium;

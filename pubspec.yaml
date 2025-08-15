@@ -3,7 +3,7 @@ description: "MAT Finance - gestionarea clientilor si proceselor de creditare."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 0.1.7
+version: 0.1.8
 
 environment:
   sdk: ^3.7.2
@@ -86,7 +86,7 @@ flutter:
     - assets/viewIcon.svg
     - assets/saveIcon.svg
     - assets/deleteIcon.svg
-    - assets/matcherIcon.svg
+    - assets/bankIcon.svg
     - assets/trendingIcon.svg
     - assets/doneIcon.svg
     - assets/copyIcon.svg
@@ -94,7 +94,6 @@ flutter:
     - assets/showIcon.svg
     - assets/editIcon.svg
     - assets/InfoIcon.svg
-    - assets/meetingIcon.svg
     - assets/clientsIcon.svg
     - assets/settingsIcon.svg
     - assets/calendarIcon.svg
@@ -124,6 +123,8 @@ flutter:
     - assets/coffeeIcon.svg
     - assets/sendIcon.svg
     - assets/chatIcon.svg
+    - assets/minimizeIcon.svg
+    - assets/maximizeIcon.svg
     - lib/backend/ocr/names.json
 
 # Launcher icons configuration (do not run generation here; user executes the command)

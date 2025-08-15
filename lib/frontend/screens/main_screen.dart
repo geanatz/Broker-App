@@ -2,14 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:mat_finance/backend/services/sidebar_service.dart';
 import 'package:mat_finance/frontend/popups/consultant_popup.dart';
-import 'package:mat_finance/frontend/components/headers/widget_header3.dart';
-import 'package:mat_finance/frontend/components/buttons/spaced_buttons1.dart';
-import 'package:mat_finance/frontend/components/items/light_item7.dart';
+// removed unused header/button imports after sidebar redesign
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mat_finance/frontend/areas/dashboard_area.dart';
 import 'package:mat_finance/frontend/areas/form_area.dart';
 import 'package:mat_finance/frontend/areas/calendar_area.dart';
 import 'package:mat_finance/frontend/areas/settings_area.dart';
-import 'package:mat_finance/frontend/panes/meetings_pane.dart';
 import 'package:mat_finance/frontend/panes/calculator_pane.dart';
 import 'package:mat_finance/frontend/panes/clients_pane.dart';
 import 'package:mat_finance/frontend/panes/matcher_pane.dart';
@@ -19,12 +17,14 @@ import 'package:mat_finance/backend/services/splash_service.dart';
 import 'package:mat_finance/backend/services/update_service.dart';
 import 'package:mat_finance/backend/services/app_logger.dart';
 import 'package:mat_finance/frontend/components/update_notification.dart';
+import 'package:mat_finance/frontend/components/dialog_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // import removed
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mat_finance/frontend/screens/mobile_clients_screen.dart';
 import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
+// window_manager no longer used here; handlers moved to main.dart
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -59,7 +59,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   // GlobalKeys pentru componente
   final GlobalKey<CalendarAreaState> _calendarKey = GlobalKey<CalendarAreaState>();
-  final GlobalKey<MeetingsPaneState> _meetingsPaneKey = GlobalKey<MeetingsPaneState>();
   final GlobalKey<MatcherPaneState> _matcherPaneKey = GlobalKey<MatcherPaneState>();
   
   // Splash service pentru servicii pre-incarcate
@@ -76,9 +75,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Sidebar service pentru navigare
   late final SidebarService _sidebarService;
   
-  // UI state pentru sidebar - sectiuni colapsabile
-  bool _isAreaSectionCollapsed = false;
-  bool _isPaneSectionCollapsed = false;
+  // UI state pentru sidebar - removed collapsible sections in new design
   
   // Performance monitoring
   int _buildCount = 0;
@@ -207,7 +204,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           return;
         }
         if (!mounted) return;
-        await showDialog(
+        await showBlurredDialog(
           context: context,
           barrierDismissible: true,
           builder: (ctx) => _buildWhatsNewDialog(version, desc),
@@ -394,33 +391,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       onClientsPopupRequested: _handleClientsPopupRequested,
       onSwitchToFormArea: _handleSwitchToFormArea,
     ),
-    PaneType.meetings: MeetingsPane(
-      key: _meetingsPaneKey,
-      onNavigateToMeeting: _navigateToMeeting,
-    ),
     PaneType.calculator: CalculatorPane(),
     PaneType.matches: MatcherPane(
       key: _matcherPaneKey,
     ),
   };
   
-  /// Navigates to a specific meeting in the calendar
-  void _navigateToMeeting(String meetingId) {
-    // Switch to calendar area if not already there
-    if (_currentArea != AreaType.calendar) {
-      // Use the SidebarService to change area to keep states in sync
-      _sidebarService.changeArea(AreaType.calendar);
-    }
-    
-    // Navigate to the meeting in calendar with highlight
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _calendarKey.currentState?.navigateToMeeting(meetingId);
-    });
-  }
+  // Removed: _navigateToMeeting (meetings list embedded in calendar)
   
   /// Refreshes meetings pane when meetings are saved
   void _refreshMeetingsPane() {
-    _meetingsPaneKey.currentState?.refreshMeetings();
     _calendarKey.currentState?.refreshCalendar();
   }
 
@@ -456,33 +436,45 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         ),
         child: Stack(
           children: [
+            // Custom titlebar is now injected globally in MaterialApp.builder (main.dart)
             // Main content
             Padding(
-          padding: const EdgeInsets.all(AppTheme.mediumGap),
+          padding: const EdgeInsets.fromLTRB(AppTheme.mediumGap, 0, AppTheme.mediumGap, AppTheme.mediumGap),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Conditionally render pane column only if current area is not dashboard (Acasa)
-              ...(_currentArea != AreaType.dashboard ? [
-                // Pane Column (stanga) - latime fixa 312
+              // Sidebar (stanga)
+              _buildSidebar(),
+              // Spatiu intre sidebar si containerul combinat
+              const SizedBox(width: AppTheme.mediumGap),
+              // Container combinat pentru Area (stanga) + Pane (dreapta)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(AppTheme.smallGap),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.boxColor,
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Area (stanga)
+                      Expanded(
+                        child: _areaWidgets[_currentArea]!,
+                      ),
+                      // Gap 8 intre area si pane (doar cand pane este vizibil)
+                      if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
+                        const SizedBox(width: AppTheme.smallGap),
+                      // Pane (dreapta) - ascuns pe dashboard, settings si calendar
+                      if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
                 SizedBox(
                   width: 296,
                   child: _paneWidgets[_currentPane]!,
                 ),
-                // Spacing
-                const SizedBox(width: AppTheme.mediumGap),
-              ] : []),
-              
-              // Area Column (centru) - latime flexibila
-              Expanded(
-                child: _areaWidgets[_currentArea]!,
+                    ],
+                  ),
+                ),
               ),
-              
-              // Spacing intre area si sidebar
-              const SizedBox(width: AppTheme.mediumGap),
-              
-              // Sidebar Column (dreapta) - latime fixa 224
-              _buildSidebar(),
             ],
               ),
             ),
@@ -496,6 +488,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
     );
   }
+  
+  // Titlebar handlers and buttons moved to global builder in main.dart
   
   
   /// Builds dual popup overlay with both popups side by side
@@ -577,9 +571,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     // Refresh meetings when switching to meetings pane
     if (pane == PaneType.meetings) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _meetingsPaneKey.currentState?.refreshMeetings();
-      });
+      // Meetings pane removed; redirect to clients
+      _sidebarService.changePane(PaneType.clients);
     }
     
     // Refresh matcher data when switching to matches pane
@@ -736,232 +729,141 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   /// Builds the main sidebar widget
   Widget _buildSidebar() {
+    final areaButtons = _sidebarService.areaButtons;
+    final paneButtons = _sidebarService.paneButtons;
+
+    // Configuratie layout: latime fixa 48, inaltime fill, padding vertical 8
     return Container(
-      width: 224,
-      padding: const EdgeInsets.all(AppTheme.smallGap),
-      decoration: AppTheme.widgetDecoration,
+      width: 48,
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.smallGap),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Consultant information section
-          _buildConsultantSection(),
-          const SizedBox(height: AppTheme.mediumGap),
-          
-          // Areas navigation section
-          _buildAreasSection(),
-          // Afiseaza sectiunea de pane doar daca area curent nu este Acasa (dashboard)
-          if (_currentArea != AreaType.dashboard) ...[
-            const SizedBox(height: AppTheme.mediumGap),
-            _buildPanesSection(),
+          // NAVIGATION (top)
+          // Areas: home, calendar, form (ordine noua)
+          _buildIconOnlyButton(
+            iconPath: areaButtons[0].iconPath,
+            isActive: _sidebarService.currentArea == areaButtons[0].targetArea,
+            onTap: () => _sidebarService.handleButtonClick(areaButtons[0]),
+          ),
+          const SizedBox(height: AppTheme.smallGap),
+          _buildIconOnlyButton(
+            iconPath: areaButtons[2].iconPath,
+            isActive: _sidebarService.currentArea == areaButtons[2].targetArea,
+            onTap: () => _sidebarService.handleButtonClick(areaButtons[2]),
+        ),
+        const SizedBox(height: AppTheme.smallGap),
+          _buildIconOnlyButton(
+            iconPath: areaButtons[1].iconPath,
+            isActive: _sidebarService.currentArea == areaButtons[1].targetArea,
+            onTap: () => _sidebarService.handleButtonClick(areaButtons[1]),
+          ),
+
+          // Separator intre areas si panes (8px gap deasupra si dedesubt)
+          if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar) ...[
+            const SizedBox(height: AppTheme.smallGap),
+            Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFB5BFC9),
+                borderRadius: BorderRadius.circular(2),
+              ),
+        ),
+        const SizedBox(height: AppTheme.smallGap),
           ],
-          
-          // Special functions section (doar daca exista butoane)
-          if (_sidebarService.specialButtons.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.mediumGap),
-            _buildSpecialSection(),
+
+          // Panes: clients, calculator, recommendation (ascunse pe home, settings si calendar)
+          if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar) ...[
+            // Iterate panes but skip meetings to remove it from sidebar
+            for (int i = 0; i < paneButtons.length; i++) ...[
+              if (paneButtons[i].id != 'meetings') ...[
+                _buildIconOnlyButton(
+                  iconPath: paneButtons[i].iconPath,
+                  isActive: _sidebarService.currentPane == paneButtons[i].targetPane,
+                  onTap: () => _sidebarService.handleButtonClick(paneButtons[i]),
+        ),
+        const SizedBox(height: AppTheme.smallGap),
+              ],
+            ],
           ],
+
+          // GAP AUTO
+          const Spacer(),
+
+          // PROFILE (bottom): settings, consultant
+          _buildIconOnlyButton(
+            iconPath: 'assets/settingsIcon.svg',
+            onTap: () => _sidebarService.handleButtonClick(
+              const ButtonConfig(
+                id: 'settings',
+                title: 'Setari',
+                iconPath: 'assets/settingsIcon.svg',
+                actionType: ActionType.navigateToArea,
+                targetArea: AreaType.settings,
+              ),
+            ),
+            isActive: _sidebarService.currentArea == AreaType.settings,
+          ),
+          const SizedBox(height: AppTheme.smallGap),
+          _buildIconOnlyButton(
+            iconPath: 'assets/userIcon.svg',
+            onTap: _showConsultantPopup,
+          ),
         ],
       ),
     );
   }
 
-  /// Builds the consultant information section using LightItem7
-  Widget _buildConsultantSection() {
-    return LightItem7(
-      title: _consultantName,
-      description: _teamName,
-      svgAsset: 'assets/userIcon.svg',
-      onTap: _showConsultantPopup,
-    );
-  }
+  // Removed _buildConsultantSection (handled inline in sidebar layout)
 
+  /// Icon-only square button used in the new sidebar
+  Widget _buildIconOnlyButton({
+    required String iconPath,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    final Color background = isActive ? AppTheme.containerColor2 : AppTheme.containerColor1;
+    final Color iconColor = isActive ? AppTheme.elementColor3 : AppTheme.elementColor2;
 
-
-  /// Builds the areas navigation section with collapsible header
-  Widget _buildAreasSection() {
-    return Column(
-      children: [
-        WidgetHeader3(
-          title: 'Principal',
-          isExpanded: !_isAreaSectionCollapsed, // animatie
-          onTrailingIconTap: () {
-            setState(() {
-              _isAreaSectionCollapsed = !_isAreaSectionCollapsed;
-            });
-          },
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+          child: Container(
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                iconPath,
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              ),
+            ),
+          ),
         ),
-        const SizedBox(height: AppTheme.smallGap),
-        _buildAreaButtons(),
-      ],
+      ),
     );
   }
 
-  /// Builds the panes navigation section with collapsible header
-  Widget _buildPanesSection() {
-    return Column(
-      children: [
-        WidgetHeader3(
-          title: 'Secundar',
-          isExpanded: !_isPaneSectionCollapsed, // animatie
-          onTrailingIconTap: () {
-            setState(() {
-              _isPaneSectionCollapsed = !_isPaneSectionCollapsed;
-            });
-          },
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-        ),
-        const SizedBox(height: AppTheme.smallGap),
-        _buildPaneButtons(),
-      ],
-    );
-  }
 
-  /// Builds the special functions section
-  Widget _buildSpecialSection() {
-    final buttons = _sidebarService.specialButtons;
-    
-    if (buttons.isEmpty) {
-      return const SizedBox.shrink(); // Nu afisa sectiunea daca nu sunt butoane
-    }
-    
-    return Column(
-      children: [
-        WidgetHeader3(
-          title: 'Functii',
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.smallGap),
-        ),
-        const SizedBox(height: AppTheme.smallGap),
-        _buildSpecialButtons(),
-      ],
-    );
-  }
 
-  /// Builds the special function buttons
-  Widget _buildSpecialButtons() {
-    final buttons = _sidebarService.specialButtons;
-    
-    if (buttons.isEmpty) {
-      return const SizedBox.shrink(); // Nu afisa nimic daca nu sunt butoane
-    }
-    
-    return Column(
-      children: [
-        for (int i = 0; i < buttons.length; i++) ...[
-          _buildSpecialNavigationButton(buttons[i]),
-          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
-        ],
-      ],
-    );
-  }
+  // Removed legacy sidebar sections and headers for icon-only design
 
-  /// Builds the area navigation buttons with collapse behavior
-  Widget _buildAreaButtons() {
-    final buttons = _sidebarService.areaButtons;
-    
-    if (_isAreaSectionCollapsed) {
-      // When collapsed, show only the active button
-      final activeButton = buttons.firstWhere(
-        (button) => button.targetArea == _currentArea,
-        orElse: () => buttons.first,
-      );
-      return _buildNavigationButton(activeButton);
-    }
-    
-    // When expanded, show all buttons with proper gap spacing
-    return Column(
-      children: [
-        for (int i = 0; i < buttons.length; i++) ...[
-          _buildNavigationButton(buttons[i]),
-          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
-        ],
-      ],
-    );
-  }
-
-  /// Builds the pane navigation buttons with collapse behavior
-  Widget _buildPaneButtons() {
-    final buttons = _sidebarService.paneButtons;
-    
-    if (_isPaneSectionCollapsed) {
-      // When collapsed, show only the active button
-      final activeButton = buttons.firstWhere(
-        (button) => button.targetPane == _currentPane,
-        orElse: () => buttons.first,
-      );
-      return _buildNavigationButton(activeButton);
-    }
-    
-    // When expanded, show all buttons with proper gap spacing
-    return Column(
-      children: [
-        for (int i = 0; i < buttons.length; i++) ...[
-          _buildNavigationButton(buttons[i]),
-          if (i < buttons.length - 1) const SizedBox(height: AppTheme.smallGap),
-        ],
-      ],
-    );
-  }
-
-  /// Builds a single navigation button with active state styling
-  Widget _buildNavigationButton(ButtonConfig button) {
-    bool isActive = _isButtonActive(button);
-    
-    if (isActive) {
-      // For active buttons, set explicit colors
-      return SpacedButtonSingleSvg(
-        text: button.title,
-        iconPath: button.iconPath,
-        onTap: () => _sidebarService.handleButtonClick(button),
-        backgroundColor: AppTheme.containerColor2,
-        textColor: AppTheme.elementColor3,
-        iconColor: AppTheme.elementColor3,
-        borderRadius: AppTheme.borderRadiusMedium,
-        buttonHeight: AppTheme.navButtonHeight,
-      );
-    } else {
-      // For inactive buttons, let the component handle hover states
-      return SpacedButtonSingleSvg(
-        text: button.title,
-        iconPath: button.iconPath,
-        onTap: () => _sidebarService.handleButtonClick(button),
-        borderRadius: AppTheme.borderRadiusMedium,
-        buttonHeight: AppTheme.navButtonHeight,
-      );
-    }
-  }
-
-  /// Builds a special function button 
-  Widget _buildSpecialNavigationButton(ButtonConfig button) {
-    return SpacedButtonSingleSvg(
-      text: button.title,
-      iconPath: button.iconPath,
-      onTap: () => _handleSpecialButtonClick(button),
-      borderRadius: AppTheme.borderRadiusMedium,
-      buttonHeight: AppTheme.navButtonHeight,
-    );
-  }
-
-  /// Handles special button clicks (like export)
-  void _handleSpecialButtonClick(ButtonConfig button) {
-    _sidebarService.handleButtonClick(button);
-  }
-
-  /// Determines if a button should appear as active
-  bool _isButtonActive(ButtonConfig button) {
-    if (button.actionType == ActionType.navigateToArea && button.targetArea != null) {
-      return _sidebarService.currentArea == button.targetArea;
-    } else if (button.actionType == ActionType.openPane && button.targetPane != null) {
-      return _sidebarService.currentPane == button.targetPane;
-    }
-    return false;
-  }
+  // Removed legacy text/button helpers (special buttons, area/pane buttons, navigation button)
 
   /// Shows the consultant details popup
   void _showConsultantPopup() {
     if (!mounted) return;
     
-    showDialog(
+    showBlurredDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) => ConsultantPopup(
@@ -982,6 +884,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     if (_currentPane != _sidebarService.currentPane) {
       _currentPane = _sidebarService.currentPane ?? PaneType.clients;
+      needsUpdate = true;
+    }
+    
+    // Enforce rule: meetings pane no longer exists; remap to clients when encountered
+    if (_currentPane == PaneType.meetings) {
+      _currentPane = PaneType.clients;
+      _sidebarService.syncPane(_currentPane);
       needsUpdate = true;
     }
     

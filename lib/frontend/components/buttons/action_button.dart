@@ -81,7 +81,7 @@ class ActionButton extends StatelessWidget {
     final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
     final Color effectiveTextColor = textColor ?? AppTheme.elementColor2;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
-    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusSmall;
     final double effectiveHeight = height ?? 48.0;
     final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;
     final double effectiveSpacing = spacing ?? AppTheme.smallGap;

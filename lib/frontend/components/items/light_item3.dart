@@ -62,7 +62,7 @@ class LightItem3 extends StatelessWidget {
     final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
     final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor1;
-    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 48.0;
     final double horizontalPadding = AppTheme.mediumGap;
     final double effectiveDescriptionContainerWidth = descriptionContainerWidth ?? 104.0;

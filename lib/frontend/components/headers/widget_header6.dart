@@ -84,7 +84,7 @@ class WidgetHeader6 extends StatelessWidget {
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor1;
     final Color effectiveDateTextColor = dateTextColor ?? AppTheme.elementColor1;
     final Color effectiveDateNavIconColor = dateNavIconColor ?? AppTheme.elementColor1;
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.headerPadding);
     final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
     final double effectiveDateTextContainerWidth = dateTextContainerWidth ?? 80.0;
     final double effectiveDateNavIconSize = dateNavIconSize ?? AppTheme.iconSizeMedium;

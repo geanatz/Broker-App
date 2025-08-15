@@ -65,7 +65,7 @@ class _TokenPopupState extends State<TokenPopup> {
         decoration: AppTheme.popupDecoration.copyWith(
           color: AppTheme.popupBackground,
           boxShadow: [AppTheme.widgetShadow],
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

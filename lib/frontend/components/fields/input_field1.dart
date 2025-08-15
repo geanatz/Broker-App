@@ -221,7 +221,7 @@ class _InputField1State extends State<InputField1> {
     final double effectiveHeight = widget.fieldHeight ?? 72.0;
     final double labelAreaHeight = 21.0;
     final double inputAreaHeight = 48.0;
-    final double effectiveInputBorderRadius = widget.inputBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveInputBorderRadius = widget.inputBorderRadius ?? AppTheme.borderRadiusTiny;
     final double effectiveIconSize = widget.iconSize ?? 24.0;
 
     final TextStyle titleStyle = AppTheme.safeOutfit(

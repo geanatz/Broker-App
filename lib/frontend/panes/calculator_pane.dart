@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../backend/services/calculator_service.dart';
 import '../../backend/services/form_service.dart';
 import '../popups/amortization_popup.dart';
+import '../components/dialog_utils.dart';
 // Import components
 import '../components/headers/widget_header1.dart';
 import '../components/items/light_item3.dart';
@@ -181,7 +182,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
       );
 
       // Afiseaza popup-ul cu graficul de amortizare
-      showDialog(
+      showBlurredDialog(
         context: context,
         builder: (context) => AmortizationPopup(
           schedule: schedule,
@@ -279,7 +280,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: [
           BoxShadow(
@@ -322,7 +323,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                         decoration: ShapeDecoration(
                           color: AppTheme.containerColor1,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                           ),
                         ),
                         child: Column(
@@ -384,13 +385,8 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                       SizedBox(height: 16),
                       
                       // Results Container
-                      Container(
+                      SizedBox(
                         width: double.infinity,
-                        decoration: ShapeDecoration(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                        ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.start,
@@ -495,7 +491,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
             trailingIconPath: 'assets/returnIcon.svg',
             onTrailingIconTap: _resetFields,
             spacing: AppTheme.smallGap,
-            borderRadius: AppTheme.borderRadiusMedium,
+            borderRadius: AppTheme.borderRadiusSmall,
             buttonHeight: 48.0,
             primaryButtonTextStyle: AppTheme.safeOutfit(
               fontSize: AppTheme.fontSizeMedium,

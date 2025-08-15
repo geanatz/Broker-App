@@ -93,7 +93,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
   // Pentru a sti daca suntem in modul editare
   bool get isEditMode => widget.meetingId != null;
   
-  String get popupTitle => isEditMode ? 'Editeaza intalnire' : 'Creaza intalnire';
+  String get popupTitle => isEditMode ? 'Editeaza intalnire' : 'Creeaza intalnire';
 
   @override
   void initState() {
@@ -520,6 +520,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                                 inputText: _selectedDateText,
                                 trailingIconPath: "assets/calendarIcon.svg",
                                 onTap: _selectDate,
+                                inputBorderRadius: AppTheme.borderRadiusTiny,
                               ),
                             ),
                             
@@ -545,6 +546,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                                 },
                                 hintText: "Selecteaza ora",
                                 enabled: _selectedDate != null && _availableTimeSlots.isNotEmpty,
+                                dropdownBorderRadius: AppTheme.borderRadiusTiny,
                               ),
                             ),
                           ],
@@ -561,7 +563,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                     text: "Salveaza",
                     iconPath: "assets/saveIcon.svg",
                     onTap: _saveMeeting,
-                    borderRadius: AppTheme.borderRadiusMedium,
+                    borderRadius: AppTheme.borderRadiusSmall,
                     buttonHeight: 48.0,
                     textStyle: AppTheme.safeOutfit(
                       fontSize: AppTheme.fontSizeMedium,
@@ -576,7 +578,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                     trailingIconPath: "assets/deleteIcon.svg",
                     onTrailingIconTap: _onDeleteMeeting,
                     spacing: AppTheme.smallGap,
-                    borderRadius: AppTheme.borderRadiusMedium,
+                    borderRadius: AppTheme.borderRadiusSmall,
                     buttonHeight: 48.0,
                     primaryButtonTextStyle: AppTheme.safeOutfit(
                       fontSize: AppTheme.fontSizeMedium,

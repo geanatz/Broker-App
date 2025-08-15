@@ -59,7 +59,7 @@ class WidgetHeader2 extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor1;
     final Color effectiveAltTextColor = altTextColor ?? AppTheme.elementColor1;
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.headerPadding);
     final double effectiveSpacing = spacing ?? AppTheme.mediumGap;
 
     final TextStyle defaultTitleStyle = AppTheme.safeOutfit(

@@ -76,7 +76,7 @@ class _LightItem7State extends State<LightItem7> {
     final Color effectiveDescriptionColor = widget.descriptionColor ?? AppTheme.elementColor1;
     final Color effectiveIconColor = AppTheme.elementColor2;
 
-    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusSmall;
     final double itemHeight = 64.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;

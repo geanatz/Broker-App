@@ -10,6 +10,7 @@ import '../../backend/services/clients_service.dart';
 import '../../backend/services/splash_service.dart';
 
 import '../popups/status_popup.dart';
+import '../components/dialog_utils.dart';
 import '../../backend/services/firebase_service.dart';
 
 /// ClientsPane - Interfata pentru gestionarea clientilor
@@ -416,7 +417,7 @@ class _ClientsPaneState extends State<ClientsPane> {
   
   /// FIX: Show status popup for client
   void _showStatusPopup(ClientModel client) {
-    showDialog(
+    showBlurredDialog(
       context: context,
       builder: (context) => ClientSavePopup(
         client: client,
@@ -475,7 +476,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       decoration: ShapeDecoration(
         color: AppTheme.widgetBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         shadows: [AppTheme.widgetShadow],
       ),
@@ -545,12 +546,12 @@ class _ClientsPaneState extends State<ClientsPane> {
             child: _buildSection('Clienti', ClientCategory.apeluri, canCollapse: false),
           ),
           
-          SizedBox(height: AppTheme.mediumGap),
+          SizedBox(height: AppTheme.smallGap),
           
           // Sectiunea Reveniri - HUG (doar cat ii trebuie)
           _buildSection('Reveniri', ClientCategory.reveniri),
           
-          SizedBox(height: AppTheme.mediumGap),
+          SizedBox(height: AppTheme.smallGap),
           
           // Sectiunea Recente - HUG (doar cat ii trebuie)
           _buildSection('Recente', ClientCategory.recente),

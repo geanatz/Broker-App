@@ -66,9 +66,9 @@ class WidgetHeader5 extends StatelessWidget {
     // --- Placeholder Values / Hardcoded Defaults ---
     final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
     final Color effectiveDescriptionColor = descriptionColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.only(left: 16, right: 8);
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.only(left: AppTheme.headerPadding, right: AppTheme.headerPadding);
     final double effectiveTextSpacing = spacingBetweenTexts ?? 0.0; // AppTheme.tinyGap
-    final double effectiveMainRowSpacing = mainRowSpacing ?? 16.0; // AppTheme.mediumGap
+    final double effectiveMainRowSpacing = mainRowSpacing ?? AppTheme.mediumGap; // AppTheme.mediumGap
     final CrossAxisAlignment effectiveTextColumnAlignment = textColumnAlignment ?? CrossAxisAlignment.start;
 
     final TextStyle defaultTitleStyle = TextStyle(

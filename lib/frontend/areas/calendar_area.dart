@@ -15,8 +15,13 @@ import 'package:mat_finance/backend/services/firebase_service.dart';
 // Import the required components
 import 'package:mat_finance/frontend/components/headers/widget_header6.dart';
 import 'package:mat_finance/frontend/components/items/outlined_item6.dart';
+import 'package:mat_finance/frontend/components/dialog_utils.dart';
 import 'package:mat_finance/frontend/components/items/dark_item4.dart';
 import 'package:mat_finance/frontend/components/items/dark_item2.dart';
+import 'package:intl/intl.dart';
+import 'package:mat_finance/frontend/components/headers/widget_header1.dart';
+import 'package:mat_finance/frontend/components/items/light_item7.dart';
+import 'package:mat_finance/frontend/components/items/dark_item7.dart';
 
 /// Area pentru calendar care va fi afisata in cadrul ecranului principal.
 /// OPTIMIZAT: Implementare avansata cu cache inteligent si loading instant
@@ -61,6 +66,16 @@ class CalendarAreaState extends State<CalendarArea> {
   // Highlight functionality
   String? _highlightedMeetingId;
   Timer? _highlightTimer;
+
+  // Upcoming meetings (formerly meetings pane) state
+  DateFormat? dateFormatter;
+  DateFormat? timeFormatter;
+  bool _isInitializingUpcoming = true;
+  List<ClientActivity> _upcomingAppointments = [];
+  bool _isLoadingUpcoming = true;
+  Timer? _upcomingLoadDebounceTimer;
+  bool _isLoadingUpcomingMeetings = false;
+  DateTime? _lastUpcomingLoadTime;
   
   // Scroll controller for calendar grid
   final ScrollController _scrollController = ScrollController();
@@ -83,6 +98,8 @@ class CalendarAreaState extends State<CalendarArea> {
     
     // OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
     _loadFromCacheInstantly();
+    _initializeFormatters();
+    _loadUpcomingFromCacheInstantly();
     
     PerformanceMonitor.endTimer('calendarAreaInit');
 
@@ -159,6 +176,14 @@ class CalendarAreaState extends State<CalendarArea> {
     });
     // Then trigger a forced background refresh to ensure latest data (fire-and-forget)
     unawaited(_loadMeetingsForCurrentWeek(force: true));
+    // Also refresh upcoming meetings side panel
+    final now = DateTime.now();
+    _rebuildUpcomingFromList(instant, now).then((updated) {
+      if (updated && mounted) {
+        setState(() {});
+      }
+    });
+    unawaited(_loadUpcomingMeetings(force: true));
   }
 
   /// OPTIMIZAT: Filtreaza intalnirile pentru saptamana curenta din cache
@@ -302,7 +327,7 @@ class CalendarAreaState extends State<CalendarArea> {
       decoration: ShapeDecoration(
         color: AppTheme.widgetBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
       child: Center(
@@ -336,33 +361,42 @@ class CalendarAreaState extends State<CalendarArea> {
       decoration: ShapeDecoration(
         color: AppTheme.widgetBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header cu navigation conform Figma folosind WidgetHeader6
-          WidgetHeader6(
-            title: 'Calendar',
-            dateText: dateInterval,
-            prevDateIcon: Icons.chevron_left,
-            nextDateIcon: Icons.chevron_right,
-            onPrevDateTap: _navigateToPreviousWeek,
-            onNextDateTap: _navigateToNextWeek,
-            onDateTextTap: _currentWeekOffset != 0 ? _navigateToCurrentWeek : null,
-            titleColor: AppTheme.elementColor1,
-            dateTextColor: _currentWeekOffset != 0 
-                ? AppTheme.elementColor2 
-                : AppTheme.elementColor1,
-            dateNavIconColor: AppTheme.elementColor1,
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Containerul principal cu calendar
+          // Calendar column
           Expanded(
-            child: _buildCalendarContainer(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header cu navigation conform Figma folosind WidgetHeader6
+                WidgetHeader6(
+                  title: 'Calendar',
+                  dateText: dateInterval,
+                  prevDateIcon: Icons.chevron_left,
+                  nextDateIcon: Icons.chevron_right,
+                  onPrevDateTap: _navigateToPreviousWeek,
+                  onNextDateTap: _navigateToNextWeek,
+                  onDateTextTap: _currentWeekOffset != 0 ? _navigateToCurrentWeek : null,
+                  titleColor: AppTheme.elementColor1,
+                  dateTextColor: _currentWeekOffset != 0 
+                      ? AppTheme.elementColor2 
+                      : AppTheme.elementColor1,
+                  dateNavIconColor: AppTheme.elementColor1,
+                ),
+                const SizedBox(height: 8),
+                Expanded(child: _buildCalendarContainer()),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Embedded meetings pane on the right
+          SizedBox(
+            width: 264,
+            child: _buildUpcomingMeetingsPanel(),
           ),
         ],
       ),
@@ -377,7 +411,7 @@ class CalendarAreaState extends State<CalendarArea> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
       ),
       child: Column(
@@ -629,14 +663,14 @@ class CalendarAreaState extends State<CalendarArea> {
             backgroundColor: backgroundColor,
             titleColor: AppTheme.elementColor3,
             descriptionColor: AppTheme.elementColor2,
-            borderRadius: AppTheme.borderRadiusMedium,
+            borderRadius: AppTheme.borderRadiusSmall,
           )
         : DarkItem2(
             title: consultantName,
             onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
             backgroundColor: backgroundColor,
             titleColor: AppTheme.elementColor3,
-            borderRadius: AppTheme.borderRadiusMedium,
+            borderRadius: AppTheme.borderRadiusSmall,
           ),
     );
   }
@@ -653,7 +687,7 @@ class CalendarAreaState extends State<CalendarArea> {
         mainBorderWidth: 4.0,
         titleColor: AppTheme.elementColor2,
         iconColor: AppTheme.elementColor2,
-        mainBorderRadius: AppTheme.borderRadiusMedium,
+        mainBorderRadius: AppTheme.borderRadiusSmall,
       ),
     );
   }
@@ -670,7 +704,7 @@ class CalendarAreaState extends State<CalendarArea> {
       );
       
       // OPTIMIZARE: Afiseaza imediat popup-ul fara delay
-      showDialog(
+      showBlurredDialog(
         context: context,
         barrierDismissible: true,
         builder: (context) => MeetingPopup(
@@ -684,6 +718,8 @@ class CalendarAreaState extends State<CalendarArea> {
             
             // OPTIMIZARE: Notifica main_screen sa refresheze meetings_pane
             widget.onMeetingSaved?.call();
+            // Refresh embedded upcoming meetings as well
+            _refreshUpcomingMeetings();
             
             // OPTIMIZARE: Refresh calendar cu delay redus pentru actualizare rapida
             _refreshCalendarWithDelay();
@@ -711,7 +747,7 @@ class CalendarAreaState extends State<CalendarArea> {
     
     try {
       // OPTIMIZARE: Afiseaza imediat popup-ul fara delay
-      showDialog(
+      showBlurredDialog(
         context: context,
         barrierDismissible: true,
         builder: (context) => MeetingPopup(
@@ -725,6 +761,8 @@ class CalendarAreaState extends State<CalendarArea> {
             
             // OPTIMIZARE: Notifica main_screen sa refresheze meetings_pane
             widget.onMeetingSaved?.call();
+            // Refresh embedded upcoming meetings as well
+            _refreshUpcomingMeetings();
             
             // OPTIMIZARE: Refresh calendar cu delay redus pentru actualizare rapida
             _refreshCalendarWithDelay();
@@ -875,6 +913,339 @@ class CalendarAreaState extends State<CalendarArea> {
       debugPrint('❌ CALENDAR_AREA: Error getting sync consultant token: $e');
       return null;
     }
+  }
+
+  // ======================== UPCOMING MEETINGS PANEL (embedded) ========================
+
+  void _initializeFormatters() {
+    try {
+      dateFormatter = DateFormat('dd MMM yyyy', 'ro_RO');
+      timeFormatter = DateFormat('HH:mm', 'ro_RO');
+      _isInitializingUpcoming = false;
+    } catch (e) {
+      debugPrint("Error initializing formatters: $e");
+      _isInitializingUpcoming = false;
+    }
+  }
+
+  Future<void> _loadUpcomingFromCacheInstantly() async {
+    try {
+      // Load meetings from cache instantly, then trigger background refresh
+      final allMeetings = _splashService.getCachedMeetingsSync();
+      final now = DateTime.now();
+      final List<ClientActivity> futureAppointments = [];
+      final currentConsultantToken = await _getCurrentConsultantToken();
+      for (final meeting in allMeetings) {
+        if (!meeting.dateTime.isAfter(now)) continue;
+        final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+        if (meetingConsultantId != null) {
+          if (meetingConsultantId != _auth.currentUser?.uid) continue;
+        } else {
+          final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+          if (meetingConsultantToken == null || meetingConsultantToken != currentConsultantToken) continue;
+        }
+        futureAppointments.add(meeting);
+      }
+      futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      if (mounted) {
+        setState(() {
+          _upcomingAppointments = futureAppointments;
+          _isLoadingUpcoming = false;
+          _lastUpcomingLoadTime = DateTime.now();
+        });
+      }
+      // Background refresh (fire-and-forget)
+      unawaited(() async {
+        final refreshed = await _splashService.getCachedMeetingsFast();
+        if (mounted) {
+          final currentConsultantToken = await _getCurrentConsultantToken();
+          final filtered = <ClientActivity>[];
+          for (final meeting in refreshed) {
+            if (!meeting.dateTime.isAfter(now)) continue;
+            final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+            if (meetingConsultantId != null) {
+              if (meetingConsultantId != _auth.currentUser?.uid) continue;
+            } else {
+              final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+              if (meetingConsultantToken == null || meetingConsultantToken != currentConsultantToken) continue;
+            }
+            filtered.add(meeting);
+          }
+          filtered.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+          final changed = filtered.length != _upcomingAppointments.length ||
+              !_upcomingAppointments.asMap().entries.every((e) => e.value.id == filtered[e.key].id);
+          if (changed) {
+            setState(() {
+              _upcomingAppointments = filtered;
+            });
+          }
+        }
+      }());
+    } catch (e) {
+      debugPrint('❌ CALENDAR_AREA: Error loading upcoming from cache: $e');
+      await _loadUpcomingMeetings();
+    }
+  }
+
+  Future<bool> _rebuildUpcomingFromList(List<ClientActivity> allMeetings, DateTime now) async {
+    try {
+      final currentConsultantToken = await _getCurrentConsultantToken();
+      final List<ClientActivity> futureAppointments = [];
+      for (final meeting in allMeetings) {
+        if (!meeting.dateTime.isAfter(now)) continue;
+        final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+        if (meetingConsultantId != null) {
+          if (meetingConsultantId != _auth.currentUser?.uid) continue;
+        } else {
+          final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+          if (meetingConsultantToken == null || meetingConsultantToken != currentConsultantToken) continue;
+        }
+        futureAppointments.add(meeting);
+      }
+      futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      final changed = futureAppointments.length != _upcomingAppointments.length ||
+          !_upcomingAppointments.asMap().entries.every((e) => e.value.id == futureAppointments[e.key].id);
+      if (changed) {
+        _upcomingAppointments = futureAppointments;
+      }
+      return changed;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _refreshUpcomingMeetings() {
+    if (!mounted) return;
+    _loadUpcomingMeetings();
+  }
+
+  Future<void> _loadUpcomingMeetings({bool force = false}) async {
+    if (!force && _lastUpcomingLoadTime != null &&
+        DateTime.now().difference(_lastUpcomingLoadTime!).inSeconds < 3) {
+      return;
+    }
+    _upcomingLoadDebounceTimer?.cancel();
+    if (_isLoadingUpcomingMeetings) return;
+    _upcomingLoadDebounceTimer = Timer(const Duration(milliseconds: 10), () async {
+      await _performLoadUpcomingMeetings();
+    });
+  }
+
+  Future<void> _performLoadUpcomingMeetings() async {
+    if (_isLoadingUpcomingMeetings) return;
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) {
+      debugPrint("❌ CALENDAR_AREA: User not authenticated (upcoming)");
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _isLoadingUpcoming = true;
+      });
+    }
+    try {
+      _isLoadingUpcomingMeetings = true;
+      final allMeetings = await _splashService.getCachedMeetings();
+      final now = DateTime.now();
+      final List<ClientActivity> futureAppointments = [];
+      final currentConsultantToken = await _getCurrentConsultantToken();
+      for (final meeting in allMeetings) {
+        if (!meeting.dateTime.isAfter(now)) continue;
+        final meetingConsultantId = meeting.additionalData?['consultantId'] as String?;
+        if (meetingConsultantId != null) {
+          if (meetingConsultantId != currentUserId) continue;
+        } else {
+          final meetingConsultantToken = meeting.additionalData?['consultantToken'] as String?;
+          if (meetingConsultantToken == null || meetingConsultantToken != currentConsultantToken) continue;
+        }
+        futureAppointments.add(meeting);
+      }
+      futureAppointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      if (mounted) {
+        setState(() {
+          _upcomingAppointments = futureAppointments;
+          _isLoadingUpcoming = false;
+          _lastUpcomingLoadTime = DateTime.now();
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ CALENDAR_AREA: Error loading upcoming meetings: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingUpcoming = false;
+        });
+      }
+    } finally {
+      _isLoadingUpcomingMeetings = false;
+    }
+  }
+
+  String _getTimeUntilMeeting(DateTime meetingDateTime) {
+    final now = DateTime.now();
+    final difference = meetingDateTime.difference(now);
+    if (difference.isNegative) return 'Trecut';
+    final days = difference.inDays;
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes;
+    if (days > 0) return 'in $days ${days == 1 ? 'zi' : 'zile'}';
+    if (hours > 0) return 'in $hours ${hours == 1 ? 'ora' : 'ore'}';
+    if (minutes > 0) return 'in $minutes ${minutes == 1 ? 'minut' : 'minute'}';
+    return 'acum';
+  }
+
+  bool _isWithin30Minutes(DateTime meetingDateTime) {
+    final now = DateTime.now();
+    final difference = meetingDateTime.difference(now);
+    return difference.inMinutes <= 30 && difference.inMinutes >= 0;
+  }
+
+  void _navigateToCalendarMeeting(String meetingId) {
+    navigateToMeeting(meetingId);
+  }
+
+  Future<String?> _getCurrentConsultantToken() async {
+    try {
+      final firebaseService = NewFirebaseService();
+      return await firebaseService.getCurrentConsultantToken();
+    } catch (e) {
+      debugPrint('❌ CALENDAR_AREA: Error getting current consultant token: $e');
+      return null;
+    }
+  }
+
+  Widget _buildUpcomingMeetingsPanel() {
+    final EdgeInsetsGeometry effectivePadding = EdgeInsets.zero;
+    final BoxDecoration? effectiveDecoration = null;
+    if (_isInitializingUpcoming || dateFormatter == null) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: effectivePadding,
+        decoration: effectiveDecoration,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    final ScrollController paneScrollController = ScrollController();
+    return SmoothScrollWrapper(
+      controller: paneScrollController,
+      scrollSpeed: 120.0,
+      animationDuration: const Duration(milliseconds: 250),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: effectivePadding,
+        decoration: effectiveDecoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WidgetHeader1(
+              title: 'Intalnirile mele',
+              titleColor: AppTheme.elementColor1,
+            ),
+            const SizedBox(height: AppTheme.smallGap),
+            Expanded(
+              child: _buildUpcomingMeetingsList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingMeetingsList() {
+    final currentUserId = _auth.currentUser?.uid;
+    if (currentUserId == null) {
+      return Center(
+        child: Text(
+          "Utilizator neconectat",
+          style: TextStyle(fontSize: AppTheme.fontSizeMedium, color: AppTheme.elementColor2),
+        ),
+      );
+    }
+    if (_isLoadingUpcoming) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_upcomingAppointments.isEmpty) {
+      return Center(
+        child: Text(
+          'Nicio programare viitoare',
+          style: AppTheme.secondaryTitleStyle,
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: _upcomingAppointments.length,
+      itemBuilder: (context, index) {
+        final meeting = _upcomingAppointments[index];
+        final dateTime = meeting.dateTime;
+        String clientName = meeting.additionalData?['clientName'] ?? '';
+        if (clientName.trim().isEmpty) {
+          clientName = 'Client fara nume';
+        }
+        final clientPhone = meeting.additionalData?['phoneNumber'] ?? '';
+        final meetingId = meeting.id;
+        final timeUntil = _getTimeUntilMeeting(dateTime);
+        final isUrgent = _isWithin30Minutes(dateTime);
+        final formattedDate = dateFormatter?.format(dateTime) ?? dateTime.toString();
+        final formattedTime = timeFormatter?.format(dateTime) ?? dateTime.toString();
+        return Container(
+          margin: const EdgeInsets.only(bottom: AppTheme.smallGap),
+          child: isUrgent
+              ? _buildUrgentMeetingItem(
+                  clientName: clientName,
+                  clientPhone: clientPhone,
+                  dateTime: dateTime,
+                  formattedDate: formattedDate,
+                  formattedTime: formattedTime,
+                  timeUntil: timeUntil,
+                  meetingId: meetingId,
+                )
+              : _buildNormalMeetingItem(
+                  clientName: clientName,
+                  clientPhone: clientPhone,
+                  dateTime: dateTime,
+                  formattedDate: formattedDate,
+                  formattedTime: formattedTime,
+                  timeUntil: timeUntil,
+                  meetingId: meetingId,
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUrgentMeetingItem({
+    required String clientName,
+    required String clientPhone,
+    required DateTime dateTime,
+    required String formattedDate,
+    required String formattedTime,
+    required String timeUntil,
+    required String meetingId,
+  }) {
+    return DarkItem7(
+      title: clientName,
+      description: clientPhone.isNotEmpty ? clientPhone : timeUntil,
+      svgAsset: 'assets/doneIcon.svg',
+      onTap: () => _navigateToCalendarMeeting(meetingId),
+    );
+  }
+
+  Widget _buildNormalMeetingItem({
+    required String clientName,
+    required String clientPhone,
+    required DateTime dateTime,
+    required String formattedDate,
+    required String formattedTime,
+    required String timeUntil,
+    required String meetingId,
+  }) {
+    return LightItem7(
+      title: clientName,
+      description: timeUntil,
+      svgAsset: 'assets/viewIcon.svg',
+      onTap: () => _navigateToCalendarMeeting(meetingId),
+    );
   }
 }
 

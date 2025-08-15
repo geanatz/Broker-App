@@ -18,6 +18,8 @@ import 'package:mat_finance/backend/services/connection_service.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
 import 'package:mat_finance/backend/services/update_config.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -208,7 +210,7 @@ void main() async {
         center: true,
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
-        titleBarStyle: TitleBarStyle.normal,
+        titleBarStyle: TitleBarStyle.hidden,
       );
       
       windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -351,6 +353,56 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
         ),
+        builder: (context, child) {
+          if (!kIsWeb && Platform.isWindows) {
+            // Wrap desktop layout in a Stack so we can overlay the blurred dimmer above the custom titlebar
+            return Stack(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      width: double.infinity,
+                      child: Row(
+                        children: const [
+                          // Drag region (fills remaining space on the left)
+                          _TitleBarDragRegion(),
+                          SizedBox(width: 16),
+                          _TitleBarIcon(assetPath: 'assets/minimizeIcon.svg', action: TitleBarAction.minimize),
+                          SizedBox(width: 16),
+                          _TitleBarIcon(assetPath: 'assets/maximizeIcon.svg', action: TitleBarAction.maximizeToggle),
+                          SizedBox(width: 16),
+                          _TitleBarIcon(assetPath: 'assets/closeIcon.svg', action: TitleBarAction.close),
+                        ],
+                      ),
+                    ),
+                    Expanded(child: child ?? const SizedBox.shrink()),
+                  ],
+                ),
+                // Global dimmer above titlebar when any dialog is shown
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: DialogOverlayController.instance.isShown,
+                      builder: (context, isShown, _) {
+                        return AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          opacity: isShown ? 1.0 : 0.0,
+                          child: Container(color: Colors.black.withValues(alpha: 0.1)),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          return child ?? const SizedBox.shrink();
+        },
         home: const AuthWrapper(),
         // routes: { // Eliminat vechile rute
         //   '/register': (context) => const RegisterScreen(),
@@ -358,6 +410,76 @@ class _MyAppState extends State<MyApp> {
         //   '/token': (context) => const TokenScreen(),
         //   '/reset_password': (context) => const ResetPasswordScreen(),
         // },
+      ),
+    );
+  }
+}
+
+enum TitleBarAction { minimize, maximizeToggle, close }
+
+class _TitleBarIcon extends StatelessWidget {
+  final String assetPath;
+  final TitleBarAction action;
+  const _TitleBarIcon({required this.assetPath, required this.action});
+
+  Future<void> _handle() async {
+    try {
+      switch (action) {
+        case TitleBarAction.minimize:
+          await windowManager.minimize();
+          break;
+        case TitleBarAction.maximizeToggle:
+          final isMax = await windowManager.isMaximized();
+          if (isMax) {
+            await windowManager.unmaximize();
+          } else {
+            await windowManager.maximize();
+          }
+          break;
+        case TitleBarAction.close:
+          await windowManager.close();
+          break;
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _handle,
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: SvgPicture.asset(
+          assetPath,
+          width: 24,
+          height: 24,
+          fit: BoxFit.contain,
+          colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
+        ),
+      ),
+    ),
+    );
+  }
+}
+
+class _TitleBarDragRegion extends StatelessWidget {
+  const _TitleBarDragRegion();
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanStart: (_) async {
+          try {
+            await windowManager.startDragging();
+          } catch (_) {}
+        },
+        child: const SizedBox(height: 24),
       ),
     );
   }

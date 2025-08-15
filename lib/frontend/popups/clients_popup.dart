@@ -15,6 +15,7 @@ import '../components/fields/input_field1.dart';
 import '../../backend/services/ocr_service.dart';
 import '../../backend/services/clients_service.dart';
 import '../../backend/services/splash_service.dart';
+import '../components/dialog_utils.dart';
 
 /// Client model to represent client data
 class Client {
@@ -338,7 +339,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     final result = _ocrResults![imagePath];
     final clientCount = result?.extractedClients?.length ?? 0;
     
-    showDialog(
+    showBlurredDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -478,7 +479,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(32)),
+          borderRadius: BorderRadius.all(Radius.circular(AppTheme.borderRadiusMedium)),
         ),
       ),
       child: Column(
@@ -515,7 +516,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
       child: Column(
@@ -529,7 +530,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
                   side: BorderSide(width: 8, color: Colors.red),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
               ),
             ),
@@ -575,7 +576,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
                   side: BorderSide(width: 8, color: AppTheme.containerColor1),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
               ),
             ),
@@ -647,7 +648,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
       child: SingleChildScrollView(
@@ -698,7 +699,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
       child: SingleChildScrollView(
@@ -797,7 +798,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         text: 'Salveaza clienti',
         iconPath: 'assets/saveIcon.svg',
         onTap: _saveOcrClients,
-        borderRadius: AppTheme.borderRadiusMedium,
+        borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
         textStyle: AppTheme.navigationButtonTextStyle,
       );
@@ -807,7 +808,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         text: 'Anuleaza',
         iconPath: 'assets/returnIcon.svg',
         onTap: _cancelOcrProcess,
-        borderRadius: AppTheme.borderRadiusMedium,
+        borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
         textStyle: AppTheme.navigationButtonTextStyle,
       );
@@ -825,12 +826,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       decoration: ShapeDecoration(
         color: AppTheme.popupBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(32),
-            bottomLeft: Radius.circular(32),
-            topRight: Radius.circular(32),
-            bottomRight: Radius.circular(32),
-          ),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
       ),
       child: Column(
@@ -942,13 +938,13 @@ class _ClientsPopupState extends State<ClientsPopup> {
         totalWidth = 296; // Widget OCR
         break;
       case PopupState.clientsWithEdit:
-        totalWidth = 360 + 296 + 16; // Lista + Editare + gap 16px
+        totalWidth = 360 + 296 + 8; // Lista + Editare + gap 8px
         break;
       case PopupState.ocrWithClients:
-        totalWidth = 296 + 360 + 16; // OCR + Lista + gap 16px
+        totalWidth = 296 + 360 + 8; // OCR + Lista + gap 8px
         break;
       case PopupState.ocrWithClientsAndEdit:
-        totalWidth = 296 + 360 + 296 + 2 * 16; // OCR + Lista + Editare + 2 gaps
+        totalWidth = 296 + 360 + 296 + 2 * 8; // OCR + Lista + Editare + 2 gaps
         break;
     }
 
@@ -965,7 +961,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
                 _currentState == PopupState.ocrWithClientsAndEdit) ...[
               _buildOcrWidget(_ocrWidgetWidth),
               if (_currentState != PopupState.ocrOnly)
-                const SizedBox(width: 16),
+                const SizedBox(width: 8),
             ],
             if (_currentState == PopupState.clientsOnly ||
                 _currentState == PopupState.clientsWithEdit ||
@@ -975,7 +971,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
             ],
             if ((_currentState == PopupState.clientsWithEdit || _currentState == PopupState.ocrWithClientsAndEdit)
                 && (_editingClient != null || _clientService.temporaryClient != null)) ...[
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               _buildEditClientWidget(_editWidgetWidth),
             ],
           ],
@@ -995,7 +991,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         text: "Adauga client",
         iconPath: "assets/addIcon.svg",
         onTap: () => _startClientCreation(),
-        borderRadius: AppTheme.borderRadiusMedium,
+        borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
         textStyle: AppTheme.navigationButtonTextStyle,
       );
@@ -1005,7 +1001,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
         text: "Adauga client",
         iconPath: "assets/addIcon.svg",
         onTap: () => _startClientCreation(),
-        borderRadius: AppTheme.borderRadiusMedium,
+        borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
         textStyle: AppTheme.navigationButtonTextStyle,
       );
@@ -1191,7 +1187,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         trailingIconPath: "assets/deleteIcon.svg",
         onTrailingIconTap: widget.editingClient != null && widget.onDeleteClient != null ? () => widget.onDeleteClient!(widget.editingClient!) : null,
         spacing: AppTheme.smallGap,
-        borderRadius: AppTheme.borderRadiusMedium,
+        borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
         primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
       );
@@ -1204,7 +1200,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         trailingIconPath: "assets/closeIcon.svg",
         onTrailingIconTap: _cancelClientCreation,
         spacing: AppTheme.smallGap,
-        borderRadius: AppTheme.borderRadiusMedium,
+        borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
         primaryButtonTextStyle: AppTheme.navigationButtonTextStyle,
       );
@@ -1224,7 +1220,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         decoration: ShapeDecoration(
           color: AppTheme.popupBackground,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(32)),
+            borderRadius: BorderRadius.all(Radius.circular(AppTheme.borderRadiusMedium)),
           ),
         ),
         child: Column(
@@ -1256,7 +1252,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                         decoration: ShapeDecoration(
                           color: AppTheme.containerColor1,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                           ),
                         ),
                         child: Column(

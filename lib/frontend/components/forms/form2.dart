@@ -153,7 +153,7 @@ class _Form2State extends State<Form2> {
   @override
   Widget build(BuildContext context) {
     final Color effectiveContainerColor = widget.containerColor ?? AppTheme.containerColor1;
-    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveBorderRadius = widget.borderRadius ?? AppTheme.borderRadiusSmall;
     final EdgeInsetsGeometry effectivePadding = widget.padding ?? const EdgeInsets.all(8.0);
     final double effectiveRowSpacing = widget.rowSpacing ?? AppTheme.smallGap;
     final double effectiveFieldSpacing = widget.fieldSpacing ?? AppTheme.smallGap;

@@ -94,8 +94,8 @@ class _DarkItem7State extends State<DarkItem7> {
     final Color effectiveDescriptionColor = widget.descriptionColor ?? AppTheme.elementColor2;
     final Color effectiveIconColor = widget.iconColor ?? AppTheme.elementColor3;
     final Color effectiveIconContainerColor = widget.iconContainerColor ?? Colors.transparent;
-    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusMedium;
-    final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveMainBorderRadius = widget.mainBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveIconContainerBorderRadius = widget.iconContainerBorderRadius ?? AppTheme.borderRadiusTiny;
     final double itemHeight = 64.0;
     final double textColumnSpacing = AppTheme.tinyGap-1;
     final double internalRowSpacing = AppTheme.mediumGap;

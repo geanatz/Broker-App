@@ -149,7 +149,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
         decoration: AppTheme.popupDecoration.copyWith(
           color: AppTheme.popupBackground,
           boxShadow: [AppTheme.widgetShadow],
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
         child: SingleChildScrollView(
           child: Column(

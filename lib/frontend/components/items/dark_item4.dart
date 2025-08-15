@@ -55,7 +55,7 @@ class DarkItem4 extends StatelessWidget {
     final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor2;
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor3;
     final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor2;
-    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
+    final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusSmall;
     final double effectiveItemHeight = itemHeight ?? 64.0;
     final double textSpacing = AppTheme.tinyGap-1;
 

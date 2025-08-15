@@ -92,7 +92,7 @@ class WidgetHeader3 extends StatelessWidget {
     // Use AppTheme colors and dimensions instead of hardcoded values
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor1;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor1;
-    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap);
+    final EdgeInsetsGeometry effectivePadding = padding ?? const EdgeInsets.symmetric(horizontal: AppTheme.headerPadding);
     final double effectiveSpacing = spacing ?? AppTheme.mediumGap;
     final double effectiveTitleContainerHeight = titleContainerHeight ?? 24.0;
     final double effectiveIconSize = iconSize ?? AppTheme.iconSizeMedium;

@@ -566,7 +566,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           decoration: ShapeDecoration(
             color: AppTheme.popupBackground,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(32),
+              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
             ),
           ),
           child: Column(
@@ -587,7 +587,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                   decoration: ShapeDecoration(
                     color: AppTheme.containerColor1,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                     ),
                   ),
                   child: Column(
@@ -714,11 +714,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                             Expanded(
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: ShapeDecoration(
                                   color: AppTheme.containerColor2,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
                                   ),
                                 ),
                                 child: TextField(
@@ -759,7 +759,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                 text: _isLoading ? 'Se salveaza...' : 'Salveaza status',
                 iconPath: "assets/saveIcon.svg",
                 onTap: _isLoading ? null : _saveClientStatus,
-                borderRadius: AppTheme.borderRadiusMedium,
+                borderRadius: AppTheme.borderRadiusSmall,
                 buttonHeight: AppTheme.navButtonHeight,
                 textStyle: AppTheme.safeOutfit(
                   fontSize: AppTheme.fontSizeMedium,

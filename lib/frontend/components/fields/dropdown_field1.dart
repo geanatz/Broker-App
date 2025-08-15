@@ -91,7 +91,7 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
     final double effectiveHeight = widget.fieldHeight ?? 72.0;
     final double labelAreaHeight = 21.0;
     final double dropdownAreaHeight = 48.0;
-    final double effectiveDropdownBorderRadius = widget.dropdownBorderRadius ?? AppTheme.borderRadiusSmall;
+    final double effectiveDropdownBorderRadius = widget.dropdownBorderRadius ?? AppTheme.borderRadiusTiny;
     final double effectiveIconSize = widget.iconSize ?? 24.0;
 
     final TextStyle titleStyle = AppTheme.safeOutfit(

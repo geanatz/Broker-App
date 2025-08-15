@@ -135,7 +135,7 @@ class _BankPopupState extends State<BankPopup> {
         decoration: ShapeDecoration(
           color: AppTheme.popupBackground,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           ),
           shadows: const [
             BoxShadow(
@@ -164,7 +164,7 @@ class _BankPopupState extends State<BankPopup> {
               decoration: ShapeDecoration(
                 color: AppTheme.containerColor1,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                 ),
               ),
               child: Column(

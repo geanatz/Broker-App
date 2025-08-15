@@ -297,8 +297,8 @@ class SidebarService {
     ),
     const ButtonConfig(
       id: 'matches',
-      title: 'Recomandare',
-      iconPath: 'assets/matcherIcon.svg',
+      title: 'Recomandare banca',
+      iconPath: 'assets/bankIcon.svg',
       actionType: ActionType.openPane,
       targetPane: PaneType.matches,
     ),
@@ -368,8 +368,8 @@ class SidebarService {
     ),
     const SidebarButtonConfig(
       id: 'form_recommendation',
-      title: 'Recomandare',
-      iconPath: 'assets/matcherIcon.svg',
+      title: 'Recomandare banca',
+      iconPath: 'assets/bankIcon.svg',
       actionType: SidebarButtonActionType.showSecondaryPanel,
       targetPanel: SecondaryPanelType.recommendation,
       visibleOnScreen: NavigationScreen.form,
