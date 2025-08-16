@@ -282,14 +282,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: [
-          BoxShadow(
-            color: Color(0x19000000),
-            blurRadius: 15,
-            offset: Offset(0, 0),
-            spreadRadius: 0,
-          )
-        ],
+        // Removed shadow as requested
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -394,7 +387,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                           children: [
                             // Monthly Payment
                             LightItem3(
-                              title: 'Rata lunara',
+                              title: 'Rata aviatocco',
                               description: _monthlyPayment > 0 ? _monthlyPayment.toStringAsFixed(1) : '0.0',
                               backgroundColor: AppTheme.containerColor1,
                               titleColor: AppTheme.elementColor2,

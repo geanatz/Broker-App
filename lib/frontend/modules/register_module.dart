@@ -146,10 +146,10 @@ class _RegisterPopupState extends State<RegisterPopup> {
           maxHeight: MediaQuery.of(context).size.height * 0.9,
         ),
         padding: const EdgeInsets.all(AppTheme.smallGap),
-        decoration: AppTheme.popupDecoration.copyWith(
-          color: AppTheme.popupBackground,
-          boxShadow: [AppTheme.widgetShadow],
+        decoration: BoxDecoration(
+          color: AppTheme.widgetBackground,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          // Removed shadow as requested
         ),
         child: SingleChildScrollView(
           child: Column(

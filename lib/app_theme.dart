@@ -145,23 +145,8 @@ class AppTheme extends ChangeNotifier {
   static const Color popupBackground = Color(0xFFD6D9DC);
 
   // ======== UMBRELE ========
-  static BoxShadow get widgetShadow => BoxShadow(
-    color: Colors.black.withValues(alpha: 0.1),
-    blurRadius: 15,
-  );
+  // Removed all shadows as requested
   
-  static BoxShadow get buttonShadow => BoxShadow(
-    color: Colors.black.withValues(alpha: 0.2),
-    blurRadius: 4,
-    offset: const Offset(0, 2),
-  );
-  
-  static BoxShadow get slotShadow => BoxShadow(
-    color: Colors.black.withValues(alpha: 0.2),
-    blurRadius: 4,
-    offset: const Offset(0, 2),
-  );
-
   // ======== STILURI TEXT ========
   static TextStyle get headerTitleStyle => GoogleFonts.outfit(
     fontSize: fontSizeLarge,
@@ -233,7 +218,6 @@ class AppTheme extends ChangeNotifier {
   static BoxDecoration get widgetDecoration => BoxDecoration(
     color: widgetBackground,
     borderRadius: BorderRadius.circular(borderRadiusMedium),
-    boxShadow: [widgetShadow],
   );
 
   // Decoratiune pentru popup-uri
@@ -258,7 +242,6 @@ class AppTheme extends ChangeNotifier {
   static BoxDecoration get reservedSlotDecoration => BoxDecoration(
     color: const Color(0xFFC6ACD3),
     borderRadius: BorderRadius.circular(borderRadiusSmall),
-    boxShadow: [slotShadow],
   );
 } 
 

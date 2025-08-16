@@ -867,14 +867,7 @@ class _FormAreaState extends State<FormArea> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: [
-          BoxShadow(
-            color: Color(0x19000000),
-            blurRadius: 15,
-            offset: Offset(0, 0),
-            spreadRadius: 0,
-          )
-        ],
+        // Removed shadow as requested
       ),
       child: Center(
         child: Column(
@@ -925,14 +918,7 @@ class _FormAreaState extends State<FormArea> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: [
-          BoxShadow(
-            color: Color(0x19000000),
-            blurRadius: 15,
-            offset: Offset(0, 0),
-            spreadRadius: 0,
-          )
-        ],
+        // Removed shadow as requested
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1031,14 +1017,7 @@ class _FormAreaState extends State<FormArea> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: [
-          BoxShadow(
-            color: Color(0x19000000),
-            blurRadius: 15,
-            offset: Offset(0, 0),
-            spreadRadius: 0,
-          )
-        ],
+        // Removed shadow as requested
       ),
       child: Center(
         child: Column(
@@ -1094,14 +1073,6 @@ class _FormAreaState extends State<FormArea> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: [
-          BoxShadow(
-            color: Color(0x19000000),
-            blurRadius: 15,
-            offset: Offset(0, 0),
-            spreadRadius: 0,
-          )
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1152,14 +1123,6 @@ class _FormAreaState extends State<FormArea> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: [
-          BoxShadow(
-            color: Color(0x19000000),
-            blurRadius: 15,
-            offset: Offset(0, 0),
-            spreadRadius: 0,
-          )
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -59,6 +59,10 @@ class WidgetHeader6 extends StatelessWidget {
   /// Defaults to 24.0.
   final double? dateNavIconSize;
 
+  /// Optional custom widget for the title area.
+  /// If provided, this will replace the default title text.
+  final Widget? titleWidget;
+
   const WidgetHeader6({
     super.key,
     required this.title,
@@ -77,6 +81,7 @@ class WidgetHeader6 extends StatelessWidget {
     this.titleContainerHeight,
     this.dateTextContainerWidth,
     this.dateNavIconSize,
+    this.titleWidget,
   });
 
   @override
@@ -142,7 +147,7 @@ class WidgetHeader6 extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
+                  titleWidget ?? Text(
                     title,
                     style: finalTitleStyle,
                     overflow: TextOverflow.ellipsis,

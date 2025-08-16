@@ -1,7 +1,7 @@
 ﻿class UpdateConfig {
   // GitHub Repository Configuration
   static const String githubOwner = 'geanatz';
-  static const String githubRepo = 'Broker-App';
+  static const String githubRepo = 'MAT-Finance';
   static const String githubApiUrl = 'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
   
   // In-App Update Settings (Discord-style)

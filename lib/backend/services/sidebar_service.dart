@@ -13,7 +13,6 @@ enum AreaType {
 /// Enum defining the different pane types that can be displayed.
 enum PaneType {
   clients,       // Client management pane
-  meetings,      // Meetings management pane
   calculator,    // Financial calculator pane
   matches        // Bank matching recommendations pane
 }
@@ -281,13 +280,7 @@ class SidebarService {
       actionType: ActionType.openPane,
       targetPane: PaneType.clients,
     ),
-    const ButtonConfig(
-      id: 'meetings',
-      title: 'Intalniri',
-      iconPath: 'assets/meetingIcon.svg',
-      actionType: ActionType.openPane,
-      targetPane: PaneType.meetings,
-    ),
+
     const ButtonConfig(
       id: 'calculator',
       title: 'Calculator',
@@ -431,7 +424,7 @@ class SidebarService {
       case SecondaryPanelType.calls:
         return PaneType.clients;
       case SecondaryPanelType.returns:
-        return PaneType.meetings;
+        return PaneType.clients;
       case SecondaryPanelType.calculator:
         return PaneType.calculator;
       case SecondaryPanelType.recommendation:
@@ -458,8 +451,6 @@ class SidebarService {
     switch (pane) {
       case PaneType.clients:
         return SecondaryPanelType.calls;
-      case PaneType.meetings:
-        return SecondaryPanelType.returns;
       case PaneType.calculator:
         return SecondaryPanelType.calculator;
       case PaneType.matches:

@@ -478,7 +478,7 @@ class _ClientsPaneState extends State<ClientsPane> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: [AppTheme.widgetShadow],
+        // Removed shadow as requested
       ),
       child: isApeluri 
           ? Column(

@@ -195,13 +195,7 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
                     decoration: BoxDecoration(
                       color: effectiveDropdownContainerColor,
                       borderRadius: dropdownRadius,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(15),
-                          blurRadius: 16,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                      // Removed shadow as requested
                     ),
                   ),
                   style: selectedOptionStyle,

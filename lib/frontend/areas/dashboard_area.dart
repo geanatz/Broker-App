@@ -117,6 +117,42 @@ class _DashboardAreaState extends State<DashboardArea> {
           ? AppTheme.elementColor1 
           : AppTheme.elementColor2,
       dateNavIconColor: AppTheme.elementColor1,
+      // Custom title widget pentru a include săgeata
+      titleWidget: _selectedTeamId != null 
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedTeamId = null),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: SvgPicture.asset(
+                        'assets/leftIcon.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(
+                          AppTheme.elementColor1,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8), // Gap de 8px
+                Text(
+                  title,
+                  style: AppTheme.safeOutfit(
+                    color: AppTheme.elementColor1,
+                    fontSize: AppTheme.fontSizeLarge,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            )
+          : null,
     );
   }
 
@@ -194,7 +230,7 @@ class _DashboardAreaState extends State<DashboardArea> {
         decoration: ShapeDecoration(
           color: AppTheme.containerColor1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),
         ),
         child: Center(
@@ -234,7 +270,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       decoration: ShapeDecoration(
         color: AppTheme.containerColor1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
       ),
       child: Column(
@@ -296,13 +332,6 @@ class _DashboardAreaState extends State<DashboardArea> {
               decoration: BoxDecoration(
                 color: AppTheme.containerColor2,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(10),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               ),
                               child: Align(
                   alignment: Alignment.topCenter,
@@ -518,7 +547,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                 _buildStatCard('assets/formIcon.svg', '${stats?.formsCompletedThisMonth ?? 0} formulare'),
                 const SizedBox(width: 10),
                 // Meetings card
-                _buildStatCard('assets/meetingIcon.svg', '${stats?.totalMeetingsScheduled ?? 0} intalniri'),
+                _buildStatCard('assets/calendarIcon.svg', '${stats?.totalMeetingsScheduled ?? 0} intalniri'),
                 const SizedBox(width: 10),
                 // Duty agent card
                 if (_dashboardService.dutyAgent != null)

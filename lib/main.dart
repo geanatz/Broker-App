@@ -20,6 +20,7 @@ import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
 import 'package:mat_finance/backend/services/update_config.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -179,8 +180,14 @@ void main() async {
         if (ready) {
           final has = await updater.checkForUpdates();
           if (has) {
-            await updater.installUpdate();
-            return; // process exits inside installUpdate
+            final installed = await updater.installUpdate();
+            // Only abort normal startup if install succeeded and process exited inside installUpdate.
+            // If installation failed (returns false), continue normal startup to avoid headless hang.
+            if (installed) {
+              return; // process exits inside installUpdate when relaunch succeeds
+            }
+            // Cleanup stale/corrupt installer and continue
+            try { await updater.cancelUpdate(); } catch (_) {}
           } else {
             // Stale installer, clean up and continue normal startup
             await updater.cancelUpdate();
@@ -191,8 +198,11 @@ void main() async {
         if (has) {
           final ok = await updater.startDownload();
           if (ok) {
-            await updater.installUpdate();
-            return; // process exits inside installUpdate
+            final installed = await updater.installUpdate();
+            if (installed) {
+              return; // process exits inside installUpdate when relaunch succeeds
+            }
+            // If installation failed, fall through to normal app startup
           }
         }
       } catch (e) {
@@ -466,8 +476,45 @@ class _TitleBarIcon extends StatelessWidget {
   }
 }
 
-class _TitleBarDragRegion extends StatelessWidget {
+class _TitleBarDragRegion extends StatefulWidget {
   const _TitleBarDragRegion();
+
+  @override
+  State<_TitleBarDragRegion> createState() => _TitleBarDragRegionState();
+}
+
+class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
+  String _version = '0.1.8'; // Default fallback
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _version = packageInfo.version;
+        });
+      }
+    } catch (e) {
+      // Keep default version if loading fails
+    }
+  }
+
+  Future<void> _handleDoubleTap() async {
+    try {
+      final isMax = await windowManager.isMaximized();
+      if (isMax) {
+        await windowManager.unmaximize();
+      } else {
+        await windowManager.maximize();
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -479,7 +526,30 @@ class _TitleBarDragRegion extends StatelessWidget {
             await windowManager.startDragging();
           } catch (_) {}
         },
-        child: const SizedBox(height: 24),
+        onDoubleTap: _handleDoubleTap,
+        child: Row(
+          children: [
+            // Version display
+            Container(
+              padding: const EdgeInsets.only(left: 8),
+              child: SizedBox(
+                width: 48,
+                height: 24,
+                child: Center(
+                  child: Text(
+                    _version,
+                    style: GoogleFonts.firaMono(
+                      fontSize: 12,
+                      color: AppTheme.elementColor1,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const Spacer(),
+          ],
+        ),
       ),
     );
   }

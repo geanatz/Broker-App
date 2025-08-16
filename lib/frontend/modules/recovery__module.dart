@@ -108,10 +108,10 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
         width: popupWidth,
         height: popupHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
-        decoration: AppTheme.popupDecoration.copyWith(
-          color: AppTheme.popupBackground,
-          boxShadow: [AppTheme.widgetShadow],
+        decoration: BoxDecoration(
+          color: AppTheme.widgetBackground,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          // Removed shadow as requested
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

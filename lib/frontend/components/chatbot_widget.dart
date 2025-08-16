@@ -137,7 +137,11 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
           width: double.infinity,
           height: double.infinity, // Fill pe verticala
           padding: const EdgeInsets.all(AppTheme.smallGap),
-          decoration: AppTheme.widgetDecoration,
+          decoration: BoxDecoration(
+            color: AppTheme.widgetBackground,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+            // Removed shadow as requested
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -469,18 +473,21 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
               ),
             )
           else
-            GestureDetector(
-              onTap: _sendMessage,
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: SvgPicture.asset(
-                  'assets/sendIcon.svg',
-                  width: 20,
-                  height: 20,
-                  colorFilter: ColorFilter.mode(
-                    AppTheme.elementColor2,
-                    BlendMode.srcIn,
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _sendMessage,
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: SvgPicture.asset(
+                    'assets/sendIcon.svg',
+                    width: 20,
+                    height: 20,
+                    colorFilter: ColorFilter.mode(
+                      AppTheme.elementColor2,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),

@@ -569,11 +569,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Save navigation state
     _saveNavigationState();
     
-    // Refresh meetings when switching to meetings pane
-    if (pane == PaneType.meetings) {
-      // Meetings pane removed; redirect to clients
-      _sidebarService.changePane(PaneType.clients);
-    }
+
     
     // Refresh matcher data when switching to matches pane
     if (pane == PaneType.matches) {
@@ -887,12 +883,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       needsUpdate = true;
     }
     
-    // Enforce rule: meetings pane no longer exists; remap to clients when encountered
-    if (_currentPane == PaneType.meetings) {
-      _currentPane = PaneType.clients;
-      _sidebarService.syncPane(_currentPane);
-      needsUpdate = true;
-    }
+
     
     if (needsUpdate && mounted) {
       setState(() {});

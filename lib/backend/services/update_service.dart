@@ -377,10 +377,20 @@ class UpdateService {
       });
       // Build silent args and force installer log file into app support dir
       final appSupportDir = await getApplicationSupportDirectory();
-      final installerLogPath = '${appSupportDir.path}/${UpdateConfig.getUpdateDirectory()}/Installer.log';
+      final installerLogPath = ('${appSupportDir.path}/${UpdateConfig.getUpdateDirectory()}/Installer.log').replaceAll('/', '\\');
+      // Ensure log directory exists
+      try { await Directory('${appSupportDir.path}/${UpdateConfig.getUpdateDirectory()}').create(recursive: true); } catch (_) {}
+      // Force install directory to per-user LocalAppData to avoid privilege prompts and stale paths
+      final desiredInstallDir = (() {
+        final lad = Platform.environment['LOCALAPPDATA'] ?? '';
+        if (lad.isEmpty) return '';
+        final buf = StringBuffer(lad)..write('\\')..write('MAT Finance');
+        return buf.toString();
+      })();
       final args = <String>[
         ...UpdateConfig.windowsInstallerSilentArgs,
-        '/LOG="$installerLogPath"',
+        '/LOG=$installerLogPath',
+        if (desiredInstallDir.isNotEmpty) '/DIR=$desiredInstallDir',
       ];
       AppLogger.sync('update_service', 'installer_launch', {
         'path': installerPath,
@@ -389,12 +399,18 @@ class UpdateService {
       });
       _updateStatus('Pornire installer...');
       // Run the installer as a separate process; no cmd window
+      final installStartTs = DateTime.now();
       final process = await Process.start(
         installerPath,
         args,
         runInShell: false,
         workingDirectory: Directory.current.path,
       );
+      // Capture any stdout/stderr from installer for diagnostics
+      final stdoutBuffer = StringBuffer();
+      final stderrBuffer = StringBuffer();
+      unawaited(process.stdout.transform(utf8.decoder).listen((d) { stdoutBuffer.write(d); }).asFuture());
+      unawaited(process.stderr.transform(utf8.decoder).listen((d) { stderrBuffer.write(d); }).asFuture());
       AppLogger.sync('update_service', 'installer_started', {'pid': process.pid});
 
       // New strategy: wait for installer to finish, then launch installed app ourselves.
@@ -412,6 +428,64 @@ class UpdateService {
 
       AppLogger.sync('update_service', 'installer_finished', {'exit_code': exitCode});
 
+      // If installer failed, try to capture the tail of Installer.log for diagnostics
+      if (exitCode != 0) {
+        try {
+          final appSupportDir = await getApplicationSupportDirectory();
+          final installerLogPath = '${appSupportDir.path}/${UpdateConfig.getUpdateDirectory()}/Installer.log';
+          final logFile = File(installerLogPath);
+          if (await logFile.exists()) {
+            final content = await logFile.readAsString();
+            final lines = content.split(RegExp(r'\r?\n'));
+            final tailCount = lines.length >= 60 ? 60 : lines.length; // limit tail size
+            final tail = lines.sublist(lines.length - tailCount).join('\n');
+            AppLogger.error('update_service', 'installer_log_tail', tail);
+          } else {
+            // Try fallback: look into system temp for latest "Setup Log*.txt" near install time
+            try {
+              final tempDir = Directory.systemTemp;
+              final entries = tempDir
+                  .listSync()
+                  .whereType<File>()
+                  .where((f) {
+                    final name = f.path.toLowerCase();
+                    return name.contains('setup log') && name.endsWith('.txt');
+                  })
+                  .toList();
+              File? newest;
+              DateTime newestTime = DateTime.fromMillisecondsSinceEpoch(0);
+              for (final f in entries) {
+                final stat = await f.stat();
+                // Only consider logs written after installer started (with small negative tolerance)
+                final threshold = installStartTs.subtract(const Duration(seconds: 5));
+                if (stat.modified.isAfter(threshold) && stat.modified.isAfter(newestTime)) {
+                  newest = f;
+                  newestTime = stat.modified;
+                }
+              }
+              if (newest != null) {
+                final content = await newest.readAsString();
+                final lines = content.split(RegExp(r'\r?\n'));
+                final tailCount = lines.length >= 60 ? 60 : lines.length;
+                final tail = lines.sublist(lines.length - tailCount).join('\n');
+                AppLogger.error('update_service', 'installer_temp_log_tail', {'file': newest.path, 'tail': tail});
+              } else {
+                AppLogger.warning('update_service', 'installer_log_missing');
+              }
+            } catch (e) {
+              AppLogger.error('update_service', 'installer_temp_log_read_exception', e);
+            }
+          }
+        } catch (e) {
+          AppLogger.error('update_service', 'read_installer_log_exception', e);
+        }
+        // Also include any stdout/stderr captured
+        final so = stdoutBuffer.toString().trim();
+        if (so.isNotEmpty) { AppLogger.error('update_service', 'installer_stdout', so); }
+        final se = stderrBuffer.toString().trim();
+        if (se.isNotEmpty) { AppLogger.error('update_service', 'installer_stderr', se); }
+      }
+
       // Try to start the newly installed app from common install locations
       final localAppData = Platform.environment['LOCALAPPDATA'] ?? '';
       final programFiles = Platform.environment['ProgramFiles'] ?? '';
@@ -428,22 +502,10 @@ class UpdateService {
       }
 
       final candidates = <String>[
-        // New naming
+        // New naming only
         buildWinPath(localAppData, ['MAT Finance', UpdateConfig.getExecutableName()]),
         buildWinPath(programFiles, ['MAT Finance', UpdateConfig.getExecutableName()]),
         buildWinPath(programFilesX86, ['MAT Finance', UpdateConfig.getExecutableName()]),
-        // New folder with legacy exe name
-        buildWinPath(localAppData, ['MAT Finance', 'broker_app.exe']),
-        buildWinPath(programFiles, ['MAT Finance', 'broker_app.exe']),
-        buildWinPath(programFilesX86, ['MAT Finance', 'broker_app.exe']),
-        // Legacy folder with legacy exe name
-        buildWinPath(localAppData, ['Broker App', 'broker_app.exe']),
-        buildWinPath(programFiles, ['Broker App', 'broker_app.exe']),
-        buildWinPath(programFilesX86, ['Broker App', 'broker_app.exe']),
-        // Legacy folder with new exe name
-        buildWinPath(localAppData, ['Broker App', UpdateConfig.getExecutableName()]),
-        buildWinPath(programFiles, ['Broker App', UpdateConfig.getExecutableName()]),
-        buildWinPath(programFilesX86, ['Broker App', UpdateConfig.getExecutableName()]),
       ];
 
       AppLogger.sync('update_service', 'installed_path_candidates', {
@@ -576,25 +638,18 @@ class UpdateService {
 
     // Preferred new installer name
     final preferred = UpdateConfig.getInstallerName();
-    final legacyNames = <String>[
-      'BrokerAppInstaller.exe',
-      'broker_app_installer.exe',
-    ];
+    // legacy names removed
 
     // 1) Try preferred exact match
     final preferredUrl = exactMatch(preferred);
     if (preferredUrl != null) return preferredUrl;
 
-    // 2) Try legacy exact matches
-    for (final legacy in legacyNames) {
-      final url = exactMatch(legacy);
-      if (url != null) return url;
-    }
+    // 2) No legacy exact matches
 
-    // 3) Heuristic fallback: any .exe asset that contains 'Installer'
+    // 3) Heuristic fallback: exact match on configured installer name (case-insensitive)
     for (final asset in assets) {
       final assetName = (asset['name']?.toString() ?? '').toLowerCase();
-      if (assetName.endsWith('.exe') && assetName.contains('installer')) {
+      if (assetName == UpdateConfig.getInstallerName().toLowerCase()) {
         return asset['browser_download_url']?.toString();
       }
     }
@@ -658,9 +713,8 @@ class UpdateService {
       final fallbackNames = <String>[
         _downloadAssetName ?? '',
         UpdateConfig.getInstallerName(),
-        'BrokerAppInstaller.exe',
       ].where((e) => e.isNotEmpty).toList();
-      final saveName = isInstaller ? fallbackNames.first : 'broker_app_update.unsupported';
+      final saveName = isInstaller ? fallbackNames.first : 'update.unsupported';
       _updateFilePath = '${updateDir.path}/$saveName';
       AppLogger.sync('update_service', 'download_paths', {
         'target_dir': updateDir.path,
@@ -845,7 +899,6 @@ class UpdateService {
       // Look for any known installer file names
       final candidates = <String>[
         '${updateDir.path}/${UpdateConfig.getInstallerName()}',
-        '${updateDir.path}/BrokerAppInstaller.exe',
       ];
       File? installerFile;
       for (final path in candidates) {

@@ -239,14 +239,6 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
-        shadows: const [
-          BoxShadow(
-            color: Color(0x19000000),
-            blurRadius: 15,
-            offset: Offset(0, 0),
-            spreadRadius: 0,
-          )
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
