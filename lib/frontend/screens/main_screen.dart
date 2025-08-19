@@ -27,6 +27,8 @@ import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 // window_manager no longer used here; handlers moved to main.dart
 import 'dart:ui';
+import 'package:flutter/scheduler.dart';
+import 'dart:async';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -89,6 +91,58 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   List<Client> _popupClients = [];
   Client? _selectedPopupClient;
   bool _isShowingClientListPopup = false;
+  
+  // Transition profiling state
+  final Stopwatch _transitionStopwatch = Stopwatch();
+  bool _transitionProfilingActive = false;
+  final List<FrameTiming> _transitionFrameTimings = <FrameTiming>[];
+  TimingsCallback? _transitionTimingsCallback;
+
+  void _startTransitionProfiling(String label) {
+    if (_transitionProfilingActive) return;
+    _transitionProfilingActive = true;
+    _transitionFrameTimings.clear();
+    _transitionStopwatch
+      ..reset()
+      ..start();
+    debugPrint('ANIM_METRICS: start | label=$label');
+    _transitionTimingsCallback = (List<FrameTiming> timings) {
+      if (!_transitionProfilingActive) return;
+      _transitionFrameTimings.addAll(timings);
+    };
+    SchedulerBinding.instance.addTimingsCallback(_transitionTimingsCallback!);
+  }
+
+  void _stopTransitionProfiling({String reason = 'completed'}) {
+    if (!_transitionProfilingActive) return;
+    _transitionProfilingActive = false;
+    _transitionStopwatch.stop();
+    if (_transitionTimingsCallback != null) {
+      SchedulerBinding.instance.removeTimingsCallback(_transitionTimingsCallback!);
+    }
+    final int totalMs = _transitionStopwatch.elapsedMilliseconds;
+    final int frames = _transitionFrameTimings.length;
+    double avgBuildMs = 0.0, avgRasterMs = 0.0, maxBuildMs = 0.0, maxRasterMs = 0.0;
+    int jankBuild = 0, jankRaster = 0;
+    if (frames > 0) {
+      int sumBuildUs = 0, sumRasterUs = 0;
+      for (final t in _transitionFrameTimings) {
+        final double buildMs = t.buildDuration.inMicroseconds / 1000.0;
+        final double rasterMs = t.rasterDuration.inMicroseconds / 1000.0;
+        sumBuildUs += t.buildDuration.inMicroseconds;
+        sumRasterUs += t.rasterDuration.inMicroseconds;
+        if (buildMs > maxBuildMs) maxBuildMs = buildMs;
+        if (rasterMs > maxRasterMs) maxRasterMs = rasterMs;
+        if (buildMs > 16.7) jankBuild++;
+        if (rasterMs > 16.7) jankRaster++;
+      }
+      avgBuildMs = sumBuildUs / frames / 1000.0;
+      avgRasterMs = sumRasterUs / frames / 1000.0;
+    }
+    debugPrint(
+      'ANIM_METRICS: end | reason=$reason totalMs=$totalMs frames=$frames avgBuildMs=${avgBuildMs.toStringAsFixed(2)} avgRasterMs=${avgRasterMs.toStringAsFixed(2)} maxBuildMs=${maxBuildMs.toStringAsFixed(2)} maxRasterMs=${maxRasterMs.toStringAsFixed(2)} jankBuild=$jankBuild jankRaster=$jankRaster',
+    );
+  }
   
   @override
   void initState() {
@@ -449,31 +503,91 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               _buildSidebar(),
               // Spatiu intre sidebar si containerul combinat
               const SizedBox(width: AppTheme.mediumGap),
-              // Container combinat pentru Area (stanga) + Pane (dreapta)
+              // Container combinat pentru Area (stanga) + Pane (dreapta) cu bounce pe intrare/iesire pentru TOT box-ul
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(AppTheme.smallGap),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.boxColor,
-                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Area (stanga)
-                      Expanded(
-                        child: _areaWidgets[_currentArea]!,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 320),
+                  reverseDuration: const Duration(milliseconds: 240),
+                  switchInCurve: Curves.linear,
+                  switchOutCurve: Curves.linear,
+                  layoutBuilder: (currentChild, previousChildren) {
+                    final prev = previousChildren.isNotEmpty
+                        ? <Widget>[previousChildren.last]
+                        : const <Widget>[];
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: <Widget>[
+                        ...prev,
+                        if (currentChild != null) currentChild,
+                      ],
+                    );
+                  },
+                  transitionBuilder: (child, animation) {
+                    final bool isIncoming = child.key == ValueKey(_currentArea);
+                    if (isIncoming) {
+                      // Intrare: bounce cozy (easeOutBack)
+                      if (!_transitionProfilingActive) {
+                        _startTransitionProfiling('area_change to $_currentArea');
+                      }
+                      final curved = CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                        reverseCurve: Curves.easeInBack,
+                      );
+                      curved.addStatusListener((status) {
+                        if (status == AnimationStatus.completed) {
+                          _stopTransitionProfiling(reason: 'incoming_completed');
+                        }
+                      });
+                      return ScaleTransition(
+                        scale: Tween<double>(begin: 0.985, end: 1.0).animate(curved),
+                        child: child,
+                      );
+                    } else {
+                      // Iesire: bounce-back cozy (easeInBack)
+                      final curved = CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeInBack,
+                        reverseCurve: Curves.easeOutBack,
+                      );
+                      curved.addStatusListener((status) {
+                        if (status == AnimationStatus.dismissed) {
+                          _stopTransitionProfiling(reason: 'outgoing_dismissed');
+                        }
+                      });
+                      return ScaleTransition(
+                        scale: Tween<double>(begin: 1.0, end: 0.992).animate(curved),
+                        child: child,
+                      );
+                    }
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey(_currentArea),
+                    child: RepaintBoundary(
+                      child: Container(
+                      padding: const EdgeInsets.all(AppTheme.smallGap),
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.boxColor,
+                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
                       ),
-                      // Gap 8 intre area si pane (doar cand pane este vizibil)
-                      if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
-                        const SizedBox(width: AppTheme.smallGap),
-                      // Pane (dreapta) - ascuns pe dashboard, settings si calendar
-                      if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
-                SizedBox(
-                  width: 296,
-                  child: _paneWidgets[_currentPane]!,
-                ),
-                    ],
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Area (stanga)
+                          Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
+                          // Gap 8 intre area si pane (doar cand pane este vizibil)
+                          if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
+                            const SizedBox(width: AppTheme.smallGap),
+                          // Pane (dreapta) - ascuns pe dashboard, settings si calendar
+                          if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
+                            SizedBox(
+                              width: 296,
+                              child: RepaintBoundary(child: _paneWidgets[_currentPane]!),
+                            ),
+                        ],
+                      ),
+                      ),
+                    ),
                   ),
                 ),
               ),
