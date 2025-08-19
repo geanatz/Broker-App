@@ -391,8 +391,12 @@ class _MyAppState extends State<MyApp> {
                     Expanded(child: child ?? const SizedBox.shrink()),
                   ],
                 ),
-                // Global dimmer above titlebar when any dialog is shown
-                Positioned.fill(
+                // Titlebar-only dimmer when any dialog/popup is shown
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: 40,
                   child: IgnorePointer(
                     ignoring: true,
                     child: ValueListenableBuilder<bool>(

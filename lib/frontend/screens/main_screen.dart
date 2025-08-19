@@ -18,6 +18,7 @@ import 'package:mat_finance/backend/services/update_service.dart';
 import 'package:mat_finance/backend/services/app_logger.dart';
 import 'package:mat_finance/frontend/components/update_notification.dart';
 import 'package:mat_finance/frontend/components/dialog_utils.dart';
+import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // import removed
 import 'package:google_fonts/google_fonts.dart';
@@ -25,6 +26,7 @@ import 'package:mat_finance/frontend/screens/mobile_clients_screen.dart';
 import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 // window_manager no longer used here; handlers moved to main.dart
+import 'dart:ui';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -496,36 +498,47 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Widget _buildDualPopupOverlay() {
     return GestureDetector(
       onTap: _closeAllPopups, // Inchide popup-ul la click pe background
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.5),
-        child: Center(
-          child: GestureDetector(
-            onTap: () {}, // Previne inchiderea cand se face click pe popup
-            child: Material(
-              color: Colors.transparent,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Client List Popup (intotdeauna vizibil cand e deschis)
-                  if (_isShowingClientListPopup)
-                    ClientsPopup(
-                      clients: _popupClients,
-                      selectedClient: _selectedPopupClient,
-                      onClientSelected: _handleClientSelected,
-                      onEditClient: _handleEditClient,
-                      onSaveClient: _handleSaveClient,
-                      onDeleteClient: (client) => _handleDeleteClient(client),
-
-                      onDeleteOcrClients: _handleDeleteOcrClients,
-                    ),
-                  
-                  // Form-ul de editare e acum integrat in ClientsPopup
-                ],
+      child: Stack(
+        children: [
+          // Blur + dim uniform sub popup (consistent cu showBlurredDialog)
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(color: Colors.black.withValues(alpha: 0.1)),
+            ),
+          ),
+          // Continutul popup-ului
+          Positioned.fill(
+            child: Center(
+              child: GestureDetector(
+                onTap: () {}, // Previne inchiderea cand se face click pe popup
+                behavior: HitTestBehavior.opaque,
+                child: Material(
+                  color: Colors.transparent,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Client List Popup (intotdeauna vizibil cand e deschis)
+                      if (_isShowingClientListPopup)
+                        ClientsPopup(
+                          clients: _popupClients,
+                          selectedClient: _selectedPopupClient,
+                          onClientSelected: _handleClientSelected,
+                          onEditClient: _handleEditClient,
+                          onSaveClient: _handleSaveClient,
+                          onDeleteClient: (client) => _handleDeleteClient(client),
+                          onDeleteOcrClients: _handleDeleteOcrClients,
+                        ),
+                      
+                      // Form-ul de editare e acum integrat in ClientsPopup
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -594,6 +607,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       // Nu selecta niciun client implicit la deschiderea popup-ului
       _selectedPopupClient = null;
     });
+    DialogOverlayController.instance.push();
   }
 
   /// Handles switching to form area when a client is selected
@@ -610,6 +624,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     setState(() {
       _isShowingClientListPopup = false;
     });
+    DialogOverlayController.instance.pop();
   }
   
   /// Handles client selection in the popup

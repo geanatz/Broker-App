@@ -2077,3 +2077,90 @@ File: D:\Repositories\Broker-App/logs.txt
 [2025-08-16T17:40:11.696848] MAIN_SCREEN: build_called
 [2025-08-16T17:40:14.579791] CLIENTS_SERVICE: load_clients_ms | ms=4
 [2025-08-16T17:40:14.957593] MAIN_SCREEN: build_called
+
+================================
+[2025-08-19T15:08:01.157534] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-19T15:08:01.159596] UPDATE_SERVICE: initialized | version=0.1.8, dir=D:\Repositories\Broker-App
+[2025-08-19T15:08:01.160605] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-19T15:08:01.442920] CLIENTS_SERVICE: load_clients_ms | ms=255
+[2025-08-19T15:08:01.647191] FIREBASE_SERVICE: team_meetings_ms | ms=209, tokens=2
+[2025-08-19T15:08:01.648696] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=479
+[2025-08-19T15:08:04.472784] CLIENTS_SERVICE: load_clients_ms | ms=237
+[2025-08-19T15:08:04.821386] MAIN_SCREEN: init_state
+[2025-08-19T15:08:04.824434] MAIN_SCREEN: build_called
+[2025-08-19T15:08:04.909097] MAIN_SCREEN: post_frame_callback
+[2025-08-19T15:08:04.909097] MAIN_SCREEN: whats_new_check_start
+[2025-08-19T15:08:04.921193] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-19T15:08:04.921193] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-19T15:08:04.921193] MAIN_SCREEN: whats_new_missing
+[2025-08-19T15:08:10.663556] MAIN_SCREEN: build_called
+[2025-08-19T15:08:11.099507] FIREBASE_SERVICE: team_meetings_ms | ms=192, tokens=2
+[2025-08-19T15:08:11.101498] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=431
+
+================================
+[2025-08-19T15:43:22.442571] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-19T15:43:22.445750] UPDATE_SERVICE: initialized | version=0.1.8, dir=D:\Repositories\Broker-App
+[2025-08-19T15:43:22.447759] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-19T15:43:22.742228] CLIENTS_SERVICE: load_clients_ms | ms=249
+[2025-08-19T15:43:23.173424] FIREBASE_SERVICE: team_meetings_ms | ms=437, tokens=2
+[2025-08-19T15:43:23.174425] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=707
+[2025-08-19T15:43:25.466303] CLIENTS_SERVICE: load_clients_ms | ms=195
+[2025-08-19T15:43:25.865983] MAIN_SCREEN: init_state
+[2025-08-19T15:43:25.868983] MAIN_SCREEN: build_called
+[2025-08-19T15:43:25.964705] MAIN_SCREEN: post_frame_callback
+[2025-08-19T15:43:25.964705] MAIN_SCREEN: whats_new_check_start
+[2025-08-19T15:43:25.979836] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-19T15:43:25.979836] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-19T15:43:25.979836] MAIN_SCREEN: whats_new_missing
+[2025-08-19T15:43:30.379343] MAIN_SCREEN: build_called
+[2025-08-19T15:43:32.577283] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-19T15:43:38.941716] MAIN_SCREEN: build_called
+[2025-08-19T15:43:42.709034] MAIN_SCREEN: build_called
+
+================================
+[2025-08-19T15:43:52.584326] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-19T15:43:52.584326] UPDATE_SERVICE: initialized | version=0.1.8, dir=D:\Repositories\Broker-App
+[2025-08-19T15:43:52.585331] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-19T15:43:53.830697] CLIENTS_SERVICE: load_clients_ms | ms=199
+[2025-08-19T15:43:54.788031] MAIN_SCREEN: init_state
+[2025-08-19T15:43:54.789028] MAIN_SCREEN: build_called
+[2025-08-19T15:43:54.815021] MAIN_SCREEN: post_frame_callback
+[2025-08-19T15:43:54.815021] MAIN_SCREEN: whats_new_check_start
+[2025-08-19T15:43:54.818033] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-19T15:43:54.818537] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-19T15:43:54.818537] MAIN_SCREEN: whats_new_missing
+[2025-08-19T15:43:56.437722] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-19T15:43:58.056077] MAIN_SCREEN: build_called
+[2025-08-19T15:44:02.790481] MAIN_SCREEN: build_called
+[2025-08-19T15:44:06.243617] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-19T15:44:06.515639] CLIENTS_SERVICE: load_clients_ms | ms=3
+[2025-08-19T15:44:06.537897] MAIN_SCREEN: build_called
+[2025-08-19T16:01:29.712892] MAIN_SCREEN: build_called
+[2025-08-19T16:01:30.120244] FIREBASE_SERVICE: team_meetings_ms | ms=189, tokens=2
+[2025-08-19T16:01:30.121237] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=403
+[2025-08-19T16:01:31.480854] CLIENTS_SERVICE: load_clients_ms | ms=3
+[2025-08-19T16:01:32.930165] MAIN_SCREEN: build_called
+[2025-08-19T16:03:48.797648] MAIN_SCREEN: build_called
+[2025-08-19T16:03:49.141313] FIREBASE_SERVICE: team_meetings_ms | ms=193, tokens=2
+[2025-08-19T16:03:49.142311] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=341
+[2025-08-19T16:03:50.808913] CLIENTS_SERVICE: load_clients_ms | ms=3
+[2025-08-19T16:03:52.438895] MAIN_SCREEN: build_called
+[2025-08-19T16:07:14.903452] MAIN_SCREEN: build_called
+[2025-08-19T16:07:53.389664] MAIN_SCREEN: build_called
+[2025-08-19T16:07:56.910317] MAIN_SCREEN: build_called
+[2025-08-19T16:08:01.056172] MAIN_SCREEN: build_called
+[2025-08-19T16:10:35.506515] MAIN_SCREEN: build_called
+[2025-08-19T16:10:43.618550] MAIN_SCREEN: build_called
+[2025-08-19T16:10:47.473175] MAIN_SCREEN: build_called
+[2025-08-19T16:10:55.102455] MAIN_SCREEN: build_called
+[2025-08-19T16:10:59.878776] MAIN_SCREEN: build_called
+[2025-08-19T16:11:25.542253] MAIN_SCREEN: build_called
+[2025-08-19T16:11:41.131763] MAIN_SCREEN: build_called
+[2025-08-19T16:11:59.258473] MAIN_SCREEN: build_called
+[2025-08-19T16:12:38.474889] MAIN_SCREEN: build_called
