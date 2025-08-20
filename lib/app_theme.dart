@@ -243,5 +243,17 @@ class AppTheme extends ChangeNotifier {
     color: const Color(0xFFC6ACD3),
     borderRadius: BorderRadius.circular(borderRadiusSmall),
   );
+
+  // ======== CALENDAR SLOT THEME ========
+  // Free slot base fill when not hovered (no stroke)
+  static const Color calendarFreeFill = Color(0xFFBEC7D0); // BEC7D0
+
+  // Hovered free slot stroke gradient
+  static const Color calendarHoverStrokeTop = Color(0xFFCAD1D8); // CAD1D8
+  static const Color calendarHoverStrokeBottom = Color(0xFFBEC7D0); // BEC7D0
+
+  // Reserved slot stroke gradient
+  static const Color calendarReservedStrokeTop = Color(0xFFA1B7CE); // A1B7CE
+  static const Color calendarReservedStrokeBottom = Color(0xFF93ADC8); // 93ADC8
 } 
 

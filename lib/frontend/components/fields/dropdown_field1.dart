@@ -124,6 +124,19 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
       bottomRight: Radius.circular(effectiveDropdownBorderRadius),
     );
 
+    // Sanitize items: deduplicate by value to satisfy DropdownButton's assertion
+    final List<DropdownMenuItem<T>> uniqueItems = <DropdownMenuItem<T>>[];
+    final Set<T?> seenValues = <T?>{};
+    for (final DropdownMenuItem<T> item in widget.items) {
+      if (seenValues.contains(item.value)) continue;
+      seenValues.add(item.value);
+      uniqueItems.add(item);
+    }
+    // If current value is not uniquely present, null it out to avoid assertion
+    final bool hasUniqueSelection = widget.value != null &&
+        uniqueItems.any((DropdownMenuItem<T> item) => item.value == widget.value);
+    final T? effectiveValue = hasUniqueSelection ? widget.value : null;
+
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: widget.minWidth),
       child: SizedBox(
@@ -160,8 +173,8 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton2<T>(
-                  value: widget.value,
-                  items: widget.items,
+                  value: effectiveValue,
+                  items: uniqueItems,
                   onChanged: widget.enabled ? widget.onChanged : null,
                   hint: widget.hintText != null
                       ? Text(
@@ -200,7 +213,7 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
                   ),
                   style: selectedOptionStyle,
                   selectedItemBuilder: (BuildContext context) {
-                    return widget.items.map<Widget>((DropdownMenuItem<T> item) {
+                    return uniqueItems.map<Widget>((DropdownMenuItem<T> item) {
                       return Container(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -212,12 +225,23 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
                     }).toList();
                   },
                   disabledHint: widget.value != null
-                      ? Text(
-                          widget.items.firstWhere((item) => item.value == widget.value, orElse: () => DropdownMenuItem<T>(value: widget.value, child: Text(widget.value.toString()))).child is Text
-                              ? (widget.items.firstWhere((item) => item.value == widget.value).child as Text).data ?? ''
-                              : widget.value.toString(),
-                          style: selectedOptionStyle,
-                        )
+                      ? (() {
+                          final DropdownMenuItem<T> match = uniqueItems.firstWhere(
+                            (item) => item.value == widget.value,
+                            orElse: () => DropdownMenuItem<T>(
+                              value: widget.value,
+                              child: Text(widget.value.toString()),
+                            ),
+                          );
+                          final Widget child = match.child;
+                          final String label = child is Text
+                              ? (child.data ?? widget.value.toString())
+                              : widget.value.toString();
+                          return Text(
+                            label,
+                            style: selectedOptionStyle,
+                          );
+                        })()
                       : (widget.hintText != null
                           ? Text(
                               widget.hintText!,

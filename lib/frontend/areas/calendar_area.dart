@@ -14,10 +14,8 @@ import 'package:mat_finance/backend/services/firebase_service.dart';
 
 // Import the required components
 import 'package:mat_finance/frontend/components/headers/widget_header6.dart';
-import 'package:mat_finance/frontend/components/items/outlined_item6.dart';
+import 'package:mat_finance/frontend/components/items/calendar_slot.dart';
 import 'package:mat_finance/frontend/components/dialog_utils.dart';
-import 'package:mat_finance/frontend/components/items/dark_item4.dart';
-import 'package:mat_finance/frontend/components/items/dark_item2.dart';
 import 'package:intl/intl.dart';
 import 'package:mat_finance/frontend/components/headers/widget_header1.dart';
 import 'package:mat_finance/frontend/components/items/light_item7.dart';
@@ -64,7 +62,6 @@ class CalendarAreaState extends State<CalendarArea> {
   DateTime? _lastLoadTime;
   
   // Highlight functionality
-  String? _highlightedMeetingId;
   Timer? _highlightTimer;
 
   // Upcoming meetings (formerly meetings pane) state
@@ -512,11 +509,15 @@ class CalendarAreaState extends State<CalendarArea> {
         controller: _scrollController,
         scrollSpeed: 120.0, // Viteza mai mare pentru calendarul cu multe randuri
         animationDuration: const Duration(milliseconds: 300),
-        child: SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
+        child: Scrollbar(
           controller: _scrollController,
-          child: Column(
-            children: _buildHourRows(meetingsMap, meetingsDocIds),
+          thumbVisibility: false,
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
+            controller: _scrollController,
+            child: Column(
+              children: _buildHourRows(meetingsMap, meetingsDocIds),
+            ),
           ),
         ),
       );
@@ -585,7 +586,7 @@ class CalendarAreaState extends State<CalendarArea> {
     });
   }
 
-  /// Construieste un slot rezervat conform designului folosind DarkItem4 sau DarkItem2 (OPTIMIZAT: logging redus)
+  /// Construieste un slot rezervat cu CalendarSlot (design nou)
   Widget _buildMeetingSlot(Map<String, dynamic> meetingData, String docId) {
     // OPTIMIZARE: Citeste datele din structura corecta cu fallback-uri mai robuste
     final additionalData = meetingData['additionalData'] as Map<String, dynamic>?;
@@ -598,16 +599,32 @@ class CalendarAreaState extends State<CalendarArea> {
       consultantName = additionalData['consultantName'].toString();
     }
     
-    // OPTIMIZARE: Incearca sa gasesti clientName din toate sursele posibile
-    String clientName = 'N/A';
-    if (meetingData.containsKey('clientName') && meetingData['clientName'] != null && meetingData['clientName'].toString().trim().isNotEmpty) {
-      clientName = meetingData['clientName'].toString();
-    } else if (additionalData != null && additionalData.containsKey('clientName') && additionalData['clientName'] != null && additionalData['clientName'].toString().trim().isNotEmpty) {
-      clientName = additionalData['clientName'].toString();
+    // Derive time text from meeting dateTime
+    String timeText = '';
+    try {
+      final dynamic rawDateTime = meetingData['dateTime'];
+      DateTime dateTime;
+      if (rawDateTime is DateTime) {
+        dateTime = rawDateTime;
+      } else if (rawDateTime is int) {
+        dateTime = DateTime.fromMillisecondsSinceEpoch(rawDateTime);
+      } else if (rawDateTime != null && rawDateTime.toString().contains('Timestamp')) {
+        // Avoid importing Timestamp type directly; rely on toString heuristic fallback
+        // Many Firebase Timestamp implementations provide toDate(); attempt via dynamic
+        try {
+          final dynamic dyn = rawDateTime;
+          final DateTime parsed = dyn.toDate();
+          dateTime = parsed;
+        } catch (_) {
+          dateTime = DateTime.now();
+        }
+      } else {
+        dateTime = DateTime.now();
+      }
+      timeText = DateFormat('HH:mm').format(dateTime);
+    } catch (_) {
+      timeText = '';
     }
-    
-    // OPTIMIZARE: Log redus - doar pentru debugging cand e necesar
-    // debugPrint('🔍 CALENDAR_AREA: Building meeting slot: $clientName');
     
     final consultantId = additionalData?['consultantId'] as String?;
     final currentUserId = _auth.currentUser?.uid;
@@ -635,60 +652,20 @@ class CalendarAreaState extends State<CalendarArea> {
       }
     }
     
-    final bool isHighlighted = _highlightedMeetingId == docId;
-    
-    // OPTIMIZARE: Debug redus - doar pentru debugging cand e necesar
-    // debugPrint('  - isOwner: $isOwner');
-    
-    // Check if client name is valid and not empty
-    final hasRealClientName = clientName.trim().isNotEmpty &&
-        clientName != 'N/A' &&
-        clientName != 'Client necunoscut' &&
-        clientName != 'Client nedefinit';
-
-    // Calculate background color with highlight effect
-    Color backgroundColor = AppTheme.containerColor2;
-    if (isHighlighted) {
-      // Add 20% white overlay for highlight effect
-      backgroundColor = Color.lerp(backgroundColor, Colors.white, 0.2) ?? backgroundColor;
-    }
-
-    return MouseRegion(
-      cursor: isOwner ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: hasRealClientName 
-        ? DarkItem4(
-            title: consultantName,
-            description: clientName,
-            onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
-            backgroundColor: backgroundColor,
-            titleColor: AppTheme.elementColor3,
-            descriptionColor: AppTheme.elementColor2,
-            borderRadius: AppTheme.borderRadiusSmall,
-          )
-        : DarkItem2(
-            title: consultantName,
-            onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
-            backgroundColor: backgroundColor,
-            titleColor: AppTheme.elementColor3,
-            borderRadius: AppTheme.borderRadiusSmall,
-          ),
+    return CalendarSlot.reserved(
+      consultantName: consultantName,
+      timeText: timeText,
+      isClickable: isOwner,
+      onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
     );
   }
 
-  /// Construieste un slot liber conform designului folosind OutlinedItem6
+  /// Construieste un slot liber cu CalendarSlot (design nou)
   Widget _buildAvailableSlot(int dayIndex, int hourIndex) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: OutlinedItem6(
-        title: 'Liber',
-        svgAsset: 'assets/addIcon.svg',
-        onTap: () => _showCreateMeetingDialog(dayIndex, hourIndex),
-        mainBorderColor: AppTheme.containerColor2,
-        mainBorderWidth: 4.0,
-        titleColor: AppTheme.elementColor2,
-        iconColor: AppTheme.elementColor2,
-        mainBorderRadius: AppTheme.borderRadiusSmall,
-      ),
+    final String hourText = CalendarService.workingHours[hourIndex];
+    return CalendarSlot.free(
+      hourText: hourText,
+      onTap: () => _showCreateMeetingDialog(dayIndex, hourIndex),
     );
   }
 
@@ -881,7 +858,6 @@ class CalendarAreaState extends State<CalendarArea> {
   void _highlightMeeting(String meetingId) {
     if (mounted) {
       setState(() {
-        _highlightedMeetingId = meetingId;
       });
     }
     
@@ -890,7 +866,6 @@ class CalendarAreaState extends State<CalendarArea> {
     _highlightTimer = Timer(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() {
-          _highlightedMeetingId = null;
         });
       }
     });
