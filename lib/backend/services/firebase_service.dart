@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart'
 import 'clients_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'app_logger.dart';
+import 'splash_service.dart';
 
 /// Custom logging utility for Firebase operations
 class FirebaseLogger {
@@ -1491,6 +1492,20 @@ class NewFirebaseService {
         await batch.commit();
         return true;
       });
+      
+      // CROSS-PLATFORM FIX: Trigger immediate aggressive cache invalidation
+      if (success) {
+        // Trigger immediate cache invalidation in background to avoid blocking
+        Future.microtask(() async {
+          try {
+            final splashService = SplashService();
+            await splashService.invalidateAllMeetingCaches();
+            debugPrint('🔄 FIREBASE_SERVICE: Meeting cache invalidated after creation');
+          } catch (e) {
+            debugPrint('⚠️ FIREBASE_SERVICE: Error invalidating meeting cache: $e');
+          }
+        });
+      }
 
       return success;
     } catch (e) {
@@ -1610,22 +1625,42 @@ class NewFirebaseService {
     }
   }
 
-  /// Obtine intalnirile pentru echipa consultantului curent (FIX: mai robust filtering)
+  /// CROSS-PLATFORM FIX: Enhanced team meetings retrieval with network resilience
   Future<List<Map<String, dynamic>>> getTeamMeetings() async {
     final team = await getCurrentConsultantTeam();
-    if (team == null) {
+    if (team == null || team.isEmpty) {
+      debugPrint('❌ FIREBASE_SERVICE: No team found for current consultant');
       return [];
     }
 
+    debugPrint('🔍 FIREBASE_SERVICE: Fetching team meetings for team: $team');
+
     try {
       final swTeam = Stopwatch()..start();
-      // Obtine toti consultantii din echipa si colecteaza token-urile
-      final teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(
-        () => _firestore
-            .collection(_consultantsCollection)
-            .where('team', isEqualTo: team)
-            .get(),
-      );
+      
+      // CROSS-PLATFORM FIX: Network-aware team consultant fetching with retry
+      QuerySnapshot<Map<String, dynamic>> teamConsultantsSnapshot;
+      try {
+        teamConsultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+          () => _firestore
+              .collection(_consultantsCollection)
+              .where('team', isEqualTo: team)
+              .get(),
+        );
+      } catch (consultantFetchError) {
+        debugPrint('❌ FIREBASE_SERVICE: Failed to fetch team consultants: $consultantFetchError');
+        
+        // Check if this is a network connectivity issue
+        final errorMsg = consultantFetchError.toString().toLowerCase();
+        if (errorMsg.contains('unable to resolve host') || 
+            errorMsg.contains('network unreachable') ||
+            errorMsg.contains('connection abort')) {
+          debugPrint('🌐 FIREBASE_SERVICE: Network connectivity issue detected for team consultants');
+          throw Exception('Network connectivity issue: $consultantFetchError');
+        }
+        
+        rethrow;
+      }
 
       final List<String> teamTokens = teamConsultantsSnapshot.docs
           .map((doc) => doc.data()['token'] as String?)
@@ -1633,53 +1668,98 @@ class NewFirebaseService {
           .cast<String>()
           .toList();
 
-      if (teamTokens.isEmpty) return [];
+      debugPrint('👥 FIREBASE_SERVICE: Found ${teamTokens.length} consultants in team $team');
+      
+      if (teamTokens.isEmpty) {
+        debugPrint('⚠️ FIREBASE_SERVICE: No valid tokens found for team members');
+        return [];
+      }
 
       final List<Map<String, dynamic>> teamMeetings = [];
+      int totalFetchedChunks = 0;
 
       // Firestore whereIn max 10 elemente: chunking
       const int chunkSize = 10;
       for (int i = 0; i < teamTokens.length; i += chunkSize) {
         final chunk = teamTokens.sublist(i, i + chunkSize > teamTokens.length ? teamTokens.length : i + chunkSize);
+        
+        debugPrint('📦 FIREBASE_SERVICE: Processing chunk ${(i ~/ chunkSize) + 1} with ${chunk.length} tokens');
 
-        final snapshot = await _threadHandler.executeOnPlatformThread(
-          () => _firestore
-              .collectionGroup(_meetingsSubcollection)
-              .where('consultantToken', whereIn: chunk)
-              .orderBy('dateTime', descending: false)
-              .get(),
-        );
+        try {
+          final snapshot = await _threadHandler.executeOnPlatformThread(
+            () => _firestore
+                .collectionGroup(_meetingsSubcollection)
+                .where('consultantToken', whereIn: chunk)
+                .orderBy('dateTime', descending: false)
+                .get(),
+          );
+          
+          totalFetchedChunks++;
+          debugPrint('📥 FIREBASE_SERVICE: Chunk ${totalFetchedChunks} returned ${snapshot.docs.length} meetings');
 
-        for (final doc in snapshot.docs) {
-          final meetingData = doc.data();
-          final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
-          final phone = meetingData['phoneNumber'] ?? additionalData['phoneNumber'] ?? '';
-          final token = meetingData['consultantToken'] as String? ?? additionalData['consultantToken'] as String? ?? '';
+          for (final doc in snapshot.docs) {
+            final meetingData = doc.data();
+            final additionalData = meetingData['additionalData'] as Map<String, dynamic>? ?? {};
+            final phone = meetingData['phoneNumber'] ?? additionalData['phoneNumber'] ?? '';
+            final token = meetingData['consultantToken'] as String? ?? additionalData['consultantToken'] as String? ?? '';
 
-          teamMeetings.add({
-            'id': doc.id,
-            'clientPhoneNumber': phone,
-            'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? 'Client necunoscut',
-            'consultantToken': token,
-            ...meetingData,
-            'additionalData': {
-              ...additionalData,
+            teamMeetings.add({
+              'id': doc.id,
+              'clientPhoneNumber': phone,
+              'clientName': meetingData['clientName'] ?? additionalData['clientName'] ?? 'Client necunoscut',
               'consultantToken': token,
-            },
-          });
+              ...meetingData,
+              'additionalData': {
+                ...additionalData,
+                'consultantToken': token,
+              },
+            });
+          }
+        } catch (chunkError) {
+          debugPrint('❌ FIREBASE_SERVICE: Error processing chunk ${(i ~/ chunkSize) + 1}: $chunkError');
+          
+          // Check for network connectivity issues in chunk processing
+          final errorMsg = chunkError.toString().toLowerCase();
+          if (errorMsg.contains('unable to resolve host') || 
+              errorMsg.contains('network unreachable') ||
+              errorMsg.contains('connection abort') ||
+              errorMsg.contains('firestore.googleapis.com')) {
+            debugPrint('🌐 FIREBASE_SERVICE: Network connectivity issue in chunk processing');
+            throw Exception('Network connectivity issue in chunk processing: $chunkError');
+          }
+          
+          // For other errors, continue processing remaining chunks
+          continue;
         }
       }
 
       // Sortare deja facuta pe server
       swTeam.stop();
+      
+      debugPrint('✅ FIREBASE_SERVICE: Successfully fetched ${teamMeetings.length} meetings from $totalFetchedChunks chunks in ${swTeam.elapsedMilliseconds}ms');
+      
       try { AppLogger.sync('firebase_service', 'team_meetings_ms', { 'ms': swTeam.elapsedMilliseconds, 'tokens': teamTokens.length }); } catch (_) {}
       return teamMeetings;
+      
     } catch (e) {
-      FirebaseLogger.error('Error getting team meetings: $e');
+      debugPrint('❌ FIREBASE_SERVICE: Error getting team meetings: $e');
+      
+      // CROSS-PLATFORM FIX: Enhanced error categorization for better handling
+      final errorMsg = e.toString().toLowerCase();
+      if (errorMsg.contains('unable to resolve host') || 
+          errorMsg.contains('network unreachable') ||
+          errorMsg.contains('connection abort') ||
+          errorMsg.contains('firestore.googleapis.com')) {
+        debugPrint('🌐 FIREBASE_SERVICE: Network connectivity issue detected');
+        FirebaseLogger.error('Network connectivity issue in getTeamMeetings: $e');
+      } else {
+        FirebaseLogger.error('Error getting team meetings: $e');
+      }
 
       // Keep N+1 fallback only in debug to aid development without indexes.
       if (e is FirebaseException && e.code == 'failed-precondition') {
         if (kDebugMode) {
+          debugPrint('🔄 FIREBASE_SERVICE: Attempting fallback N+1 query for missing index');
           try {
             final List<Map<String, dynamic>> teamMeetings = [];
 
@@ -1740,12 +1820,15 @@ class NewFirebaseService {
               return aDt.compareTo(bDt);
             });
 
+            debugPrint('✅ FIREBASE_SERVICE: Fallback N+1 query returned ${teamMeetings.length} meetings');
             return teamMeetings;
           } catch (fallbackError) {
+            debugPrint('❌ FIREBASE_SERVICE: Fallback getTeamMeetings failed: $fallbackError');
             FirebaseLogger.error('Fallback getTeamMeetings failed: $fallbackError');
             return [];
           }
         } else {
+          debugPrint('⚠️ FIREBASE_SERVICE: Missing Firestore index for meetings collectionGroup team query. Returning empty in release.');
           FirebaseLogger.warning('Missing Firestore index for meetings collectionGroup team query. Returning empty in release.');
           return [];
         }
@@ -1792,6 +1875,18 @@ class NewFirebaseService {
         });
         await batch.commit();
       });
+      
+      // CROSS-PLATFORM FIX: Trigger immediate aggressive cache invalidation after update
+      Future.microtask(() async {
+        try {
+          final splashService = SplashService();
+          await splashService.invalidateAllMeetingCaches();
+          debugPrint('🔄 FIREBASE_SERVICE: Meeting cache invalidated after update');
+        } catch (e) {
+          debugPrint('⚠️ FIREBASE_SERVICE: Error invalidating meeting cache after update: $e');
+        }
+      });
+      
       return true;
     } catch (e) {
       FirebaseLogger.error('Error updating meeting: $e');

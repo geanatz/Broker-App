@@ -25,7 +25,7 @@ class UpdateService {
   String? _downloadAssetName;
   String? _checksumUrl;
   String? _updateFilePath;
-  String? _releaseDescription; // Adaug variabila pentru descrierea release-ului
+  String? _releaseDescription; 
   double _downloadProgress = 0.0;
   int _downloadedBytes = 0;
   int _totalBytes = 0;

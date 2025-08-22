@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mat_finance/backend/services/clients_service.dart';
 import 'package:mat_finance/backend/services/splash_service.dart';
 import 'package:mat_finance/backend/services/firebase_service.dart';
+import 'package:mat_finance/backend/services/message_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
@@ -342,12 +343,47 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     }
   }
 
-  // Helper to send a message
+  // Helper to send a message with personalized content
   Future<void> _sendMessage(String phoneNumber) async {
     if (phoneNumber.isEmpty) return;
-    final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
-    if (await canLaunchUrl(smsUri)) {
-      await launchUrl(smsUri);
+    
+    try {
+      // Find the client model for this phone number
+      final client = _clients.firstWhere(
+        (c) => c.phoneNumber1 == phoneNumber,
+        orElse: () => ClientModel(
+          id: phoneNumber,
+          name: 'Client',
+          phoneNumber1: phoneNumber,
+          status: ClientStatus.normal,
+          category: ClientCategory.apeluri,
+          formData: {},
+        ),
+      );
+      
+      // Force refresh form data before generating message to ensure latest data
+      final messageService = MessageService();
+      await messageService.forceRefreshForClient(phoneNumber);
+      
+      // Generate personalized message with fresh data
+      final personalizedMessage = await messageService.generatePersonalizedMessage(client);
+      
+      // Create SMS URI with the personalized message
+      final Uri smsUri = Uri(
+        scheme: 'sms',
+        path: phoneNumber,
+        queryParameters: {'body': personalizedMessage},
+      );
+      
+      if (await canLaunchUrl(smsUri)) {
+        await launchUrl(smsUri);
+      }
+    } catch (e) {
+      // Fallback to simple SMS without message
+      final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
+      if (await canLaunchUrl(smsUri)) {
+        await launchUrl(smsUri);
+      }
     }
   }
 

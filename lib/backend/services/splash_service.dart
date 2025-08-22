@@ -223,14 +223,65 @@ class SplashService extends ChangeNotifier {
 
 
 
-  /// OPTIMIZAT: Obtine toate intalnirile din cache cu validare avansata
+  /// CROSS-PLATFORM FIX: Enhanced cached meetings retrieval with network resilience
   Future<List<ClientActivity>> getCachedMeetings() async {
-    // OPTIMIZARE: Verifica consultantul doar daca cache-ul este invalid
-    if (_meetingsCacheTime == null || 
-        DateTime.now().difference(_meetingsCacheTime!).inSeconds > 60) {
-      // FIX: Verifica daca consultantul s-a schimbat doar cand este necesar
+    // CROSS-PLATFORM FIX: Always verify consultant state for data consistency
+    try {
       await resetForNewConsultant();
-      await _refreshMeetingsCache();
+    } catch (e) {
+      debugPrint('⚠️ SPLASH_SERVICE: Warning - consultant verification failed: $e');
+    }
+    
+    // CROSS-PLATFORM FIX: Enhanced cache validation with network awareness
+    final now = DateTime.now();
+    final cacheAge = _meetingsCacheTime != null ? now.difference(_meetingsCacheTime!) : null;
+    final isCacheStale = cacheAge == null || cacheAge.inSeconds > 60;
+    
+    debugPrint('📊 SPLASH_SERVICE: Cache status - Age: ${cacheAge?.inSeconds ?? 'null'}s, Meetings: ${_cachedMeetings.length}, Stale: $isCacheStale');
+    
+    if (isCacheStale) {
+      debugPrint('🔄 SPLASH_SERVICE: Cache is stale, attempting refresh...');
+      
+      try {
+        // CROSS-PLATFORM FIX: Network-aware refresh with timeout protection
+        await _refreshMeetingsCache();
+        
+        final refreshedCount = _cachedMeetings.length;
+        debugPrint('✅ SPLASH_SERVICE: Cache refreshed successfully: $refreshedCount meetings');
+        
+      } catch (refreshError) {
+        debugPrint('❌ SPLASH_SERVICE: Cache refresh failed: $refreshError');
+        debugPrint('🔍 SPLASH_SERVICE: Will return existing cache data if available');
+        
+        // CROSS-PLATFORM FIX: Check if this is a network connectivity issue
+        final errorMsg = refreshError.toString().toLowerCase();
+        if (errorMsg.contains('unable to resolve host') || 
+            errorMsg.contains('network unreachable') ||
+            errorMsg.contains('connection abort')) {
+          debugPrint('🌐 SPLASH_SERVICE: Network connectivity issue detected - using cached data');
+        }
+      }
+    } else {
+    }
+    
+    // CROSS-PLATFORM FIX: Return available data with comprehensive logging
+    final finalMeetingsCount = _cachedMeetings.length;
+    if (finalMeetingsCount == 0) {
+      debugPrint('⚠️ SPLASH_SERVICE: Warning - returning 0 meetings');
+      debugPrint('📊 SPLASH_SERVICE: Team: $_currentTeam, Cache time: $_meetingsCacheTime');
+      
+      // Check if we have team cache as fallback
+      if (_currentTeam != null && _teamMeetingsCache.containsKey(_currentTeam!)) {
+        final teamCachedMeetings = _teamMeetingsCache[_currentTeam!] ?? [];
+        if (teamCachedMeetings.isNotEmpty) {
+          debugPrint('🔄 SPLASH_SERVICE: Found ${teamCachedMeetings.length} meetings in team cache, using as fallback');
+          _cachedMeetings = List.from(teamCachedMeetings);
+          _meetingsCacheTime = DateTime.now();
+          return _cachedMeetings;
+        }
+      }
+    } else {
+      debugPrint('✅ SPLASH_SERVICE: Returning $finalMeetingsCount meetings');
     }
     
     return _cachedMeetings;
@@ -276,7 +327,7 @@ class SplashService extends ChangeNotifier {
     return _cachedClients;
   }
 
-  /// OPTIMIZAT: Refresh cache-ul de meetings cu timeout si retry
+  /// CROSS-PLATFORM FIX: Enhanced meetings cache refresh with network resilience and aggressive retry
   Future<void> _refreshMeetingsCache() async {
     // Throttle: evita refresh-uri mai dese de 300ms
     final now = DateTime.now();
@@ -287,6 +338,7 @@ class SplashService extends ChangeNotifier {
       return;
     }
     _isRefreshingMeetings = true;
+    
     try {
       final firebaseService = _clientUIService?.firebaseService;
       if (firebaseService == null) {
@@ -294,33 +346,99 @@ class SplashService extends ChangeNotifier {
         return;
       }
 
-      // OPTIMIZARE: Timeout pentru operatiunea de refresh (redus pentru a evita FREEZE)
-      final sw = Stopwatch()..start();
-      final meetingsData = await firebaseService.getTeamMeetings()
-          .timeout(const Duration(seconds: 3));
+      // CROSS-PLATFORM FIX: Multi-strategy approach with retries for network resilience
+      List<Map<String, dynamic>> meetingsData = [];
+      bool fetchSuccess = false;
+      int retryCount = 0;
+      const maxRetries = 3;
       
+      while (!fetchSuccess && retryCount < maxRetries) {
+        try {
+          retryCount++;
+          debugPrint('🔄 SPLASH_SERVICE: Attempt $retryCount/$maxRetries to fetch meetings');
+          
+          // CROSS-PLATFORM FIX: Progressive timeout strategy for network issues
+          final timeout = Duration(seconds: 2 + (retryCount * 2)); // 2s, 4s, 6s
+          
+          final sw = Stopwatch()..start();
+          meetingsData = await firebaseService.getTeamMeetings()
+              .timeout(timeout);
+          sw.stop();
+          
+          fetchSuccess = true;
+          debugPrint('✅ SPLASH_SERVICE: Successfully fetched ${meetingsData.length} meetings on attempt $retryCount (${sw.elapsedMilliseconds}ms)');
+          
+          try { AppLogger.sync('splash_service', 'refresh_meetings_cache_ms', { 'ms': sw.elapsedMilliseconds }); } catch (_) {}
+          
+        } catch (e) {
+          debugPrint('⚠️ SPLASH_SERVICE: Attempt $retryCount failed: $e');
+          
+          // CROSS-PLATFORM FIX: Check for specific network connectivity issues
+          final errorMessage = e.toString().toLowerCase();
+          if (errorMessage.contains('unable to resolve host') || 
+              errorMessage.contains('network unreachable') ||
+              errorMessage.contains('connection abort') ||
+              errorMessage.contains('firestore.googleapis.com')) {
+            debugPrint('🌐 SPLASH_SERVICE: Network connectivity issue detected on Android');
+            
+            // For network issues, wait longer between retries
+            if (retryCount < maxRetries) {
+              await Future.delayed(Duration(milliseconds: 500 * retryCount));
+            }
+          }
+          
+          if (retryCount >= maxRetries) {
+            debugPrint('❌ SPLASH_SERVICE: All retry attempts failed. Using cached data if available.');
+            // Don't clear existing cache on network failure - preserve what we have
+            return;
+          }
+        }
+      }
+      
+      if (!fetchSuccess) {
+        debugPrint('❌ SPLASH_SERVICE: Failed to fetch meetings after all retries');
+        return;
+      }
+      
+      // CROSS-PLATFORM FIX: Process meetings with enhanced error handling
       final List<ClientActivity> meetings = [];
+      int conversionErrors = 0;
+      
       for (final meetingMap in meetingsData) {
         try {
           meetings.add(_convertMapToClientActivity(meetingMap));
         } catch (e) {
-          // OPTIMIZARE: Log redus pentru erori
-          // debugPrint('⚠️ SPLASH_SERVICE: Error converting meeting: $e');
+          conversionErrors++;
+          debugPrint('⚠️ SPLASH_SERVICE: Error converting meeting ${meetingMap['id'] ?? 'unknown'}: $e');
         }
       }
       
-      _cachedMeetings = meetings;
-      _meetingsCacheTime = DateTime.now();
-      
-      // Salveaza in cache pentru echipa curenta
-      if (_currentTeam != null) {
-        _teamMeetingsCache[_currentTeam!] = List.from(meetings);
+      if (conversionErrors > 0) {
+        debugPrint('⚠️ SPLASH_SERVICE: $conversionErrors meeting conversion errors out of ${meetingsData.length} total');
       }
-      notifyListeners();
-      sw.stop();
-      try { AppLogger.sync('splash_service', 'refresh_meetings_cache_ms', { 'ms': sw.elapsedMilliseconds }); } catch (_) {}
+      
+      // CROSS-PLATFORM FIX: Only update cache if we have valid data
+      if (meetings.isNotEmpty || meetingsData.isEmpty) {
+        _cachedMeetings = meetings;
+        _meetingsCacheTime = DateTime.now();
+        
+        // Salveaza in cache pentru echipa curenta cu validation
+        if (_currentTeam != null && _currentTeam!.isNotEmpty) {
+          _teamMeetingsCache[_currentTeam!] = List.from(meetings);
+          debugPrint('💾 SPLASH_SERVICE: Cached ${meetings.length} meetings for team $_currentTeam');
+        } else {
+          debugPrint('⚠️ SPLASH_SERVICE: No current team set for caching meetings');
+        }
+        
+        notifyListeners();
+        debugPrint('✅ SPLASH_SERVICE: Successfully refreshed meetings cache: ${meetings.length} meetings');
+      } else {
+        debugPrint('⚠️ SPLASH_SERVICE: No valid meetings data, keeping existing cache');
+      }
+      
     } catch (e) {
-      debugPrint('❌ SPLASH_SERVICE: Error refreshing meetings cache: $e');
+      debugPrint('❌ SPLASH_SERVICE: Critical error refreshing meetings cache: $e');
+      debugPrint('📊 SPLASH_SERVICE: Current cache state: ${_cachedMeetings.length} meetings, team: $_currentTeam');
     } finally {
       _isRefreshingMeetings = false;
       _lastMeetingsRefresh = DateTime.now();
@@ -371,7 +489,7 @@ class SplashService extends ChangeNotifier {
     _timeSlotsLastUpdate = null;
   }
 
-  /// OPTIMIZAT: Invalideaza si reincarca imediat cache-ul de meetings cu debouncing imbunatatit
+  /// CROSS-PLATFORM FIX: Enhanced cache invalidation and refresh with network resilience
   Future<void> invalidateMeetingsCacheAndRefresh() async {
     // OPTIMIZARE: Debouncing redus pentru raspuns mai rapid
     if (_hasPendingInvalidation) return;
@@ -381,36 +499,76 @@ class SplashService extends ChangeNotifier {
     // CRITICAL FIX: Near-instant cache invalidation for immediate sync
     _cacheInvalidationTimer = Timer(const Duration(milliseconds: 10), () async {
       try {
+        debugPrint('🔄 SPLASH_SERVICE: Starting cross-platform cache invalidation and refresh');
+        
         // Clear in-memory caches immediately to avoid stale sync reads
+        final previousMeetingsCount = _cachedMeetings.length;
         _cachedMeetings = [];
         _meetingsCacheTime = null;
-        if (_currentTeam != null) {
+        
+        // CROSS-PLATFORM FIX: Enhanced team cache management
+        if (_currentTeam != null && _currentTeam!.isNotEmpty) {
+          final previousTeamCount = _teamMeetingsCache[_currentTeam!]?.length ?? 0;
           _teamMeetingsCache.remove(_currentTeam!);
+          debugPrint('💾 SPLASH_SERVICE: Cleared team cache for $_currentTeam (had $previousTeamCount meetings)');
         } else {
           _teamMeetingsCache.clear();
+          debugPrint('💾 SPLASH_SERVICE: Cleared all team caches (no current team)');
         }
         
-        // OPTIMIZARE: Reincarca imediat cache-ul nou pentru actualizare instantanee
-        await _refreshMeetingsCache();
+        debugPrint('🛤️ SPLASH_SERVICE: Cache cleared (had $previousMeetingsCount meetings)');
+        
+        // CROSS-PLATFORM FIX: Network-aware refresh with fallback strategies
+        try {
+          // First attempt: Normal refresh
+          await _refreshMeetingsCache();
+          
+          final newMeetingsCount = _cachedMeetings.length;
+          debugPrint('✅ SPLASH_SERVICE: Cache refresh completed: $newMeetingsCount meetings loaded');
+          
+          // CROSS-PLATFORM FIX: Validate that we actually got data
+          if (newMeetingsCount == 0 && previousMeetingsCount > 0) {
+            debugPrint('⚠️ SPLASH_SERVICE: Warning - cache went from $previousMeetingsCount to 0 meetings');
+            debugPrint('🔍 SPLASH_SERVICE: This might indicate a network connectivity issue');
+          }
+          
+        } catch (refreshError) {
+          debugPrint('❌ SPLASH_SERVICE: Primary refresh failed: $refreshError');
+          
+          // CROSS-PLATFORM FIX: Retry mechanism for critical operations
+          debugPrint('🔄 SPLASH_SERVICE: Attempting fallback refresh...');
+          try {
+            await Future.delayed(const Duration(milliseconds: 500));
+            await _refreshMeetingsCache();
+            debugPrint('✅ SPLASH_SERVICE: Fallback refresh succeeded');
+          } catch (fallbackError) {
+            debugPrint('❌ SPLASH_SERVICE: Fallback refresh also failed: $fallbackError');
+          }
+        }
+        
         notifyListeners();
         
-        // OPTIMIZARE: Notificare optimizata pentru ClientUIService cu delay redus
+        // CROSS-PLATFORM FIX: Enhanced background client notification
         if (_clientUIService != null && _clientUIService!.clients.isNotEmpty) {
           // OPTIMIZARE: Executa in background pentru a nu bloca UI-ul
           Future.microtask(() async {
             try {
+              debugPrint('🔄 SPLASH_SERVICE: Refreshing client service in background');
               await _clientUIService!.loadClientsFromFirebase();
               _clientUIService!.notifyListeners();
+              debugPrint('✅ SPLASH_SERVICE: Client service refreshed successfully');
             } catch (e) {
               debugPrint('❌ SPLASH_SERVICE: Error loading clients in background: $e');
             }
           });
         }
         
+        debugPrint('✅ SPLASH_SERVICE: Cross-platform cache invalidation completed successfully');
         _hasPendingInvalidation = false;
     
       } catch (e) {
-        debugPrint('❌ SPLASH_SERVICE: Error in cache invalidation: $e');
+        debugPrint('❌ SPLASH_SERVICE: Critical error in cache invalidation: $e');
+        debugPrint('📊 SPLASH_SERVICE: Stack trace: ${StackTrace.current}');
         _hasPendingInvalidation = false;
       }
     });
@@ -568,16 +726,22 @@ class SplashService extends ChangeNotifier {
     
     final additionalData = meetingMap['additionalData'] as Map<String, dynamic>? ?? {};
     
+    // FIX: Enhanced phone number mapping for proper message matching
+    final phoneNumber = meetingMap['phoneNumber'] ?? meetingMap['clientPhoneNumber'] ?? additionalData['phoneNumber'] ?? '';
+    final clientName = additionalData['clientName'] ?? meetingMap['clientName'] ?? '';
+    
     return ClientActivity(
       id: meetingMap['id'] ?? '',
       type: type,
       dateTime: dateTime,
       description: meetingMap['description'],
       additionalData: {
-        // FIX: Pastreaza toate datele importante pentru afisare in calendar
+        // FIX: Pastreaza toate datele importante pentru afisare in calendar si message matching
         ...additionalData,
-        'phoneNumber': meetingMap['clientPhoneNumber'] ?? '',
-        'clientName': additionalData['clientName'] ?? meetingMap['clientName'] ?? '',
+        // FIX: Ensure phone number is available in multiple locations for robust matching
+        'phoneNumber': phoneNumber,
+        'clientPhoneNumber': phoneNumber, // Legacy compatibility
+        'clientName': clientName,
         'consultantName': meetingMap['consultantName'] ?? additionalData['consultantName'] ?? '',
         'consultantToken': meetingMap['consultantToken'] ?? '',
         // FIX: Propaga consultantId din additionalData pentru ownership verification
@@ -1058,6 +1222,8 @@ class SplashService extends ChangeNotifier {
            _googleDriveService != null &&
            _isInitialized;
   }
+  
+ Null  get cacheAg => null;
 
   /// Forteaza re-initializarea (pentru debug sau refresh)
   void forceReinitialize() {

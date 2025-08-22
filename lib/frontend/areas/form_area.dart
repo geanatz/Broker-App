@@ -1399,7 +1399,7 @@ class _FormAreaState extends State<FormArea> {
         
         titleR2F4: 'Tip rata',
         valueR2F4: (form.rateType.isEmpty || form.rateType == 'Selecteaza' || form.rateType == 'Selecteaza tipul') ? null : form.rateType,
-        itemsR2F4: ['IRCC', 'Euribor', 'Variabila', 'Fixa'].map((type) => DropdownMenuItem<String>(
+        itemsR2F4: ['IRCC', 'Euribor', 'Robor', 'Fixa'].map((type) => DropdownMenuItem<String>(
           value: type,
           child: Text(type),
         )).toList(),

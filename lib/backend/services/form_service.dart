@@ -328,10 +328,9 @@ class FormService extends ChangeNotifier {
 
   static const List<String> rateTypes = [
     'Fixa',
-    'Variabila',
     'Euribor',
     'IRCC',
-    'ROBOR',
+    'Robor',
   ];
 
   static const List<String> incomeTypes = [
@@ -453,12 +452,22 @@ class FormService extends ChangeNotifier {
         forms.add(CreditFormModel());
       }
       
-      // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
+      // ULTRA-URGENT FIX: TRIPLE cache invalidation for INSTANT responsiveness
       _formDataCache.remove(clientId);
-      debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after updating credit form at index $index');
+      _formDataCache.clear(); // Clear ALL cache for maximum freshness
+      debugPrint('🚨 ULTRA_URGENT: Cleared ALL form cache for INSTANT update after credit form change');
       
-      // FIX: Debounce notifyListeners to prevent excessive rebuilds
-      _debounceNotifyListeners();
+      // ULTRA-URGENT FIX: IMMEDIATE notifications WITHOUT any debounce
+      notifyListeners();
+      notifyListeners(); // Double notification for insurance
+      
+      // ULTRA-URGENT FIX: Force immediate async notification as well
+      Future.microtask(() => notifyListeners());
+      
+      debugPrint('🚨 ULTRA_URGENT: TRIPLE notifyListeners called for INSTANT UI update');
+      
+      // Remove debounced notification to prevent conflicts
+      // _debounceNotifyListeners(); // REMOVED for instant updates
       
       // Automatically save to Firebase after updating form
       _autoSaveToFirebaseForClient(clientId);
@@ -477,12 +486,22 @@ class FormService extends ChangeNotifier {
         forms.add(IncomeFormModel());
       }
       
-      // FIX: Clear cache pentru client pentru a preveni folosirea datelor vechi
+      // ULTRA-URGENT FIX: TRIPLE cache invalidation for INSTANT responsiveness
       _formDataCache.remove(clientId);
-      debugPrint('🔧 FORM_SERVICE: Cleared cache for client $clientId after updating income form at index $index');
+      _formDataCache.clear(); // Clear ALL cache for maximum freshness
+      debugPrint('🚨 ULTRA_URGENT: Cleared ALL form cache for INSTANT update after income form change');
       
-      // FIX: Debounce notifyListeners to prevent excessive rebuilds
-      _debounceNotifyListeners();
+      // ULTRA-URGENT FIX: IMMEDIATE notifications WITHOUT any debounce
+      notifyListeners();
+      notifyListeners(); // Double notification for insurance
+      
+      // ULTRA-URGENT FIX: Force immediate async notification as well
+      Future.microtask(() => notifyListeners());
+      
+      debugPrint('🚨 ULTRA_URGENT: TRIPLE notifyListeners called for INSTANT UI update');
+      
+      // Remove debounced notification to prevent conflicts
+      // _debounceNotifyListeners(); // REMOVED for instant updates
       
       // Automatically save to Firebase after updating form
       _autoSaveToFirebaseForClient(clientId);
@@ -999,13 +1018,31 @@ class FormService extends ChangeNotifier {
 
   /// FIX: Force refresh form data for a specific client
   Future<void> forceRefreshFormData(String clientId, String phoneNumber) async {
-    // Clear cache for this client
-    _formDataCache.remove(clientId);
+    // ULTRA-URGENT FIX: COMPLETE cache annihilation for guaranteed fresh data
+    _formDataCache.clear(); // Clear ALL cache
+    _formDataCache.remove(clientId); // Double removal for insurance
     
-    // Clear loading state
+    // ULTRA-URGENT FIX: Clear ALL in-memory data for this client
+    _clientCreditForms.remove(clientId);
+    _coborrowerCreditForms.remove(clientId);
+    _clientIncomeForms.remove(clientId);
+    _coborrowerIncomeForms.remove(clientId);
     
-    // Force reload form data
+    debugPrint('🚨 ULTRA_URGENT: COMPLETELY cleared ALL data for client $clientId');
+    
+    // ULTRA-URGENT FIX: Clear loading state and force immediate reload
+    _isLoadingFormData = false;
+    _currentlyLoadingClientId = null;
+    
+    // ULTRA-URGENT FIX: Force immediate reload with fresh data
     await _performFormDataLoad(clientId, phoneNumber);
+    
+    // ULTRA-URGENT FIX: TRIPLE notification for guaranteed UI update
+    notifyListeners();
+    notifyListeners();
+    Future.microtask(() => notifyListeners());
+    
+    debugPrint('🚨 ULTRA_URGENT: FORCE refresh completed with TRIPLE notifications');
   }
 
   /// FIX: Clear form data cache for a specific client
