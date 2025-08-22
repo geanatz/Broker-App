@@ -1675,6 +1675,7 @@ class GoogleDriveService extends ChangeNotifier {
     final rata = creditData['rata']?.toString() ?? '';
     final rateType = creditData['rateType']?.toString() ?? '';
     final perioada = creditData['perioada']?.toString() ?? '';
+    final fixedRate = creditData['fixedRate']?.toString() ?? '';
     
     // Verifica daca banca si tipul de credit sunt valide (nu "Selecteaza")
     if (_isSelectValue(bank)) {
@@ -1694,7 +1695,7 @@ class GoogleDriveService extends ChangeNotifier {
     final creditTypeFormatted = _formatCreditType(creditType);
     
     // Formateaza sumele (sold/consumat si rata)
-    final amountsPart = _formatCreditAmounts(sold, consumat, rata);
+    final amountsPart = _formatCreditAmounts(sold, consumat, rata, creditType);
     
     // Daca nu exista nicio suma, nu salvam creditul
     if (amountsPart.isEmpty) {
@@ -1702,8 +1703,8 @@ class GoogleDriveService extends ChangeNotifier {
       return '';
     }
     
-    // Formateaza detaliile (rateType si perioada)
-    final detailsPart = _formatCreditDetails(rateType, perioada, creditType);
+    // Formateaza detaliile (rateType, perioada si rata fixa)
+    final detailsPart = _formatCreditDetails(rateType, perioada, creditType, fixedRate);
     
     // Construieste formatul final: "banca-tip: sume(detalii)"
     String result = '$bankFormatted-$creditTypeFormatted: $amountsPart';
@@ -1842,52 +1843,89 @@ class GoogleDriveService extends ChangeNotifier {
   }
 
   /// Formateaza sumele creditului (sold/consumat si rata)
-  String _formatCreditAmounts(String sold, String consumat, String rata) {
+  String _formatCreditAmounts(String sold, String consumat, String rata, String creditType) {
     final soldFormatted = _formatAmountWithK(sold);
     final consumatFormatted = _formatAmountWithK(consumat);
     final rataFormatted = _formatAmountWithK(rata);
     
-    // Construieste partea cu sumele folosind cratima in loc de slash
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Sume formatate - sold: $soldFormatted, consumat: $consumatFormatted, rata: $rataFormatted, creditType: $creditType');
+    
     String amounts = '';
-    if (soldFormatted.isNotEmpty || consumatFormatted.isNotEmpty) {
-      // Trateaza cazurile cand una dintre sume lipseste
-      if (soldFormatted.isNotEmpty && consumatFormatted.isNotEmpty) {
-        amounts = '$soldFormatted-$consumatFormatted';
-      } else if (soldFormatted.isNotEmpty) {
-        amounts = soldFormatted;
-      } else if (consumatFormatted.isNotEmpty) {
-        amounts = consumatFormatted;
-      }
+    
+    // Pentru Card cumparaturi si Overdraft, foloseste sold/consumat
+    if (soldFormatted.isNotEmpty && consumatFormatted.isNotEmpty) {
+      amounts = '$soldFormatted/$consumatFormatted';
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Format sold/consumat: $amounts');
+    } else if (soldFormatted.isNotEmpty) {
+      amounts = soldFormatted;
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Doar sold: $amounts');
     }
     
+    // Adauga rata daca exista
     if (rataFormatted.isNotEmpty) {
       if (amounts.isNotEmpty) {
-        amounts += ' $rataFormatted';
+        // Pentru creditele ipotecare, prima casa si nevoi personale, foloseste cratima intre sold si rata
+        if (creditType.toLowerCase() == 'ipotecar' || 
+            creditType.toLowerCase() == 'prima casa' || 
+            creditType.toLowerCase() == 'nevoi personale') {
+          amounts = '$soldFormatted-$rataFormatted';
+        } else {
+          amounts += ' $rataFormatted';
+        }
       } else {
         amounts = rataFormatted;
       }
+      debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Cu rata: $amounts');
     }
     
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Sume finale: "$amounts"');
     return amounts;
   }
 
-  /// Formateaza detaliile creditului (rateType si perioada)
-  String _formatCreditDetails(String rateType, String perioada, String creditType) {
+  /// Formateaza detaliile creditului (rateType, perioada si rata fixa)
+  String _formatCreditDetails(String rateType, String perioada, String creditType, String fixedRate) {
     final details = <String>[];
     
-    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit details - rateType: "$rateType", perioada: "$perioada"');
+    debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Credit details - rateType: "$rateType", perioada: "$perioada", fixedRate: "$fixedRate"');
     
     // Adauga tipul ratei daca exista si nu este "Selecteaza"
-    if (rateType.isNotEmpty && !_isSelectValue(rateType)) {
+    // Pentru rata fixa, nu adauga rateType separat - va fi combinat cu fixedRate
+    if (rateType.isNotEmpty && !_isSelectValue(rateType) && rateType != 'Fixa') {
       details.add(rateType);
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adaugat rateType: $rateType');
     }
     
-    // Adauga perioada daca exista
+    // Adauga perioada si rata fixa daca exista
     if (perioada.isNotEmpty && !_isSelectValue(perioada)) {
       final period = _formatPeriod(perioada);
       if (period.isNotEmpty) {
-        details.add(period);
+        // Pentru rata fixa, combina perioada cu rata fixa: "Fixa5%,4/1" sau "Fixa,4/1"
+        if (rateType == 'Fixa') {
+          if (fixedRate.isNotEmpty && !_isSelectValue(fixedRate)) {
+            // Cu valoare: "Fixa5%,4/1"
+            details.add('Fixa$fixedRate%,$period');
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adaugat rata fixa cu valoare si perioada: Fixa$fixedRate%,$period');
+          } else {
+            // Fara valoare: "Fixa,4/1"
+            details.add('Fixa,$period');
+            debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adaugat rata fixa fara valoare si perioada: Fixa,$period');
+          }
+        } else {
+          // Pentru alte tipuri de rata, adauga perioada separat
+          details.add(period);
+          debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adaugat perioada: $period');
+        }
+      }
+    } else if (rateType == 'Fixa') {
+      // Daca nu exista perioada dar exista rata fixa
+      if (fixedRate.isNotEmpty && !_isSelectValue(fixedRate)) {
+        // Cu valoare: "Fixa5%"
+        details.add('Fixa$fixedRate%');
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adaugat rata fixa cu valoare: Fixa$fixedRate%');
+      } else {
+        // Fara valoare: "Fixa"
+        details.add('Fixa');
+        debugPrint('🔧 GOOGLE_DRIVE_SERVICE: Adaugat rata fixa fara valoare: Fixa');
       }
     }
     

@@ -667,6 +667,7 @@ class CreditData {
   final String rateType;
   final double? monthlyPayment;
   final int? remainingMonths;
+  final double? fixedRate;
 
   const CreditData({
     required this.id,
@@ -677,6 +678,7 @@ class CreditData {
     required this.rateType,
     this.monthlyPayment,
     this.remainingMonths,
+    this.fixedRate,
   });
 
   Map<String, dynamic> toMap() {
@@ -689,6 +691,7 @@ class CreditData {
       'rateType': rateType,
       'monthlyPayment': monthlyPayment,
       'remainingMonths': remainingMonths,
+      'fixedRate': fixedRate,
     };
   }
 
@@ -702,6 +705,7 @@ class CreditData {
       rateType: map['rateType'] ?? '',
       monthlyPayment: map['monthlyPayment']?.toDouble(),
       remainingMonths: map['remainingMonths']?.toInt(),
+      fixedRate: map['fixedRate']?.toDouble(),
     );
   }
 

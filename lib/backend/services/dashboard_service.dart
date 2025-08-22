@@ -72,6 +72,7 @@ class ConsultantStats {
   final int dailyFormsTarget;
   final int formsCompletedThisMonth;
   final int totalMeetingsScheduled;
+  final int meetingsScheduledToday;
   final DateTime lastUpdated;
 
   ConsultantStats({
@@ -79,6 +80,7 @@ class ConsultantStats {
     required this.dailyFormsTarget,
     required this.formsCompletedThisMonth,
     required this.totalMeetingsScheduled,
+    required this.meetingsScheduledToday,
     required this.lastUpdated,
   });
 
@@ -500,12 +502,14 @@ class DashboardService extends ChangeNotifier {
 
       final stats = await calculateConsultantStatsOptimized(consultantToken);
       final dailyFormsToday = await _readDailyFormsCompletedToday(consultantToken);
+      final dailyMeetingsToday = await _readDailyMeetingsScheduledToday(consultantToken);
       
       _consultantStats = ConsultantStats(
         formsCompletedToday: dailyFormsToday,
         dailyFormsTarget: 10, // Placeholder
         formsCompletedThisMonth: stats['formsCompleted'] ?? 0,
         totalMeetingsScheduled: stats['meetingsScheduled'] ?? 0,
+        meetingsScheduledToday: dailyMeetingsToday,
         lastUpdated: DateTime.now(),
       );
     } catch (e) {
@@ -697,6 +701,41 @@ class DashboardService extends ChangeNotifier {
       return 0;
     } catch (e) {
       debugPrint('❌ DASHBOARD_SERVICE: Error reading daily forms today: $e');
+      return 0;
+    }
+  }
+
+  /// Reads daily meetings scheduled today from sharded counters (fallback to old field)
+  Future<int> _readDailyMeetingsScheduledToday(String consultantToken) async {
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final dailyParent = _firestore
+          .collection('data')
+          .doc('stats')
+          .collection('daily')
+          .doc(today)
+          .collection('consultants')
+          .doc(consultantToken);
+
+      final fromShards = await _getShardedCounterTotal(
+        parentDoc: dailyParent,
+        counterGroup: 'meetings',
+      );
+      if (fromShards > 0 || await _hasAnyShards(dailyParent)) {
+        return fromShards;
+      }
+
+      final dailyDoc = await _threadHandler.executeOnPlatformThread(
+        () => dailyParent.get(),
+      );
+      if (dailyDoc.exists) {
+        final data = dailyDoc.data();
+        final val = (data?['meetingsHeld'] ?? 0) as num;
+        return val.toInt();
+      }
+      return 0;
+    } catch (e) {
+      debugPrint('❌ DASHBOARD_SERVICE: Error reading daily meetings today: $e');
       return 0;
     }
   }

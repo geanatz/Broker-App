@@ -63,6 +63,7 @@ class CreditFormModel {
   String rateType;
   String rata;
   String perioada;
+  String fixedRate;
   bool isNew;
 
   CreditFormModel({
@@ -74,13 +75,16 @@ class CreditFormModel {
     this.rateType = 'Selecteaza',
     this.rata = '',
     this.perioada = '',
+    this.fixedRate = '',
     this.isNew = true,
   }) : id = id ?? 'credit_${DateTime.now().millisecondsSinceEpoch}_${objectRuntimeType(CreditFormModel, 'CreditFormModel')}';
 
   /// Verifica daca formularul are informatii minime
   bool hasMinimumInfo() {
-    return bank != 'Selecteaza' && bank != 'Selecteaza banca' && 
-           creditType != 'Selecteaza' && creditType != 'Selecteaza tipul';
+    // Schimbare: consideram formularul "ne-gol" imediat ce este selectat tipul de credit,
+    // fara a mai necesita selectia bancii. Acest lucru permite afisarea randului 2
+    // dupa selectarea tipului de credit si transformarea FormNew doar pe baza acestuia.
+    return creditType != 'Selecteaza' && creditType != 'Selecteaza tipul';
   }
 
   /// Verifica daca formularul este gol
@@ -95,6 +99,7 @@ class CreditFormModel {
     rateType = other.rateType;
     rata = other.rata;
     perioada = other.perioada;
+    fixedRate = other.fixedRate;
     isNew = other.isNew;
   }
 
@@ -109,6 +114,7 @@ class CreditFormModel {
       'rateType': rateType,
       'rata': rata,
       'perioada': perioada,
+      'fixedRate': fixedRate,
       'isNew': isNew,
     };
   }
@@ -124,6 +130,7 @@ class CreditFormModel {
       rateType: _migrateOldPlaceholder(map['rateType'] ?? 'Selecteaza'),
       rata: map['rata'] ?? '',
       perioada: map['perioada'] ?? '',
+      fixedRate: map['fixedRate'] ?? '',
       isNew: map['isNew'] ?? true,
     );
   }

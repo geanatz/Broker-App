@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mat_finance/backend/services/clients_service.dart';
 import 'package:mat_finance/frontend/components/forms/form1.dart';
 import 'package:mat_finance/frontend/components/forms/form3.dart';
+import 'package:mat_finance/frontend/components/forms/form4.dart';
 import 'package:mat_finance/frontend/components/forms/form_new.dart';
 import 'package:mat_finance/frontend/components/headers/widget_header2.dart';
 import 'package:intl/intl.dart';
@@ -535,7 +536,7 @@ class _FormAreaState extends State<FormArea> {
   /// Formateaza o valoare numerica cu virgule pentru afisare
   String _formatValueForDisplay(String value, String fieldType) {
     // Aplica formatarea cu virgule doar pentru campurile numerice
-    if (fieldType == 'sold' || fieldType == 'rata' || fieldType == 'consumat' || fieldType == 'incomeAmount') {
+    if (fieldType == 'sold' || fieldType == 'rata' || fieldType == 'consumat' || fieldType == 'incomeAmount' || fieldType == 'fixedRate') {
       if (value.isNotEmpty && value != '0') {
         try {
           // Remove existing commas if any
@@ -584,7 +585,7 @@ class _FormAreaState extends State<FormArea> {
     // Check if we should update the controller
     // For numeric fields, compare the numeric values (without commas) to avoid formatting conflicts
     if (cleanValue.isNotEmpty) {
-      if (fieldType == 'sold' || fieldType == 'rata' || fieldType == 'consumat' || fieldType == 'incomeAmount') {
+      if (fieldType == 'sold' || fieldType == 'rata' || fieldType == 'consumat' || fieldType == 'incomeAmount' || fieldType == 'fixedRate') {
         // For numeric fields, compare values without commas
         final controllerNumericValue = controller.text.replaceAll(',', '');
         if (controller.text.isEmpty) {
@@ -655,7 +656,7 @@ class _FormAreaState extends State<FormArea> {
             if (mounted) {
                               // Process value based on field type
                 String cleanValue = value;
-                if (field == 'sold' || field == 'rata' || field == 'consumat' || field == 'incomeAmount') {
+                if (field == 'sold' || field == 'rata' || field == 'consumat' || field == 'incomeAmount' || field == 'fixedRate') {
                   // Remove commas for numeric fields
                   cleanValue = value.replaceAll(',', '');
               } else if (field == 'perioada' || field == 'vechime') {
@@ -711,6 +712,7 @@ class _FormAreaState extends State<FormArea> {
         case 'consumat': return creditForm.consumat;
         case 'rateType': return creditForm.rateType;
         case 'perioada': return creditForm.perioada;
+        case 'fixedRate': return creditForm.fixedRate;
         default: return '';
       }
     } else {
@@ -1217,12 +1219,11 @@ class _FormAreaState extends State<FormArea> {
             _creditSelectedType[_selectionKey(client.phoneNumber, isClient)] = value;
             debugPrint('DEBUG: Credit type selected: $value');
           });
-          // Check if both fields are completed and transform if needed
-          final selBank = _creditSelectedBank[_selectionKey(client.phoneNumber, isClient)];
-          if (value != null && selBank != null) {
-            debugPrint('DEBUG: Both credit fields completed, transforming...');
+          // MODIFICARE: Transforma formularul doar cand se selecteaza tipul de credit
+          if (value != null) {
+            debugPrint('DEBUG: Credit type selected, transforming immediately...');
             Future.microtask(() {
-              _transformCreditFormNew(client, selBank, value, isClient);
+              _transformCreditFormNewImmediate(client, value, isClient);
             });
           }
         },
@@ -1311,12 +1312,11 @@ class _FormAreaState extends State<FormArea> {
             _incomeSelectedType[_selectionKey(client.phoneNumber, isClient)] = value;
             debugPrint('DEBUG: Income type selected: $value');
           });
-          // Check if both fields are completed and transform if needed
-          final selBank = _incomeSelectedBank[_selectionKey(client.phoneNumber, isClient)];
-          if (value != null && selBank != null) {
-            debugPrint('DEBUG: Both income fields completed, transforming...');
+          // MODIFICARE: Transforma formularul doar cand se selecteaza tipul de venit
+          if (value != null) {
+            debugPrint('DEBUG: Income type selected, transforming immediately...');
             Future.microtask(() {
-              _transformIncomeFormNew(client, selBank, value, isClient);
+              _transformIncomeFormNewImmediate(client, value, isClient);
             });
           }
         },
@@ -1353,65 +1353,137 @@ class _FormAreaState extends State<FormArea> {
     final showIpotecarFields = form.creditType == 'Ipotecar' || form.creditType == 'Prima casa';
 
     if (showIpotecarFields) {
-      // Foloseste Form3 pentru Ipotecar si Prima casa (2+4 campuri: Banca, Tip credit in primul rand; Sold, Rata, Perioada, Tip Rata in al doilea rand)
-      return Form3(
-        titleR1F1: 'Banca',
-        valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
-        itemsR1F1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
-          value: bank,
-          child: Text(bank),
-        )).toList(),
-        onChangedR1F1: (value) {
-          if (value != null) {
-            _updateFormField(client, index, 'bank', value, true, isClient);
-          }
-        },
-        hintTextR1F1: 'Selecteaza',
-        
-        titleR1F2: 'Tip credit',
-        valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza' || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
-        itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
-          value: type,
-          child: Text(type),
-        )).toList(),
-        onChangedR1F2: (value) {
-          if (value != null) {
-            _updateFormField(client, index, 'creditType', value, true, isClient);
-          }
-        },
-        hintTextR1F2: 'Selecteaza',
-        
-        titleR2F1: 'Sold',
-        controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_sold', form.sold),
-        hintTextR2F1: '0',
-        keyboardTypeR2F1: TextInputType.number,
-        
-        titleR2F2: 'Rata',
-        controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_rata', form.rata),
-        hintTextR2F2: '0',
-        keyboardTypeR2F2: TextInputType.number,
-        
-        titleR2F3: 'Perioada',
-        controllerR2F3: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_perioada', form.perioada),
-        hintTextR2F3: '0/0',
-        keyboardTypeR2F3: TextInputType.text,
-        suffixTextColorR2F3: AppTheme.elementColor2,
-        
-        titleR2F4: 'Tip rata',
-        valueR2F4: (form.rateType.isEmpty || form.rateType == 'Selecteaza' || form.rateType == 'Selecteaza tipul') ? null : form.rateType,
-        itemsR2F4: ['IRCC', 'Euribor', 'Robor', 'Fixa'].map((type) => DropdownMenuItem<String>(
-          value: type,
-          child: Text(type),
-        )).toList(),
-        onChangedR2F4: (value) {
-          if (value != null) {
-            _updateFormField(client, index, 'rateType', value, true, isClient);
-          }
-        },
-        hintTextR2F4: 'Selecteaza',
-        
-        onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
-      );
+      // Verifica daca tipul de rata este "Fixa" pentru a afisa Form4 cu input pentru rata fixa
+      final isFixedRate = form.rateType == 'Fixa';
+      
+      if (isFixedRate) {
+        // Foloseste Form4 pentru Ipotecar si Prima casa cu rata fixa (2+5 campuri: Banca, Tip credit in primul rand; Sold, Rata, Perioada, Tip Rata, Rata Fixa in al doilea rand)
+        return Form4(
+          titleR1F1: 'Banca',
+          valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
+          itemsR1F1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
+            value: bank,
+            child: Text(bank),
+          )).toList(),
+          onChangedR1F1: (value) {
+            if (value != null) {
+              _updateFormField(client, index, 'bank', value, true, isClient);
+            }
+          },
+          hintTextR1F1: 'Selecteaza',
+          
+          titleR1F2: 'Tip credit',
+          valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza' || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+          itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
+            value: type,
+            child: Text(type),
+          )).toList(),
+          onChangedR1F2: (value) {
+            if (value != null) {
+              _updateFormField(client, index, 'creditType', value, true, isClient);
+            }
+          },
+          hintTextR1F2: 'Selecteaza',
+          
+          titleR2F1: 'Sold',
+          controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_sold', form.sold),
+          hintTextR2F1: '0',
+          keyboardTypeR2F1: TextInputType.number,
+          
+          titleR2F2: 'Rata',
+          controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_rata', form.rata),
+          hintTextR2F2: '0',
+          keyboardTypeR2F2: TextInputType.number,
+          
+          titleR2F3: 'Perioada',
+          controllerR2F3: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_perioada', form.perioada),
+          hintTextR2F3: '0/0',
+          keyboardTypeR2F3: TextInputType.text,
+          suffixTextColorR2F3: AppTheme.elementColor2,
+          
+          titleR2F4: 'Tip rata',
+          valueR2F4: (form.rateType.isEmpty || form.rateType == 'Selecteaza' || form.rateType == 'Selecteaza tipul') ? null : form.rateType,
+          itemsR2F4: ['IRCC', 'Euribor', 'Robor', 'Fixa'].map((type) => DropdownMenuItem<String>(
+            value: type,
+            child: Text(type),
+          )).toList(),
+          onChangedR2F4: (value) {
+            if (value != null) {
+              _updateFormField(client, index, 'rateType', value, true, isClient);
+            }
+          },
+          hintTextR2F4: 'Selecteaza',
+          
+          titleR2F5: 'Rata fixa',
+          controllerR2F5: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_fixedRate', form.fixedRate),
+          hintTextR2F5: '0',
+          keyboardTypeR2F5: TextInputType.numberWithOptions(decimal: true),
+          suffixTextR2F5: '%',
+          suffixTextColorR2F5: AppTheme.elementColor3,
+          
+          onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
+        );
+      } else {
+        // Foloseste Form3 pentru Ipotecar si Prima casa fara rata fixa (2+4 campuri: Banca, Tip credit in primul rand; Sold, Rata, Perioada, Tip Rata in al doilea rand)
+        return Form3(
+          titleR1F1: 'Banca',
+          valueR1F1: (form.bank.isEmpty || form.bank == 'Selecteaza' || form.bank == 'Selecteaza banca') ? null : form.bank,
+          itemsR1F1: FormService.creditBanks.map((bank) => DropdownMenuItem<String>(
+            value: bank,
+            child: Text(bank),
+          )).toList(),
+          onChangedR1F1: (value) {
+            if (value != null) {
+              _updateFormField(client, index, 'bank', value, true, isClient);
+            }
+          },
+          hintTextR1F1: 'Selecteaza',
+          
+          titleR1F2: 'Tip credit',
+          valueR1F2: (form.creditType.isEmpty || form.creditType == 'Selecteaza' || form.creditType == 'Selecteaza tipul') ? null : form.creditType,
+          itemsR1F2: FormService.creditTypes.map((type) => DropdownMenuItem<String>(
+            value: type,
+            child: Text(type),
+          )).toList(),
+          onChangedR1F2: (value) {
+            if (value != null) {
+              _updateFormField(client, index, 'creditType', value, true, isClient);
+            }
+          },
+          hintTextR1F2: 'Selecteaza',
+          
+          titleR2F1: 'Sold',
+          controllerR2F1: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_sold', form.sold),
+          hintTextR2F1: '0',
+          keyboardTypeR2F1: TextInputType.number,
+          
+          titleR2F2: 'Rata',
+          controllerR2F2: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_rata', form.rata),
+          hintTextR2F2: '0',
+          keyboardTypeR2F2: TextInputType.number,
+          
+          titleR2F3: 'Perioada',
+          controllerR2F3: _getControllerWithText('${client.phoneNumber}_${isClient ? 'client' : 'coborrower'}_credit_${index}_perioada', form.perioada),
+          hintTextR2F3: '0/0',
+          keyboardTypeR2F3: TextInputType.text,
+          suffixTextColorR2F3: AppTheme.elementColor2,
+          
+          titleR2F4: 'Tip rata',
+          valueR2F4: (form.rateType.isEmpty || form.rateType == 'Selecteaza' || form.rateType == 'Selecteaza tipul') ? null : form.rateType,
+          itemsR2F4: ['IRCC', 'Euribor', 'Robor', 'Fixa'].map((type) => DropdownMenuItem<String>(
+            value: type,
+            child: Text(type),
+          )).toList(),
+          onChangedR2F4: (value) {
+            if (value != null) {
+              _updateFormField(client, index, 'rateType', value, true, isClient);
+            }
+          },
+          hintTextR2F4: 'Selecteaza',
+          
+          onClose: () => _formService.removeCreditForm(client.phoneNumber, index, isClient: isClient),
+        );
+      }
     } else if (showSoldRata) {
       // Foloseste Form1 pentru Nevoi personale (4 campuri: Sold si Rata)
       return Form1(
@@ -1607,6 +1679,7 @@ class _FormAreaState extends State<FormArea> {
           rateType: field == 'rateType' ? value : form.rateType,
           rata: field == 'rata' ? value : form.rata,
           perioada: field == 'perioada' ? value : form.perioada,
+          fixedRate: field == 'fixedRate' ? value : form.fixedRate,
           isNew: form.isNew,
         );
         
@@ -1660,6 +1733,52 @@ class _FormAreaState extends State<FormArea> {
     // Reset selections to show a new clean FormNew
     _resetCreditFormSelections();
     debugPrint('DEBUG: Credit form selections reset');
+  }
+
+  /// Transform credit form new based on selected bank and credit type
+  void _transformCreditFormNewImmediate(ClientModel client, String creditType, bool isClient) {
+    debugPrint('DEBUG: Transforming credit form immediately - Type: $creditType, IsClient: $isClient');
+    
+    // Creeaza un formular nou cu datele selectate
+    final newForm = CreditFormModel(
+      bank: _creditSelectedBank[_selectionKey(client.phoneNumber, isClient)] ?? 'Selecteaza',
+      creditType: creditType,
+    );
+    
+    // FIX: Create a completely new form list with only the new form
+    _formService.createNewCreditForm(client.phoneNumber, newForm, isClient: isClient);
+    
+    debugPrint('DEBUG: Created new credit form with clean state');
+    
+    // Automatically save to Firebase after creating new form
+    _autoSaveToFirebase(client);
+    
+    // Reset selections to show a new clean FormNew
+    _resetCreditFormSelections();
+    debugPrint('DEBUG: Credit form selections reset');
+  }
+
+  /// Transform income form new based on selected income type only (bank optional)
+  void _transformIncomeFormNewImmediate(ClientModel client, String incomeType, bool isClient) {
+    debugPrint('DEBUG: Transforming income form immediately - Type: $incomeType, IsClient: $isClient');
+    
+    // Creeaza un formular nou cu datele selectate
+    final newForm = IncomeFormModel(
+      bank: _incomeSelectedBank[_selectionKey(client.phoneNumber, isClient)] ?? 'Selecteaza',
+      incomeType: incomeType,
+    );
+    
+    // Creeaza formularul nou pastrand cele existente
+    _formService.createNewIncomeForm(client.phoneNumber, newForm, isClient: isClient);
+    
+    debugPrint('DEBUG: Created new income form with clean state');
+    
+    // Salvare automata
+    _autoSaveToFirebase(client);
+    
+    // Reset selectie pentru a arata un FormNew curat
+    _resetIncomeFormSelections();
+    debugPrint('DEBUG: Income form selections reset');
   }
 
   /// Transform income form new based on selected bank and income type

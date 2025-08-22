@@ -543,11 +543,11 @@ class _DashboardAreaState extends State<DashboardArea> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Forms card
-                _buildStatCard('assets/formIcon.svg', '${stats?.formsCompletedThisMonth ?? 0} formulare'),
+                // Forms card (today)
+                _buildStatCard('assets/formIcon.svg', '${stats?.formsCompletedToday ?? 0} formulare'),
                 const SizedBox(width: 10),
-                // Meetings card
-                _buildStatCard('assets/calendarIcon.svg', '${stats?.totalMeetingsScheduled ?? 0} intalniri'),
+                // Meetings card (today)
+                _buildStatCard('assets/calendarIcon.svg', '${stats?.meetingsScheduledToday ?? 0} intalniri'),
                 const SizedBox(width: 10),
                 // Duty agent card
                 if (_dashboardService.dutyAgent != null)
