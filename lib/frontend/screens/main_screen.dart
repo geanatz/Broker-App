@@ -31,6 +31,7 @@ import 'dart:ui';
 // import 'package:flutter/scheduler.dart'; // Removed as no longer needed
 import 'dart:async';
 import 'package:mat_finance/main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -143,8 +144,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Asculta schimbarile din ClientService
     _clientService.addListener(_onClientServiceChanged);
     
-
+    // Asculta schimbarile de culori ale consultantilor
+    _consultantService.addListener(_onConsultantColorsChanged);
     
+    // FIX: Asculta schimbarile de autentificare pentru a reseta culoarea
+    _listenToAuthChanges();
+
     // Asculta schimbarile de brightness pentru modul auto
     WidgetsBinding.instance.addObserver(this);
     
@@ -160,32 +165,67 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     /// FIX: Initializeaza aplicatia pentru consultantul curent
   Future<void> _initializeForCurrentConsultant() async {
     try {
+      // FIX: Reseteaza culoarea inainte de a reseta cache-ul
+      if (mounted) {
+        setState(() {
+          _consultantColorIndex = null;
+        });
+      }
+      
       // Reseteaza cache-ul pentru consultant/echipa curenta
       await _splashService.resetForNewConsultant();
 
+      // FIX: Incarca culoarea dupa resetarea cache-ului
+      await _loadConsultantColor();
 
     } catch (e) {
-      // Error initializing for current consultant
+      debugPrint('❌ MAIN_SCREEN: Error initializing for current consultant: $e');
     }
   }
 
   /// Incarca culoarea consultantului curent
   Future<void> _loadConsultantColor() async {
     try {
+      // FIX: Reseteaza culoarea inainte de a incarca una noua
+      if (mounted) {
+        setState(() {
+          _consultantColorIndex = null;
+        });
+      }
+      
       final colorIndex = await _consultantService.getCurrentConsultantColor();
       if (mounted) {
         setState(() {
           _consultantColorIndex = colorIndex;
         });
+        debugPrint('🎨 MAIN_SCREEN: Loaded consultant color: $colorIndex');
       }
     } catch (e) {
       debugPrint('❌ MAIN_SCREEN: Error loading consultant color: $e');
     }
   }
+
+  /// Callback pentru schimbarile de culori ale consultantilor
+  void _onConsultantColorsChanged() {
+    if (!mounted) return;
+    
+    debugPrint('🎨 MAIN_SCREEN: Consultant colors changed, updating color');
+    
+    // FIX: Reseteaza culoarea inainte de a o actualiza
+    setState(() {
+      _consultantColorIndex = null;
+    });
+    
+    // Actualizeaza culoarea consultantului curent
+    _loadConsultantColor();
+  }
   
   @override
   void dispose() {
     _clientService.removeListener(_onClientServiceChanged);
+    _consultantService.removeListener(_onConsultantColorsChanged);
+    _authSubscription?.cancel(); // FIX: Opreste listener-ul de autentificare
+    _authDebounceTimer?.cancel(); // FIX: Opreste timer-ul de debouncing
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -1037,6 +1077,55 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     if (!_clientService.validateFocusState()) {
       _clientService.fixFocusStateInconsistencies();
     }
+  }
+
+  /// FIX: Asculta schimbarile de autentificare pentru a reseta culoarea
+  StreamSubscription<User?>? _authSubscription;
+
+  // FIX: Debouncing pentru schimbarile de autentificare
+  Timer? _authDebounceTimer;
+  User? _lastUserState;
+
+  /// FIX: Asculta schimbarile de autentificare pentru a reseta culoarea cu debouncing inteligent
+  void _listenToAuthChanges() {
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        debugPrint('🔐 MAIN_SCREEN: Auth state changed, user: ${user?.uid ?? 'null'}');
+
+        // FIX: Implementeaza debouncing mai inteligent
+        // Anuleaza timer-ul anterior pentru a reseta debouncing-ul
+        _authDebounceTimer?.cancel();
+
+        // FIX: Implementeaza debouncing - asteapta 1000ms de stabilitate
+        _authDebounceTimer = Timer(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            // FIX: Verifica daca starea s-a schimbat efectiv, inclusiv pentru null
+            bool hasStateChanged = false;
+
+            if (_lastUserState == null && user != null) {
+              // null → user: schimbare reala
+              hasStateChanged = true;
+            } else if (_lastUserState != null && user == null) {
+              // user → null: schimbare reala
+              hasStateChanged = true;
+            } else if (_lastUserState != null && user != null && _lastUserState!.uid != user.uid) {
+              // user → alt user: schimbare reala
+              hasStateChanged = true;
+            }
+            // null → null sau user → același user: nu se consideră schimbare
+
+            if (hasStateChanged) {
+              _lastUserState = user;
+              debugPrint('🔐 MAIN_SCREEN: Auth state stable, reloading consultant color');
+              // Reseteaza culoarea consultantului la schimbarea autentificarii
+              _loadConsultantColor();
+            } else {
+              debugPrint('🔐 MAIN_SCREEN: Auth state unchanged after debounce, skipping reload');
+            }
+          }
+        });
+      }
+    });
   }
 
 }

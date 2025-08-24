@@ -1,5 +1,6 @@
 ﻿import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_service.dart'; // For FirebaseThreadHandler
 
 /// User roles supported by the app
 enum UserRole {
@@ -37,6 +38,7 @@ class RoleService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseThreadHandler _threadHandler = FirebaseThreadHandler.instance;
 
   // Cache
   UserRole _currentRole = UserRole.consultant;
@@ -68,7 +70,9 @@ class RoleService {
     }
 
     try {
-      final doc = await _firestore.collection('consultants').doc(user.uid).get();
+      final doc = await _threadHandler.executeOnPlatformThread(() =>
+        _firestore.collection('consultants').doc(user.uid).get()
+      );
       String? roleString;
       if (doc.exists) {
         final data = doc.data();

@@ -297,6 +297,14 @@ class AppTheme extends ChangeNotifier {
 
   // Helper method to get consultant color by index (1-10)
   static Color getConsultantColor(int index) {
+    // Log pentru monitorizarea accesului la culori
+    if (index < 1 || index > 10) {
+      debugPrint('🎨 THEME_COLORS: getConsultantColor - invalid index: $index, using fallback color1');
+      return consultantColor1; // fallback
+    }
+    
+    debugPrint('🎨 THEME_COLORS: getConsultantColor - accessing color index: $index');
+    
     switch (index) {
       case 1: return consultantColor1;
       case 2: return consultantColor2;
@@ -314,6 +322,14 @@ class AppTheme extends ChangeNotifier {
 
   // Helper method to get consultant stroke color by index (1-10)
   static Color getConsultantStrokeColor(int index) {
+    // Log pentru monitorizarea accesului la culori
+    if (index < 1 || index > 10) {
+      debugPrint('🎨 THEME_COLORS: getConsultantStrokeColor - invalid index: $index, using fallback strokeColor1');
+      return consultantStrokeColor1; // fallback
+    }
+    
+    debugPrint('🎨 THEME_COLORS: getConsultantStrokeColor - accessing stroke color index: $index');
+    
     switch (index) {
       case 1: return consultantStrokeColor1;
       case 2: return consultantStrokeColor2;

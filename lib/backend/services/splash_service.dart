@@ -13,6 +13,7 @@ import 'package:mat_finance/backend/services/sheets_service.dart';
 import 'package:mat_finance/backend/services/connection_service.dart';
 import 'package:mat_finance/backend/services/llm_service.dart';
 import 'package:mat_finance/backend/services/role_service.dart';
+import 'package:mat_finance/backend/services/consultant_service.dart';
 import 'app_logger.dart';
 
 /// Service pentru gestionarea incarcarilor de pe splash screen si cache-ul aplicatiei
@@ -163,6 +164,9 @@ class SplashService extends ChangeNotifier {
 
         // Also clear Firebase-side caches strictly bound to previous consultant
         NewFirebaseService().clearAllCaches();
+        
+        // Invalideaza cache-ul de culori pentru consultant
+        ConsultantService().resetForNewConsultant();
         
         // FIX: Switch consultant in Google Drive service
         if (_googleDriveService != null && newConsultantToken != null) {

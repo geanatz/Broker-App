@@ -573,13 +573,37 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
       final doc = await FirebaseFirestore.instance.collection('consultants').doc(user.uid).get();
       if (doc.exists) {
         final data = doc.data();
-        return data?['colorIndex'] as int?;
+        final colorIndex = data?['colorIndex'] as int?;
+        debugPrint('🎨 TITLEBAR: Loaded color index $colorIndex for consultant ${user.uid}');
+        return colorIndex;
       }
       return null;
     } catch (e) {
       debugPrint('TitleBar: Error loading consultant color: $e');
       return null;
     }
+  }
+
+  int? _getCurrentConsultantColor(User? user, Map<String, int?>? colorSnapshotData, Map<String, dynamic>? dataSnapshotData) {
+    if (user == null) {
+      return null;
+    }
+
+    // Daca colorSnapshotData este disponibil, cauta culoarea dupa numele consultantului
+    if (colorSnapshotData != null && colorSnapshotData.isNotEmpty) {
+      // FIX: Cauta culoarea dupa numele consultantului din dataSnapshotData
+      final consultantName = dataSnapshotData?['name'] as String?;
+      if (consultantName != null && colorSnapshotData.containsKey(consultantName)) {
+        return colorSnapshotData[consultantName];
+      }
+    }
+
+    // Altfel, daca dataSnapshotData este disponibil, foloseste culoarea din future
+    if (dataSnapshotData != null && dataSnapshotData.containsKey('colorIndex')) {
+      return dataSnapshotData['colorIndex'] as int?;
+    }
+
+    return null;
   }
 
   @override
@@ -617,50 +641,60 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
             StreamBuilder<User?>(
               stream: FirebaseAuth.instance.authStateChanges(),
               builder: (context, snapshot) {
-                return FutureBuilder<Map<String, dynamic>>(
-                  future: Future.wait([
-                    _loadConsultantName(snapshot.data),
-                    _loadConsultantColor(snapshot.data),
-                  ]).then((results) => {
-                    'name': results[0],
-                    'colorIndex': results[1],
-                  }),
-                  builder: (context, dataSnapshot) {
-                    final displayName = dataSnapshot.data?['name'] ?? 'Se incarca...';
-                    final colorIndex = dataSnapshot.data?['colorIndex'] as int?;
+                // FIX: Adauga un key unic pentru fiecare consultant pentru a forta rebuild-ul
+                final userKey = snapshot.data?.uid ?? 'no_user';
+                
+                return StreamBuilder<Map<String, int?>>(
+                  stream: ConsultantService().colorChangeStream,
+                  builder: (context, colorSnapshot) {
+                    return FutureBuilder<Map<String, dynamic>>(
+                      key: ValueKey('consultant_$userKey'), // FIX: Key unic pentru fiecare consultant
+                      future: Future.wait([
+                        _loadConsultantName(snapshot.data),
+                        _loadConsultantColor(snapshot.data),
+                      ]).then((results) => {
+                        'name': results[0],
+                        'colorIndex': results[1],
+                      }),
+                      builder: (context, dataSnapshot) {
+                        final displayName = dataSnapshot.data?['name'] ?? 'Se incarca...';
+                        // FIX: Foloseste culoarea din stream doar daca e pentru consultantul curent
+                        final colorIndex = _getCurrentConsultantColor(snapshot.data, colorSnapshot.data, dataSnapshot.data);
 
-                    // Determina culoarea de fundal
-                    final backgroundColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
-                        ? AppTheme.getConsultantColor(colorIndex)
-                        : AppTheme.backgroundColor2;
+                        // Determina culoarea de fundal
+                        final backgroundColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
+                            ? AppTheme.getConsultantColor(colorIndex)
+                            : AppTheme.backgroundColor2;
 
-                    // Determina culoarea pentru border
-                    final borderColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
-                        ? AppTheme.getConsultantStrokeColor(colorIndex)
-                        : AppTheme.backgroundColor3;
+                        // Determina culoarea pentru border
+                        final borderColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
+                            ? AppTheme.getConsultantStrokeColor(colorIndex)
+                            : AppTheme.backgroundColor3;
 
-                    return Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: backgroundColor,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: borderColor,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          displayName,
-                          style: GoogleFonts.outfit(
-                            fontSize: 15,
-                            color: AppTheme.elementColor2,
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.none,
+                        return Container(
+                          height: 24,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: backgroundColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: borderColor,
+                              width: 2,
+                            ),
                           ),
-                        ),
-                      ),
+                          child: Center(
+                            child: Text(
+                              displayName,
+                              style: GoogleFonts.outfit(
+                                fontSize: 15,
+                                color: AppTheme.elementColor2,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );

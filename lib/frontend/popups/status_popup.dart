@@ -557,11 +557,18 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 360, minHeight: 376),
-        child: Container(
-          width: 360,
-          height: _shouldShowSecondRow ? 456 : 376, // Inaltime dinamica
+      child: Builder(
+        builder: (context) {
+          // Calculeaza inaltimea disponibila pentru a evita overflow
+          final screenHeight = MediaQuery.of(context).size.height;
+          final availableHeight = screenHeight * 0.7; // 70% din inaltimea ecranului
+          final maxHeight = availableHeight.clamp(300.0, 500.0); // Intre 300-500 pixeli
+
+          return ConstrainedBox(
+            constraints: BoxConstraints(minWidth: 360, minHeight: maxHeight),
+            child: Container(
+              width: 360,
+              height: maxHeight, // Inaltime dinamica responsive
           padding: const EdgeInsets.all(8),
           decoration: ShapeDecoration(
             color: AppTheme.backgroundColor1,
@@ -769,7 +776,9 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
               ),
             ],
           ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

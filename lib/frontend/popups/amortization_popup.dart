@@ -28,11 +28,18 @@ class AmortizationPopup extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.zero,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: 520, minHeight: 432),
-        child: Container(
-          width: 520,
-          height: 432,
+      child: Builder(
+        builder: (context) {
+          // Calculeaza inaltimea disponibila pentru a evita overflow
+          final screenHeight = MediaQuery.of(context).size.height;
+          final availableHeight = screenHeight * 0.7; // 70% din inaltimea ecranului
+          final maxHeight = availableHeight.clamp(300.0, 500.0); // Intre 300-500 pixeli
+
+          return ConstrainedBox(
+            constraints: BoxConstraints(minWidth: 520, minHeight: maxHeight),
+            child: Container(
+              width: 520,
+              height: maxHeight,
           padding: const EdgeInsets.all(8),
           decoration: ShapeDecoration(
             color: AppTheme.backgroundColor1,
@@ -277,7 +284,9 @@ class AmortizationPopup extends StatelessWidget {
               ),
             ],
           ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -471,10 +471,15 @@ class _ClientsPopupState extends State<ClientsPopup> {
   /// Construieste widgetul de extragere OCR
   Widget _buildOcrWidget(double width) {
     // Determina daca acest widget este ultimul (cel mai din dreapta)
-    
+
+    // Calculeaza inaltimea disponibila pentru a evita overflow
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableHeight = screenHeight * 0.7; // 70% din inaltimea ecranului
+    final maxHeight = availableHeight.clamp(300.0, 500.0); // Intre 300-500 pixeli
+
     return Container(
       width: width,
-      height: 432,
+      height: maxHeight,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: ShapeDecoration(
         color: AppTheme.backgroundColor1,
@@ -819,9 +824,14 @@ class _ClientsPopupState extends State<ClientsPopup> {
   Widget _buildClientsWidget(double width) {
     // Determina pozitia acestui widget in layout
 
+    // Calculeaza inaltimea disponibila pentru a evita overflow
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableHeight = screenHeight * 0.7; // 70% din inaltimea ecranului
+    final maxHeight = availableHeight.clamp(300.0, 500.0); // Intre 300-500 pixeli
+
     return Container(
       width: width,
-      height: 432,
+      height: maxHeight,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: ShapeDecoration(
         color: AppTheme.backgroundColor1,
@@ -948,11 +958,16 @@ class _ClientsPopupState extends State<ClientsPopup> {
         break;
     }
 
+    // Calculeaza inaltimea disponibila pentru a evita overflow
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableHeight = screenHeight * 0.7; // 70% din inaltimea ecranului
+    final maxHeight = availableHeight.clamp(300.0, 500.0); // Intre 300-500 pixeli
+
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: totalWidth, minHeight: 432),
+      constraints: BoxConstraints(minWidth: totalWidth, minHeight: maxHeight),
       child: Container(
         width: totalWidth,
-        height: 432,
+        height: maxHeight,
         color: Colors.transparent,
         child: Row(
           children: [
@@ -1210,12 +1225,17 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.editingClient != null;
-    
+
+    // Calculeaza inaltimea disponibila pentru a evita overflow
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableHeight = screenHeight * 0.7; // 70% din inaltimea ecranului
+    final maxHeight = availableHeight.clamp(300.0, 500.0); // Intre 300-500 pixeli
+
     return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 296, minHeight: 432),
+      constraints: BoxConstraints(minWidth: 296, minHeight: maxHeight),
       child: Container(
         width: 296,
-        height: 432,
+        height: maxHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: ShapeDecoration(
           color: AppTheme.backgroundColor1,

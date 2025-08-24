@@ -107,36 +107,31 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
   @override
   void initState() {
     super.initState();
-
-    PerformanceMonitor.startTimer('calendarAreaInit');
-
-    // Foloseste serviciile pre-incarcate din splash
-    _calendarService = SplashService().calendarService;
+    
+    // Initializeaza serviciile
+    _calendarService = CalendarService();
     _splashService = SplashService();
     _consultantService = ConsultantService();
-
-    // FIX: Asculta la schimbari in SplashService pentru refresh automat
+    
+    // Adauga listener pentru schimbarile de culori
+    _consultantService.addListener(_onConsultantColorsChanged);
+    
+    // Adauga listener pentru schimbarile din SplashService
     _splashService.addListener(_onSplashServiceChanged);
-
-    // Calendar este deja initializat in splash
-    _isInitialized = true;
-
-    // Initialize animation controller - optimized for speed and smoothness
+    
+    // Initializeaza animatiile
     _slideAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 280), // Faster animation
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-
-    // Create optimized slide animation with better curve
+    
     _slideAnimation = Tween<Offset>(
-      begin: Offset.zero,
+      begin: const Offset(1.0, 0.0),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideAnimationController,
-      curve: Curves.fastOutSlowIn, // More responsive curve
+      curve: Curves.easeInOut,
     ));
-
-
 
     // OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
     _loadFromCacheInstantly();
@@ -148,10 +143,29 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
 
   }
 
+  /// Callback pentru schimbarile de culori ale consultantilor
+  void _onConsultantColorsChanged() {
+    if (!mounted) return;
+    
+    debugPrint('🎨 CALENDAR_COLORS: Consultant colors changed, updating cache');
+    
+    // Actualizeaza cache-ul local cu noile culori
+    final newColors = _consultantService.getCachedColors();
+    if (newColors.isNotEmpty) {
+      setState(() {
+        _consultantColorsCache = newColors;
+      });
+      debugPrint('🎨 CALENDAR_COLORS: Cache updated with new colors: $_consultantColorsCache');
+    }
+  }
+
   /// Incarca culorile consultantilor din echipa curenta
   Future<void> _loadConsultantColors() async {
     if (_isLoadingConsultantColors) return;
     _isLoadingConsultantColors = true;
+
+    final stopwatch = Stopwatch()..start();
+    debugPrint('🎨 CALENDAR_COLORS: _loadConsultantColors - starting to load consultant colors');
 
     try {
       final consultantColors = await _consultantService.getTeamConsultantColorsByName();
@@ -159,9 +173,14 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
         setState(() {
           _consultantColorsCache = consultantColors;
         });
+        
+        stopwatch.stop();
+        debugPrint('🎨 CALENDAR_COLORS: _loadConsultantColors - completed successfully, timeMs=${stopwatch.elapsedMilliseconds}, colorsLoaded=${consultantColors.length}, cacheSize=${_consultantColorsCache.length}');
+        debugPrint('🎨 CALENDAR_COLORS: _loadConsultantColors - cache content: $_consultantColorsCache');
       }
     } catch (e) {
-      debugPrint('❌ CALENDAR_AREA: Error loading consultant colors: $e');
+      stopwatch.stop();
+      debugPrint('❌ CALENDAR_COLORS: _loadConsultantColors - error: $e, timeMs=${stopwatch.elapsedMilliseconds}');
     } finally {
       _isLoadingConsultantColors = false;
     }
@@ -224,7 +243,8 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     _scrollController.dispose();
     _slideAnimationController.dispose();
     _currentWeekOffsetNotifier.dispose();
-    _splashService.removeListener(_onSplashServiceChanged); // FIX: cleanup listener
+    _splashService.removeListener(_onSplashServiceChanged);
+    _consultantService.removeListener(_onConsultantColorsChanged);
     super.dispose();
   }
 
@@ -578,9 +598,14 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
 
   /// Construieste containerul de loading
   Widget _buildLoadingContainer() {
+    // Calculeaza inaltimea disponibila pentru a evita overflow
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableHeight = screenHeight * 0.6; // 60% din inaltimea ecranului
+    final maxHeight = availableHeight.clamp(400.0, 800.0); // Intre 400-800 pixeli
+
     return Container(
       width: double.infinity,
-      height: 600,
+      height: maxHeight,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
         color: AppTheme.backgroundColor1,
@@ -1213,9 +1238,13 @@ class _HoverableSlotState extends State<_HoverableSlot> {
 
     // Cauta culoarea consultantului in cache
     final colorIndex = widget.consultantColors[consultantName];
-
+    
+    // Log pentru monitorizarea accesului la culori
     if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
+      debugPrint('🎨 CALENDAR_COLORS: _getConsultantColor - cache HIT for consultant: $consultantName, colorIndex: $colorIndex');
       return AppTheme.getConsultantColor(colorIndex);
+    } else {
+      debugPrint('🎨 CALENDAR_COLORS: _getConsultantColor - cache MISS for consultant: $consultantName, availableColors: ${widget.consultantColors.keys.toList()}');
     }
 
     // Fallback la culoarea implicita
@@ -1239,7 +1268,10 @@ class _HoverableSlotState extends State<_HoverableSlot> {
     final colorIndex = widget.consultantColors[consultantName];
 
     if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
+      debugPrint('🎨 CALENDAR_COLORS: _getConsultantStrokeColor - cache HIT for consultant: $consultantName, colorIndex: $colorIndex');
       return AppTheme.getConsultantStrokeColor(colorIndex);
+    } else {
+      debugPrint('🎨 CALENDAR_COLORS: _getConsultantStrokeColor - cache MISS for consultant: $consultantName, availableColors: ${widget.consultantColors.keys.toList()}');
     }
 
     // Fallback la culoarea implicita

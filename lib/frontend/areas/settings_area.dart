@@ -95,27 +95,53 @@ class _SettingsAreaState extends State<SettingsArea> {
   Future<void> _saveConsultantColor(int colorIndex) async {
     if (_isLoading) return;
 
+    final stopwatch = Stopwatch()..start();
+    debugPrint('🎨 SETTINGS_COLORS: _saveConsultantColor - starting to save color index: $colorIndex');
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final success = await _consultantService.setCurrentConsultantColor(colorIndex);
+      final success = await _consultantService.updateCurrentConsultantColor(colorIndex);
+      stopwatch.stop();
+      
       if (success && mounted) {
         setState(() {
           _selectedColorIndex = colorIndex;
         });
 
+        debugPrint('🎨 SETTINGS_COLORS: _saveConsultantColor - completed successfully, timeMs=${stopwatch.elapsedMilliseconds}, colorIndex: $colorIndex');
+
         // Arata mesaj de succes
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Culoare salvata cu succes!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Culoare salvata cu succes!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       } else {
+        debugPrint('❌ SETTINGS_COLORS: _saveConsultantColor - failed to save, timeMs=${stopwatch.elapsedMilliseconds}, colorIndex: $colorIndex');
+        
         // Arata mesaj de eroare
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Eroare la salvarea culorii'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      stopwatch.stop();
+      debugPrint('❌ SETTINGS_COLORS: _saveConsultantColor - error: $e, timeMs=${stopwatch.elapsedMilliseconds}, colorIndex: $colorIndex');
+      
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Eroare la salvarea culorii'),
@@ -124,15 +150,6 @@ class _SettingsAreaState extends State<SettingsArea> {
           ),
         );
       }
-    } catch (e) {
-      debugPrint('❌ SETTINGS: Error saving consultant color: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Eroare la salvarea culorii'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
     } finally {
       if (mounted) {
         setState(() {
@@ -309,7 +326,7 @@ class _SettingsAreaState extends State<SettingsArea> {
                     ),
                     boxShadow: isSelected ? [
                       BoxShadow(
-                        color: color.withOpacity(0.3),
+                        color: color.withValues(alpha: 0.3),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),
@@ -352,7 +369,7 @@ class _SettingsAreaState extends State<SettingsArea> {
             Container(
               padding: const EdgeInsets.all(AppTheme.smallGap),
               decoration: BoxDecoration(
-                color: AppTheme.getConsultantColor(_selectedColorIndex!).withOpacity(0.1),
+                color: AppTheme.getConsultantColor(_selectedColorIndex!).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                 border: Border.all(
                   color: AppTheme.getConsultantStrokeColor(_selectedColorIndex!),
