@@ -6,6 +6,7 @@ import 'package:mat_finance/app_theme.dart';
 import 'package:mat_finance/backend/services/splash_service.dart';
 import 'package:mat_finance/backend/services/update_service.dart';
 import 'package:mat_finance/frontend/screens/main_screen.dart';
+import 'package:mat_finance/frontend/areas/calendar_area.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Splash screen care pre-incarca toate serviciile aplicatiei pentru o experienta fluida
@@ -34,6 +35,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   // Service instances
   final SplashService _splashService = SplashService();
   final UpdateService _updateService = UpdateService();
+
+  // Calendar pre-loading
+  bool _calendarPreLoaded = false;
 
   // OPTIMIZARE: Loading states pentru componente specifice
   bool _calendarLoaded = false;
@@ -96,25 +100,31 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     try {
       // Listen to splash service changes
       _splashService.addListener(_onSplashServiceChanged);
-      
+
       // Initialize updater (no background checks; updates happen pre-launch only)
       await _updateService.initialize();
 
       // What's New se afiseaza in MainScreen pentru a evita dublura si pentru UI gata
-      
+
+      // CRITICAL: Start calendar pre-loading in parallel with other services
+      _startCalendarPreLoading();
+
       // Start preloading
       final success = await _splashService.startPreloading();
-      
+
+      // Wait for calendar to finish pre-loading
+      await _waitForCalendarPreLoad();
+
       if (success) {
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         await _navigateToMainScreen();
       } else {
         // In case of error, still navigate to main screen
         await Future.delayed(const Duration(milliseconds: 500));
         await _navigateToMainScreen();
       }
-      
+
     } catch (e) {
       debugPrint('SPLASH_SCREEN: Error during preloading: $e');
       // In case of error, still navigate to main screen
@@ -137,30 +147,67 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
 
+  /// CRITICAL: Start calendar pre-loading in parallel
+  void _startCalendarPreLoading() {
+    debugPrint('SPLASH_CALENDAR: Starting calendar pre-loading...');
+
+    // Start the pre-loading process using static method
+    unawaited(_performCalendarPreLoad());
+  }
+
+  /// Perform calendar pre-loading using static method
+  Future<void> _performCalendarPreLoad() async {
+    try {
+      // Call the static pre-load method
+      await CalendarArea.preLoadCalendarData();
+      _calendarPreLoaded = true;
+      debugPrint('SPLASH_CALENDAR: Calendar pre-loading completed successfully');
+    } catch (e) {
+      debugPrint('SPLASH_CALENDAR: Error during calendar pre-loading: $e');
+      _calendarPreLoaded = true; // Don't block navigation on error
+    }
+  }
+
+  /// Wait for calendar pre-loading to complete
+  Future<void> _waitForCalendarPreLoad() async {
+    const maxWaitTime = Duration(seconds: 10);
+    final startTime = DateTime.now();
+
+    while (!_calendarPreLoaded && DateTime.now().difference(startTime) < maxWaitTime) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    if (!_calendarPreLoaded) {
+      debugPrint('SPLASH_CALENDAR: Calendar pre-loading timeout, proceeding anyway');
+    } else {
+      debugPrint('SPLASH_CALENDAR: Calendar pre-loading confirmed complete');
+    }
+  }
+
   /// OPTIMIZARE: Actualizeaza starile de loading pentru componente specifice
   void _updateLoadingStates() {
     final progress = _splashService.progress;
-    
+
     // Calendar loaded after core services (15% + 25% = 40%)
-    if (progress >= 0.4) {
+    if (progress >= 0.4 || _calendarPreLoaded) {
       _calendarLoaded = true;
     }
-    
+
     // Meetings loaded after data preload (40% + 20% = 60%)
     if (progress >= 0.6) {
       _meetingsLoaded = true;
     }
-    
+
     // Clients loaded after data preload (40% + 20% = 60%)
     if (progress >= 0.6) {
       _clientsLoaded = true;
     }
-    
+
     // Dashboard loaded after sync (60% + 15% = 75%)
     if (progress >= 0.75) {
       _dashboardLoaded = true;
     }
-    
+
     // Google Drive loaded after sync (60% + 15% = 75%)
     if (progress >= 0.75) {
       _googleDriveLoaded = true;
