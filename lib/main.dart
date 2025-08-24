@@ -601,7 +601,7 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
             ),
             const SizedBox(width: 8),
             // Consultant name
-            Container(
+            SizedBox(
               height: 24,
               child: Center(
                 child: Text(

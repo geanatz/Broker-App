@@ -495,7 +495,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             // Custom titlebar is now injected globally in MaterialApp.builder (main.dart)
             // Main content
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppTheme.smallGap, 0, AppTheme.smallGap, AppTheme.smallGap),
+              padding: const EdgeInsets.fromLTRB(AppTheme.smallGap, 0, AppTheme.mediumGap, AppTheme.smallGap),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -570,20 +570,33 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         gradient: AppTheme.boxColor,
                         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
                       ),
-                      child: Row(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Area (stanga)
-                          Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
-                          // Gap 8 intre area si pane (doar cand pane este vizibil)
+                          // Area (stanga) + Pane (dreapta) pentru dashboard, settings si calendar
+                          if (_currentArea == AreaType.dashboard || _currentArea == AreaType.settings || _currentArea == AreaType.calendar)
+                            Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
+                          // Row pentru area + pane pentru celelalte tipuri
                           if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
-                            const SizedBox(width: AppTheme.smallGap),
-                          // Pane (dreapta) - ascuns pe dashboard, settings si calendar
-                          if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
-                            SizedBox(
-                              width: 296,
-                              child: RepaintBoundary(child: _paneWidgets[_currentPane]!),
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Area (stanga)
+                                  Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
+                                  // Gap 8 intre area si pane
+                                  const SizedBox(width: AppTheme.smallGap),
+                                  // Pane (dreapta)
+                                  SizedBox(
+                                    width: 296,
+                                    child: RepaintBoundary(child: _paneWidgets[_currentPane]!),
+                                  ),
+                                ],
+                              ),
                             ),
+                          // Switch săptămâni pentru calendar (în afara CalendarArea)
+                          if (_currentArea == AreaType.calendar)
+                            _buildCalendarWeekSwitch(),
                         ],
                       ),
                       ),
@@ -608,6 +621,114 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Titlebar handlers and buttons moved to global builder in main.dart
   
   
+  /// Construieste switch-ul pentru săptămâni în calendar (în afara CalendarArea)
+  Widget _buildCalendarWeekSwitch() {
+    final calendarService = _splashService.calendarService;
+    final currentWeekOffset = _calendarKey.currentState?.currentWeekOffset ?? 0;
+    final weekRange = calendarService.getDateInterval(currentWeekOffset);
+    
+    return Container(
+      width: double.infinity,
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 480,
+            height: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: ShapeDecoration(
+              color: AppTheme.backgroundColor2,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Buton pentru săptămâna anterioară
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      _calendarKey.currentState?.navigateToPreviousWeek();
+                    },
+                    child: Container(
+                      decoration: ShapeDecoration(
+                        color: AppTheme.elementColor2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chevron_left,
+                            color: AppTheme.elementColor1,
+                            size: 24,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Text cu intervalul săptămânii
+                SizedBox(
+                  width: 149.33,
+                  height: 24,
+                  child: Text(
+                    weekRange,
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.elementColor2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Buton pentru săptămâna următoare
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      _calendarKey.currentState?.navigateToNextWeek();
+                    },
+                    child: Container(
+                      decoration: ShapeDecoration(
+                        color: AppTheme.elementColor2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chevron_right,
+                            color: AppTheme.elementColor1,
+                            size: 24,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Builds dual popup overlay with both popups side by side
   Widget _buildDualPopupOverlay() {
     return GestureDetector(
