@@ -145,15 +145,18 @@ class SidebarService {
   // Current navigation state
   AreaType _currentArea = AreaType.dashboard;
   PaneType? _currentPane = PaneType.clients;
-  
+
+  // ValueNotifier for area changes (for titlebar updates)
+  final ValueNotifier<AreaType> currentAreaNotifier;
+
   // Debounce mechanism to prevent rapid clicks
   DateTime? _lastClickTime;
   static const Duration _clickDebounceDelay = Duration(milliseconds: 300);
-  
+
   // Getters for current state
   AreaType get currentArea => _currentArea;
   PaneType? get currentPane => _currentPane;
-  
+
   // Callback functions
   final AreaChangeCallback onAreaChanged;
   final PaneChangeCallback onPaneChanged;
@@ -164,17 +167,18 @@ class SidebarService {
     required this.onPaneChanged,
     AreaType initialArea = AreaType.dashboard,
     PaneType? initialPane,
-  }) : 
+  }) :
     _currentArea = initialArea,
-    _currentPane = initialPane;
+    _currentPane = initialPane,
+    currentAreaNotifier = ValueNotifier<AreaType>(initialArea);
   
   // ========== STATE MANAGEMENT ==========
   
   /// Change the current area
   void changeArea(AreaType area) {
     if (_currentArea != area) {
-
       _currentArea = area;
+      currentAreaNotifier.value = area;
       onAreaChanged(area);
     } else {
 
@@ -195,6 +199,21 @@ class SidebarService {
   /// Synchronize area state without triggering callbacks (for state restoration)
   void syncArea(AreaType area) {
     _currentArea = area;
+    currentAreaNotifier.value = area;
+  }
+
+  /// Get the Romanian display name for an area type
+  static String getAreaDisplayName(AreaType area) {
+    switch (area) {
+      case AreaType.dashboard:
+        return 'Acasa';
+      case AreaType.calendar:
+        return 'Calendar';
+      case AreaType.form:
+        return 'Formular';
+      case AreaType.settings:
+        return 'Setari';
+    }
   }
   
   /// Synchronize pane state without triggering callbacks (for state restoration)

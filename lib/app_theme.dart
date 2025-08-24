@@ -262,5 +262,71 @@ class AppTheme extends ChangeNotifier {
   // Reserved slot stroke gradient
   static const Color calendarReservedStrokeTop = Color(0xFFA1B7CE); // A1B7CE
   static const Color calendarReservedStrokeBottom = Color(0xFF93ADC8); // 93ADC8
+
+  // ======== CONSULTANT COLORS ========
+  // Consultant color palette - 10 colors with fill and stroke variants
+  static const Color consultantColor1 = Color(0xFFEFE5C7);
+  static const Color consultantStrokeColor1 = Color(0xFFE8DAB0);
+
+  static const Color consultantColor2 = Color(0xFFE1EFC7);
+  static const Color consultantStrokeColor2 = Color(0xFFD5E9AF);
+
+  static const Color consultantColor3 = Color(0xFFC9EFC7);
+  static const Color consultantStrokeColor3 = Color(0xFFB2E9AF);
+
+  static const Color consultantColor4 = Color(0xFFC7EFDD);
+  static const Color consultantStrokeColor4 = Color(0xFFAFE9CF);
+
+  static const Color consultantColor5 = Color(0xFFC7E9EF);
+  static const Color consultantStrokeColor5 = Color(0xFFAFE0E9);
+
+  static const Color consultantColor6 = Color(0xFFC7D1EF);
+  static const Color consultantStrokeColor6 = Color(0xFFAFBDE9);
+
+  static const Color consultantColor7 = Color(0xFFD5C7EF);
+  static const Color consultantStrokeColor7 = Color(0xFFC3AFE9);
+
+  static const Color consultantColor8 = Color(0xFFEDC7EF);
+  static const Color consultantStrokeColor8 = Color(0xFFE6AFE9);
+
+  static const Color consultantColor9 = Color(0xFFEFC7D9);
+  static const Color consultantStrokeColor9 = Color(0xFFE9AFC9);
+
+  static const Color consultantColor10 = Color(0xFFEFCDC7);
+  static const Color consultantStrokeColor10 = Color(0xFFE9B8AF);
+
+  // Helper method to get consultant color by index (1-10)
+  static Color getConsultantColor(int index) {
+    switch (index) {
+      case 1: return consultantColor1;
+      case 2: return consultantColor2;
+      case 3: return consultantColor3;
+      case 4: return consultantColor4;
+      case 5: return consultantColor5;
+      case 6: return consultantColor6;
+      case 7: return consultantColor7;
+      case 8: return consultantColor8;
+      case 9: return consultantColor9;
+      case 10: return consultantColor10;
+      default: return consultantColor1; // fallback
+    }
+  }
+
+  // Helper method to get consultant stroke color by index (1-10)
+  static Color getConsultantStrokeColor(int index) {
+    switch (index) {
+      case 1: return consultantStrokeColor1;
+      case 2: return consultantStrokeColor2;
+      case 3: return consultantStrokeColor3;
+      case 4: return consultantStrokeColor4;
+      case 5: return consultantStrokeColor5;
+      case 6: return consultantStrokeColor6;
+      case 7: return consultantStrokeColor7;
+      case 8: return consultantStrokeColor8;
+      case 9: return consultantStrokeColor9;
+      case 10: return consultantStrokeColor10;
+      default: return consultantStrokeColor1; // fallback
+    }
+  }
 } 
 

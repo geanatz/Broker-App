@@ -11,6 +11,7 @@ import 'package:mat_finance/backend/services/clients_service.dart';
 import 'package:mat_finance/backend/services/splash_service.dart';
 import 'package:mat_finance/frontend/components/texts/text2.dart';
 import 'package:mat_finance/backend/services/firebase_service.dart';
+import 'package:mat_finance/backend/services/consultant_service.dart';
 
 // Import the required components
 import 'package:mat_finance/frontend/components/dialog_utils.dart';
@@ -44,6 +45,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
   // Services
   late final CalendarService _calendarService;
   late final SplashService _splashService;
+  late final ConsultantService _consultantService;
   
   // Firebase references
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -98,6 +100,10 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
   int _cacheHits = 0;
   int _cacheMisses = 0;
 
+  // Consultant colors cache
+  Map<String, int?> _consultantColorsCache = {};
+  bool _isLoadingConsultantColors = false;
+
   @override
   void initState() {
     super.initState();
@@ -107,6 +113,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     // Foloseste serviciile pre-incarcate din splash
     _calendarService = SplashService().calendarService;
     _splashService = SplashService();
+    _consultantService = ConsultantService();
 
     // FIX: Asculta la schimbari in SplashService pentru refresh automat
     _splashService.addListener(_onSplashServiceChanged);
@@ -134,8 +141,30 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     // OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
     _loadFromCacheInstantly();
 
+    // Incarca culorile consultantilor
+    _loadConsultantColors();
+
     PerformanceMonitor.endTimer('calendarAreaInit');
 
+  }
+
+  /// Incarca culorile consultantilor din echipa curenta
+  Future<void> _loadConsultantColors() async {
+    if (_isLoadingConsultantColors) return;
+    _isLoadingConsultantColors = true;
+
+    try {
+      final consultantColors = await _consultantService.getTeamConsultantColorsByName();
+      if (mounted) {
+        setState(() {
+          _consultantColorsCache = consultantColors;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ CALENDAR_AREA: Error loading consultant colors: $e');
+    } finally {
+      _isLoadingConsultantColors = false;
+    }
   }
 
   /// OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
@@ -710,7 +739,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
       return Column(
         children: [
           // Slot pentru ora curenta
-          _buildSlotWithHoverForWeek(dayIndex, hourIndex, hour, isMeeting, meetingData, docId, isLastHour, weekOffset),
+          _buildSlotWithHoverForWeek(dayIndex, hourIndex, hour, isMeeting, meetingData, docId, isLastHour, weekOffset, consultantColors: _consultantColorsCache),
           if (!isLastHour) const SizedBox(height: 16),
         ],
       );
@@ -728,8 +757,9 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     Map<String, dynamic>? meetingData,
     String? docId,
     bool isLastHour,
-    int weekOffset
-  ) {
+    int weekOffset, {
+    required Map<String, int?> consultantColors,
+  }) {
     return _HoverableSlot(
       dayIndex: dayIndex,
       hourIndex: hourIndex,
@@ -741,6 +771,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
       weekOffset: weekOffset,
       onEditMeeting: _showEditMeetingDialog,
       onCreateMeeting: _showCreateMeetingDialogWithWeek,
+      consultantColors: consultantColors,
     );
   }
 
@@ -1144,6 +1175,7 @@ class _HoverableSlot extends StatefulWidget {
   final int weekOffset;
   final Function(Map<String, dynamic>, String) onEditMeeting;
   final Function(int, int, int) onCreateMeeting; // dayIndex, hourIndex, weekOffset
+  final Map<String, int?> consultantColors;
 
   const _HoverableSlot({
     required this.dayIndex,
@@ -1156,6 +1188,7 @@ class _HoverableSlot extends StatefulWidget {
     required this.weekOffset,
     required this.onEditMeeting,
     required this.onCreateMeeting,
+    required this.consultantColors,
   });
 
   @override
@@ -1164,6 +1197,54 @@ class _HoverableSlot extends StatefulWidget {
 
 class _HoverableSlotState extends State<_HoverableSlot> {
   bool _isHovered = false;
+
+  /// Obtine culoarea consultantului pentru acest slot
+  Color _getConsultantColor() {
+    if (widget.meetingData == null) return AppTheme.backgroundColor2;
+
+    final additionalData = widget.meetingData!['additionalData'] as Map<String, dynamic>?;
+
+    String consultantName = 'N/A';
+    if (widget.meetingData!.containsKey('consultantName') && widget.meetingData!['consultantName'] != null && widget.meetingData!['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = widget.meetingData!['consultantName'].toString();
+    } else if (additionalData != null && additionalData.containsKey('consultantName') && additionalData['consultantName'] != null && additionalData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = additionalData['consultantName'].toString();
+    }
+
+    // Cauta culoarea consultantului in cache
+    final colorIndex = widget.consultantColors[consultantName];
+
+    if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
+      return AppTheme.getConsultantColor(colorIndex);
+    }
+
+    // Fallback la culoarea implicita
+    return AppTheme.backgroundColor2;
+  }
+
+  /// Obtine strokeColor al consultantului pentru acest slot
+  Color _getConsultantStrokeColor() {
+    if (widget.meetingData == null) return AppTheme.backgroundColor3;
+
+    final additionalData = widget.meetingData!['additionalData'] as Map<String, dynamic>?;
+
+    String consultantName = 'N/A';
+    if (widget.meetingData!.containsKey('consultantName') && widget.meetingData!['consultantName'] != null && widget.meetingData!['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = widget.meetingData!['consultantName'].toString();
+    } else if (additionalData != null && additionalData.containsKey('consultantName') && additionalData['consultantName'] != null && additionalData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = additionalData['consultantName'].toString();
+    }
+
+    // Cauta culoarea consultantului in cache
+    final colorIndex = widget.consultantColors[consultantName];
+
+    if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
+      return AppTheme.getConsultantStrokeColor(colorIndex);
+    }
+
+    // Fallback la culoarea implicita
+    return AppTheme.backgroundColor3;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1178,11 +1259,15 @@ class _HoverableSlotState extends State<_HoverableSlot> {
         child: Container(
           width: double.infinity,
           height: 64,
-          padding: widget.isMeeting ? const EdgeInsets.symmetric(horizontal: 16, vertical: 0) : null,
+          padding: widget.isMeeting ? const EdgeInsets.symmetric(horizontal: 24, vertical: 0) : null,
           decoration: ShapeDecoration(
-            color: widget.isMeeting ? AppTheme.backgroundColor2 : const Color(0xFFE5E1DC),
+            color: widget.isMeeting ? _getConsultantColor() : const Color(0xFFE5E1DC),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: widget.isMeeting ? BorderSide(
+                color: _getConsultantStrokeColor(),
+                width: 4.0,
+              ) : BorderSide.none,
             ),
             shadows: (widget.isMeeting || _isHovered) ? AppTheme.standardShadow : null,
           ),

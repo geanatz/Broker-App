@@ -21,6 +21,7 @@ import 'package:mat_finance/backend/services/update_config.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:mat_finance/backend/services/sidebar_service.dart';
 
 // For DevTools inspection
 class DebugOptions {
@@ -41,6 +42,11 @@ class DebugOptions {
   static void toggleWidgetInspector() {
     showWidgetInspector = !showWidgetInspector;
   }
+}
+
+/// Global ValueNotifier for current area (used by titlebar)
+class GlobalState {
+  static final ValueNotifier<AreaType> currentAreaNotifier = ValueNotifier<AreaType>(AreaType.dashboard);
 }
 
 /// Custom logging filter to reduce Firebase verbosity
@@ -490,23 +496,11 @@ class _TitleBarDragRegion extends StatefulWidget {
 
 class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
   String _version = '0.1.9'; // Default fallback
-  String _consultantName = 'Consultant';
-  bool _isLoadingConsultantInfo = false;
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
-    // Nu apelam _loadConsultantInfo() aici pentru a evita blocarea
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Apelam _loadConsultantInfo() aici, dupa ce context-ul este disponibil
-    if (!_isLoadingConsultantInfo) {
-      _loadConsultantInfo();
-    }
   }
 
   Future<void> _loadVersion() async {
@@ -531,41 +525,6 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
     return fullVersion; // Fallback to original if format is unexpected
   }
 
-  Future<void> _loadConsultantInfo() async {
-    if (_isLoadingConsultantInfo) return; // Prevent multiple calls
-    
-    setState(() {
-      _isLoadingConsultantInfo = true;
-    });
-
-    try {
-      // Verificam daca Firebase este initializat
-      if (!Firebase.apps.isNotEmpty) {
-        return;
-      }
-
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final doc = await FirebaseFirestore.instance.collection('consultants').doc(user.uid).get();
-        if (doc.exists && mounted) {
-          final data = doc.data();
-          setState(() {
-            _consultantName = data?['name'] ?? 'Consultant';
-          });
-        }
-      }
-    } catch (e) {
-      // Keep default values if loading fails
-      debugPrint('TitleBar: Error loading consultant info: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingConsultantInfo = false;
-        });
-      }
-    }
-  }
-
   Future<void> _handleDoubleTap() async {
     try {
       final isMax = await windowManager.isMaximized();
@@ -575,6 +534,52 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
         await windowManager.maximize();
       }
     } catch (_) {}
+  }
+
+  Future<String> _loadConsultantName(User? user) async {
+    if (user == null) {
+      return 'Deconectat';
+    }
+
+    try {
+      // Verificam daca Firebase este initializat
+      if (!Firebase.apps.isNotEmpty) {
+        return 'Consultant';
+      }
+
+      final doc = await FirebaseFirestore.instance.collection('consultants').doc(user.uid).get();
+      if (doc.exists) {
+        final data = doc.data();
+        return data?['name'] ?? 'Consultant';
+      }
+      return 'Consultant';
+    } catch (e) {
+      debugPrint('TitleBar: Error loading consultant name: $e');
+      return 'Consultant';
+    }
+  }
+
+  Future<int?> _loadConsultantColor(User? user) async {
+    if (user == null) {
+      return null;
+    }
+
+    try {
+      // Verificam daca Firebase este initializat
+      if (!Firebase.apps.isNotEmpty) {
+        return null;
+      }
+
+      final doc = await FirebaseFirestore.instance.collection('consultants').doc(user.uid).get();
+      if (doc.exists) {
+        final data = doc.data();
+        return data?['colorIndex'] as int?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('TitleBar: Error loading consultant color: $e');
+      return null;
+    }
   }
 
   @override
@@ -608,31 +613,78 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
               ),
             ),
             const SizedBox(width: 8),
-            // Consultant name container
-            Container(
-              height: 24,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor2,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppTheme.backgroundColor3,
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  _consultantName,
-                  style: GoogleFonts.outfit(
-                    fontSize: 15,
-                    color: AppTheme.elementColor2,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
+            // Consultant name container with StreamBuilder for real-time updates
+            StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                return FutureBuilder<Map<String, dynamic>>(
+                  future: Future.wait([
+                    _loadConsultantName(snapshot.data),
+                    _loadConsultantColor(snapshot.data),
+                  ]).then((results) => {
+                    'name': results[0],
+                    'colorIndex': results[1],
+                  }),
+                  builder: (context, dataSnapshot) {
+                    final displayName = dataSnapshot.data?['name'] ?? 'Se incarca...';
+                    final colorIndex = dataSnapshot.data?['colorIndex'] as int?;
+
+                    // Determina culoarea de fundal
+                    final backgroundColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
+                        ? AppTheme.getConsultantColor(colorIndex)
+                        : AppTheme.backgroundColor2;
+
+                    // Determina culoarea pentru border
+                    final borderColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
+                        ? AppTheme.getConsultantStrokeColor(colorIndex)
+                        : AppTheme.backgroundColor3;
+
+                    return Container(
+                      height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: borderColor,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          displayName,
+                          style: GoogleFonts.outfit(
+                            fontSize: 15,
+                            color: AppTheme.elementColor2,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+            // Current area name - centered with semibold, size 17, elementColor1
+            Expanded(
+              child: ValueListenableBuilder<AreaType>(
+                valueListenable: GlobalState.currentAreaNotifier,
+                builder: (context, currentArea, child) {
+                  return Center(
+                    child: Text(
+                      SidebarService.getAreaDisplayName(currentArea),
+                      style: GoogleFonts.outfit(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.elementColor1,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            const Spacer(),
           ],
         ),
       ),

@@ -16,6 +16,7 @@ import 'package:mat_finance/backend/services/clients_service.dart';
 import 'package:mat_finance/backend/services/splash_service.dart';
 import 'package:mat_finance/backend/services/update_service.dart';
 import 'package:mat_finance/backend/services/app_logger.dart';
+import 'package:mat_finance/backend/services/consultant_service.dart';
 import 'package:mat_finance/frontend/components/update_notification.dart';
 import 'package:mat_finance/frontend/components/dialog_utils.dart';
 import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
@@ -29,6 +30,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:ui';
 // import 'package:flutter/scheduler.dart'; // Removed as no longer needed
 import 'dart:async';
+import 'package:mat_finance/main.dart';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
 /// - pane (stanga, latime 312)
@@ -60,6 +62,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Consultant info
   late String _consultantName;
   late String _teamName;
+  late final ConsultantService _consultantService;
+  int? _consultantColorIndex;
   
   // GlobalKeys pentru componente
   final GlobalKey<CalendarAreaState> _calendarKey = GlobalKey<CalendarAreaState>();
@@ -105,7 +109,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     _consultantName = widget.consultantName ?? 'Consultant';
     _teamName = widget.teamName ?? 'Echipa';
-    
+    _consultantService = ConsultantService();
+
     // Foloseste serviciile pre-incarcate din splash
     // Verifica daca serviciile sunt disponibile
     if (_splashService.areServicesReady) {
@@ -117,7 +122,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     // FIX: Reseteaza cache-ul pentru consultant curent la inceput
     _initializeForCurrentConsultant();
-    
+
+    // Incarca culoarea consultantului
+    _loadConsultantColor();
+
     // Initializeaza sidebar service
     _sidebarService = SidebarService(
       onAreaChanged: _handleAreaChanged,
@@ -149,15 +157,29 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  /// FIX: Initializeaza aplicatia pentru consultantul curent
+    /// FIX: Initializeaza aplicatia pentru consultantul curent
   Future<void> _initializeForCurrentConsultant() async {
     try {
       // Reseteaza cache-ul pentru consultant/echipa curenta
       await _splashService.resetForNewConsultant();
-      
+
 
     } catch (e) {
       // Error initializing for current consultant
+    }
+  }
+
+  /// Incarca culoarea consultantului curent
+  Future<void> _loadConsultantColor() async {
+    try {
+      final colorIndex = await _consultantService.getCurrentConsultantColor();
+      if (mounted) {
+        setState(() {
+          _consultantColorIndex = colorIndex;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ MAIN_SCREEN: Error loading consultant color: $e');
     }
   }
   
@@ -330,24 +352,26 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     try {
       final prefs = await SharedPreferences.getInstance();
       final paneIndex = prefs.getInt(_currentPaneKey);
-      
+
       // Not reading areaIndex anymore; area always defaults to dashboard
       _currentArea = AreaType.dashboard;
       _sidebarService.syncArea(_currentArea);
-  
-      
+
+      // Update global state for titlebar
+      GlobalState.currentAreaNotifier.value = _currentArea;
+
       if (paneIndex != null && paneIndex < PaneType.values.length) {
         _currentPane = PaneType.values[paneIndex];
         // Update SidebarService state to keep it in sync
         _sidebarService.syncPane(_currentPane);
-    
+
       } else {
-        // Nu exista preferinte salvate - folosim default-ul (clients)  
+        // Nu exista preferinte salvate - folosim default-ul (clients)
         _currentPane = PaneType.clients;
         _sidebarService.syncPane(_currentPane);
-    
+
       }
-      
+
       // Update UI if needed
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -363,7 +387,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       _currentPane = PaneType.clients;
       _sidebarService.syncArea(_currentArea);
       _sidebarService.syncPane(_currentPane);
-  
+
+      // Update global state for titlebar
+      GlobalState.currentAreaNotifier.value = _currentArea;
     }
   }
   
@@ -549,19 +575,23 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
   void _handleAreaChanged(AreaType area) {
     // Area change
-    
+
     // FIX: Track focus persistence before area change
     _trackFocusPersistence('BEFORE_AREA_CHANGE');
-    
+
     // FIX: Preserve focus state before area change
     _clientService.preserveFocusState();
-    
+
     setState(() {
       _currentArea = area;
     });
+
+    // Update global state for titlebar
+    GlobalState.currentAreaNotifier.value = area;
+
     // Save navigation state
     _saveNavigationState();
-    
+
     // FIX: Restore focus state after area change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _clientService.restoreFocusState();
@@ -821,10 +851,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             isActive: _sidebarService.currentArea == AreaType.settings,
           ),
           const SizedBox(height: AppTheme.smallGap),
-          _buildIconOnlyButton(
-            iconPath: 'assets/user_outlined.svg',
-            onTap: _showConsultantPopup,
-          ),
+          _buildConsultantButton(),
         ],
       ),
     );
@@ -909,6 +936,65 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Removed legacy sidebar sections and headers for icon-only design
 
   // Removed legacy text/button helpers (special buttons, area/pane buttons, navigation button)
+
+  /// Obtine culoarea pentru butonul consultantului
+  Color _getConsultantButtonColor() {
+    if (_consultantColorIndex != null && _consultantColorIndex! >= 1 && _consultantColorIndex! <= 10) {
+      return AppTheme.getConsultantColor(_consultantColorIndex!);
+    }
+    return AppTheme.backgroundColor2; // Fallback la culoarea implicita
+  }
+
+  /// Obtine culoarea pentru border-ul butonului consultantului
+  Color _getConsultantButtonBorderColor() {
+    if (_consultantColorIndex != null && _consultantColorIndex! >= 1 && _consultantColorIndex! <= 10) {
+      return AppTheme.getConsultantStrokeColor(_consultantColorIndex!);
+    }
+    return AppTheme.backgroundColor3; // Fallback la culoarea implicita
+  }
+
+  /// Builds the consultant button with initials
+  Widget _buildConsultantButton() {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showConsultantPopup,
+          borderRadius: BorderRadius.circular(16.0), // 16px border radius
+          child: Container(
+            decoration: BoxDecoration(
+              color: _getConsultantButtonColor(), // Culoarea consultantului sau fallback
+              borderRadius: BorderRadius.circular(16.0), // 16px border radius
+              border: Border.all(
+                color: _getConsultantButtonBorderColor(), // strokeColor al consultantului
+                width: 4.0, // 4px border width
+              ),
+            ),
+            child: Center(
+              child: Text(
+                _getConsultantInitial(),
+                style: GoogleFonts.outfit(
+                  fontSize: 19.0, // 19px font size
+                  fontWeight: FontWeight.bold, // Bold weight
+                  color: AppTheme.elementColor1,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Get the first initial of the consultant name
+  String _getConsultantInitial() {
+    if (_consultantName.isEmpty || _consultantName == 'Consultant') {
+      return 'C'; // Default initial
+    }
+    return _consultantName[0].toUpperCase();
+  }
 
   /// Shows the consultant details popup
   void _showConsultantPopup() {

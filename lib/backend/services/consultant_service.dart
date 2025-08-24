@@ -114,6 +114,125 @@ class ConsultantService {
     }
   }
 
+  /// Seteaza culoarea aleasa de consultantul curent (1-10)
+  Future<bool> setCurrentConsultantColor(int colorIndex) async {
+    final user = currentUser;
+    if (user == null || colorIndex < 1 || colorIndex > 10) return false;
+
+    try {
+      await _threadHandler.executeOnPlatformThread(
+        () => _firestore.collection(_collectionName).doc(user.uid).update({
+          'colorIndex': colorIndex,
+          'updatedAt': FieldValue.serverTimestamp(),
+        })
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Obtine culoarea aleasa de consultantul curent (1-10, null daca nu a ales)
+  Future<int?> getCurrentConsultantColor() async {
+    final user = currentUser;
+    if (user == null) return null;
+
+    try {
+      final consultantDoc = await _threadHandler.executeOnPlatformThread(
+        () => _firestore.collection(_collectionName).doc(user.uid).get()
+      );
+
+      if (consultantDoc.exists) {
+        final data = consultantDoc.data();
+        return data?['colorIndex'] as int?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Obtine culoarea aleasa de un consultant specific (1-10, null daca nu a ales)
+  Future<int?> getConsultantColor(String consultantId) async {
+    if (consultantId.isEmpty) return null;
+
+    try {
+      final consultantDoc = await _threadHandler.executeOnPlatformThread(
+        () => _firestore.collection(_collectionName).doc(consultantId).get()
+      );
+
+      if (consultantDoc.exists) {
+        final data = consultantDoc.data();
+        return data?['colorIndex'] as int?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Obtine culoarea aleasa pentru consultantii din echipa curenta
+  Future<Map<String, int?>> getTeamConsultantColors() async {
+    final currentConsultant = await getCurrentConsultantData();
+    if (currentConsultant == null) return {};
+
+    final currentTeam = currentConsultant['team'] as String?;
+    if (currentTeam == null || currentTeam.isEmpty) return {};
+
+    try {
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+        () => _firestore
+            .collection(_collectionName)
+            .where('team', isEqualTo: currentTeam)
+            .get()
+      );
+
+      final colors = <String, int?>{};
+      for (final doc in consultantsSnapshot.docs) {
+        final data = doc.data();
+        final consultantId = doc.id;
+        final colorIndex = data['colorIndex'] as int?;
+        colors[consultantId] = colorIndex;
+      }
+
+      return colors;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Obtine culoarea aleasa pentru consultantii din echipa curenta dupa nume
+  Future<Map<String, int?>> getTeamConsultantColorsByName() async {
+    final currentConsultant = await getCurrentConsultantData();
+    if (currentConsultant == null) return {};
+
+    final currentTeam = currentConsultant['team'] as String?;
+    if (currentTeam == null || currentTeam.isEmpty) return {};
+
+    try {
+      final consultantsSnapshot = await _threadHandler.executeOnPlatformThread(
+        () => _firestore
+            .collection(_collectionName)
+            .where('team', isEqualTo: currentTeam)
+            .get()
+      );
+
+      final colors = <String, int?>{};
+      for (final doc in consultantsSnapshot.docs) {
+        final data = doc.data();
+        final consultantName = data['name'] as String?;
+        final colorIndex = data['colorIndex'] as int?;
+        if (consultantName != null && consultantName.isNotEmpty) {
+          colors[consultantName] = colorIndex;
+        }
+      }
+
+      return colors;
+    } catch (e) {
+      return {};
+    }
+  }
+
   /// Obtine toti consultantii
   Future<List<Consultant>> getAllConsultants() async {
     try {
