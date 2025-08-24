@@ -518,7 +518,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                               child: InputField3(
                                 title: "Data",
                                 inputText: _selectedDateText,
-                                trailingIconPath: "assets/calendarIcon.svg",
+                                trailingIconPath: "assets/calendar_outlined.svg",
                                 onTap: _selectDate,
                                 inputBorderRadius: AppTheme.borderRadiusTiny,
                               ),
@@ -561,7 +561,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
                 if (!isEditMode)
                   FlexButtonSingle(
                     text: "Salveaza",
-                    iconPath: "assets/saveIcon.svg",
+                    iconPath: "assets/save_outlined.svg",
                     onTap: _saveMeeting,
                     borderRadius: AppTheme.borderRadiusSmall,
                     buttonHeight: 48.0,
@@ -573,9 +573,9 @@ class _MeetingPopupState extends State<MeetingPopup> {
                 else
                   FlexButtonWithTrailingIcon(
                     primaryButtonText: "Salveaza",
-                    primaryButtonIconPath: "assets/saveIcon.svg",
+                    primaryButtonIconPath: "assets/save_outlined.svg",
                     onPrimaryButtonTap: _saveMeeting,
-                    trailingIconPath: "assets/deleteIcon.svg",
+                    trailingIconPath: "assets/delete_outlined.svg",
                     onTrailingIconTap: _onDeleteMeeting,
                     spacing: AppTheme.smallGap,
                     borderRadius: AppTheme.borderRadiusSmall,

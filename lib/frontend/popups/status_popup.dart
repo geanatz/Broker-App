@@ -635,7 +635,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                 inputText: _selectedDate != null 
                                   ? DateFormat('dd/MM/yy').format(_selectedDate!)
                                   : '',
-                                trailingIconPath: "assets/calendarIcon.svg",
+                                trailingIconPath: "assets/calendar_outlined.svg",
                                 onTap: _selectDate,
                               ),
                             ),
@@ -754,10 +754,10 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
               
               const SizedBox(height: 8),
               
-              // Butonul de salvare - folosind FlexButtonSingle cu saveIcon
+              // Butonul de salvare - folosind FlexButtonSingle cu save_outlined
               FlexButtonSingle(
                 text: _isLoading ? 'Se salveaza...' : 'Salveaza status',
-                iconPath: "assets/saveIcon.svg",
+                iconPath: "assets/save_outlined.svg",
                 onTap: _isLoading ? null : _saveClientStatus,
                 borderRadius: AppTheme.borderRadiusSmall,
                 buttonHeight: AppTheme.navButtonHeight,

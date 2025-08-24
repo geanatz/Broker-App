@@ -173,7 +173,7 @@ class MatcherService extends ChangeNotifier {
   final Map<String, DateTime> _logDebounce = {};
 
   // Map pentru iconitele bancilor
-  final Map<String, String> bankIcons = {
+  final Map<String, String> recommend_outlined = {
     'BCR': 'assets/bcrIcon.svg',
     'BRD': 'assets/brdIcon.svg',
     'Raiffeisen': 'assets/raiffeisenIcon.svg',

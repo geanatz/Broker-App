@@ -24,7 +24,7 @@ class ExpandIconSvg extends StatelessWidget {
       duration: duration,
       curve: Curves.easeInOut,
       child: SvgPicture.asset(
-        'assets/expandIcon.svg',
+        'assets/caret_outlined.svg',
         width: size,
         height: size,
         colorFilter: color != null ? ColorFilter.mode(color!, BlendMode.srcIn) : null,

@@ -538,7 +538,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
   Widget _buildNavBar(BuildContext context) {
     final navItems = [
       {
-        'icon': 'assets/returnIcon.svg',
+        'icon': 'assets/undo_outlined.svg',
         'active': _currentCategory == MobileClientCategory.reveniri,
         'onTap': () {
           setState(() {
@@ -547,7 +547,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
         },
       },
       {
-        'icon': 'assets/callIcon.svg',
+        'icon': 'assets/phone_outlined.svg',
         'active': _currentCategory == MobileClientCategory.clienti,
         'onTap': () {
           setState(() {
@@ -556,7 +556,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
         },
       },
       {
-        'icon': 'assets/historyIcon.svg',
+        'icon': 'assets/history_outlined.svg',
         'active': _currentCategory == MobileClientCategory.recente,
         'onTap': () {
           setState(() {

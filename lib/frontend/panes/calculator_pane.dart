@@ -479,9 +479,9 @@ class _CalculatorPaneState extends State<CalculatorPane> {
           // Bottom Buttons
           FlexButtonWithTrailingIcon(
             primaryButtonText: 'Amortizare',
-            primaryButtonIconPath: 'assets/viewIcon.svg',
+            primaryButtonIconPath: 'assets/look_outlined.svg',
             onPrimaryButtonTap: _showAmortizationSchedule,
-            trailingIconPath: 'assets/returnIcon.svg',
+            trailingIconPath: 'assets/undo_outlined.svg',
             onTrailingIconTap: _resetFields,
             spacing: AppTheme.smallGap,
             borderRadius: AppTheme.borderRadiusSmall,

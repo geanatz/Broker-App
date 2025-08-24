@@ -224,7 +224,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
             width: 48,
             height: 48,
             child: SvgPicture.asset(
-              'assets/logoIcon.svg',
+              'assets/logo.svg',
               colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
               fit: BoxFit.contain,
             ),
@@ -382,7 +382,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
         padding: const EdgeInsets.only(right: AppTheme.smallGap),
         child: IconButton(
           icon: SvgPicture.asset(
-            obscureText ? 'assets/showIcon.svg' : 'assets/hideIcon.svg',
+            obscureText ? 'assets/view_outlined.svg' : 'assets/hide_outlined.svg',
             width: AppTheme.iconSizeMedium, 
             height: AppTheme.iconSizeMedium,
             colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
@@ -449,7 +449,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
                   ),
             isExpanded: true,
             icon: SvgPicture.asset(
-              'assets/expandIcon.svg',
+              'assets/caret_outlined.svg',
               width: AppTheme.iconSizeMedium, 
               height: AppTheme.iconSizeMedium,
               colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),

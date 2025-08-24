@@ -1201,7 +1201,7 @@ class CalendarAreaState extends State<CalendarArea> {
     return DarkItem7(
       title: clientName,
       description: clientPhone.isNotEmpty ? clientPhone : timeUntil,
-      svgAsset: 'assets/doneIcon.svg',
+      svgAsset: 'assets/check_outlined.svg',
       onTap: () => _navigateToCalendarMeeting(meetingId),
     );
   }
@@ -1218,7 +1218,7 @@ class CalendarAreaState extends State<CalendarArea> {
     return LightItem7(
       title: clientName,
       description: timeUntil,
-      svgAsset: 'assets/viewIcon.svg',
+      svgAsset: 'assets/look_outlined.svg',
       onTap: () => _navigateToCalendarMeeting(meetingId),
     );
   }

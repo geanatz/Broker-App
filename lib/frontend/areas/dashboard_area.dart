@@ -130,7 +130,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                       width: 24,
                       height: 24,
                       child: SvgPicture.asset(
-                        'assets/leftIcon.svg',
+                        'assets/left_outlined.svg',
                         width: 24,
                         height: 24,
                         colorFilter: ColorFilter.mode(
@@ -242,7 +242,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                 width: 56,
                 height: 56,
                 child: SvgPicture.asset(
-                  'assets/userIcon.svg',
+                  'assets/user_outlined.svg',
                   colorFilter: ColorFilter.mode(
                     AppTheme.elementColor1,
                     BlendMode.srcIn,
@@ -544,14 +544,14 @@ class _DashboardAreaState extends State<DashboardArea> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Forms card (today)
-                _buildStatCard('assets/formIcon.svg', '${stats?.formsCompletedToday ?? 0} formulare'),
+                _buildStatCard('assets/form_outlined.svg', '${stats?.formsCompletedToday ?? 0} formulare'),
                 const SizedBox(width: 10),
                 // Meetings card (today)
-                _buildStatCard('assets/calendarIcon.svg', '${stats?.meetingsScheduledToday ?? 0} intalniri'),
+                _buildStatCard('assets/calendar_outlined.svg', '${stats?.meetingsScheduledToday ?? 0} intalniri'),
                 const SizedBox(width: 10),
                 // Duty agent card
                 if (_dashboardService.dutyAgent != null)
-                  _buildStatCard('assets/coffeeIcon.svg', _dashboardService.dutyAgent ?? 'Nimeni'),
+                  _buildStatCard('assets/coffee_outlined.svg', _dashboardService.dutyAgent ?? 'Nimeni'),
               ],
             ),
           ),

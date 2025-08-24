@@ -92,9 +92,9 @@ class _LightItem7State extends State<LightItem7> {
       fontWeight: FontWeight.w500,
     );
 
-    // Iconita: userIcon mereu vizibila, restul doar la hover
+    // Iconita: user_outlined mereu vizibila, restul doar la hover
     final bool hasIcon = (widget.svgAsset != null || widget.icon != null) &&
-        (widget.svgAsset == 'assets/userIcon.svg' || _isHovered);
+        (widget.svgAsset == 'assets/user_outlined.svg' || _isHovered);
     String? effectiveSvgAsset;
     if (widget.svgAsset != null) {
       effectiveSvgAsset = widget.svgAsset;

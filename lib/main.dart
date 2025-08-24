@@ -376,15 +376,16 @@ class _MyAppState extends State<MyApp> {
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                       width: double.infinity,
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: const [
                           // Drag region (fills remaining space on the left)
                           _TitleBarDragRegion(),
                           SizedBox(width: 16),
-                          _TitleBarIcon(assetPath: 'assets/minimizeIcon.svg', action: TitleBarAction.minimize),
+                          _TitleBarIcon(assetPath: 'assets/minus_outlined.svg', action: TitleBarAction.minimize),
                           SizedBox(width: 16),
-                          _TitleBarIcon(assetPath: 'assets/maximizeIcon.svg', action: TitleBarAction.maximizeToggle),
+                          _TitleBarIcon(assetPath: 'assets/maximize_outlined.svg', action: TitleBarAction.maximizeToggle),
                           SizedBox(width: 16),
-                          _TitleBarIcon(assetPath: 'assets/closeIcon.svg', action: TitleBarAction.close),
+                          _TitleBarIcon(assetPath: 'assets/close_outlined.svg', action: TitleBarAction.close),
                         ],
                       ),
                     ),
@@ -488,12 +489,25 @@ class _TitleBarDragRegion extends StatefulWidget {
 }
 
 class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
-  String _version = '0.1.8'; // Default fallback
+  String _version = '0.1.9'; // Default fallback
+  String _consultantName = 'Consultant';
+  String _consultantRole = 'Consultant';
+  bool _isLoadingConsultantInfo = false;
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
+    // Nu apelam _loadConsultantInfo() aici pentru a evita blocarea
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Apelam _loadConsultantInfo() aici, dupa ce context-ul este disponibil
+    if (!_isLoadingConsultantInfo) {
+      _loadConsultantInfo();
+    }
   }
 
   Future<void> _loadVersion() async {
@@ -506,6 +520,42 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
       }
     } catch (e) {
       // Keep default version if loading fails
+    }
+  }
+
+  Future<void> _loadConsultantInfo() async {
+    if (_isLoadingConsultantInfo) return; // Prevent multiple calls
+    
+    setState(() {
+      _isLoadingConsultantInfo = true;
+    });
+
+    try {
+      // Verificam daca Firebase este initializat
+      if (!Firebase.apps.isNotEmpty) {
+        return;
+      }
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance.collection('consultants').doc(user.uid).get();
+        if (doc.exists && mounted) {
+          final data = doc.data();
+          setState(() {
+            _consultantName = data?['name'] ?? 'Consultant';
+            _consultantRole = data?['role'] ?? 'Consultant';
+          });
+        }
+      }
+    } catch (e) {
+      // Keep default values if loading fails
+      debugPrint('TitleBar: Error loading consultant info: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingConsultantInfo = false;
+        });
+      }
     }
   }
 
@@ -535,18 +585,53 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
           children: [
             // Version display
             Container(
-              padding: const EdgeInsets.only(left: 8),
-              child: SizedBox(
-                width: 48,
-                height: 24,
-                child: Center(
-                  child: Text(
-                    _version,
-                    style: GoogleFonts.firaMono(
-                      fontSize: 12,
-                      color: AppTheme.elementColor1,
-                      decoration: TextDecoration.none,
-                    ),
+              width: 48,
+              height: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Center(
+                child: Text(
+                  _version,
+                  style: GoogleFonts.firaMono(
+                    fontSize: 12,
+                    color: AppTheme.elementColor1,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Consultant name
+            Container(
+              height: 24,
+              child: Center(
+                child: Text(
+                  _consultantName,
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    color: AppTheme.elementColor1,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Consultant role badge
+            Container(
+              height: 20,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: ShapeDecoration(
+                color: const Color(0xFFC6D1E6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              ),
+              child: Center(
+                child: Text(
+                  _consultantRole,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: const Color(0xFF707784),
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),

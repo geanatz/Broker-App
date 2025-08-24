@@ -877,7 +877,7 @@ class _FormAreaState extends State<FormArea> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SvgPicture.asset(
-              'assets/addIcon.svg',
+              'assets/plus_outlined.svg',
               width: 64,
               height: 64,
               colorFilter: ColorFilter.mode(
@@ -944,7 +944,7 @@ class _FormAreaState extends State<FormArea> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SvgPicture.asset(
-                    'assets/userIcon.svg',
+                    'assets/user_outlined.svg',
                     width: 64,
                     height: 64,
                     colorFilter: ColorFilter.mode(

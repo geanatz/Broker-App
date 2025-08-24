@@ -133,7 +133,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
             width: 48,
             height: 48,
             child: SvgPicture.asset(
-              'assets/logoIcon.svg',
+              'assets/logo.svg',
               colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
               fit: BoxFit.contain,
             ),
@@ -190,7 +190,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
                 ),
                 IconButton(
                   icon: SvgPicture.asset(
-                    'assets/copyIcon.svg',
+                    'assets/copy_outlined.svg',
                     width: 24,
                     height: 24,
                     colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),

@@ -22,8 +22,8 @@ import '../../backend/services/firebase_service.dart';
 /// 3. Recente - clientii respinsi sau finalizati cu succes (HUG - se poate collapse)
 /// 
 /// Logica de focus:
-/// - LightItem7: starea normala (viewIcon)
-/// - DarkItem7: starea focusata (doneIcon)
+/// - LightItem7: starea normala (look_outlined)
+/// - DarkItem7: starea focusata (check_outlined)
 class ClientsPane extends StatefulWidget {
   /// Callback pentru deschiderea popup-ului de clienti
   final VoidCallback? onClientsPopupRequested;
@@ -365,14 +365,14 @@ class _ClientsPaneState extends State<ClientsPane> {
     return isFocused ? DarkItem7(
       title: client.name,
       description: client.phoneNumber1,
-      svgAsset: 'assets/doneIcon.svg',
+      svgAsset: 'assets/check_outlined.svg',
       onTap: () {
         _showStatusPopup(client);
       },
     ) : LightItem7(
       title: client.name,
       description: client.phoneNumber1,
-      svgAsset: 'assets/viewIcon.svg',
+      svgAsset: 'assets/look_outlined.svg',
       onTap: () {
         // Faza focus/popup: primul click = focus, al doilea (cand e focusat) = popup
         _focusClient(client);

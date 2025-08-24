@@ -131,7 +131,7 @@ class _SettingsAreaState extends State<SettingsArea> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SvgPicture.asset(
-                  'assets/settingsIcon.svg',
+                  'assets/settings_outlined.svg',
                   width: 64,
                   height: 64,
                   colorFilter: ColorFilter.mode(

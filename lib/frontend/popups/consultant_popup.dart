@@ -168,7 +168,7 @@ class _ConsultantPopupState extends State<ConsultantPopup> {
         ? (_googleDriveService.userEmail ?? 'Necunoscut')
         : 'Conecteaza-te',
       trailingIconPath: _googleDriveService.isAuthenticated 
-        ? "assets/logoutIcon.svg"
+        ? "assets/logout_outlined.svg"
         : null,
       trailingIcon: _googleDriveService.isAuthenticated 
         ? null
@@ -215,7 +215,7 @@ class _ConsultantPopupState extends State<ConsultantPopup> {
             }
           },
           text: "Deconectare",
-          iconPath: "assets/logoutIcon.svg",
+          iconPath: "assets/logout_outlined.svg",
           textStyle: AppTheme.safeOutfit(
             fontSize: AppTheme.fontSizeMedium, // 17px
             fontWeight: FontWeight.w500, // medium

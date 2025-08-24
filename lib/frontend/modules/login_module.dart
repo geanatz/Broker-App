@@ -252,7 +252,7 @@ class _LoginPopupState extends State<LoginPopup> {
             width: 48,
             height: 48,
             child: SvgPicture.asset(
-              'assets/logoIcon.svg',
+              'assets/logo.svg',
               // Use srcATop for better color blending with transparent backgrounds
               colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),
               fit: BoxFit.contain,
@@ -342,7 +342,7 @@ class _LoginPopupState extends State<LoginPopup> {
                       ),
             isExpanded: true,
             icon: SvgPicture.asset(
-              'assets/expandIcon.svg',
+              'assets/caret_outlined.svg',
               width: AppTheme.iconSizeMedium, 
               height: AppTheme.iconSizeMedium,
               colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
@@ -442,7 +442,7 @@ class _LoginPopupState extends State<LoginPopup> {
                 child: IconButton(
                   tooltip: _isPasswordVisible ? "Ascunde parola" : "Afiseaza parola",
                   icon: SvgPicture.asset(
-                    _isPasswordVisible ? 'assets/hideIcon.svg' : 'assets/showIcon.svg',
+                    _isPasswordVisible ? 'assets/hide_outlined.svg' : 'assets/view_outlined.svg',
                     width: AppTheme.iconSizeMedium,
                     height: AppTheme.iconSizeMedium,
                     colorFilter: ColorFilter.mode(

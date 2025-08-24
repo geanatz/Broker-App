@@ -223,7 +223,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       return Transform.scale(
                         scale: _pulseAnimation?.value ?? 1.0,
                         child: SvgPicture.asset(
-                          'assets/logoIcon.svg',
+                          'assets/logo.svg',
                           width: 120,
                           height: 120,
                           colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcATop),

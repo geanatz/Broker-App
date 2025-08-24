@@ -624,14 +624,14 @@ class _ClientsPopupState extends State<ClientsPopup> {
             return DarkItem7(
               title: displayName,
               description: '${result.extractedClients?.length ?? 0} clienti',
-              svgAsset: 'assets/doneIcon.svg',
+              svgAsset: 'assets/check_outlined.svg',
               onTap: () => _handleOcrImageTap(imagePath),
             );
           } else {
             return LightItem7(
               title: displayName,
               description: '${result.extractedClients?.length ?? 0} clienti',
-              svgAsset: 'assets/viewIcon.svg',
+              svgAsset: 'assets/look_outlined.svg',
               onTap: () => _handleOcrImageTap(imagePath),
             );
           }
@@ -796,7 +796,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     if (_ocrResults != null && _selectedOcrImagePath != null) {
       return FlexButtonSingle(
         text: 'Salveaza clienti',
-        iconPath: 'assets/saveIcon.svg',
+        iconPath: 'assets/save_outlined.svg',
         onTap: _saveOcrClients,
         borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
@@ -806,7 +806,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       // In timpul procesarii sau fara imagine selectata, afiseaza buton de anulare
       return FlexButtonSingle(
         text: 'Anuleaza',
-        iconPath: 'assets/returnIcon.svg',
+        iconPath: 'assets/undo_outlined.svg',
         onTap: _cancelOcrProcess,
         borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
@@ -989,7 +989,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
     if (isShowingOcrClients) {
       return FlexButtonSingle(
         text: "Adauga client",
-        iconPath: "assets/addIcon.svg",
+        iconPath: "assets/plus_outlined.svg",
         onTap: () => _startClientCreation(),
         borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
@@ -999,7 +999,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       // In lista de contacte reala, afiseaza doar butonul de adaugare
       return FlexButtonSingle(
         text: "Adauga client",
-        iconPath: "assets/addIcon.svg",
+        iconPath: "assets/plus_outlined.svg",
         onTap: () => _startClientCreation(),
         borderRadius: AppTheme.borderRadiusSmall,
         buttonHeight: 48.0,
@@ -1182,9 +1182,9 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
     if (isEditing) {
       return FlexButtonWithTrailingIcon(
         primaryButtonText: "Salveaza client",
-        primaryButtonIconPath: "assets/saveIcon.svg",
+        primaryButtonIconPath: "assets/save_outlined.svg",
         onPrimaryButtonTap: _saveClient,
-        trailingIconPath: "assets/deleteIcon.svg",
+        trailingIconPath: "assets/delete_outlined.svg",
         onTrailingIconTap: widget.editingClient != null && widget.onDeleteClient != null ? () => widget.onDeleteClient!(widget.editingClient!) : null,
         spacing: AppTheme.smallGap,
         borderRadius: AppTheme.borderRadiusSmall,
@@ -1195,9 +1195,9 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
       // For new client creation, use FlexButtonWithTrailingIcon with cancel
       return FlexButtonWithTrailingIcon(
         primaryButtonText: "Salveaza client",
-        primaryButtonIconPath: "assets/saveIcon.svg",
+        primaryButtonIconPath: "assets/save_outlined.svg",
         onPrimaryButtonTap: _saveClient,
-        trailingIconPath: "assets/closeIcon.svg",
+        trailingIconPath: "assets/close_outlined.svg",
         onTrailingIconTap: _cancelClientCreation,
         spacing: AppTheme.smallGap,
         borderRadius: AppTheme.borderRadiusSmall,

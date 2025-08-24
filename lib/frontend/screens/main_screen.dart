@@ -495,15 +495,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             // Custom titlebar is now injected globally in MaterialApp.builder (main.dart)
             // Main content
             Padding(
-          padding: const EdgeInsets.fromLTRB(AppTheme.mediumGap, 0, AppTheme.mediumGap, AppTheme.mediumGap),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Sidebar (stanga)
-              _buildSidebar(),
-              // Spatiu intre sidebar si containerul combinat
-              const SizedBox(width: AppTheme.mediumGap),
-              // Container combinat pentru Area (stanga) + Pane (dreapta) cu bounce pe intrare/iesire pentru TOT box-ul
+              padding: const EdgeInsets.fromLTRB(AppTheme.smallGap, 0, AppTheme.smallGap, AppTheme.smallGap),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Sidebar (stanga)
+                  _buildSidebar(),
+                  // Spatiu intre sidebar si containerul combinat
+                  const SizedBox(width: AppTheme.smallGap),
+                  // Container combinat pentru Area (stanga) + Pane (dreapta) cu bounce pe intrare/iesire pentru TOT box-ul
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 320),
@@ -918,12 +918,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
           // PROFILE (bottom): settings, consultant
           _buildIconOnlyButton(
-            iconPath: 'assets/settingsIcon.svg',
+            iconPath: 'assets/settings_outlined.svg',
             onTap: () => _sidebarService.handleButtonClick(
               const ButtonConfig(
                 id: 'settings',
                 title: 'Setari',
-                iconPath: 'assets/settingsIcon.svg',
+                iconPath: 'assets/settings_outlined.svg',
                 actionType: ActionType.navigateToArea,
                 targetArea: AreaType.settings,
               ),
@@ -932,7 +932,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: AppTheme.smallGap),
           _buildIconOnlyButton(
-            iconPath: 'assets/userIcon.svg',
+            iconPath: 'assets/user_outlined.svg',
             onTap: _showConsultantPopup,
           ),
         ],
@@ -948,33 +948,68 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     required VoidCallback onTap,
     bool isActive = false,
   }) {
-            final Color background = isActive ? AppTheme.backgroundColor3 : AppTheme.backgroundColor2;
-    final Color iconColor = isActive ? AppTheme.elementColor3 : AppTheme.elementColor2;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isHovered = false;
+        
+        // Get solid icon path by replacing _outlined with _solid
+        String getSolidIconPath(String outlinedPath) {
+          if (outlinedPath.contains('_outlined.svg')) {
+            // List of icons that have solid versions available
+            final List<String> availableSolidIcons = [
+              'home', 'calendar', 'form', 'clients', 'calculator', 'settings'
+            ];
+            
+            // Check if this icon has a solid version
+            for (String iconName in availableSolidIcons) {
+              if (outlinedPath.contains('${iconName}_outlined.svg')) {
+                return outlinedPath.replaceAll('${iconName}_outlined.svg', '${iconName}_solid.svg');
+              }
+            }
+          }
+          // Return original path if no solid version exists
+          return outlinedPath;
+        }
+        
+        // Determine background color: transparent by default, backgroundColor2 when focused/hovered
+        final Color background = isActive || isHovered ? AppTheme.backgroundColor2 : Colors.transparent;
+        
+        // Determine icon color: elementColor1 by default, elementColor2 when focused/hovered
+        final Color iconColor = isActive || isHovered ? AppTheme.elementColor2 : AppTheme.elementColor1;
+        
+        // Determine icon path: solid when hovered OR active, outlined otherwise
+        final String currentIconPath = (isHovered || isActive) ? getSolidIconPath(iconPath) : iconPath;
 
-    return SizedBox(
-      width: 48,
-      height: 48,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-          child: Container(
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                iconPath,
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+        return SizedBox(
+          width: 48,
+          height: 48,
+          child: Material(
+            color: Colors.transparent,
+            child: MouseRegion(
+              onEnter: (_) => setState(() => isHovered = true),
+              onExit: (_) => setState(() => isHovered = false),
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: background,
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                  ),
+                  child: Center(
+                    child: SvgPicture.asset(
+                      currentIconPath,
+                      width: 24,
+                      height: 24,
+                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

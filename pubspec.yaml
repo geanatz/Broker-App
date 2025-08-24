@@ -90,7 +90,7 @@ flutter:
     - assets/check_outlined.svg
     - assets/copy_outlined.svg
     - assets/hide_outlined.svg
-    - assets/view_outlined.svg
+    - assets/look_outlined.svg
     - assets/edit_outlined.svg
     - assets/info_outlined.svg
     - assets/clients_outlined.svg
@@ -123,6 +123,12 @@ flutter:
     - assets/chat_outlined.svg
     - assets/minus_outlined.svg
     - assets/maximize_outlined.svg
+    - assets/home_solid.svg
+    - assets/calendar_solid.svg
+    - assets/form_solid.svg
+    - assets/clients_solid.svg
+    - assets/calculator_solid.svg
+    - assets/settings_solid.svg
     - lib/backend/ocr/names.json
 
 # Launcher icons configuration (do not run generation here; user executes the command)

@@ -200,7 +200,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SvgPicture.asset(
-            'assets/chatIcon.svg',
+            'assets/chat_outlined.svg',
             width: 32,
             height: 32,
             colorFilter: ColorFilter.mode(
@@ -377,7 +377,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                         height: 16,
                         margin: const EdgeInsets.only(right: 8),
                         child: SvgPicture.asset(
-                          'assets/retryIcon.svg',
+                          'assets/retry_outlined.svg',
                           width: 16,
                           height: 16,
                           colorFilter: ColorFilter.mode(
@@ -408,7 +408,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                         height: 16,
                         margin: const EdgeInsets.only(left: 8),
                         child: SvgPicture.asset(
-                          'assets/copyIcon.svg',
+                          'assets/copy_outlined.svg',
                           width: 16,
                           height: 16,
                           colorFilter: ColorFilter.mode(
@@ -481,7 +481,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                   width: 24,
                   height: 24,
                   child: SvgPicture.asset(
-                    'assets/sendIcon.svg',
+                    'assets/send_outlined.svg',
                     width: 20,
                     height: 20,
                     colorFilter: ColorFilter.mode(
