@@ -132,8 +132,8 @@ class AppTheme extends ChangeNotifier {
   static const Color backgroundEnd = Color(0xFFB0B5CF);
 
   // Culori pentru containere
-  static const Color containerColor1 = Color(0xFFC4CCD4);
-  static const Color containerColor2 = Color(0xFF9AB2CB);
+  static const Color backgroundColor2 = Color(0xFFE7E6E4);
+  static const Color backgroundColor3 = Color(0xFFECEBE9);
 
   // Culori pentru elemente
   static const Color elementColor1 = Color(0xFF70808F);
@@ -141,8 +141,7 @@ class AppTheme extends ChangeNotifier {
   static const Color elementColor3 = Color(0xFF494D50);
 
   // Culori pentru widget-uri
-  static const Color widgetBackground = Color(0xFFD6D9DC);
-  static const Color popupBackground = Color(0xFFD6D9DC);
+  static const Color backgroundColor1 = Color(0xFFE3E1DE);
 
   // ======== UMBRELE ========
   // Removed all shadows as requested
@@ -199,10 +198,10 @@ class AppTheme extends ChangeNotifier {
   // ======== DECORATIUNI ========
   
   // Background solid (vizual) pentru ecran – implementat ca gradient cu aceeasi culoare la ambele capete
-  static Gradient get appBackground => LinearGradient(
+  static Gradient get backgroundColor1Gradient => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [widgetBackground, widgetBackground],
+    colors: [backgroundColor1, backgroundColor1],
     stops: const [0.0, 1.0],
   );
 
@@ -210,31 +209,31 @@ class AppTheme extends ChangeNotifier {
   static Gradient get boxColor => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [backgroundStart, backgroundEnd],
+    colors: [const Color(0xFFDDD7D0), const Color(0xFFDDD7D0)],
     stops: const [0.0, 1.0],
   );
 
   // Decoratiune pentru widget-uri
   static BoxDecoration get widgetDecoration => BoxDecoration(
-    color: widgetBackground,
+    color: backgroundColor1,
     borderRadius: BorderRadius.circular(borderRadiusMedium),
   );
 
   // Decoratiune pentru popup-uri
   static BoxDecoration get popupDecoration => BoxDecoration(
-    color: popupBackground,
+    color: backgroundColor1,
     borderRadius: BorderRadius.circular(borderRadiusMedium),
   );
 
   // Decoratiune pentru container-ul principal (de nivel 1)
   static BoxDecoration get container1Decoration => BoxDecoration(
-    color: containerColor1,
+    color: backgroundColor2,
     borderRadius: BorderRadius.circular(borderRadiusSmall),
   );
 
   // Decoratiune pentru container-ul secundar (de nivel 2) 
   static BoxDecoration get container2Decoration => BoxDecoration(
-    color: containerColor2,
+    color: backgroundColor3,
     borderRadius: BorderRadius.circular(borderRadiusSmall),
   );
   

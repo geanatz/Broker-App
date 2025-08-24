@@ -344,26 +344,26 @@ class MessageService {
     final banks = creditInfo['banks'] as List<String>;
     
     // Incepe cu salutul
-    String message = 'Bună ziua!\n';
+    String message = 'Buna ziua!\n';
     
     // Adauga informatiile despre programare daca exista
     if (appointmentInfo != null) {
-      message += 'Conform discuției telefonice, rămâne stabilită întâlnirea de *${appointmentInfo['date']}*, ora *${appointmentInfo['time']}*. ';
+      message += 'Conform discutiei telefonice, ramane stabilita intalnirea de *${appointmentInfo['date']}*, ora *${appointmentInfo['time']}*. ';
     } else {
       // Mesaj generic pentru programare
-      message += 'Conform discuției telefonice, rămâne stabilită întâlnirea. ';
+      message += 'Conform discutiei telefonice, ramane stabilita intalnirea. ';
     }
     
     // Adauga adresa biroului
-    message += 'Biroul nostru se află pe *Bulevardul Iuliu Maniu, nr. 7*. Vă rog să mă sunați când ajungeți pentru a vă prelua.\n';
+    message += 'Biroul nostru se afla pe *Bulevardul Iuliu Maniu, nr. 7*. Va rog sa ma sunati cand ajungeti pentru a va prelua.\n';
     
     // Determina tipul de finantare
     if (hasRetirement || hasCredits) {
-      message += 'Pentru refinanțare, vă rog să aveți la dumneavoastră următoarele documente:\n';
+      message += 'Pentru refinantare, va rog sa aveti la dumneavoastra urmatoarele documente:\n';
       
       // Documente pentru pensionari
       if (hasRetirement) {
-        message += 'Decizia de pensionare (în original)\n';
+        message += 'Decizia de pensionare (in original)\n';
         message += 'Ultimul cupon de pensie\n';
       }
       
@@ -371,16 +371,16 @@ class MessageService {
       if (hasCredits) {
         final totalCredits = creditInfo['totalCredits'] as int;
         if (totalCredits == 1) {
-          message += 'Contractul de credit (în format fizic sau electronic)\n';
+          message += 'Contractul de credit (in format fizic sau electronic)\n';
         } else {
-          message += 'Contractele de credit (în format fizic sau electronic)\n';
+          message += 'Contractele de credit (in format fizic sau electronic)\n';
         }
         
         // Adauga adresa de refinantare pentru banci specifice
         for (final bank in banks) {
           final refinanceAddress = _getRefinanceAddress(bank);
           if (refinanceAddress.isNotEmpty) {
-            message += 'Adresa de refinanțare $refinanceAddress\n';
+            message += 'Adresa de refinantare $refinanceAddress\n';
           }
         }
       }
@@ -389,12 +389,12 @@ class MessageService {
       message += 'Carte de identitate';
     } else {
       // Pentru finantare noua (fara pensie si fara credite)
-      message += 'Pentru finanțare, vă rog să aveți la dumneavoastră următoarele documente:\n';
+      message += 'Pentru finantare, va rog sa aveti la dumneavoastra urmatoarele documente:\n';
       message += 'Carte de identitate';
     }
     
     // Inchide mesajul
-    message += '\n\nVă aștept la întâlnire. Zi frumoasă!';
+    message += '\n\nVa astept la intalnire. Zi frumoasa!';
     
     return message;
   }
@@ -470,7 +470,7 @@ class MessageService {
       case DateTime.monday:
         return 'Luni';
       case DateTime.tuesday:
-        return 'Marți';
+        return 'Marti';
       case DateTime.wednesday:
         return 'Miercuri';
       case DateTime.thursday:
@@ -478,9 +478,9 @@ class MessageService {
       case DateTime.friday:
         return 'Vineri';
       case DateTime.saturday:
-        return 'Sâmbătă';
+        return 'Sambata';
       case DateTime.sunday:
-        return 'Duminică';
+        return 'Duminica';
       default:
         return '';
     }
@@ -519,22 +519,22 @@ class MessageService {
         .toLowerCase()
         .trim()
         .replaceAll(RegExp(r'\s+'), ' ') // Replace multiple spaces with single space
-        .replaceAll('ă', 'a')
-        .replaceAll('â', 'a')
-        .replaceAll('î', 'i')
-        .replaceAll('ș', 's')
-        .replaceAll('ț', 't')
+        .replaceAll('a', 'a')
+        .replaceAll('a', 'a')
+        .replaceAll('i', 'i')
+        .replaceAll('s', 's')
+        .replaceAll('t', 't')
         .replaceAll('ş', 's')
         .replaceAll('ţ', 't');
   }
 
   /// Returneaza un mesaj generic in caz de eroare
   String _getGenericMessage() {
-    return '''Bună ziua!
-Conform discuției telefonice, rămâne stabilită întâlnirea. Biroul nostru se află pe *Bulevardul Iuliu Maniu, nr. 7*. Vă rog să mă sunați când ajungeți pentru a vă prelua.
-Pentru finanțare, vă rog să aveți la dumneavoastră următoarele documente:
+    return '''Buna ziua!
+Conform discutiei telefonice, ramane stabilita intalnirea. Biroul nostru se afla pe *Bulevardul Iuliu Maniu, nr. 7*. Va rog sa ma sunati cand ajungeti pentru a va prelua.
+Pentru finantare, va rog sa aveti la dumneavoastra urmatoarele documente:
 Carte de identitate
 
-Vă aștept la întâlnire. Zi frumoasă!''';
+Va astept la intalnire. Zi frumoasa!''';
   }
 }

@@ -30,7 +30,7 @@ class DynamicTextDataRow extends StatelessWidget {
   final double? rowHeight;
 
   /// Optional decoration for the data row container.
-  /// Defaults to a ShapeDecoration with AppTheme.containerColor2 fill and rounded corners.
+  /// Defaults to a ShapeDecoration with AppTheme.backgroundColor3 fill and rounded corners.
   final ShapeDecoration? decoration;
 
   /// Optional background color for the row. Overrides decoration's color if provided.
@@ -85,7 +85,7 @@ class DynamicTextDataRow extends StatelessWidget {
     final double effectiveCellHeight = cellHeight ?? 21.0; // From snippet inner container
     final TextAlign effectiveTextAlign = textAlign ?? TextAlign.start;
 
-    final Color effectiveRowBackgroundColor = rowBackgroundColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
+    final Color effectiveRowBackgroundColor = rowBackgroundColor ?? const Color(0xFFACACD2); // AppTheme.backgroundColor3
     final double effectiveRowBorderRadius = rowBorderRadius ?? 16.0; // AppTheme.borderRadiusMedium
 
 

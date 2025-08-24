@@ -280,7 +280,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   Widget _buildWhatsNewDialog(String version, String description) {
     return AlertDialog(
-      backgroundColor: AppTheme.widgetBackground,
+                          backgroundColor: AppTheme.backgroundColor1,
       title: Text(
         'Ce este nou in $version',
         style: GoogleFonts.outfit(
@@ -488,7 +488,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       child: Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.appBackground,
+          gradient: AppTheme.backgroundColor1Gradient,
         ),
         child: Stack(
           children: [
@@ -565,7 +565,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     key: ValueKey(_currentArea),
                     child: RepaintBoundary(
                       child: Container(
-                      padding: const EdgeInsets.all(AppTheme.smallGap),
+                      padding: const EdgeInsets.all(AppTheme.largeGap),
                       decoration: BoxDecoration(
                         gradient: AppTheme.boxColor,
                         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
@@ -948,7 +948,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     required VoidCallback onTap,
     bool isActive = false,
   }) {
-    final Color background = isActive ? AppTheme.containerColor2 : AppTheme.containerColor1;
+            final Color background = isActive ? AppTheme.backgroundColor3 : AppTheme.backgroundColor2;
     final Color iconColor = isActive ? AppTheme.elementColor3 : AppTheme.elementColor2;
 
     return SizedBox(

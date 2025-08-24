@@ -865,7 +865,7 @@ class _FormAreaState extends State<FormArea> {
       padding: const EdgeInsets.all(AppTheme.largeGap),
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -916,7 +916,7 @@ class _FormAreaState extends State<FormArea> {
           padding: const EdgeInsets.all(8.0),
           clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -982,7 +982,7 @@ class _FormAreaState extends State<FormArea> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: AppTheme.containerColor1,
+                            color: AppTheme.backgroundColor2,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
@@ -1015,7 +1015,7 @@ class _FormAreaState extends State<FormArea> {
       padding: const EdgeInsets.all(AppTheme.largeGap),
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -1071,7 +1071,7 @@ class _FormAreaState extends State<FormArea> {
       padding: const EdgeInsets.all(8),
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -1121,7 +1121,7 @@ class _FormAreaState extends State<FormArea> {
       padding: const EdgeInsets.all(8),
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),

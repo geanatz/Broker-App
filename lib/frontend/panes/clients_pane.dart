@@ -474,7 +474,7 @@ class _ClientsPaneState extends State<ClientsPane> {
       padding: sectionPadding,
       clipBehavior: Clip.antiAlias,
       decoration: ShapeDecoration(
-        color: AppTheme.widgetBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),

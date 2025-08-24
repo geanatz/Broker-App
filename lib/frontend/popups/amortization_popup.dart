@@ -35,7 +35,7 @@ class AmortizationPopup extends StatelessWidget {
           height: 432,
           padding: const EdgeInsets.all(8),
           decoration: ShapeDecoration(
-            color: AppTheme.popupBackground,
+            color: AppTheme.backgroundColor1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
             ),
@@ -65,7 +65,7 @@ class AmortizationPopup extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(8),
                   decoration: ShapeDecoration(
-                    color: AppTheme.containerColor1,
+                    color: AppTheme.backgroundColor2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                     ),
@@ -180,7 +180,7 @@ class AmortizationPopup extends StatelessWidget {
                               height: 40,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: ShapeDecoration(
-                                color: AppTheme.containerColor2,
+                                color: AppTheme.backgroundColor3,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
                                 ),

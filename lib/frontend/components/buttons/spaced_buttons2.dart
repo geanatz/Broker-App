@@ -37,7 +37,7 @@ class _TextIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.backgroundColor2;
     final Color effectiveTextColor = textColor ?? AppTheme.elementColor2;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
     final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;

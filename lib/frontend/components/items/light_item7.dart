@@ -23,7 +23,7 @@ class LightItem7 extends StatefulWidget {
   final VoidCallback? onTap;
 
   /// Optional custom background color for the main container.
-  /// Defaults to AppTheme.containerColor1.
+  /// Defaults to AppTheme.backgroundColor2.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
@@ -71,7 +71,7 @@ class _LightItem7State extends State<LightItem7> {
   @override
   Widget build(BuildContext context) {
     // Nu mai schimb culoarea la hover, doar iconita
-    final Color effectiveBackgroundColor = widget.backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? AppTheme.backgroundColor2;
     final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor2;
     final Color effectiveDescriptionColor = widget.descriptionColor ?? AppTheme.elementColor1;
     final Color effectiveIconColor = AppTheme.elementColor2;

@@ -23,7 +23,7 @@ class DarkItem6 extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Optional custom background color for the main container.
-  /// Defaults to AppTheme.containerColor2 if not provided.
+  /// Defaults to AppTheme.backgroundColor3 if not provided.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
@@ -67,7 +67,7 @@ class DarkItem6 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor2;
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.backgroundColor3;
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor3;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
     final Color effectiveIconContainerColor = iconContainerColor ?? Colors.transparent;

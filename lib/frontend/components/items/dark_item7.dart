@@ -30,7 +30,7 @@ class DarkItem7 extends StatefulWidget {
   final VoidCallback? onIconTap;
 
   /// Optional custom background color for the main container.
-  /// Defaults to AppTheme.containerColor2.
+  /// Defaults to AppTheme.backgroundColor3.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
@@ -89,7 +89,7 @@ class _DarkItem7State extends State<DarkItem7> {
   @override
   Widget build(BuildContext context) {
     // DarkItem7 represents focused state - no hover color changes needed
-    final Color effectiveBackgroundColor = widget.backgroundColor ?? AppTheme.containerColor2;
+    final Color effectiveBackgroundColor = widget.backgroundColor ?? AppTheme.backgroundColor3;
     final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor3;
     final Color effectiveDescriptionColor = widget.descriptionColor ?? AppTheme.elementColor2;
     final Color effectiveIconColor = widget.iconColor ?? AppTheme.elementColor3;

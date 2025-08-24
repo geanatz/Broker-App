@@ -16,7 +16,7 @@ class ActionButton extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Optional background color for the button.
-  /// Defaults to AppTheme.containerColor1.
+  /// Defaults to AppTheme.backgroundColor2.
   final Color? backgroundColor;
 
   /// Optional text color.
@@ -78,7 +78,7 @@ class ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.backgroundColor2;
     final Color effectiveTextColor = textColor ?? AppTheme.elementColor2;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
     final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusSmall;

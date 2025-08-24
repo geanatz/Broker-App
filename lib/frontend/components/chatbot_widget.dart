@@ -138,7 +138,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
           height: double.infinity, // Fill pe verticala
           padding: const EdgeInsets.all(AppTheme.smallGap),
           decoration: BoxDecoration(
-            color: AppTheme.widgetBackground,
+            color: AppTheme.backgroundColor1,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
             // Removed shadow as requested
           ),
@@ -260,7 +260,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.containerColor1,
+            color: AppTheme.backgroundColor2,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Center(
@@ -298,7 +298,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppTheme.containerColor1,
+                      color: AppTheme.backgroundColor2,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(16),
                         topRight: Radius.circular(4),
@@ -332,7 +332,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: AppTheme.containerColor1,
+                        color: AppTheme.backgroundColor2,
                         width: 2,
                       ),
                       borderRadius: const BorderRadius.only(
@@ -434,7 +434,7 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),

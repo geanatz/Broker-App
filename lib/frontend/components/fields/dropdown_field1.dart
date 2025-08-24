@@ -86,7 +86,7 @@ class _DropdownField1State<T> extends State<DropdownField1<T>> {
     final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor2;
     final Color effectiveSelectedOptionColor = widget.selectedOptionColor ?? AppTheme.elementColor3;
     final Color effectiveIconColor = widget.iconColor ?? AppTheme.elementColor3;
-    final Color effectiveDropdownContainerColor = widget.dropdownContainerColor ?? AppTheme.containerColor2;
+    final Color effectiveDropdownContainerColor = widget.dropdownContainerColor ?? AppTheme.backgroundColor3;
 
     final double effectiveHeight = widget.fieldHeight ?? 72.0;
     final double labelAreaHeight = 21.0;

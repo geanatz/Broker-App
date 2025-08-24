@@ -33,7 +33,7 @@ class InputField4 extends StatelessWidget {
   final double? fieldHeight;
 
   /// Optional background color for the input area.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2).
+  /// Defaults to AppTheme.backgroundColor3 (0xFFACACD2).
   final Color? inputContainerColor;
 
   /// Optional text color for the title.
@@ -86,7 +86,7 @@ class InputField4 extends StatelessWidget {
     final Color effectiveSubtitleColor = subtitleColor ?? const Color(0xFF8A8AA8); // AppTheme.elementColor1
     final Color effectiveInputTextColor = inputTextColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
     final Color effectiveIconColor = iconColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
-    final Color effectiveInputContainerColor = inputContainerColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
+    final Color effectiveInputContainerColor = inputContainerColor ?? const Color(0xFFACACD2); // AppTheme.backgroundColor3
 
     final double effectiveHeight = fieldHeight ?? 72.0; // AppTheme.inputFieldHeight
     final double labelAreaHeight = 21.0; // AppTheme.inputFieldLabelHeight

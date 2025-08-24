@@ -72,42 +72,40 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/addIcon.svg
-    - assets/removeIcon.svg
-    - assets/closeIcon.svg
-    - assets/rightIcon.svg
-    - assets/expandIcon.svg
-    - assets/leftIcon.svg
-    - assets/callIcon.svg
-    - assets/talkIcon.svg
-    - assets/groupIcon.svg
-    - assets/returnIcon.svg
-    - assets/retryIcon.svg
-    - assets/viewIcon.svg
-    - assets/saveIcon.svg
-    - assets/deleteIcon.svg
-    - assets/bankIcon.svg
-    - assets/trendingIcon.svg
-    - assets/doneIcon.svg
-    - assets/copyIcon.svg
-    - assets/hideIcon.svg
-    - assets/showIcon.svg
-    - assets/editIcon.svg
-    - assets/InfoIcon.svg
-    - assets/clientsIcon.svg
-    - assets/settingsIcon.svg
-    - assets/calendarIcon.svg
-    - assets/formIcon.svg
-    - assets/dashboardIcon.svg
-    - assets/calculatorIcon.svg
-    - assets/listIcon.svg
-    - assets/userIcon.svg
-    - assets/imageIcon.svg
-    - assets/logoIcon.svg
-    - assets/darkIcon.svg
-    - assets/lightIcon.svg
-    - assets/systemIcon.svg
-    - assets/colorIcon.svg
+    - assets/plus_outlined.svg
+    - assets/close_outlined.svg
+    - assets/right_outlined.svg
+    - assets/caret_outlined.svg
+    - assets/left_outlined.svg
+    - assets/phone_outlined.svg
+    - assets/chat_outlined.svg
+    - assets/group_outlined.svg
+    - assets/undo_outlined.svg
+    - assets/retry_outlined.svg
+    - assets/view_outlined.svg
+    - assets/save_outlined.svg
+    - assets/delete_outlined.svg
+    - assets/recommend_outlined.svg
+    - assets/trending_outlined.svg
+    - assets/check_outlined.svg
+    - assets/copy_outlined.svg
+    - assets/hide_outlined.svg
+    - assets/view_outlined.svg
+    - assets/edit_outlined.svg
+    - assets/info_outlined.svg
+    - assets/clients_outlined.svg
+    - assets/settings_outlined.svg
+    - assets/calendar_outlined.svg
+    - assets/form_outlined.svg
+    - assets/dashboard_outlined.svg
+    - assets/calculator_outlined.svg
+    - assets/user_outlined.svg
+    - assets/image_outlined.svg
+    - assets/logo.svg
+    - assets/moon_outlined.svg
+    - assets/sun_outlined.svg
+    - assets/system_outlined.svg
+    - assets/color_outlined.svg
     - assets/brdIcon.svg
     - assets/bcrIcon.svg
     - assets/raiffeisenIcon.svg
@@ -117,14 +115,14 @@ flutter:
     - assets/btIcon.svg
     - assets/alphaIcon.svg
     - assets/cecIcon.svg 
-    - assets/logoutIcon.svg
-    - assets/homeIcon.svg
-    - assets/historyIcon.svg
-    - assets/coffeeIcon.svg
-    - assets/sendIcon.svg
-    - assets/chatIcon.svg
-    - assets/minimizeIcon.svg
-    - assets/maximizeIcon.svg
+    - assets/logout_outlined.svg
+    - assets/home_outlined.svg
+    - assets/history_outlined.svg
+    - assets/coffee_outlined.svg
+    - assets/send_outlined.svg
+    - assets/chat_outlined.svg
+    - assets/minus_outlined.svg
+    - assets/maximize_outlined.svg
     - lib/backend/ocr/names.json
 
 # Launcher icons configuration (do not run generation here; user executes the command)

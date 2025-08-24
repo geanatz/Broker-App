@@ -35,7 +35,7 @@ class InputField3 extends StatelessWidget {
   final double? fieldHeight;
 
   /// Optional background color for the input area.
-  /// Defaults to AppTheme.containerColor2.
+  /// Defaults to AppTheme.backgroundColor3.
   final Color? inputContainerColor;
 
   /// Optional text color for the title.
@@ -82,7 +82,7 @@ class InputField3 extends StatelessWidget {
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
     final Color effectiveInputTextColor = inputTextColor ?? AppTheme.elementColor3;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor3;
-    final Color effectiveInputContainerColor = inputContainerColor ?? AppTheme.containerColor2;
+    final Color effectiveInputContainerColor = inputContainerColor ?? AppTheme.backgroundColor3;
 
     final double effectiveHeight = fieldHeight ?? 72.0;
     final double labelAreaHeight = 21.0;

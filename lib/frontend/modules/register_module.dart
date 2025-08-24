@@ -147,7 +147,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
         ),
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: BoxDecoration(
-          color: AppTheme.widgetBackground,
+          color: AppTheme.backgroundColor1,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           // Removed shadow as requested
         ),
@@ -238,7 +238,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Form(
@@ -324,7 +324,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.containerColor2,
+            color: AppTheme.backgroundColor3,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: isInvalid 
                 ? Border.all(color: AppTheme.elementColor2, width: 2.0)
@@ -417,7 +417,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
         Container(
           height: 48, 
           decoration: BoxDecoration(
-            color: AppTheme.containerColor2, 
+            color: AppTheme.backgroundColor3, 
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: _isTeamInvalid 
                 ? Border.all(color: AppTheme.elementColor2, width: 2.0)
@@ -459,7 +459,7 @@ class _RegisterPopupState extends State<RegisterPopup> {
               contentPadding: EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
             ),
             style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
-            dropdownColor: AppTheme.containerColor2,
+            dropdownColor: AppTheme.backgroundColor3,
             validator: null, // Eliminam validatorul standard
           ),
         ),

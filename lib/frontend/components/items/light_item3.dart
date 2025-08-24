@@ -16,7 +16,7 @@ class LightItem3 extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Optional custom background color for the container.
-  /// Defaults to AppTheme.containerColor1 if not provided.
+  /// Defaults to AppTheme.backgroundColor2 if not provided.
   final Color? backgroundColor;
 
   /// Optional custom color for the title text.
@@ -59,7 +59,7 @@ class LightItem3 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.backgroundColor2;
     final Color effectiveTitleColor = titleColor ?? AppTheme.elementColor2;
     final Color effectiveDescriptionColor = descriptionColor ?? AppTheme.elementColor1;
     final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusSmall;

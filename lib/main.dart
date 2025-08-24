@@ -325,7 +325,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: AppTheme.appBackground,
+        gradient: AppTheme.backgroundColor1Gradient,
       ),
       child: MaterialApp(
         title: 'MAT Finance',

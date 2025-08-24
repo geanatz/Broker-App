@@ -9,7 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 ///
 /// The main item has a prominent border. The icon container has rounded corners
 /// but is transparent by default and has no border.
-/// On hover, the background changes to containerColor2.
+/// On hover, the background changes to backgroundColor3.
 class OutlinedItem6 extends StatefulWidget {
   /// The primary title text.
   final String title;
@@ -28,7 +28,7 @@ class OutlinedItem6 extends StatefulWidget {
   final Color? mainBackgroundColor;
 
   /// Optional custom color for the main border.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2).
+  /// Defaults to AppTheme.backgroundColor3 (0xFFACACD2).
   final Color? mainBorderColor;
 
   /// Optional custom width for the main border.
@@ -85,11 +85,11 @@ class _OutlinedItem6State extends State<OutlinedItem6> {
 
   @override
   Widget build(BuildContext context) {
-    // Use containerColor2 on hover, otherwise use the provided color or transparent
+    // Use backgroundColor3 on hover, otherwise use the provided color or transparent
     final Color effectiveMainBackgroundColor = _isHovered 
-        ? AppTheme.containerColor2 
+        ? AppTheme.backgroundColor3 
         : (widget.mainBackgroundColor ?? Colors.transparent);
-    final Color effectiveMainBorderColor = widget.mainBorderColor ?? AppTheme.containerColor2;
+    final Color effectiveMainBorderColor = widget.mainBorderColor ?? AppTheme.backgroundColor3;
     final double effectiveMainBorderWidth = widget.mainBorderWidth ?? 4.0;
     
     // Change text and icon colors on hover: elementColor2 default, elementColor3 on hover

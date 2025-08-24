@@ -322,7 +322,7 @@ class CalendarAreaState extends State<CalendarArea> {
       height: 600,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.widgetBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -356,7 +356,7 @@ class CalendarAreaState extends State<CalendarArea> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.widgetBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -406,7 +406,7 @@ class CalendarAreaState extends State<CalendarArea> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),

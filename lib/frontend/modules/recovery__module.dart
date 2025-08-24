@@ -109,7 +109,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
         height: popupHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: BoxDecoration(
-          color: AppTheme.widgetBackground,
+          color: AppTheme.backgroundColor1,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           // Removed shadow as requested
         ),
@@ -198,7 +198,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Form(
@@ -276,7 +276,7 @@ class _ResetPasswordPopupState extends State<ResetPasswordPopup> {
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.containerColor2,
+            color: AppTheme.backgroundColor3,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: isInvalid 
                 ? Border.all(color: AppTheme.elementColor2, width: 2.0)

@@ -19,7 +19,7 @@ class OutlinedItem2 extends StatelessWidget {
   final Color? backgroundColor;
 
   /// Optional custom color for the border.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2).
+  /// Defaults to AppTheme.backgroundColor3 (0xFFACACD2).
   final Color? borderColor;
 
   /// Optional custom width for the border.
@@ -54,7 +54,7 @@ class OutlinedItem2 extends StatelessWidget {
   Widget build(BuildContext context) {
     // --- Placeholder Values / Hardcoded Defaults ---
     final Color effectiveBackgroundColor = backgroundColor ?? Colors.transparent;
-    final Color effectiveBorderColor = borderColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
+    final Color effectiveBorderColor = borderColor ?? const Color(0xFFACACD2); // AppTheme.backgroundColor3
     final double effectiveBorderWidth = borderWidth ?? 4.0; // AppTheme.borderWidthThick
     final Color effectiveTitleColor = titleColor ?? const Color(0xFF666699); // AppTheme.elementColor2
     final double effectiveBorderRadius = borderRadius ?? 24.0; // AppTheme.borderRadiusLarge

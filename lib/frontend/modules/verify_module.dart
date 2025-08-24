@@ -63,7 +63,7 @@ class _TokenPopupState extends State<TokenPopup> {
         height: popupHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: BoxDecoration(
-          color: AppTheme.widgetBackground,
+          color: AppTheme.backgroundColor1,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           // Removed shadow as requested
         ),
@@ -153,7 +153,7 @@ class _TokenPopupState extends State<TokenPopup> {
       height: 88,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Form(
@@ -180,7 +180,7 @@ class _TokenPopupState extends State<TokenPopup> {
             Container(
               height: 48,
               decoration: BoxDecoration(
-                color: AppTheme.containerColor2,
+                color: AppTheme.backgroundColor3,
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                 border: _isTokenInvalid 
                     ? Border.all(color: AppTheme.elementColor2, width: 2.0)

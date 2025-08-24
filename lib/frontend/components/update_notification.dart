@@ -88,7 +88,7 @@ class _UpdateNotificationWrapperState extends State<UpdateNotificationWrapper> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.widgetBackground,
+                color: AppTheme.backgroundColor1,
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
                 border: Border.all(color: AppTheme.elementColor2.withAlpha(50)),
               ),
@@ -152,7 +152,7 @@ class _UpdateNotificationWrapperState extends State<UpdateNotificationWrapper> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.widgetBackground,
+                color: AppTheme.backgroundColor1,
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
                 border: Border.all(color: AppTheme.elementColor2.withAlpha(30)),
               ),

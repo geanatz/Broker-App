@@ -133,7 +133,7 @@ class _BankPopupState extends State<BankPopup> {
         width: 360,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: ShapeDecoration(
-          color: AppTheme.popupBackground,
+          color: AppTheme.backgroundColor1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           ),
@@ -155,7 +155,7 @@ class _BankPopupState extends State<BankPopup> {
               width: double.infinity,
               padding: const EdgeInsets.all(AppTheme.smallGap),
               decoration: ShapeDecoration(
-                color: AppTheme.containerColor1,
+                color: AppTheme.backgroundColor2,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                 ),

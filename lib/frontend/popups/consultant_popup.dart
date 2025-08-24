@@ -98,7 +98,7 @@ class _ConsultantPopupState extends State<ConsultantPopup> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap), // 8px padding
       decoration: BoxDecoration(
-        color: AppTheme.containerColor1, // #CFC4D4
+        color: AppTheme.backgroundColor2, // #CFC4D4
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium), // 24px
       ),
       child: Column(
@@ -142,7 +142,7 @@ class _ConsultantPopupState extends State<ConsultantPopup> {
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap), // 16px
           decoration: BoxDecoration(
-            color: AppTheme.containerColor2, // #C6ACD3
+            color: AppTheme.backgroundColor3, // #C6ACD3
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall), // 16px
           ),
           alignment: Alignment.centerLeft,

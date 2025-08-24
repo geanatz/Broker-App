@@ -32,7 +32,7 @@ class _AuthPopupButtonState extends State<AuthPopupButton> {
           width: double.infinity,
           height: 48,
           decoration: BoxDecoration(
-            color: _isHovering ? AppTheme.containerColor2 : AppTheme.containerColor1, // Change color on hover
+            color: _isHovering ? AppTheme.backgroundColor3 : AppTheme.backgroundColor2, // Change color on hover
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           ),
           alignment: Alignment.center,
@@ -173,7 +173,7 @@ class _LoginPopupState extends State<LoginPopup> {
         height: popupHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: BoxDecoration(
-          color: AppTheme.widgetBackground,
+          color: AppTheme.backgroundColor1,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           // Removed shadow as requested
         ),
@@ -267,7 +267,7 @@ class _LoginPopupState extends State<LoginPopup> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.containerColor1, 
+        color: AppTheme.backgroundColor2, 
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Form(
@@ -305,7 +305,7 @@ class _LoginPopupState extends State<LoginPopup> {
         Container(
           height: 48, // Figma: Dropdown height
           decoration: BoxDecoration(
-            color: AppTheme.containerColor2, 
+            color: AppTheme.backgroundColor3, 
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: _isConsultantInvalid 
                 ? Border.all(color: AppTheme.elementColor2, width: 2.0)
@@ -352,7 +352,7 @@ class _LoginPopupState extends State<LoginPopup> {
               contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 15.0),
             ),
             style: AppTheme.smallTextStyle.copyWith(color: AppTheme.elementColor3, fontSize: AppTheme.fontSizeMedium, fontWeight: FontWeight.w600),
-            dropdownColor: AppTheme.containerColor2,
+            dropdownColor: AppTheme.backgroundColor3,
             validator: null, // Eliminam validatorul standard
           ),
         ),
@@ -405,7 +405,7 @@ class _LoginPopupState extends State<LoginPopup> {
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.containerColor2,
+            color: AppTheme.backgroundColor3,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             border: _isPasswordInvalid 
                 ? Border.all(color: AppTheme.elementColor2, width: 2.0)

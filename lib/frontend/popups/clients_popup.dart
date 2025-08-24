@@ -477,7 +477,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       height: 432,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(AppTheme.borderRadiusMedium)),
         ),
@@ -514,7 +514,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -575,7 +575,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
               height: 40,
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
-                  side: BorderSide(width: 8, color: AppTheme.containerColor1),
+                  side: BorderSide(width: 8, color: AppTheme.backgroundColor2),
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
               ),
@@ -646,7 +646,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -660,7 +660,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
                 width: 56,
                 height: 56,
                 decoration: ShapeDecoration(
-                  color: AppTheme.containerColor2,
+                  color: AppTheme.backgroundColor3,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -697,7 +697,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -713,7 +713,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
                   width: 56,
                   height: 56,
                   decoration: ShapeDecoration(
-                    color: AppTheme.containerColor2,
+                    color: AppTheme.backgroundColor3,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -742,7 +742,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
                                 width: 56,
                                 height: 56,
                                 decoration: BoxDecoration(
-                                  color: AppTheme.containerColor1,
+                                  color: AppTheme.backgroundColor2,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Icon(
@@ -824,7 +824,7 @@ class _ClientsPopupState extends State<ClientsPopup> {
       height: 432,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -1218,7 +1218,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
         height: 432,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: ShapeDecoration(
-          color: AppTheme.popupBackground,
+          color: AppTheme.backgroundColor1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(AppTheme.borderRadiusMedium)),
           ),
@@ -1250,7 +1250,7 @@ class _ClientsPopup2State extends State<ClientsPopup2> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(AppTheme.smallGap),
                         decoration: ShapeDecoration(
-                          color: AppTheme.containerColor1,
+                          color: AppTheme.backgroundColor2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                           ),

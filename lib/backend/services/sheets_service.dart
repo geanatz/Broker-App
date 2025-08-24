@@ -1399,8 +1399,8 @@ class GoogleDriveService extends ChangeNotifier {
       final String contact = ([formattedPhone1, formattedPhone2].where((p) => p.isNotEmpty).join('/'));
       final String coDebitorName = client['coDebitorName'] ?? '';
       final String ziua = DateTime.now().day.toString();
-      // IMPORTANT: Status-ul în Google Sheets trebuie să fie doar additionalInfo
-      // Dacă additionalInfo este gol, nu afișa nimic (nu discussionStatus)
+      // IMPORTANT: Status-ul in Google Sheets trebuie sa fie doar additionalInfo
+      // Daca additionalInfo este gol, nu afisa nimic (nu discussionStatus)
       final String status = client['additionalInfo'] ?? '';
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG additionalInfo: ${client['additionalInfo']}');
       debugPrint('🔧 GOOGLE_DRIVE_SERVICE: DEBUG discussionStatus: ${client['discussionStatus']}');

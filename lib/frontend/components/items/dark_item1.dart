@@ -9,7 +9,7 @@ class DarkItem1 extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Optional custom background color for the container.
-  /// Defaults to AppTheme.containerColor2 (0xFFACACD2) if not provided.
+  /// Defaults to AppTheme.backgroundColor3 (0xFFACACD2) if not provided.
   final Color? backgroundColor;
 
   /// Optional custom color for the text label.
@@ -33,8 +33,8 @@ class DarkItem1 extends StatelessWidget {
   Widget build(BuildContext context) {
     // --- Placeholder Values / Hardcoded Defaults ---
     // These colors are based on your snippet's comments.
-    // Replace with actual AppTheme values like AppTheme.containerColor2 etc. when AppTheme is available.
-    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFACACD2); // AppTheme.containerColor2
+    // Replace with actual AppTheme values like AppTheme.backgroundColor3 etc. when AppTheme is available.
+    final Color effectiveBackgroundColor = backgroundColor ?? const Color(0xFFACACD2); // AppTheme.backgroundColor3
     final Color effectiveTextColor = textColor ?? const Color(0xFF4D4D80); // AppTheme.elementColor3
 
     // These dimensions and styling are directly from your snippet.

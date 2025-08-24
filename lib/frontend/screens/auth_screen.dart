@@ -123,7 +123,7 @@ class _AuthScreenState extends State<AuthScreen> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppTheme.appBackground,
+          gradient: AppTheme.backgroundColor1Gradient,
         ),
         child: _buildCurrentStep(),
       ),

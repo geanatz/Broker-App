@@ -69,7 +69,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
         height: popupHeight,
         padding: const EdgeInsets.all(AppTheme.smallGap),
         decoration: BoxDecoration(
-          color: AppTheme.widgetBackground,
+          color: AppTheme.backgroundColor1,
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           // Removed shadow as requested
         ),
@@ -147,7 +147,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: BoxDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: Column(
@@ -168,7 +168,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
           Container(
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.containerColor2,
+              color: AppTheme.backgroundColor3,
               borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
             ),
             child: Row(
@@ -222,7 +222,7 @@ class _AccountCreatedPopupState extends State<AccountCreatedPopup> {
       width: double.infinity,
       height: 48,
       decoration: BoxDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       ),
       child: TextButton(

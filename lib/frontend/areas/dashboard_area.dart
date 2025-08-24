@@ -80,7 +80,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -117,7 +117,7 @@ class _DashboardAreaState extends State<DashboardArea> {
           ? AppTheme.elementColor1 
           : AppTheme.elementColor2,
       dateNavIconColor: AppTheme.elementColor1,
-      // Custom title widget pentru a include săgeata
+      // Custom title widget pentru a include sageata
       titleWidget: _selectedTeamId != null 
           ? Row(
               mainAxisSize: MainAxisSize.min,
@@ -177,7 +177,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 16),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
@@ -228,7 +228,7 @@ class _DashboardAreaState extends State<DashboardArea> {
         width: double.infinity,
         padding: const EdgeInsets.all(8),
         decoration: ShapeDecoration(
-          color: AppTheme.containerColor1,
+          color: AppTheme.backgroundColor2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),
@@ -268,7 +268,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: ShapeDecoration(
-        color: AppTheme.containerColor1,
+        color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
         ),
@@ -330,7 +330,7 @@ class _DashboardAreaState extends State<DashboardArea> {
                 width: double.infinity,
                 height: barHeight,
               decoration: BoxDecoration(
-                color: AppTheme.containerColor2,
+                color: AppTheme.backgroundColor3,
                 borderRadius: BorderRadius.circular(20),
               ),
                               child: Align(
@@ -392,7 +392,7 @@ class _DashboardAreaState extends State<DashboardArea> {
         width: finalWidth,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: ShapeDecoration(
-          color: AppTheme.containerColor2,
+          color: AppTheme.backgroundColor3,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),
@@ -566,7 +566,7 @@ class _DashboardAreaState extends State<DashboardArea> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: ShapeDecoration(
-          color: AppTheme.containerColor1,
+          color: AppTheme.backgroundColor2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
           ),

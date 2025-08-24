@@ -50,9 +50,9 @@ class _TextIconButtonState extends State<_TextIconButton> {
   Widget build(BuildContext context) {
     final bool isInteractive = _isHovered || _isFocused;
     
-    // Corrected color scheme: default uses containerColor1, hover/focus uses containerColor2
+    // Corrected color scheme: default uses backgroundColor2, hover/focus uses backgroundColor3
     final Color effectiveBackgroundColor = widget.backgroundColor ?? 
-        (isInteractive ? AppTheme.containerColor2 : AppTheme.containerColor1);
+        (isInteractive ? AppTheme.backgroundColor3 : AppTheme.backgroundColor2);
     final Color effectiveTextColor = widget.textColor ?? 
         (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
     final Color effectiveIconColor = widget.iconColor ?? 

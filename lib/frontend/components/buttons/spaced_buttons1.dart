@@ -38,7 +38,7 @@ class _TextIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.containerColor1;
+    final Color effectiveBackgroundColor = backgroundColor ?? AppTheme.backgroundColor2;
     final Color effectiveTextColor = textColor ?? AppTheme.elementColor2;
     final Color effectiveIconColor = iconColor ?? AppTheme.elementColor2;
     final double effectiveBorderRadius = borderRadius ?? AppTheme.borderRadiusMedium;
@@ -145,7 +145,7 @@ class _SpacedButtonSingleSvgState extends State<SpacedButtonSingleSvg> {
     
     // Apply hover/focus color scheme
     final Color effectiveBackgroundColor = widget.backgroundColor ?? 
-        (isInteractive ? AppTheme.containerColor2 : AppTheme.containerColor1);
+        (isInteractive ? AppTheme.backgroundColor3 : AppTheme.backgroundColor2);
     final Color effectiveTextColor = widget.textColor ?? 
         (isInteractive ? AppTheme.elementColor3 : AppTheme.elementColor2);
     final Color effectiveIconColor = widget.iconColor ?? 

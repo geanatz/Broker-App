@@ -233,7 +233,7 @@ class FormService extends ChangeNotifier {
   final Map<String, Map<String, dynamic>> _pendingPayloadByClient = {};
   final Map<String, String> _lastSavedHashByClient = {};
   static const Duration _autosaveDebounce = Duration(milliseconds: 600);
-  // Coalescing: evita multiple salvări simultane
+  // Coalescing: evita multiple salvari simultane
   final Map<String, Future<bool>> _inFlightSaves = {};
   final Set<String> _saveRequestedWhileInFlight = <String>{};
 

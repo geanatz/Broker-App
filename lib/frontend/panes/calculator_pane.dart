@@ -278,7 +278,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
       height: double.infinity,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -314,7 +314,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                         width: 296,
                         padding: const EdgeInsets.all(8),
                         decoration: ShapeDecoration(
-                          color: AppTheme.containerColor1,
+                          color: AppTheme.backgroundColor2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                           ),
@@ -389,7 +389,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: 'Rata lunara',
                               description: _monthlyPayment > 0 ? _monthlyPayment.toStringAsFixed(1) : '0.0',
-                              backgroundColor: AppTheme.containerColor1,
+                              backgroundColor: AppTheme.backgroundColor2,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
                               titleStyle: AppTheme.safeOutfit(
@@ -410,7 +410,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: 'Dobanda totala',
                               description: _totalInterest > 0 ? _totalInterest.toStringAsFixed(1) : '0.0',
-                              backgroundColor: AppTheme.containerColor1,
+                              backgroundColor: AppTheme.backgroundColor2,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
                               titleStyle: AppTheme.safeOutfit(
@@ -431,7 +431,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: 'Plata totala',
                               description: _totalCost > 0 ? _totalCost.toStringAsFixed(1) : '0.0',
-                              backgroundColor: AppTheme.containerColor1,
+                              backgroundColor: AppTheme.backgroundColor2,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
                               titleStyle: AppTheme.safeOutfit(
@@ -452,7 +452,7 @@ class _CalculatorPaneState extends State<CalculatorPane> {
                             LightItem3(
                               title: '40% din venituri',
                               description: _incomePercentage > 0 ? _incomePercentage.toStringAsFixed(1) : '0.0',
-                              backgroundColor: AppTheme.containerColor1,
+                              backgroundColor: AppTheme.backgroundColor2,
                               titleColor: AppTheme.elementColor2,
                               descriptionColor: AppTheme.elementColor1,
                               titleStyle: AppTheme.safeOutfit(

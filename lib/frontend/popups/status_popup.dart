@@ -440,7 +440,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           debugPrint('❌ STATUS_POPUP: Error invalidating cache: $e');
         }
         
-        // IMPORTANT: Mutarea clientului se face manual pentru a păstra informațiile adiționale introduse de utilizator
+        // IMPORTANT: Mutarea clientului se face manual pentru a pastra informatiile aditionale introduse de utilizator
         await _clientService.moveClientToRecente(
           widget.client.phoneNumber,
           additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
@@ -564,7 +564,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           height: _shouldShowSecondRow ? 456 : 376, // Inaltime dinamica
           padding: const EdgeInsets.all(8),
           decoration: ShapeDecoration(
-            color: AppTheme.popupBackground,
+            color: AppTheme.backgroundColor1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
             ),
@@ -585,7 +585,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(8),
                   decoration: ShapeDecoration(
-                    color: AppTheme.containerColor1,
+                    color: AppTheme.backgroundColor2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                     ),
@@ -716,7 +716,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: ShapeDecoration(
-                                  color: AppTheme.containerColor2,
+                                  color: AppTheme.backgroundColor3,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
                                   ),

@@ -216,7 +216,7 @@ class _InputField1State extends State<InputField1> {
     final Color effectiveTitleColor = widget.titleColor ?? AppTheme.elementColor2;
     final Color effectiveInputTextColor = widget.inputTextColor ?? AppTheme.elementColor3;
     final Color effectiveIconColor = widget.iconColor ?? AppTheme.elementColor3;
-    final Color effectiveInputContainerColor = widget.inputContainerColor ?? AppTheme.containerColor2;
+    final Color effectiveInputContainerColor = widget.inputContainerColor ?? AppTheme.backgroundColor3;
 
     final double effectiveHeight = widget.fieldHeight ?? 72.0;
     final double labelAreaHeight = 21.0;

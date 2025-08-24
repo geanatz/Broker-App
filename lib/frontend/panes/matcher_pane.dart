@@ -165,7 +165,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
               width: double.infinity,
               height: 48,
               decoration: ShapeDecoration(
-                color: AppTheme.containerColor2,
+                color: AppTheme.backgroundColor3,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -235,7 +235,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
       height: double.infinity,
       padding: const EdgeInsets.all(AppTheme.smallGap),
       decoration: ShapeDecoration(
-        color: AppTheme.popupBackground,
+        color: AppTheme.backgroundColor1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
         ),
@@ -266,7 +266,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppTheme.smallGap),
                   decoration: ShapeDecoration(
-                    color: AppTheme.containerColor1,
+                    color: AppTheme.backgroundColor2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                     ),
@@ -366,7 +366,7 @@ class MatcherPaneState extends State<MatcherPane> with AutomaticKeepAliveClientM
                                       width: double.infinity,
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                       decoration: ShapeDecoration(
-                                        color: AppTheme.containerColor1,
+                                        color: AppTheme.backgroundColor2,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                                         ),
