@@ -885,6 +885,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   decoration: BoxDecoration(
                     color: background,
                     borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                    boxShadow: (isActive || isHovered) ? AppTheme.standardShadow : null,
                   ),
                   child: Center(
                     child: SvgPicture.asset(

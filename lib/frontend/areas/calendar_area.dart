@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
-import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 
@@ -14,8 +13,6 @@ import 'package:mat_finance/frontend/components/texts/text2.dart';
 import 'package:mat_finance/backend/services/firebase_service.dart';
 
 // Import the required components
-import 'package:mat_finance/frontend/components/headers/widget_header6.dart';
-import 'package:mat_finance/frontend/components/items/calendar_slot.dart';
 import 'package:mat_finance/frontend/components/dialog_utils.dart';
 import 'package:intl/intl.dart';
 
@@ -50,7 +47,6 @@ class CalendarAreaState extends State<CalendarArea> {
   // Public getter pentru currentWeekOffset
   int get currentWeekOffset => _currentWeekOffset;
   bool _isInitialized = false;
-  bool _isLoading = false;
   
   // OPTIMIZARE: Data cache pentru meetings cu timestamp
   List<ClientActivity> _cachedMeetings = [];
@@ -110,7 +106,6 @@ class CalendarAreaState extends State<CalendarArea> {
         setState(() {
           _allMeetings = cachedMeetings;
           _filterMeetingsForCurrentWeek();
-          _isLoading = false;
           _isInitialized = true;
         });
       }
@@ -220,7 +215,6 @@ class CalendarAreaState extends State<CalendarArea> {
 
     if (mounted) {
       setState(() {
-        _isLoading = true;
       });
     }
 
@@ -238,7 +232,6 @@ class CalendarAreaState extends State<CalendarArea> {
         setState(() {
           _allMeetings = allTeamMeetings;
           _filterMeetingsForCurrentWeek();
-          _isLoading = false;
           _lastLoadTime = DateTime.now();
         });
       }
@@ -251,7 +244,6 @@ class CalendarAreaState extends State<CalendarArea> {
       debugPrint('❌ CALENDAR_AREA: Error loading team meetings from cache: $e');
       if (mounted) {
         setState(() {
-          _isLoading = false;
           // Keep existing cache on error
         });
       }
@@ -339,7 +331,7 @@ class CalendarAreaState extends State<CalendarArea> {
 
   /// Construieste widget-ul principal pentru calendar conform designului Figma
   Widget _buildCalendarWidget() {
-    final String dateInterval = _calendarService.getDateInterval(_currentWeekOffset);
+    _calendarService.getDateInterval(_currentWeekOffset);
 
     return Container(
       width: double.infinity,
@@ -374,7 +366,7 @@ class CalendarAreaState extends State<CalendarArea> {
                         textAlign: TextAlign.center,
                         style: GoogleFonts.outfit(
                           color: AppTheme.elementColor1,
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: FontWeight.w500,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -438,176 +430,9 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// Construieste containerul principal cu calendar
-  Widget _buildCalendarContainer() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: ShapeDecoration(
-        color: AppTheme.backgroundColor2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header cu zilele saptamanii
-          _buildWeekDaysHeader(),
-          
-          const SizedBox(height: 8),
-          
-          // Grid-ul cu sloturile (fara coloana cu orele)
-          Expanded(
-            child: _buildCalendarGrid(),
-          ),
-        ],
-      ),
-    );
-  }
 
-  /// Construieste header-ul cu zilele saptamanii conform Figma
-  Widget _buildWeekDaysHeader() {
-    final List<String> weekDates = _calendarService.getWeekDates(_currentWeekOffset);
-    
-    return SizedBox(
-      width: double.infinity,
-      height: 21,
-      child: Row(
-        children: [
-          // Zilele saptamanii folosind Text2 (fara spatiu pentru coloana cu orele)
-          ...List.generate(CalendarService.daysPerWeek, (index) {
-            return Expanded(
-              child: Container(
-                height: 21,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                alignment: Alignment.center,
-                child: Text2(
-                  text: '${CalendarService.workingDays[index]} ${weekDates[index]}',
-                  color: AppTheme.elementColor2,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
 
-  /// Construieste grid-ul cu sloturile (fara StreamBuilder si fara coloana cu orele)
-  Widget _buildCalendarGrid() {
-    if (_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: AppTheme.elementColor1,
-              strokeWidth: 2,
-            ),
-            const SizedBox(height: 8),
-            Text2(
-              text: 'Se incarca calendarul...',
-              color: AppTheme.elementColor2,
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-            ),
-          ],
-        ),
-      );
-    }
 
-    final Map<String, Map<String, dynamic>> meetingsMap = {};
-    final Map<String, String> meetingsDocIds = {};
-    
-    // Process cached meetings 
-    for (var meeting in _cachedMeetings) {
-      try {
-        final dateTime = meeting.dateTime;
-        
-        final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
-        final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
-        
-        if (dayIndex != null && hourIndex != -1) {
-          final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
-          meetingsMap[slotKey] = meeting.toMap();
-          meetingsDocIds[slotKey] = meeting.id;
-        }
-      } catch (e) {
-        debugPrint('Error processing meeting document ${meeting.id}: $e');
-        continue;
-      }
-    }
-
-    return SmoothScrollWrapper(
-      controller: _scrollController,
-      scrollSpeed: 120.0, // Viteza mai mare pentru calendarul cu multe randuri
-      animationDuration: const Duration(milliseconds: 300),
-      child: Scrollbar(
-        controller: _scrollController,
-        thumbVisibility: false,
-        child: SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
-          controller: _scrollController,
-          child: Column(
-            children: _buildHourRows(meetingsMap, meetingsDocIds),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Construieste randurile pentru fiecare ora (fara coloana cu orele)
-  List<Widget> _buildHourRows(
-    Map<String, Map<String, dynamic>> meetingsMap,
-    Map<String, String> meetingsDocIds,
-  ) {
-    
-    return List.generate(CalendarService.workingHours.length, (hourIndex) {
-      final hour = CalendarService.workingHours[hourIndex];
-      final isLastHour = hourIndex == CalendarService.workingHours.length - 1;
-      
-      return Column(
-        children: [
-          // Randul pentru ora curenta (fara coloana cu orele)
-          SizedBox(
-            height: 64,
-            child: Row(
-              children: [
-                // Sloturile pentru fiecare zi cu marime egala (fara coloana cu orele)
-                Expanded(
-                  child: Row(
-                    children: [
-                      for (int dayIndex = 0; dayIndex < CalendarService.daysPerWeek; dayIndex++) ...[
-                        Expanded(
-                          child: Builder(
-                            builder: (context) {
-                              final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
-                              final meetingData = meetingsMap[slotKey];
-                              final docId = meetingsDocIds[slotKey];
-                              final isMeeting = meetingData != null;
-                              
-                              return isMeeting 
-                                  ? _buildMeetingSlot(meetingData, docId!)
-                                  : _buildAvailableSlot(dayIndex, hourIndex);
-                            }
-                          ),
-                        ),
-                        if (dayIndex < CalendarService.daysPerWeek - 1) 
-                          SizedBox(width: AppTheme.mediumGap),
-                      ]
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!isLastHour) const SizedBox(height: 16),
-        ],
-      );
-    });
-  }
 
   /// Construieste o coloana pentru o zi specifica cu toate sloturile
   List<Widget> _buildDayColumn(int dayIndex) {
@@ -624,37 +449,34 @@ class CalendarAreaState extends State<CalendarArea> {
       return Column(
         children: [
           // Slot pentru ora curenta
-          GestureDetector(
-            onTap: isMeeting 
-                ? () => _showEditMeetingDialog(meetingData!, docId!)
-                : () => _showCreateMeetingDialog(dayIndex, hourIndex),
-            child: Container(
-              width: double.infinity,
-              height: 64,
-              padding: isMeeting ? const EdgeInsets.symmetric(horizontal: 16, vertical: 0) : null,
-              decoration: ShapeDecoration(
-                color: isMeeting ? AppTheme.backgroundColor2 : const Color(0xFFE1DCD6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                shadows: isMeeting ? [
-                  BoxShadow(
-                    color: Color(0x0C503E29),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                    spreadRadius: 0,
-                  )
-                ] : null,
-              ),
-              child: isMeeting 
-                  ? _buildMeetingSlotContent(meetingData!, docId!)
-                  : _buildFreeSlotContent(hour),
-            ),
-          ),
+          _buildSlotWithHover(dayIndex, hourIndex, hour, isMeeting, meetingData, docId, isLastHour),
           if (!isLastHour) const SizedBox(height: 16),
         ],
       );
     });
+  }
+
+  /// Construieste un slot cu hover behavior
+  Widget _buildSlotWithHover(
+    int dayIndex, 
+    int hourIndex, 
+    String hour, 
+    bool isMeeting, 
+    Map<String, dynamic>? meetingData, 
+    String? docId, 
+    bool isLastHour
+  ) {
+    return _HoverableSlot(
+      dayIndex: dayIndex,
+      hourIndex: hourIndex,
+      hour: hour,
+      isMeeting: isMeeting,
+      meetingData: meetingData,
+      docId: docId,
+      isLastHour: isLastHour,
+      onEditMeeting: _showEditMeetingDialog,
+      onCreateMeeting: _showCreateMeetingDialog,
+    );
   }
 
   /// Obtine datele intalnirii pentru un slot specific
@@ -699,113 +521,7 @@ class CalendarAreaState extends State<CalendarArea> {
     return null;
   }
 
-  /// Construieste continutul pentru un slot cu intalnire
-  Widget _buildMeetingSlotContent(Map<String, dynamic> meetingData, String docId) {
-    final additionalData = meetingData['additionalData'] as Map<String, dynamic>?;
-    
-    String consultantName = 'N/A';
-    if (meetingData.containsKey('consultantName') && meetingData['consultantName'] != null && meetingData['consultantName'].toString().trim().isNotEmpty) {
-      consultantName = meetingData['consultantName'].toString();
-    } else if (additionalData != null && additionalData.containsKey('consultantName') && additionalData['consultantName'] != null && additionalData['consultantName'].toString().trim().isNotEmpty) {
-      consultantName = additionalData['consultantName'].toString();
-    }
-    
-    String timeText = '';
-    try {
-      final dynamic rawDateTime = meetingData['dateTime'];
-      DateTime dateTime;
-      if (rawDateTime is DateTime) {
-        dateTime = rawDateTime;
-      } else if (rawDateTime is int) {
-        dateTime = DateTime.fromMillisecondsSinceEpoch(rawDateTime);
-      } else if (rawDateTime != null && rawDateTime.toString().contains('Timestamp')) {
-        try {
-          final dynamic dyn = rawDateTime;
-          final DateTime parsed = dyn.toDate();
-          dateTime = parsed;
-        } catch (_) {
-          dateTime = DateTime.now();
-        }
-      } else {
-        dateTime = DateTime.now();
-      }
-      timeText = DateFormat('HH:mm').format(dateTime);
-    } catch (_) {
-      timeText = '';
-    }
-    
-    final consultantId = additionalData?['consultantId'] as String?;
-    final currentUserId = _auth.currentUser?.uid;
-    
-    bool isOwner = false;
-    if (consultantId != null && consultantId != 'null' && consultantId.isNotEmpty) {
-      isOwner = currentUserId == consultantId;
-    } else {
-      final meetingConsultantToken = additionalData?['consultantToken'] as String?;
-      if (meetingConsultantToken != null && meetingConsultantToken.isNotEmpty) {
-        try {
-          final currentConsultantToken = _getCurrentConsultantTokenSync();
-          isOwner = currentConsultantToken == 'TEMP_ALLOW_ALL' || meetingConsultantToken == currentConsultantToken;
-        } catch (e) {
-          isOwner = false;
-        }
-      }
-    }
-    
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Flexible(
-          child: Text(
-            consultantName,
-            style: GoogleFonts.outfit(
-              color: AppTheme.elementColor2,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            timeText,
-            textAlign: TextAlign.right,
-            style: GoogleFonts.outfit(
-              color: AppTheme.elementColor1,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-        ),
-      ],
-    );
-  }
 
-  /// Construieste continutul pentru un slot liber
-  Widget _buildFreeSlotContent(String hourText) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          hourText,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.outfit(
-            color: const Color(0xFFCAC7C3),
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
 
   /// Construieste switch-ul între săptămâni în partea de jos conform designului
   Widget _buildWeekSwitch() {
@@ -840,24 +556,28 @@ class CalendarAreaState extends State<CalendarArea> {
               children: [
                 // Buton pentru săptămâna anterioară
                 Expanded(
-                  child: GestureDetector(
-                    onTap: _navigateToPreviousWeek,
-                    child: Container(
-                      decoration: ShapeDecoration(
-                        color: AppTheme.backgroundColor2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chevron_left,
-                            color: AppTheme.elementColor1,
-                            size: 24,
-                          ),
-                        ],
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: _navigateToPreviousWeek,
+                      child: Container(
+                        decoration: ShapeDecoration(
+                          color: AppTheme.backgroundColor2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shadows: AppTheme.standardShadow,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.chevron_left,
+                              color: AppTheme.elementColor3,
+                              size: 24,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -870,31 +590,35 @@ class CalendarAreaState extends State<CalendarArea> {
                                         child: Text2(
                         text: weekRange,
                         color: AppTheme.elementColor2,
-                        fontSize: 14,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                 ),
                 const SizedBox(width: 8),
                 // Buton pentru săptămâna următoare
                 Expanded(
-                  child: GestureDetector(
-                    onTap: _navigateToNextWeek,
-                    child: Container(
-                      decoration: ShapeDecoration(
-                        color: AppTheme.backgroundColor2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chevron_right,
-                            color: AppTheme.elementColor1,
-                            size: 24,
-                          ),
-                        ],
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: _navigateToNextWeek,
+                      child: Container(
+                        decoration: ShapeDecoration(
+                          color: AppTheme.backgroundColor2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shadows: AppTheme.standardShadow,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.chevron_right,
+                              color: AppTheme.elementColor3,
+                              size: 24,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -907,88 +631,7 @@ class CalendarAreaState extends State<CalendarArea> {
     );
   }
 
-  /// Construieste un slot rezervat cu CalendarSlot (design nou)
-  Widget _buildMeetingSlot(Map<String, dynamic> meetingData, String docId) {
-    // OPTIMIZARE: Citeste datele din structura corecta cu fallback-uri mai robuste
-    final additionalData = meetingData['additionalData'] as Map<String, dynamic>?;
-    
-    // OPTIMIZARE: Incearca sa gasesti consultantName din toate sursele posibile, cu debugging redus
-    String consultantName = 'N/A';
-    if (meetingData.containsKey('consultantName') && meetingData['consultantName'] != null && meetingData['consultantName'].toString().trim().isNotEmpty) {
-      consultantName = meetingData['consultantName'].toString();
-    } else if (additionalData != null && additionalData.containsKey('consultantName') && additionalData['consultantName'] != null && additionalData['consultantName'].toString().trim().isNotEmpty) {
-      consultantName = additionalData['consultantName'].toString();
-    }
-    
-    // Derive time text from meeting dateTime
-    String timeText = '';
-    try {
-      final dynamic rawDateTime = meetingData['dateTime'];
-      DateTime dateTime;
-      if (rawDateTime is DateTime) {
-        dateTime = rawDateTime;
-      } else if (rawDateTime is int) {
-        dateTime = DateTime.fromMillisecondsSinceEpoch(rawDateTime);
-      } else if (rawDateTime != null && rawDateTime.toString().contains('Timestamp')) {
-        // Avoid importing Timestamp type directly; rely on toString heuristic fallback
-        // Many Firebase Timestamp implementations provide toDate(); attempt via dynamic
-        try {
-          final dynamic dyn = rawDateTime;
-          final DateTime parsed = dyn.toDate();
-          dateTime = parsed;
-        } catch (_) {
-          dateTime = DateTime.now();
-        }
-      } else {
-        dateTime = DateTime.now();
-      }
-      timeText = DateFormat('HH:mm').format(dateTime);
-    } catch (_) {
-      timeText = '';
-    }
-    
-    final consultantId = additionalData?['consultantId'] as String?;
-    final currentUserId = _auth.currentUser?.uid;
-    
-    // OPTIMIZARE: Logica hibrida pentru ownership verification cu cache
-    bool isOwner = false;
-    
-    // Pentru intalniri noi cu consultantId valid
-    if (consultantId != null && consultantId != 'null' && consultantId.isNotEmpty) {
-      isOwner = currentUserId == consultantId;
-    } else {
-      // Pentru intalniri existente, foloseste consultantToken ca fallback
-      final meetingConsultantToken = additionalData?['consultantToken'] as String?;
-      if (meetingConsultantToken != null && meetingConsultantToken.isNotEmpty) {
-        // OPTIMIZARE: Folosim cache-ul din SplashService pentru performanta
-        try {
-          final currentConsultantToken = _getCurrentConsultantTokenSync();
-          // FIX: Permite toate intalnirile care au consultantToken valid (sunt din echipa consultantului)
-          isOwner = currentConsultantToken == 'TEMP_ALLOW_ALL' || meetingConsultantToken == currentConsultantToken;
-        } catch (e) {
-          // OPTIMIZARE: Log redus pentru erori
-          // debugPrint('❌ CALENDAR_AREA: Error getting consultant token for ownership: $e');
-          isOwner = false;
-        }
-      }
-    }
-    
-    return CalendarSlot.reserved(
-      consultantName: consultantName,
-      timeText: timeText,
-      isClickable: isOwner,
-      onTap: isOwner ? () => _showEditMeetingDialog(meetingData, docId) : null,
-    );
-  }
 
-  /// Construieste un slot liber cu CalendarSlot (design nou)
-  Widget _buildAvailableSlot(int dayIndex, int hourIndex) {
-    final String hourText = CalendarService.workingHours[hourIndex];
-    return CalendarSlot.free(
-      hourText: hourText,
-      onTap: () => _showCreateMeetingDialog(dayIndex, hourIndex),
-    );
-  }
 
   /// OPTIMIZAT: Afiseaza dialogul pentru crearea unei intalniri noi cu feedback instant
   void _showCreateMeetingDialog(int dayIndex, int hourIndex) {
@@ -1195,16 +838,156 @@ class CalendarAreaState extends State<CalendarArea> {
     SplashService().invalidateAllMeetingCaches();
   }
   
-  /// FIX: Obtine consultantToken-ul curent in mod sincron (pentru ownership verification)
-  String? _getCurrentConsultantTokenSync() {
-    try {
-      // Pentru o solutie temporara simpla, sa permitem toate intalnirile ale consultantului curent
-      // Intalnirile din calendar apartin echipei consultantului, deci toate pot fi editate
-      return 'TEMP_ALLOW_ALL';
-    } catch (e) {
-      debugPrint('❌ CALENDAR_AREA: Error getting sync consultant token: $e');
-      return null;
+}
+
+/// Widget pentru slot-uri cu hover behavior
+class _HoverableSlot extends StatefulWidget {
+  final int dayIndex;
+  final int hourIndex;
+  final String hour;
+  final bool isMeeting;
+  final Map<String, dynamic>? meetingData;
+  final String? docId;
+  final bool isLastHour;
+  final Function(Map<String, dynamic>, String) onEditMeeting;
+  final Function(int, int) onCreateMeeting;
+
+  const _HoverableSlot({
+    required this.dayIndex,
+    required this.hourIndex,
+    required this.hour,
+    required this.isMeeting,
+    required this.meetingData,
+    required this.docId,
+    required this.isLastHour,
+    required this.onEditMeeting,
+    required this.onCreateMeeting,
+  });
+
+  @override
+  State<_HoverableSlot> createState() => _HoverableSlotState();
+}
+
+class _HoverableSlotState extends State<_HoverableSlot> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.isMeeting 
+            ? () => widget.onEditMeeting(widget.meetingData!, widget.docId!)
+            : () => widget.onCreateMeeting(widget.dayIndex, widget.hourIndex),
+        child: Container(
+          width: double.infinity,
+          height: 64,
+          padding: widget.isMeeting ? const EdgeInsets.symmetric(horizontal: 16, vertical: 0) : null,
+          decoration: ShapeDecoration(
+            color: widget.isMeeting ? AppTheme.backgroundColor2 : const Color(0xFFE1DCD6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            shadows: (widget.isMeeting || _isHovered) ? AppTheme.standardShadow : null,
+          ),
+          child: widget.isMeeting 
+              ? _buildMeetingSlotContent(widget.meetingData!, widget.docId!)
+              : _buildFreeSlotContent(widget.hour, _isHovered),
+        ),
+      ),
+    );
+  }
+
+  /// Construieste continutul pentru un slot cu intalnire
+  Widget _buildMeetingSlotContent(Map<String, dynamic> meetingData, String docId) {
+    final additionalData = meetingData['additionalData'] as Map<String, dynamic>?;
+    
+    String consultantName = 'N/A';
+    if (meetingData.containsKey('consultantName') && meetingData['consultantName'] != null && meetingData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = meetingData['consultantName'].toString();
+    } else if (additionalData != null && additionalData.containsKey('consultantName') && additionalData['consultantName'] != null && additionalData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = additionalData['consultantName'].toString();
     }
+    
+    String timeText = '';
+    try {
+      final dynamic rawDateTime = meetingData['dateTime'];
+      DateTime dateTime;
+      if (rawDateTime is DateTime) {
+        dateTime = rawDateTime;
+      } else if (rawDateTime is int) {
+        dateTime = DateTime.fromMillisecondsSinceEpoch(rawDateTime);
+      } else if (rawDateTime != null && rawDateTime.toString().contains('Timestamp')) {
+        try {
+          final dynamic dyn = rawDateTime;
+          final DateTime parsed = dyn.toDate();
+          dateTime = parsed;
+        } catch (_) {
+          dateTime = DateTime.now();
+        }
+      } else {
+        dateTime = DateTime.now();
+      }
+      timeText = DateFormat('HH:mm').format(dateTime);
+    } catch (_) {
+      timeText = '';
+    }
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Flexible(
+          child: Text(
+            consultantName,
+            style: GoogleFonts.outfit(
+              color: AppTheme.elementColor2,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            timeText,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.outfit(
+              color: AppTheme.elementColor1,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Construieste continutul pentru un slot liber
+  Widget _buildFreeSlotContent(String hourText, bool isHovered) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          hourText,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.outfit(
+            color: isHovered ? AppTheme.elementColor1 : const Color(0xFFCAC7C3),
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 }
 

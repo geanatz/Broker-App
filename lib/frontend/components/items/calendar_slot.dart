@@ -104,6 +104,7 @@ class _CalendarSlotState extends State<CalendarSlot> {
       borderWidth: AppTheme.slotBorderThickness,
       borderRadius: AppTheme.borderRadiusSmall,
       fillColor: AppTheme.backgroundColor2,
+      boxShadow: AppTheme.standardShadow,
       child: Center(
         child: Text(
           widget.hourText ?? '',
@@ -125,13 +126,7 @@ class _CalendarSlotState extends State<CalendarSlot> {
       borderWidth: AppTheme.slotBorderThickness,
       borderRadius: AppTheme.borderRadiusSmall,
       fillColor: AppTheme.backgroundColor3,
-      boxShadow: const [
-        BoxShadow(
-          color: Color.fromRGBO(0, 0, 0, 0.1),
-          offset: Offset(0, 2),
-          blurRadius: 4,
-        ),
-      ],
+      boxShadow: AppTheme.standardShadow,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
@@ -144,7 +139,7 @@ class _CalendarSlotState extends State<CalendarSlot> {
                 style: AppTheme.safeOutfit(
                   fontSize: 17.0,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.elementColor3,
+                  color: AppTheme.elementColor2,
                 ),
               ),
             ),
@@ -157,7 +152,7 @@ class _CalendarSlotState extends State<CalendarSlot> {
                 style: AppTheme.safeOutfit(
                   fontSize: 15.0,
                   fontWeight: AppTheme.fontWeightMedium,
-                  color: AppTheme.elementColor2,
+                  color: AppTheme.elementColor1,
                 ),
               ),
             ),

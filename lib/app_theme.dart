@@ -142,7 +142,15 @@ class AppTheme extends ChangeNotifier {
   static const Color elementColor3 = Color(0xFF686664);
 
   // ======== UMBRELE ========
-  // Removed all shadows as requested
+  // Umbra standard pentru elemente interactive
+  static const List<BoxShadow> standardShadow = [
+    BoxShadow(
+      color: Color(0x0D513F2A), // 5% opacity pentru 513F2A
+      offset: Offset(0, 2), // Y = 2
+      blurRadius: 4, // Blur = 4
+      spreadRadius: 0,
+    ),
+  ];
   
   // ======== STILURI TEXT ========
   static TextStyle get headerTitleStyle => GoogleFonts.outfit(
@@ -215,12 +223,14 @@ class AppTheme extends ChangeNotifier {
   static BoxDecoration get widgetDecoration => BoxDecoration(
     color: backgroundColor1,
     borderRadius: BorderRadius.circular(borderRadiusMedium),
+    boxShadow: standardShadow,
   );
 
   // Decoratiune pentru popup-uri
   static BoxDecoration get popupDecoration => BoxDecoration(
     color: backgroundColor1,
     borderRadius: BorderRadius.circular(borderRadiusMedium),
+    boxShadow: standardShadow,
   );
 
   // Decoratiune pentru container-ul principal (de nivel 1)
