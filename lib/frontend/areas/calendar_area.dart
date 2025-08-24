@@ -16,6 +16,13 @@ import 'package:mat_finance/backend/services/firebase_service.dart';
 import 'package:mat_finance/frontend/components/dialog_utils.dart';
 import 'package:intl/intl.dart';
 
+/// Direction for calendar week navigation animations
+enum AnimationDirection {
+  previous, // Slide from left to right
+  next,     // Slide from right to left
+  current   // No animation or custom
+}
+
 /// Area pentru calendar care va fi afisata in cadrul ecranului principal.
 /// OPTIMIZAT: Implementare avansata cu cache inteligent si loading instant
 class CalendarArea extends StatefulWidget {
@@ -33,7 +40,7 @@ class CalendarArea extends StatefulWidget {
   State<CalendarArea> createState() => CalendarAreaState();
 }
 
-class CalendarAreaState extends State<CalendarArea> {
+class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderStateMixin {
   // Services
   late final CalendarService _calendarService;
   late final SplashService _splashService;
@@ -43,7 +50,7 @@ class CalendarAreaState extends State<CalendarArea> {
   
   // Calendar state
   int _currentWeekOffset = 0;
-  
+
   // Public getter pentru currentWeekOffset
   int get currentWeekOffset => _currentWeekOffset;
   bool _isInitialized = false;
@@ -52,7 +59,7 @@ class CalendarAreaState extends State<CalendarArea> {
   List<ClientActivity> _cachedMeetings = [];
   List<ClientActivity> _allMeetings = []; // Cache for all meetings for navigation
   Timer? _refreshTimer;
-  
+
   // OPTIMIZARE: Debouncing imbunatatit pentru load meetings
   Timer? _loadDebounceTimer;
   bool _isLoadingMeetings = false;
@@ -64,25 +71,68 @@ class CalendarAreaState extends State<CalendarArea> {
   // Scroll controller for calendar grid
   final ScrollController _scrollController = ScrollController();
 
+  // Animation controller for smooth week transitions - optimized for performance
+  late AnimationController _slideAnimationController;
+  late Animation<Offset> _slideAnimation;
+
+  // Animation state tracking
+  bool _isAnimating = false;
+
+  // Previous and current week data for smooth transitions
+  int _previousWeekOffset = 0;
+
+  // Animation state for showing previous/current slots during transition
+  final ValueNotifier<bool> _showTransition = ValueNotifier(false);
+
+  // Animation state notifier to reduce rebuilds
+  final ValueNotifier<AnimationDirection> _currentAnimationDirection = ValueNotifier(AnimationDirection.next);
+
+  // Advanced caching system for maximum performance
+  final Map<int, Widget> _weekWidgetCache = {};
+  final Map<int, List<ClientActivity>> _meetingCache = {};
+  final Map<int, int> _meetingCountCache = {};
+
+  // Performance tracking
+  int _rebuildCount = 0;
+  int _cacheHits = 0;
+  int _cacheMisses = 0;
+
   @override
   void initState() {
     super.initState();
 
     PerformanceMonitor.startTimer('calendarAreaInit');
-    
+
     // Foloseste serviciile pre-incarcate din splash
     _calendarService = SplashService().calendarService;
     _splashService = SplashService();
-    
+
     // FIX: Asculta la schimbari in SplashService pentru refresh automat
     _splashService.addListener(_onSplashServiceChanged);
-    
+
     // Calendar este deja initializat in splash
     _isInitialized = true;
-    
+
+    // Initialize animation controller - optimized for speed and smoothness
+    _slideAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 280), // Faster animation
+      vsync: this,
+    );
+
+    // Create optimized slide animation with better curve
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideAnimationController,
+      curve: Curves.fastOutSlowIn, // More responsive curve
+    ));
+
+
+
     // OPTIMIZARE: Incarca imediat din cache pentru loading instant si sincronizare completa
     _loadFromCacheInstantly();
-    
+
     PerformanceMonitor.endTimer('calendarAreaInit');
 
   }
@@ -142,6 +192,7 @@ class CalendarAreaState extends State<CalendarArea> {
     _highlightTimer?.cancel();
     _loadDebounceTimer?.cancel();
     _scrollController.dispose();
+    _slideAnimationController.dispose();
     _splashService.removeListener(_onSplashServiceChanged); // FIX: cleanup listener
     super.dispose();
   }
@@ -149,32 +200,69 @@ class CalendarAreaState extends State<CalendarArea> {
   /// FIX: Callback pentru refresh automat cand se schimba datele in SplashService
   void _onSplashServiceChanged() {
     if (!mounted) return;
-    
+
     // OPTIMIZARE: Refresh instant din cache pentru sincronizare completa
     final instant = _splashService.getCachedMeetingsSync();
     if (instant.isNotEmpty) {
+      // Clear cache when data changes to ensure consistency
+      _clearAllCaches();
       setState(() {
         _allMeetings = instant;
         _filterMeetingsForCurrentWeek();
+        // Pre-cache common weeks for smooth navigation
+        _preCacheCommonWeeks();
       });
+      debugPrint('CALENDAR_DATA_UPDATE: Refreshed ${instant.length} meetings, caches cleared');
     }
     // Then trigger a forced background refresh to ensure latest data (fire-and-forget)
     unawaited(_loadMeetingsForCurrentWeek(force: true));
   }
 
-  /// OPTIMIZAT: Filtreaza intalnirile pentru saptamana curenta din cache
+
+
+  /// Ultra-optimized filtering with advanced caching
   void _filterMeetingsForCurrentWeek() {
     final sw = Stopwatch()..start();
+
+    // Check cache first for maximum performance
+    if (_meetingCache.containsKey(_currentWeekOffset)) {
+      _cachedMeetings = _meetingCache[_currentWeekOffset]!;
+      _cacheHits++;
+      sw.stop();
+      return;
+    }
+
+    // Cache miss - perform filtering
+    _cacheMisses++;
     final DateTime startOfWeek = _calendarService.getStartOfWeekToDisplay(_currentWeekOffset);
     final DateTime endOfWeek = _calendarService.getEndOfWeekToDisplay(_currentWeekOffset);
-    final total = _allMeetings.length;
+
     _cachedMeetings = _allMeetings.where((meeting) {
       final meetingDateTime = meeting.dateTime;
       return meetingDateTime.isAfter(startOfWeek) && meetingDateTime.isBefore(endOfWeek);
     }).toList();
+
+    // Cache the result for future use
+    _meetingCache[_currentWeekOffset] = _cachedMeetings;
+    _meetingCountCache[_currentWeekOffset] = _cachedMeetings.length;
+
     sw.stop();
-    debugPrint('CALENDAR_METRICS: filterWeek offset=$_currentWeekOffset total=$total week=${_cachedMeetings.length} filterMs=${sw.elapsedMilliseconds}');
   }
+
+  /// Pre-cache meetings for common week offsets to eliminate future cache misses
+  void _preCacheCommonWeeks() {
+    final currentOffsets = [_currentWeekOffset - 1, _currentWeekOffset, _currentWeekOffset + 1];
+    for (final offset in currentOffsets) {
+      if (!_meetingCache.containsKey(offset)) {
+        final originalOffset = _currentWeekOffset;
+        _currentWeekOffset = offset;
+        _filterMeetingsForCurrentWeek();
+        _currentWeekOffset = originalOffset;
+      }
+    }
+  }
+
+
 
   /// OPTIMIZAT: Incarca intalnirile cu debouncing imbunatatit
   Future<void> _loadMeetingsForCurrentWeek({bool force = false}) async {
@@ -252,40 +340,152 @@ class CalendarAreaState extends State<CalendarArea> {
     }
   }
 
-  // Navigate to previous week
+  // Navigate to previous week with slide animation
   void _navigateToPreviousWeek() {
-    if (mounted) {
-      setState(() {
-        _currentWeekOffset--;
-      });
-    }
-    _filterMeetingsForCurrentWeek(); // OPTIMIZARE: Filtreaza din cache in loc sa incarci din nou
-  }
-  
-  // Navigate to next week
-  void _navigateToNextWeek() {
-    if (mounted) {
-      setState(() {
-        _currentWeekOffset++;
-      });
-    }
-    _filterMeetingsForCurrentWeek(); // OPTIMIZARE: Filtreaza din cache in loc sa incarci din nou
+    if (_isAnimating) return;
+    _startWeekTransition(_currentWeekOffset - 1, AnimationDirection.previous);
   }
 
-  // Navigate to current week
+  // Navigate to next week with slide animation
+  void _navigateToNextWeek() {
+    if (_isAnimating) return;
+    _startWeekTransition(_currentWeekOffset + 1, AnimationDirection.next);
+  }
+
+  // Navigate to current week with animation
   void _navigateToCurrentWeek() {
-    if (mounted) {
-      setState(() {
-        _currentWeekOffset = 0;
-      });
+    if (_isAnimating) return;
+
+    _startWeekTransition(0, AnimationDirection.current);
+  }
+
+  // Start week transition animation
+  void _startWeekTransition(int newOffset, AnimationDirection direction) {
+    if (_isAnimating) return;
+
+    _isAnimating = true;
+    _currentAnimationDirection.value = direction;
+    _previousWeekOffset = _currentWeekOffset;
+
+    // Configure animation based on direction
+    Offset startOffset, endOffset;
+    switch (direction) {
+      case AnimationDirection.previous:
+        // Current slots slide right and out, new slots slide in from left
+        startOffset = Offset.zero;      // Current slots start at center
+        endOffset = const Offset(1.0, 0.0);    // Current slots slide right and out
+        break;
+      case AnimationDirection.next:
+        // Current slots slide left and out, new slots slide in from right
+        startOffset = Offset.zero;      // Current slots start at center
+        endOffset = const Offset(-1.0, 0.0);   // Current slots slide left and out
+        break;
+      case AnimationDirection.current:
+        // For current week, simple fade transition
+        startOffset = Offset.zero;
+        endOffset = Offset.zero;
+        break;
     }
-    _filterMeetingsForCurrentWeek(); // OPTIMIZARE: Filtreaza din cache in loc sa incarci din nou
+
+    // Update slide animation for current slots (exiting)
+    _slideAnimation = Tween<Offset>(
+      begin: startOffset,
+      end: endOffset,
+    ).animate(CurvedAnimation(
+      parent: _slideAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // No fade animation - pure slide for maximum performance
+
+    // Enable transition state with ultra-optimized caching
+    _showTransition.value = true;
+    _previousWeekOffset = _currentWeekOffset;
+    _currentWeekOffset = newOffset;
+    _filterMeetingsForCurrentWeek();
+
+    // Pre-cache both weeks for instant animation
+    _getCachedWeekWidget(_currentWeekOffset);
+    _getCachedWeekWidget(_previousWeekOffset);
+
+    // Start animation with optimized cleanup
+    final animationStart = DateTime.now();
+    _slideAnimationController.forward(from: 0.0).then((_) {
+      if (mounted) {
+        final animationDuration = DateTime.now().difference(animationStart).inMilliseconds;
+        _showTransition.value = false;
+        _isAnimating = false;
+        // Clear previous week cache after animation completes
+        _weekWidgetCache.remove(_previousWeekOffset);
+        debugPrint('CALENDAR_TRANSITION: COMPLETED offset=$newOffset duration=${animationDuration}ms');
+        _logPerformanceReport();
+      }
+    });
   }
   
   /// Public methods pentru navigare din main_screen
   void navigateToPreviousWeek() => _navigateToPreviousWeek();
   void navigateToNextWeek() => _navigateToNextWeek();
   void navigateToCurrentWeek() => _navigateToCurrentWeek();
+
+  /// Ultra-optimized widget caching with reduced logging for performance
+  Widget _getCachedWeekWidget(int weekOffset) {
+    _rebuildCount++;
+
+    // Check if widget is already cached - optimized without logging during animation
+    if (_weekWidgetCache.containsKey(weekOffset)) {
+      return _weekWidgetCache[weekOffset]!;
+    }
+
+    // Cache miss - create and cache the widget
+    final weekWidget = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int dayIndex = 0; dayIndex < CalendarService.daysPerWeek; dayIndex++) ...[
+          Expanded(
+            child: Container(
+              decoration: ShapeDecoration(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _buildDayColumnForWeek(dayIndex, weekOffset),
+              ),
+            ),
+          ),
+          if (dayIndex < CalendarService.daysPerWeek - 1)
+            SizedBox(width: AppTheme.mediumGap),
+        ],
+      ],
+    );
+
+    // Cache the widget for future use
+    _weekWidgetCache[weekOffset] = weekWidget;
+
+    return weekWidget;
+  }
+
+  /// Clear all caches when data changes
+  void _clearAllCaches() {
+    final beforeSize = _weekWidgetCache.length + _meetingCache.length;
+    _weekWidgetCache.clear();
+    _meetingCache.clear();
+    _meetingCountCache.clear();
+    _cacheHits = 0;
+    _cacheMisses = 0;
+    _rebuildCount = 0;
+    debugPrint('CALENDAR_CACHE: ALL_CACHES_CLEARED - Cleared $beforeSize items, Performance reset');
+  }
+
+  /// Performance report
+  void _logPerformanceReport() {
+    final hitRate = _cacheHits + _cacheMisses > 0 ? (_cacheHits / (_cacheHits + _cacheMisses)) * 100 : 0;
+    debugPrint('CALENDAR_PERFORMANCE: hits=$_cacheHits misses=$_cacheMisses hitRate=${hitRate.toStringAsFixed(1)}% rebuilds=$_rebuildCount');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -378,7 +578,7 @@ class CalendarAreaState extends State<CalendarArea> {
               ],
             ),
           ),
-          // Calendar grid cu sloturile
+          // Calendar grid cu sloturile si tranzitii
           Expanded(
             child: Container(
               width: double.infinity,
@@ -389,33 +589,56 @@ class CalendarAreaState extends State<CalendarArea> {
                 ),
               ),
               child: SingleChildScrollView(
-                child: Container(
-                  width: double.infinity,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (int dayIndex = 0; dayIndex < CalendarService.daysPerWeek; dayIndex++) ...[
-                        Expanded(
-                          child: Container(
-                            decoration: ShapeDecoration(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    child: Container(
+                      width: double.infinity,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(),
+                  child: RepaintBoundary(
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: _showTransition,
+                      builder: (context, showTransition, child) {
+                        // Calculate required height for calendar
+                        final calendarHeight = CalendarService.workingHours.length * 80.0;
+
+                        if (showTransition) {
+                          // During transition, show both old and new slots with proper sizing
+                          return RepaintBoundary(
+                            child: SizedBox(
+                              height: calendarHeight,
+                              child: Stack(
+                                children: [
+                                  // New slots coming in (bottom layer) - optimized with RepaintBoundary
+                                  RepaintBoundary(
+                                    child: SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: _currentAnimationDirection.value == AnimationDirection.previous
+                                            ? const Offset(-1.0, 0.0)  // Enter from left
+                                            : const Offset(1.0, 0.0),   // Enter from right
+                                        end: Offset.zero,
+                                      ).animate(CurvedAnimation(
+                                        parent: _slideAnimationController,
+                                        curve: Curves.fastOutSlowIn,
+                                      )),
+                                      child: _getCachedWeekWidget(_currentWeekOffset),
+                                    ),
+                                  ),
+                                  // Old slots going out (top layer) - optimized with RepaintBoundary
+                                  RepaintBoundary(
+                                    child: SlideTransition(
+                                      position: _slideAnimation,
+                                      child: _getCachedWeekWidget(_previousWeekOffset),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: _buildDayColumn(dayIndex),
-                            ),
-                          ),
-                        ),
-                        if (dayIndex < CalendarService.daysPerWeek - 1) 
-                          SizedBox(width: AppTheme.mediumGap),
-                      ],
-                    ],
+                          );
+                        } else {
+                          // Normal state - show only current week slots with caching
+                          return _getCachedWeekWidget(_currentWeekOffset);
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -434,37 +657,42 @@ class CalendarAreaState extends State<CalendarArea> {
 
 
 
-  /// Construieste o coloana pentru o zi specifica cu toate sloturile
-  List<Widget> _buildDayColumn(int dayIndex) {
+
+
+  /// Construieste o coloana pentru o zi specifica si saptamana specifica cu toate sloturile
+  List<Widget> _buildDayColumnForWeek(int dayIndex, int weekOffset) {
     return List.generate(CalendarService.workingHours.length, (hourIndex) {
       final hour = CalendarService.workingHours[hourIndex];
       final isLastHour = hourIndex == CalendarService.workingHours.length - 1;
-      
-      // Cauta intalnirea pentru aceasta zi si ora
+
+      // Cauta intalnirea pentru aceasta zi si ora in saptamana specificata
       final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
-      final meetingData = _getMeetingDataForSlot(slotKey);
-      final docId = _getMeetingDocIdForSlot(slotKey);
+      final meetingData = _getMeetingDataForSlotInWeek(slotKey, weekOffset);
+      final docId = _getMeetingDocIdForSlotInWeek(slotKey, weekOffset);
       final isMeeting = meetingData != null;
-      
+
       return Column(
         children: [
           // Slot pentru ora curenta
-          _buildSlotWithHover(dayIndex, hourIndex, hour, isMeeting, meetingData, docId, isLastHour),
+          _buildSlotWithHoverForWeek(dayIndex, hourIndex, hour, isMeeting, meetingData, docId, isLastHour, weekOffset),
           if (!isLastHour) const SizedBox(height: 16),
         ],
       );
     });
   }
 
-  /// Construieste un slot cu hover behavior
-  Widget _buildSlotWithHover(
-    int dayIndex, 
-    int hourIndex, 
-    String hour, 
-    bool isMeeting, 
-    Map<String, dynamic>? meetingData, 
-    String? docId, 
-    bool isLastHour
+
+
+  /// Construieste un slot cu hover behavior pentru saptamana specificata
+  Widget _buildSlotWithHoverForWeek(
+    int dayIndex,
+    int hourIndex,
+    String hour,
+    bool isMeeting,
+    Map<String, dynamic>? meetingData,
+    String? docId,
+    bool isLastHour,
+    int weekOffset
   ) {
     return _HoverableSlot(
       dayIndex: dayIndex,
@@ -474,19 +702,22 @@ class CalendarAreaState extends State<CalendarArea> {
       meetingData: meetingData,
       docId: docId,
       isLastHour: isLastHour,
+      weekOffset: weekOffset,
       onEditMeeting: _showEditMeetingDialog,
-      onCreateMeeting: _showCreateMeetingDialog,
+      onCreateMeeting: _showCreateMeetingDialogWithWeek,
     );
   }
 
-  /// Obtine datele intalnirii pentru un slot specific
-  Map<String, dynamic>? _getMeetingDataForSlot(String slotKey) {
-    for (var meeting in _cachedMeetings) {
+
+
+  /// Obtine datele intalnirii pentru un slot specific in saptamana specificata
+  Map<String, dynamic>? _getMeetingDataForSlotInWeek(String slotKey, int weekOffset) {
+    for (var meeting in _allMeetings) {
       try {
         final dateTime = meeting.dateTime;
-        final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
+        final dayIndex = _calendarService.getDayIndexForDate(dateTime, weekOffset);
         final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
-        
+
         if (dayIndex != null && hourIndex != -1) {
           final meetingSlotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
           if (meetingSlotKey == slotKey) {
@@ -500,14 +731,16 @@ class CalendarAreaState extends State<CalendarArea> {
     return null;
   }
 
-  /// Obtine document ID-ul intalnirii pentru un slot specific
-  String? _getMeetingDocIdForSlot(String slotKey) {
-    for (var meeting in _cachedMeetings) {
+
+
+  /// Obtine document ID-ul intalnirii pentru un slot specific in saptamana specificata
+  String? _getMeetingDocIdForSlotInWeek(String slotKey, int weekOffset) {
+    for (var meeting in _allMeetings) {
       try {
         final dateTime = meeting.dateTime;
-        final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
+        final dayIndex = _calendarService.getDayIndexForDate(dateTime, weekOffset);
         final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
-        
+
         if (dayIndex != null && hourIndex != -1) {
           final meetingSlotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
           if (meetingSlotKey == slotKey) {
@@ -633,17 +866,19 @@ class CalendarAreaState extends State<CalendarArea> {
 
 
 
-  /// OPTIMIZAT: Afiseaza dialogul pentru crearea unei intalniri noi cu feedback instant
-  void _showCreateMeetingDialog(int dayIndex, int hourIndex) {
+
+
+  /// OPTIMIZAT: Afiseaza dialogul pentru crearea unei intalniri noi in saptamana specificata cu feedback instant
+  void _showCreateMeetingDialogWithWeek(int dayIndex, int hourIndex, int weekOffset) {
     if (!mounted) return;
-    
+
     try {
       final DateTime selectedDateTime = _calendarService.buildDateTimeFromIndices(
-        _currentWeekOffset, 
-        dayIndex, 
+        weekOffset,
+        dayIndex,
         hourIndex
       );
-      
+
       // OPTIMIZARE: Afiseaza imediat popup-ul fara delay
       showBlurredDialog(
         context: context,
@@ -652,14 +887,14 @@ class CalendarAreaState extends State<CalendarArea> {
           initialDateTime: selectedDateTime,
           onSaved: () {
             // OPTIMIZARE: Feedback instant - inchide popup-ul si notifica UI-ul
-        
-            
+
+
             // OPTIMIZARE: Invalidare cache optimizata cu delay redus
             SplashService().invalidateAllMeetingCaches();
-            
+
             // OPTIMIZARE: Notifica main_screen sa refresheze meetings_pane
             widget.onMeetingSaved?.call();
-            
+
             // OPTIMIZARE: Refresh calendar cu delay redus pentru actualizare rapida
             _refreshCalendarWithDelay();
           },
@@ -849,8 +1084,9 @@ class _HoverableSlot extends StatefulWidget {
   final Map<String, dynamic>? meetingData;
   final String? docId;
   final bool isLastHour;
+  final int weekOffset;
   final Function(Map<String, dynamic>, String) onEditMeeting;
-  final Function(int, int) onCreateMeeting;
+  final Function(int, int, int) onCreateMeeting; // dayIndex, hourIndex, weekOffset
 
   const _HoverableSlot({
     required this.dayIndex,
@@ -860,6 +1096,7 @@ class _HoverableSlot extends StatefulWidget {
     required this.meetingData,
     required this.docId,
     required this.isLastHour,
+    required this.weekOffset,
     required this.onEditMeeting,
     required this.onCreateMeeting,
   });
@@ -880,7 +1117,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
       child: GestureDetector(
         onTap: widget.isMeeting 
             ? () => widget.onEditMeeting(widget.meetingData!, widget.docId!)
-            : () => widget.onCreateMeeting(widget.dayIndex, widget.hourIndex),
+            : () => widget.onCreateMeeting(widget.dayIndex, widget.hourIndex, widget.weekOffset),
         child: Container(
           width: double.infinity,
           height: 64,
