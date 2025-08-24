@@ -473,7 +473,7 @@ class _TitleBarIcon extends StatelessWidget {
           width: 24,
           height: 24,
           fit: BoxFit.contain,
-          colorFilter: ColorFilter.mode(AppTheme.elementColor2, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(AppTheme.elementColor1, BlendMode.srcIn),
         ),
       ),
     ),
@@ -491,7 +491,6 @@ class _TitleBarDragRegion extends StatefulWidget {
 class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
   String _version = '0.1.9'; // Default fallback
   String _consultantName = 'Consultant';
-  String _consultantRole = 'Consultant';
   bool _isLoadingConsultantInfo = false;
 
   @override
@@ -515,12 +514,21 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
       final packageInfo = await PackageInfo.fromPlatform();
       if (mounted) {
         setState(() {
-          _version = packageInfo.version;
+          _version = _extractLastTwoVersionParts(packageInfo.version);
         });
       }
     } catch (e) {
       // Keep default version if loading fails
+      _version = _extractLastTwoVersionParts(_version);
     }
+  }
+
+  String _extractLastTwoVersionParts(String fullVersion) {
+    final parts = fullVersion.split('.');
+    if (parts.length >= 2) {
+      return parts.sublist(parts.length - 2).join('.');
+    }
+    return fullVersion; // Fallback to original if format is unexpected
   }
 
   Future<void> _loadConsultantInfo() async {
@@ -543,7 +551,6 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
           final data = doc.data();
           setState(() {
             _consultantName = data?['name'] ?? 'Consultant';
-            _consultantRole = data?['role'] ?? 'Consultant';
           });
         }
       }
@@ -585,14 +592,15 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
           children: [
             // Version display
             Container(
-              width: 48,
+              width: 40,
               height: 24,
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Center(
                 child: Text(
                   _version,
-                  style: GoogleFonts.firaMono(
+                  style: GoogleFonts.martianMono(
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     color: AppTheme.elementColor1,
                     decoration: TextDecoration.none,
                   ),
@@ -600,36 +608,24 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
               ),
             ),
             const SizedBox(width: 8),
-            // Consultant name
-            SizedBox(
+            // Consultant name container
+            Container(
               height: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.backgroundColor2,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.backgroundColor3,
+                  width: 2,
+                ),
+              ),
               child: Center(
                 child: Text(
                   _consultantName,
                   style: GoogleFonts.outfit(
                     fontSize: 15,
-                    color: AppTheme.elementColor1,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Consultant role badge
-            Container(
-              height: 20,
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              decoration: ShapeDecoration(
-                color: const Color(0xFFC6D1E6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              ),
-              child: Center(
-                child: Text(
-                  _consultantRole,
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: const Color(0xFF707784),
+                    color: AppTheme.elementColor2,
                     fontWeight: FontWeight.w600,
                     decoration: TextDecoration.none,
                   ),

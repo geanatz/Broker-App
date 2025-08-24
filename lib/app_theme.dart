@@ -132,20 +132,20 @@ class AppTheme extends ChangeNotifier {
   static const Color backgroundEnd = Color(0xFFB0B5CF);
 
   // Culori pentru containere
-  static const Color backgroundColor1 = Color(0xFFE3E1DE);
-  static const Color backgroundColor2 = Color(0xFFE7E6E4);
-  static const Color backgroundColor3 = Color(0xFFECEBE9);
+  static const Color backgroundColor1 = Color(0xFFE7E6E4);
+  static const Color backgroundColor2 = Color(0xFFEBEBEA);
+  static const Color backgroundColor3 = Color(0xFFF0F0EF);
 
   // Culori pentru elemente
-  static const Color elementColor1 = Color(0xFF968F88);
-  static const Color elementColor2 = Color(0xFF7F7B76);
-  static const Color elementColor3 = Color(0xFF686664);
+  static const Color elementColor1 = Color(0xFF938F8A);
+  static const Color elementColor2 = Color(0xFF7D7B78);
+  static const Color elementColor3 = Color(0xFF666666);
 
   // ======== UMBRELE ========
   // Umbra standard pentru elemente interactive
   static const List<BoxShadow> standardShadow = [
     BoxShadow(
-      color: Color(0x0D513F2A), // 5% opacity pentru 513F2A
+      color: Color(0x14513F2A), // 8% opacity pentru 513F2A
       offset: Offset(0, 2), // Y = 2
       blurRadius: 4, // Blur = 4
       spreadRadius: 0,
@@ -215,7 +215,7 @@ class AppTheme extends ChangeNotifier {
   static Gradient get areaColor => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [const Color(0xFFDDD7D0), const Color(0xFFDDD7D0)],
+    colors: [const Color(0xFFE1DCD6), const Color(0xFFE1DCD6)],
     stops: const [0.0, 1.0],
   );
 
@@ -253,7 +253,7 @@ class AppTheme extends ChangeNotifier {
 
   // ======== CALENDAR SLOT THEME ========
   // Free slot base fill when not hovered (no stroke)
-  static const Color calendarFreeFill = Color(0xFFBEC7D0); // BEC7D0
+  static const Color calendarFreeFill = Color(0xFFE5E1DC); // E5E1DC
 
   // Hovered free slot stroke gradient
   static const Color calendarHoverStrokeTop = Color(0xFFCAD1D8); // CAD1D8

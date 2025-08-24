@@ -443,7 +443,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             // Custom titlebar is now injected globally in MaterialApp.builder (main.dart)
             // Main content
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppTheme.smallGap, 0, AppTheme.mediumGap, AppTheme.mediumGap),
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -747,9 +747,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final areaButtons = _sidebarService.areaButtons;
     final paneButtons = _sidebarService.paneButtons;
 
-    // Configuratie layout: latime fixa 48, inaltime fill, padding vertical 8
+    // Configuratie layout: latime fixa 40, inaltime fill, padding vertical 8
     return Container(
-      width: 48,
+      width: 40,
       padding: const EdgeInsets.symmetric(vertical: AppTheme.smallGap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -871,8 +871,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         final String currentIconPath = (isHovered || isActive) ? getSolidIconPath(iconPath) : iconPath;
 
         return SizedBox(
-          width: 48,
-          height: 48,
+          width: 40,
+          height: 40,
           child: Material(
             color: Colors.transparent,
             child: MouseRegion(

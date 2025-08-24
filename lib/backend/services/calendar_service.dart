@@ -33,22 +33,28 @@ class CalendarService {
   static const int weekdayOffset = 1; // Monday = 1 in DateTime
 
   // ===== SERVICE STATE =====
-  
+
   // Formatter pentru date
   DateFormat? _dateFormatter;
   bool _isInitialized = false;
 
-  /// Initializeaza serviciul de calendar cu formatarea pentru limba romana
+  // Cache pentru rezultatele calculate
+  final Map<int, String> _dateIntervalCache = {};
+  final Map<int, List<String>> _weekDatesCache = {};
+  final Map<int, String> _monthYearCache = {};
+
+    /// Initializeaza serviciul de calendar cu formatarea pentru limba romana
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       await initializeDateFormatting('ro_RO', null);
-      _dateFormatter = DateFormat('d MMM', 'ro_RO');
+      _dateFormatter = DateFormat('d MMMM', 'ro_RO');
       _isInitialized = true;
-  
+
     } catch (e) {
-      _dateFormatter = DateFormat('d MMM');
+      // Fallback pentru formatul complet al lunii
+      _dateFormatter = DateFormat('d MMMM');
       _isInitialized = true;
     }
   }
@@ -56,7 +62,7 @@ class CalendarService {
   /// Returneaza formatterul pentru date
   DateFormat get dateFormatter {
     if (!_isInitialized || _dateFormatter == null) {
-      _dateFormatter = DateFormat('d MMM');
+      _dateFormatter = DateFormat('d MMMM');
     }
     return _dateFormatter!;
   }
@@ -97,27 +103,59 @@ class CalendarService {
 
   /// Genereaza lista de date pentru saptamana curenta
   List<String> getWeekDates(int weekOffset) {
+    // Verifica cache-ul mai intai
+    if (_weekDatesCache.containsKey(weekOffset)) {
+      return _weekDatesCache[weekOffset]!;
+    }
+
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
-    return List.generate(daysPerWeek, (index) {
+    final weekDates = List.generate(daysPerWeek, (index) {
       final date = startOfWeek.add(Duration(days: index));
       return dateFormatter.format(date).split(' ').first; // Doar numarul zilei
     });
+
+    // Cache rezultatul
+    _weekDatesCache[weekOffset] = weekDates;
+    return weekDates;
   }
 
   /// Returneaza informatiile despre luna si anul curent
   String getMonthYearString(int weekOffset) {
+    // Verifica cache-ul mai intai
+    if (_monthYearCache.containsKey(weekOffset)) {
+      return _monthYearCache[weekOffset]!;
+    }
+
     final startOfWeek = getStartOfWeekToDisplay(weekOffset);
-    final formatted = dateFormatter.format(startOfWeek).split(' ');
-    return formatted.length > 1 
-        ? formatted.sublist(1).join(' ') 
-        : ''; // Luna si potential anul
+
+    // Folosim formatul specific pentru luna completa in limba romana
+    final monthFormatter = DateFormat('MMMM', 'ro_RO');
+    final monthText = monthFormatter.format(startOfWeek); // "august"
+
+    // Capitalizam prima litera pentru a obtine "August"
+    final monthYear = monthText.isNotEmpty
+        ? monthText[0].toUpperCase() + monthText.substring(1)
+        : monthText;
+
+    // Cache rezultatul
+    _monthYearCache[weekOffset] = monthYear;
+    return monthYear;
   }
 
-  /// Genereaza intervalul de date pentru afisare (ex: "1-5 Dec")
+  /// Genereaza intervalul de date pentru afisare (ex: "1-5 August")
   String getDateInterval(int weekOffset) {
+    // Verifica cache-ul mai intai
+    if (_dateIntervalCache.containsKey(weekOffset)) {
+      return _dateIntervalCache[weekOffset]!;
+    }
+
     final weekDates = getWeekDates(weekOffset);
     final monthYear = getMonthYearString(weekOffset);
-    return "${weekDates.first}-${weekDates.last} $monthYear";
+    final dateInterval = "${weekDates.first} - ${weekDates.last} $monthYear";
+
+    // Cache rezultatul
+    _dateIntervalCache[weekOffset] = dateInterval;
+    return dateInterval;
   }
 
   /// Verifica daca o data este in saptamana de lucru curenta
@@ -226,10 +264,25 @@ class CalendarService {
   /// Verifica daca serviciul este initializat
   bool get isInitialized => _isInitialized;
 
+  /// Sterge cache-ul pentru un offset specific de saptamana
+  void clearWeekCache(int weekOffset) {
+    _dateIntervalCache.remove(weekOffset);
+    _weekDatesCache.remove(weekOffset);
+    _monthYearCache.remove(weekOffset);
+  }
+
+  /// Sterge tot cache-ul
+  void clearAllCache() {
+    _dateIntervalCache.clear();
+    _weekDatesCache.clear();
+    _monthYearCache.clear();
+  }
+
   /// Reseteaza starea serviciului (util pentru testing)
   void reset() {
     _isInitialized = false;
     _dateFormatter = null;
+    clearAllCache();
   }
 }
 

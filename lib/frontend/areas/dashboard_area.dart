@@ -46,7 +46,7 @@ class _DashboardAreaState extends State<DashboardArea> {
           padding: const EdgeInsets.all(AppTheme.largeGap),
           decoration: BoxDecoration(
             gradient: AppTheme.areaColor,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: _buildDashboardContent(),
         );

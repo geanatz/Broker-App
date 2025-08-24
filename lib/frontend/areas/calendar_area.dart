@@ -50,6 +50,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
   
   // Calendar state
   int _currentWeekOffset = 0;
+  final ValueNotifier<int> _currentWeekOffsetNotifier = ValueNotifier<int>(0);
 
   // Public getter pentru currentWeekOffset
   int get currentWeekOffset => _currentWeekOffset;
@@ -193,6 +194,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     _loadDebounceTimer?.cancel();
     _scrollController.dispose();
     _slideAnimationController.dispose();
+    _currentWeekOffsetNotifier.dispose();
     _splashService.removeListener(_onSplashServiceChanged); // FIX: cleanup listener
     super.dispose();
   }
@@ -206,6 +208,8 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     if (instant.isNotEmpty) {
       // Clear cache when data changes to ensure consistency
       _clearAllCaches();
+      // Sterge si cache-ul din CalendarService pentru date recalculate
+      _calendarService.clearAllCache();
       setState(() {
         _allMeetings = instant;
         _filterMeetingsForCurrentWeek();
@@ -256,8 +260,10 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
       if (!_meetingCache.containsKey(offset)) {
         final originalOffset = _currentWeekOffset;
         _currentWeekOffset = offset;
+        _currentWeekOffsetNotifier.value = offset;
         _filterMeetingsForCurrentWeek();
         _currentWeekOffset = originalOffset;
+        _currentWeekOffsetNotifier.value = originalOffset;
       }
     }
   }
@@ -402,6 +408,16 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     _showTransition.value = true;
     _previousWeekOffset = _currentWeekOffset;
     _currentWeekOffset = newOffset;
+
+    // Actualizeaza notifier-ul pentru a declansa reconstructia week switch-ului
+    _currentWeekOffsetNotifier.value = newOffset;
+
+    // Sterge cache-ul pentru saptamanile afectate
+    _calendarService.clearWeekCache(newOffset);
+    if (_previousWeekOffset != newOffset) {
+      _calendarService.clearWeekCache(_previousWeekOffset);
+    }
+
     _filterMeetingsForCurrentWeek();
 
     // Pre-cache both weeks for instant animation
@@ -496,6 +512,41 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     return _buildCalendarWidget();
   }
 
+  /// Construieste header-ul calendarului cu zilele saptamanii si datele corespunzatoare
+  Widget _buildCalendarHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.largeGap),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...List.generate(CalendarService.daysPerWeek, (index) {
+            final List<String> weekDates = _calendarService.getWeekDates(_currentWeekOffset);
+            return Expanded(
+              child: SizedBox(
+                width: 249.60,
+                height: 24,
+                child: Text(
+                  '${CalendarService.workingDays[index]} ${weekDates[index]}',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.elementColor1,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   /// Construieste containerul de loading
   Widget _buildLoadingContainer() {
     return Container(
@@ -539,45 +590,22 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
       padding: const EdgeInsets.only(top: AppTheme.largeGap),
       decoration: BoxDecoration(
         gradient: AppTheme.areaColor,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Header cu zilele saptamanii
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.largeGap),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...List.generate(CalendarService.daysPerWeek, (index) {
-                  final List<String> weekDates = _calendarService.getWeekDates(_currentWeekOffset);
-                  return Expanded(
-                    child: SizedBox(
-                      width: 249.60,
-                      height: 24,
-                      child: Text(
-                        '${CalendarService.workingDays[index]} ${weekDates[index]}',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
-                          color: AppTheme.elementColor1,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
+          // Header cu zilele saptamanii - se reconstruiește când se schimbă week offset-ul
+          ValueListenableBuilder<int>(
+            valueListenable: _currentWeekOffsetNotifier,
+            builder: (context, weekOffset, child) {
+              return _buildCalendarHeader();
+            },
           ),
+          // Gap dintre header si sloturi
+          const SizedBox(height: 16),
           // Calendar grid cu sloturile si tranzitii
           Expanded(
             child: Container(
@@ -588,11 +616,13 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
               ),
-              child: SingleChildScrollView(
-                    child: Container(
-                      width: double.infinity,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(),
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+                child: SingleChildScrollView(
+                      child: Container(
+                        width: double.infinity,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(),
                   child: RepaintBoundary(
                     child: ValueListenableBuilder<bool>(
                       valueListenable: _showTransition,
@@ -641,13 +671,19 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                     ),
                   ),
                 ),
+                ),
               ),
             ),
           ),
           // Gap intre calendar si calendar switch
           const SizedBox(height: AppTheme.mediumGap),
-          // Switch săptămâni pentru calendar
-          _buildWeekSwitch(),
+          // Switch săptămâni pentru calendar - se reconstruiește când se schimbă week offset-ul
+          ValueListenableBuilder<int>(
+            valueListenable: _currentWeekOffsetNotifier,
+            builder: (context, weekOffset, child) {
+              return _buildWeekSwitch();
+            },
+          ),
         ],
       ),
     );
@@ -759,99 +795,117 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
   /// Construieste switch-ul între săptămâni în partea de jos conform designului
   Widget _buildWeekSwitch() {
     final String weekRange = _calendarService.getDateInterval(_currentWeekOffset);
-    
+
     return Container(
       width: double.infinity,
-      height: 32,
+      height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-                      Container(
-              width: 480,
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: ShapeDecoration(
-                color: AppTheme.backgroundColor1,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
+          Container(
+            height: 40,
+            padding: const EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 0),
+            decoration: ShapeDecoration(
+              color: const Color(0xFFE6E5E4), /* light-blue-background1 */
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
               ),
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // Buton pentru săptămâna anterioară
-                Expanded(
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: _navigateToPreviousWeek,
-                      child: Container(
-                        decoration: ShapeDecoration(
-                          color: AppTheme.backgroundColor2,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          shadows: AppTheme.standardShadow,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chevron_left,
-                              color: AppTheme.elementColor3,
-                              size: 24,
-                            ),
-                          ],
-                        ),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: _navigateToPreviousWeek,
+                    child: Container(
+                      width: 128,
+                      height: 32,
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFFF0EFEF), /* light-blue-background3 */
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shadows: [
+                          BoxShadow(
+                            color: Color(0x14503E29),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                            spreadRadius: 0,
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chevron_left,
+                            color: AppTheme.elementColor3,
+                            size: 24,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 // Text cu intervalul săptămânii
-                SizedBox(
-                  width: 149.33,
-                  height: 24,
-                                        child: Text2(
-                        text: weekRange,
-                        color: AppTheme.elementColor2,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
+                Container(
+                  width: 152,
+                  height: 32,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    weekRange,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF7C7A77), /* light-blue-text-2 */
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 // Buton pentru săptămâna următoare
-                Expanded(
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: _navigateToNextWeek,
-                      child: Container(
-                        decoration: ShapeDecoration(
-                          color: AppTheme.backgroundColor2,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          shadows: AppTheme.standardShadow,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chevron_right,
-                              color: AppTheme.elementColor3,
-                              size: 24,
-                            ),
-                          ],
-                        ),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: _navigateToNextWeek,
+                    child: Container(
+                      width: 128,
+                      height: 32,
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFFF0EFEF), /* light-blue-background3 */
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shadows: [
+                          BoxShadow(
+                            color: Color(0x14503E29),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                            spreadRadius: 0,
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chevron_right,
+                            color: AppTheme.elementColor3,
+                            size: 24,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -997,6 +1051,9 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
         if (mounted) {
           setState(() {
             _currentWeekOffset = weekDifference;
+            _currentWeekOffsetNotifier.value = weekDifference;
+            // Sterge cache-ul pentru noua saptamana
+            _calendarService.clearWeekCache(weekDifference);
           });
         }
         await _loadMeetingsForCurrentWeek();
@@ -1123,7 +1180,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
           height: 64,
           padding: widget.isMeeting ? const EdgeInsets.symmetric(horizontal: 16, vertical: 0) : null,
           decoration: ShapeDecoration(
-            color: widget.isMeeting ? AppTheme.backgroundColor2 : const Color(0xFFE1DCD6),
+            color: widget.isMeeting ? AppTheme.backgroundColor2 : const Color(0xFFE5E1DC),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -1197,7 +1254,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
             style: GoogleFonts.outfit(
               color: AppTheme.elementColor1,
               fontSize: 15,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -1218,7 +1275,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
           hourText,
           textAlign: TextAlign.center,
           style: GoogleFonts.outfit(
-            color: isHovered ? AppTheme.elementColor1 : const Color(0xFFCAC7C3),
+            color: isHovered ? AppTheme.elementColor2 : const Color(0xFFCAC7C3),
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
