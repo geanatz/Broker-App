@@ -71,8 +71,12 @@ class _SettingsAreaState extends State<SettingsArea> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.smallGap),
-      decoration: AppTheme.widgetDecoration,
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.largeGap),
+      decoration: BoxDecoration(
+        gradient: AppTheme.areaColor,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+      ),
       child: _buildSettingsContent(),
     );
   }

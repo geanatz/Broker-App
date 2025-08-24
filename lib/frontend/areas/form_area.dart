@@ -809,50 +809,37 @@ class _FormAreaState extends State<FormArea> {
     }
     
     // OPTIMIZATION: Always show form content - data will load in background
-    return _buildFormContent(focusedClient);
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      padding: const EdgeInsets.all(AppTheme.largeGap),
+      decoration: BoxDecoration(
+        gradient: AppTheme.areaColor,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+      ),
+      child: _buildFormContent(focusedClient),
+    );
   }
 
   /// OPTIMIZATION: Advanced form rendering with performance profiling
   Widget _buildFormContent(ClientModel client) {
-    
-    
-    final focusedClient = _clientService.focusedClient;
-    
-    // Daca nu exista client focusat, afiseaza un placeholder
-    if (focusedClient == null) {
-      return _buildNoClientSelectedPlaceholder();
-    }
-    
-    // Daca este un client temporar, afiseaza un placeholder special
-    if (focusedClient.id.startsWith('temp_')) {
-      return _buildTemporaryClientPlaceholder(focusedClient);
-    }
-    
-    // OPTIMIZATION: Check form data availability for strategic rendering
-    _formService.hasFormDataForClient(client.phoneNumber);
-    _formService.hasCachedDataForClient(client.phoneNumber);
-    
-    
-    
     // Afiseaza formularele pentru client conform design-ului exact din Figma
     final formContent = Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                  Expanded(
-                    flex: 10,
-                    child: _buildCreditSection(client),
-                  ),
-                  const SizedBox(width: AppTheme.smallGap),
-                  Expanded(
-                    flex: 7,
-                    child: _buildIncomeSection(client),
-                  ),
-                ],
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 10,
+          child: _buildCreditSection(client),
+        ),
+        const SizedBox(width: AppTheme.smallGap),
+        Expanded(
+          flex: 7,
+          child: _buildIncomeSection(client),
+        ),
+      ],
     );
-    
-    
     
     return formContent;
   }

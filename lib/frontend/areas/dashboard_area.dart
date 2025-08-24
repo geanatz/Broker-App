@@ -41,7 +41,15 @@ class _DashboardAreaState extends State<DashboardArea> {
           return _buildErrorState();
         }
         
-        return _buildDashboardContent();
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppTheme.largeGap),
+          decoration: BoxDecoration(
+            gradient: AppTheme.areaColor,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
+          ),
+          child: _buildDashboardContent(),
+        );
       },
     );
   }

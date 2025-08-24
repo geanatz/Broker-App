@@ -27,7 +27,7 @@ import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 // window_manager no longer used here; handlers moved to main.dart
 import 'dart:ui';
-import 'package:flutter/scheduler.dart';
+// import 'package:flutter/scheduler.dart'; // Removed as no longer needed
 import 'dart:async';
 
 /// Ecranul principal al aplicatiei care contine cele 3 coloane:
@@ -92,57 +92,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Client? _selectedPopupClient;
   bool _isShowingClientListPopup = false;
   
-  // Transition profiling state
-  final Stopwatch _transitionStopwatch = Stopwatch();
-  bool _transitionProfilingActive = false;
-  final List<FrameTiming> _transitionFrameTimings = <FrameTiming>[];
-  TimingsCallback? _transitionTimingsCallback;
+  // Transition profiling state - removed as no longer needed
 
-  void _startTransitionProfiling(String label) {
-    if (_transitionProfilingActive) return;
-    _transitionProfilingActive = true;
-    _transitionFrameTimings.clear();
-    _transitionStopwatch
-      ..reset()
-      ..start();
-    debugPrint('ANIM_METRICS: start | label=$label');
-    _transitionTimingsCallback = (List<FrameTiming> timings) {
-      if (!_transitionProfilingActive) return;
-      _transitionFrameTimings.addAll(timings);
-    };
-    SchedulerBinding.instance.addTimingsCallback(_transitionTimingsCallback!);
-  }
-
-  void _stopTransitionProfiling({String reason = 'completed'}) {
-    if (!_transitionProfilingActive) return;
-    _transitionProfilingActive = false;
-    _transitionStopwatch.stop();
-    if (_transitionTimingsCallback != null) {
-      SchedulerBinding.instance.removeTimingsCallback(_transitionTimingsCallback!);
-    }
-    final int totalMs = _transitionStopwatch.elapsedMilliseconds;
-    final int frames = _transitionFrameTimings.length;
-    double avgBuildMs = 0.0, avgRasterMs = 0.0, maxBuildMs = 0.0, maxRasterMs = 0.0;
-    int jankBuild = 0, jankRaster = 0;
-    if (frames > 0) {
-      int sumBuildUs = 0, sumRasterUs = 0;
-      for (final t in _transitionFrameTimings) {
-        final double buildMs = t.buildDuration.inMicroseconds / 1000.0;
-        final double rasterMs = t.rasterDuration.inMicroseconds / 1000.0;
-        sumBuildUs += t.buildDuration.inMicroseconds;
-        sumRasterUs += t.rasterDuration.inMicroseconds;
-        if (buildMs > maxBuildMs) maxBuildMs = buildMs;
-        if (rasterMs > maxRasterMs) maxRasterMs = rasterMs;
-        if (buildMs > 16.7) jankBuild++;
-        if (rasterMs > 16.7) jankRaster++;
-      }
-      avgBuildMs = sumBuildUs / frames / 1000.0;
-      avgRasterMs = sumRasterUs / frames / 1000.0;
-    }
-    debugPrint(
-      'ANIM_METRICS: end | reason=$reason totalMs=$totalMs frames=$frames avgBuildMs=${avgBuildMs.toStringAsFixed(2)} avgRasterMs=${avgRasterMs.toStringAsFixed(2)} maxBuildMs=${maxBuildMs.toStringAsFixed(2)} maxRasterMs=${maxRasterMs.toStringAsFixed(2)} jankBuild=$jankBuild jankRaster=$jankRaster',
-    );
-  }
+  // Transition profiling methods removed as no longer needed
   
   @override
   void initState() {
@@ -486,16 +438,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     return UpdateNotificationWrapper(
       updateService: _updateService,
       child: Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundColor1Gradient,
-        ),
-        child: Stack(
+      body: Stack(
           children: [
             // Custom titlebar is now injected globally in MaterialApp.builder (main.dart)
             // Main content
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppTheme.smallGap, 0, AppTheme.mediumGap, AppTheme.smallGap),
+              padding: const EdgeInsets.fromLTRB(AppTheme.smallGap, 0, AppTheme.mediumGap, AppTheme.mediumGap),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -503,116 +451,43 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   _buildSidebar(),
                   // Spatiu intre sidebar si containerul combinat
                   const SizedBox(width: AppTheme.smallGap),
-                  // Container combinat pentru Area (stanga) + Pane (dreapta) cu bounce pe intrare/iesire pentru TOT box-ul
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 320),
-                  reverseDuration: const Duration(milliseconds: 240),
-                  switchInCurve: Curves.linear,
-                  switchOutCurve: Curves.linear,
-                  layoutBuilder: (currentChild, previousChildren) {
-                    final prev = previousChildren.isNotEmpty
-                        ? <Widget>[previousChildren.last]
-                        : const <Widget>[];
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: <Widget>[
-                        ...prev,
-                        if (currentChild != null) currentChild,
-                      ],
-                    );
-                  },
-                  transitionBuilder: (child, animation) {
-                    final bool isIncoming = child.key == ValueKey(_currentArea);
-                    if (isIncoming) {
-                      // Intrare: bounce cozy (easeOutBack)
-                      if (!_transitionProfilingActive) {
-                        _startTransitionProfiling('area_change to $_currentArea');
-                      }
-                      final curved = CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutBack,
-                        reverseCurve: Curves.easeInBack,
-                      );
-                      curved.addStatusListener((status) {
-                        if (status == AnimationStatus.completed) {
-                          _stopTransitionProfiling(reason: 'incoming_completed');
-                        }
-                      });
-                      return ScaleTransition(
-                        scale: Tween<double>(begin: 0.985, end: 1.0).animate(curved),
-                        child: child,
-                      );
-                    } else {
-                      // Iesire: bounce-back cozy (easeInBack)
-                      final curved = CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeInBack,
-                        reverseCurve: Curves.easeOutBack,
-                      );
-                      curved.addStatusListener((status) {
-                        if (status == AnimationStatus.dismissed) {
-                          _stopTransitionProfiling(reason: 'outgoing_dismissed');
-                        }
-                      });
-                      return ScaleTransition(
-                        scale: Tween<double>(begin: 1.0, end: 0.992).animate(curved),
-                        child: child,
-                      );
-                    }
-                  },
-                  child: KeyedSubtree(
-                    key: ValueKey(_currentArea),
-                    child: RepaintBoundary(
-                      child: Container(
-                      padding: const EdgeInsets.all(AppTheme.largeGap),
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.boxColor,
-                        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Area (stanga) + Pane (dreapta) pentru dashboard, settings si calendar
-                          if (_currentArea == AreaType.dashboard || _currentArea == AreaType.settings || _currentArea == AreaType.calendar)
-                            Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
-                          // Row pentru area + pane pentru celelalte tipuri
-                          if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
-                            Expanded(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  // Area (stanga)
-                                  Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
-                                  // Gap 8 intre area si pane
-                                  const SizedBox(width: AppTheme.smallGap),
-                                  // Pane (dreapta)
-                                  SizedBox(
-                                    width: 296,
-                                    child: RepaintBoundary(child: _paneWidgets[_currentPane]!),
-                                  ),
-                                ],
-                              ),
+                  // Area (stanga) + Pane (dreapta)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Area (stanga) + Pane (dreapta) pentru dashboard, settings si calendar
+                        if (_currentArea == AreaType.dashboard || _currentArea == AreaType.settings || _currentArea == AreaType.calendar)
+                          Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
+                        // Row pentru area + pane pentru celelalte tipuri
+                        if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
+                          Expanded(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Area (stanga)
+                                Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
+                                // Gap 8 intre area si pane
+                                const SizedBox(width: AppTheme.smallGap),
+                                // Pane (dreapta)
+                                SizedBox(
+                                  width: 296,
+                                  child: RepaintBoundary(child: _paneWidgets[_currentPane]!),
+                                ),
+                              ],
                             ),
-                          // Switch săptămâni pentru calendar (în afara CalendarArea)
-                          if (_currentArea == AreaType.calendar)
-                            _buildCalendarWeekSwitch(),
-                        ],
-                      ),
-                      ),
+                          ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-            ],
+                ],
               ),
             ),
             
-                         // Client Popups overlay
+            // Client Popups overlay
             if (_isShowingClientListPopup)
               _buildDualPopupOverlay(),
           ],
-        ),
         ),
       ),
     );
@@ -621,113 +496,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   // Titlebar handlers and buttons moved to global builder in main.dart
   
   
-  /// Construieste switch-ul pentru săptămâni în calendar (în afara CalendarArea)
-  Widget _buildCalendarWeekSwitch() {
-    final calendarService = _splashService.calendarService;
-    final currentWeekOffset = _calendarKey.currentState?.currentWeekOffset ?? 0;
-    final weekRange = calendarService.getDateInterval(currentWeekOffset);
-    
-    return Container(
-      width: double.infinity,
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 480,
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: ShapeDecoration(
-              color: AppTheme.backgroundColor2,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Buton pentru săptămâna anterioară
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      _calendarKey.currentState?.navigateToPreviousWeek();
-                    },
-                    child: Container(
-                      decoration: ShapeDecoration(
-                        color: AppTheme.elementColor2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chevron_left,
-                            color: AppTheme.elementColor1,
-                            size: 24,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Text cu intervalul săptămânii
-                SizedBox(
-                  width: 149.33,
-                  height: 24,
-                  child: Text(
-                    weekRange,
-                    style: GoogleFonts.outfit(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.elementColor2,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Buton pentru săptămâna următoare
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      _calendarKey.currentState?.navigateToNextWeek();
-                    },
-                    child: Container(
-                      decoration: ShapeDecoration(
-                        color: AppTheme.elementColor2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chevron_right,
-                            color: AppTheme.elementColor1,
-                            size: 24,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   /// Builds dual popup overlay with both popups side by side
   Widget _buildDualPopupOverlay() {

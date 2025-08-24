@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 
 import 'package:mat_finance/frontend/popups/meeting_popup.dart';
@@ -342,33 +343,96 @@ class CalendarAreaState extends State<CalendarArea> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(8),
-      decoration: ShapeDecoration(
-        color: AppTheme.backgroundColor1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        ),
+      height: double.infinity,
+      padding: const EdgeInsets.only(top: AppTheme.largeGap),
+      decoration: BoxDecoration(
+        gradient: AppTheme.areaColor,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Header cu navigation conform Figma folosind WidgetHeader6
-          WidgetHeader6(
-            title: 'Calendar',
-            dateText: dateInterval,
-            prevDateIcon: Icons.chevron_left,
-            nextDateIcon: Icons.chevron_right,
-            onPrevDateTap: _navigateToPreviousWeek,
-            onNextDateTap: _navigateToNextWeek,
-            onDateTextTap: _currentWeekOffset != 0 ? _navigateToCurrentWeek : null,
-            titleColor: AppTheme.elementColor1,
-            dateTextColor: _currentWeekOffset != 0 
-                ? AppTheme.elementColor2 
-                : AppTheme.elementColor1,
-            dateNavIconColor: AppTheme.elementColor1,
+          // Header cu zilele saptamanii
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.largeGap),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...List.generate(CalendarService.daysPerWeek, (index) {
+                  final List<String> weekDates = _calendarService.getWeekDates(_currentWeekOffset);
+                  return Expanded(
+                    child: SizedBox(
+                      width: 249.60,
+                      height: 24,
+                      child: Text(
+                        '${CalendarService.workingDays[index]} ${weekDates[index]}',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.outfit(
+                          color: AppTheme.elementColor1,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          Expanded(child: _buildCalendarContainer()),
+          // Calendar grid cu sloturile
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.largeGap),
+              decoration: ShapeDecoration(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Container(
+                  width: double.infinity,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int dayIndex = 0; dayIndex < CalendarService.daysPerWeek; dayIndex++) ...[
+                        Expanded(
+                          child: Container(
+                            decoration: ShapeDecoration(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: _buildDayColumn(dayIndex),
+                            ),
+                          ),
+                        ),
+                        if (dayIndex < CalendarService.daysPerWeek - 1) 
+                          SizedBox(width: AppTheme.mediumGap),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Gap intre calendar si calendar switch
+          const SizedBox(height: AppTheme.mediumGap),
+          // Switch săptămâni pentru calendar
+          _buildWeekSwitch(),
         ],
       ),
     );
@@ -545,6 +609,204 @@ class CalendarAreaState extends State<CalendarArea> {
     });
   }
 
+  /// Construieste o coloana pentru o zi specifica cu toate sloturile
+  List<Widget> _buildDayColumn(int dayIndex) {
+    return List.generate(CalendarService.workingHours.length, (hourIndex) {
+      final hour = CalendarService.workingHours[hourIndex];
+      final isLastHour = hourIndex == CalendarService.workingHours.length - 1;
+      
+      // Cauta intalnirea pentru aceasta zi si ora
+      final slotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
+      final meetingData = _getMeetingDataForSlot(slotKey);
+      final docId = _getMeetingDocIdForSlot(slotKey);
+      final isMeeting = meetingData != null;
+      
+      return Column(
+        children: [
+          // Slot pentru ora curenta
+          GestureDetector(
+            onTap: isMeeting 
+                ? () => _showEditMeetingDialog(meetingData!, docId!)
+                : () => _showCreateMeetingDialog(dayIndex, hourIndex),
+            child: Container(
+              width: double.infinity,
+              height: 64,
+              padding: isMeeting ? const EdgeInsets.symmetric(horizontal: 16, vertical: 0) : null,
+              decoration: ShapeDecoration(
+                color: isMeeting ? AppTheme.backgroundColor2 : const Color(0xFFE1DCD6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                shadows: isMeeting ? [
+                  BoxShadow(
+                    color: Color(0x0C503E29),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                    spreadRadius: 0,
+                  )
+                ] : null,
+              ),
+              child: isMeeting 
+                  ? _buildMeetingSlotContent(meetingData!, docId!)
+                  : _buildFreeSlotContent(hour),
+            ),
+          ),
+          if (!isLastHour) const SizedBox(height: 16),
+        ],
+      );
+    });
+  }
+
+  /// Obtine datele intalnirii pentru un slot specific
+  Map<String, dynamic>? _getMeetingDataForSlot(String slotKey) {
+    for (var meeting in _cachedMeetings) {
+      try {
+        final dateTime = meeting.dateTime;
+        final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
+        final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
+        
+        if (dayIndex != null && hourIndex != -1) {
+          final meetingSlotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
+          if (meetingSlotKey == slotKey) {
+            return meeting.toMap();
+          }
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  /// Obtine document ID-ul intalnirii pentru un slot specific
+  String? _getMeetingDocIdForSlot(String slotKey) {
+    for (var meeting in _cachedMeetings) {
+      try {
+        final dateTime = meeting.dateTime;
+        final dayIndex = _calendarService.getDayIndexForDate(dateTime, _currentWeekOffset);
+        final hourIndex = _calendarService.getHourIndexForDateTime(dateTime);
+        
+        if (dayIndex != null && hourIndex != -1) {
+          final meetingSlotKey = _calendarService.generateSlotKey(dayIndex, hourIndex);
+          if (meetingSlotKey == slotKey) {
+            return meeting.id;
+          }
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+    return null;
+  }
+
+  /// Construieste continutul pentru un slot cu intalnire
+  Widget _buildMeetingSlotContent(Map<String, dynamic> meetingData, String docId) {
+    final additionalData = meetingData['additionalData'] as Map<String, dynamic>?;
+    
+    String consultantName = 'N/A';
+    if (meetingData.containsKey('consultantName') && meetingData['consultantName'] != null && meetingData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = meetingData['consultantName'].toString();
+    } else if (additionalData != null && additionalData.containsKey('consultantName') && additionalData['consultantName'] != null && additionalData['consultantName'].toString().trim().isNotEmpty) {
+      consultantName = additionalData['consultantName'].toString();
+    }
+    
+    String timeText = '';
+    try {
+      final dynamic rawDateTime = meetingData['dateTime'];
+      DateTime dateTime;
+      if (rawDateTime is DateTime) {
+        dateTime = rawDateTime;
+      } else if (rawDateTime is int) {
+        dateTime = DateTime.fromMillisecondsSinceEpoch(rawDateTime);
+      } else if (rawDateTime != null && rawDateTime.toString().contains('Timestamp')) {
+        try {
+          final dynamic dyn = rawDateTime;
+          final DateTime parsed = dyn.toDate();
+          dateTime = parsed;
+        } catch (_) {
+          dateTime = DateTime.now();
+        }
+      } else {
+        dateTime = DateTime.now();
+      }
+      timeText = DateFormat('HH:mm').format(dateTime);
+    } catch (_) {
+      timeText = '';
+    }
+    
+    final consultantId = additionalData?['consultantId'] as String?;
+    final currentUserId = _auth.currentUser?.uid;
+    
+    bool isOwner = false;
+    if (consultantId != null && consultantId != 'null' && consultantId.isNotEmpty) {
+      isOwner = currentUserId == consultantId;
+    } else {
+      final meetingConsultantToken = additionalData?['consultantToken'] as String?;
+      if (meetingConsultantToken != null && meetingConsultantToken.isNotEmpty) {
+        try {
+          final currentConsultantToken = _getCurrentConsultantTokenSync();
+          isOwner = currentConsultantToken == 'TEMP_ALLOW_ALL' || meetingConsultantToken == currentConsultantToken;
+        } catch (e) {
+          isOwner = false;
+        }
+      }
+    }
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Flexible(
+          child: Text(
+            consultantName,
+            style: GoogleFonts.outfit(
+              color: AppTheme.elementColor2,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            timeText,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.outfit(
+              color: AppTheme.elementColor1,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Construieste continutul pentru un slot liber
+  Widget _buildFreeSlotContent(String hourText) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          hourText,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.outfit(
+            color: const Color(0xFFCAC7C3),
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Construieste switch-ul între săptămâni în partea de jos conform designului
   Widget _buildWeekSwitch() {
     final String weekRange = _calendarService.getDateInterval(_currentWeekOffset);
@@ -558,19 +820,19 @@ class CalendarAreaState extends State<CalendarArea> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 480,
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: ShapeDecoration(
-              color: AppTheme.backgroundColor2,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
+                      Container(
+              width: 480,
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: ShapeDecoration(
+                color: AppTheme.backgroundColor1,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
                 ),
               ),
-            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -582,7 +844,7 @@ class CalendarAreaState extends State<CalendarArea> {
                     onTap: _navigateToPreviousWeek,
                     child: Container(
                       decoration: ShapeDecoration(
-                        color: AppTheme.elementColor2,
+                        color: AppTheme.backgroundColor2,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: Row(
@@ -605,12 +867,12 @@ class CalendarAreaState extends State<CalendarArea> {
                 SizedBox(
                   width: 149.33,
                   height: 24,
-                  child: Text2(
-                    text: weekRange,
-                    color: AppTheme.elementColor2,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
+                                        child: Text2(
+                        text: weekRange,
+                        color: AppTheme.elementColor2,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
                 const SizedBox(width: 8),
                 // Buton pentru săptămâna următoare
@@ -619,7 +881,7 @@ class CalendarAreaState extends State<CalendarArea> {
                     onTap: _navigateToNextWeek,
                     child: Container(
                       decoration: ShapeDecoration(
-                        color: AppTheme.elementColor2,
+                        color: AppTheme.backgroundColor2,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: Row(

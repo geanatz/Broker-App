@@ -132,16 +132,14 @@ class AppTheme extends ChangeNotifier {
   static const Color backgroundEnd = Color(0xFFB0B5CF);
 
   // Culori pentru containere
+  static const Color backgroundColor1 = Color(0xFFE3E1DE);
   static const Color backgroundColor2 = Color(0xFFE7E6E4);
   static const Color backgroundColor3 = Color(0xFFECEBE9);
 
   // Culori pentru elemente
-  static const Color elementColor1 = Color(0xFF70808F);
-  static const Color elementColor2 = Color(0xFF5E666E);
-  static const Color elementColor3 = Color(0xFF494D50);
-
-  // Culori pentru widget-uri
-  static const Color backgroundColor1 = Color(0xFFE3E1DE);
+  static const Color elementColor1 = Color(0xFF968F88);
+  static const Color elementColor2 = Color(0xFF7F7B76);
+  static const Color elementColor3 = Color(0xFF686664);
 
   // ======== UMBRELE ========
   // Removed all shadows as requested
@@ -205,8 +203,8 @@ class AppTheme extends ChangeNotifier {
     stops: const [0.0, 1.0],
   );
 
-  // Box gradient (fostul gradient din appBackground)
-  static Gradient get boxColor => LinearGradient(
+  // Area gradient (fostul boxColor)
+  static Gradient get areaColor => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [const Color(0xFFDDD7D0), const Color(0xFFDDD7D0)],
