@@ -86,12 +86,18 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
   // State variables
   String? _selectedStatus;
   DateTime? _selectedDate;
-  String? _selectedTimeSlot; // Pentru dropdown-ul de ore cand statusul este "Acceptat"
+  String? _selectedTimeSlot; // Pentru dropdown-ul de ore cand statusul este "ClientStatusType.finalizat.name"
   List<String> _availableTimeSlots = [];
   bool _isLoading = false;
 
   // Optiunile pentru dropdown
-  final List<String> _statusOptions = ['Acceptat', 'Amanat', 'Refuzat'];
+  final List<String> _statusOptions = [
+    ClientStatusType.finalizat.name,
+    ClientStatusType.programat.name,
+    ClientStatusType.amanat.name,
+    ClientStatusType.nuRaspunde.name,
+    ClientStatusType.neapelat.name,
+  ];
 
   @override
   void initState() {
@@ -102,8 +108,8 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
   /// Initializeaza status-ul existent pentru editare
   void _initializeExistingStatus() {
-    if (widget.client.discussionStatus != null && widget.client.discussionStatus!.isNotEmpty) {
-      _selectedStatus = widget.client.discussionStatus;
+    if (widget.client.discussionStatus != null) {
+      _selectedStatus = widget.client.discussionStatus!.name;
       
       // Incarca informatiile aditionale daca exista
       if (widget.client.additionalInfo != null && widget.client.additionalInfo!.isNotEmpty) {
@@ -119,12 +125,12 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         );
         
         // Pentru amanat, incarca ora in timeController
-        if (_selectedStatus == 'Amanat') {
+        if (_selectedStatus == 'ClientStatusType.amanat.name') {
           _timeController.text = DateFormat('HH:mm').format(widget.client.scheduledDateTime!);
         }
         
         // Pentru acceptat, incarca ora ca selectedTimeSlot si pregateste orele disponibile
-        if (_selectedStatus == 'Acceptat') {
+        if (_selectedStatus == 'ClientStatusType.finalizat.name') {
           _selectedTimeSlot = DateFormat('HH:mm').format(widget.client.scheduledDateTime!);
           
           // IMPORTANT: Adauga ora existenta in lista disponibila IMEDIAT pentru a fi afisata in UI
@@ -198,14 +204,14 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
           _selectedDate = picked;
           // Reseteaza ora cand se schimba data
           _timeController.clear();
-          if (_selectedStatus == 'Acceptat') {
+          if (_selectedStatus == 'ClientStatusType.finalizat.name') {
             _selectedTimeSlot = null;
           }
         });
       }
       
-      // Incarca orele disponibile pentru data selectata daca statusul este "Acceptat"
-      if (_selectedStatus == 'Acceptat') {
+      // Incarca orele disponibile pentru data selectata daca statusul este "ClientStatusType.finalizat.name"
+      if (_selectedStatus == 'ClientStatusType.finalizat.name') {
         await _loadAvailableTimeSlotsForDate();
       }
     }
@@ -217,11 +223,11 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
     
     // Setting default date/time for status
     
-    if (status == 'Acceptat') {
-      // Pentru Acceptat, foloseste cea mai apropiata data valida din calendar
+    if (status == 'ClientStatusType.finalizat.name') {
+      // Pentru ClientStatusType.finalizat.name, foloseste cea mai apropiata data valida din calendar
       await _setNextAvailableDateTime();
-    } else if (status == 'Amanat') {
-      // Pentru Amanat, foloseste data si ora curenta
+    } else if (status == 'ClientStatusType.amanat.name') {
+      // Pentru ClientStatusType.amanat.name, foloseste data si ora curenta
       final now = DateTime.now();
       final currentTime = DateFormat('HH:mm').format(now);
       
@@ -233,9 +239,9 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         });
       }
       
-      // Set current date/time for Amanat
+      // Set current date/time for ClientStatusType.amanat.name
     }
-    // Pentru Refuzat nu setam nimic (nu are campuri de data/ora)
+    // Pentru ClientStatusType.nuRaspunde.name nu setam nimic (nu are campuri de data/ora)
   }
 
   /// Seteaza automat cea mai apropiata data si ora valida pentru programare
@@ -323,7 +329,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
 
   /// Verifica daca al doilea rand trebuie sa fie vizibil
   bool get _shouldShowSecondRow {
-    return _selectedStatus == 'Acceptat' || _selectedStatus == 'Amanat';
+    return _selectedStatus == 'ClientStatusType.finalizat.name' || _selectedStatus == 'ClientStatusType.amanat.name';
   }
 
 
@@ -342,12 +348,12 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         return;
       }
 
-      if (_selectedStatus == 'Amanat' && _timeController.text.trim().isEmpty) {
+      if (_selectedStatus == 'ClientStatusType.amanat.name' && _timeController.text.trim().isEmpty) {
         _showError("Introduceti ora pentru amanare");
         return;
       }
 
-      if (_selectedStatus == 'Acceptat' && (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty)) {
+      if (_selectedStatus == 'ClientStatusType.finalizat.name' && (_selectedTimeSlot == null || _selectedTimeSlot!.trim().isEmpty)) {
         _showError("Selectati ora pentru intalnire");
         return;
       }
@@ -361,7 +367,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
       // Construieste data si ora finale daca sunt necesare
       DateTime? finalDateTime;
       if (_shouldShowSecondRow && _selectedDate != null) {
-        if (_selectedStatus == 'Amanat' && _timeController.text.trim().isNotEmpty) {
+        if (_selectedStatus == 'ClientStatusType.amanat.name' && _timeController.text.trim().isNotEmpty) {
           // Pentru amanat, foloseste ora introdusa manual
           final timeParts = _timeController.text.trim().split(':');
           if (timeParts.length == 2) {
@@ -373,7 +379,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
               int.parse(timeParts[1]),
             );
           }
-        } else if (_selectedStatus == 'Acceptat' && _selectedTimeSlot != null) {
+        } else if (_selectedStatus == 'ClientStatusType.finalizat.name' && _selectedTimeSlot != null) {
           // Pentru acceptat, foloseste ora selectata din dropdown
           final timeParts = _selectedTimeSlot!.split(':');
           if (timeParts.length == 2) {
@@ -388,8 +394,8 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         }
       }
 
-      // Daca statusul este "Acceptat", salveaza intalnirea in calendar
-      if (_selectedStatus == 'Acceptat' && finalDateTime != null) {
+      // Daca statusul este "ClientStatusType.finalizat.name", salveaza intalnirea in calendar
+      if (_selectedStatus == 'ClientStatusType.finalizat.name' && finalDateTime != null) {
         // Obtine numele consultantului curent
         final authService = AuthService();
         final consultantData = await authService.getCurrentConsultantData();
@@ -448,9 +454,9 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
         );
         debugPrint('✅ STATUS_POPUP: Client moved manually to preserve user input in additionalInfo');
       } else {
-        // Doar daca nu s-a creat intalnire (ex: Acceptat fara data programata), muta clientul manual
+        // Doar daca nu s-a creat intalnire (ex: ClientStatusType.finalizat.name fara data programata), muta clientul manual
         switch (_selectedStatus) {
-          case 'Acceptat':
+          case 'ClientStatusType.finalizat.name':
             await _clientService.moveClientToRecente(
               widget.client.phoneNumber,
               additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
@@ -458,7 +464,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
             );
             break;
             
-          case 'Amanat':
+          case 'ClientStatusType.amanat.name':
             if (finalDateTime != null) {
               await _clientService.moveClientToReveniri(
                 widget.client.phoneNumber,
@@ -468,7 +474,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
             }
             break;
             
-          case 'Refuzat':
+          case 'ClientStatusType.nuRaspunde.name':
             await _clientService.moveClientToRecenteRefuzat(
               widget.client.phoneNumber,
               additionalInfo: _statusController.text.isNotEmpty ? _statusController.text : null,
@@ -638,7 +644,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                             // Campul pentru data - folosind InputField3 cu iconita calendar
                             Expanded(
                               child: InputField3(
-                                title: _selectedStatus == 'Acceptat' ? 'Data intalnire' : 'Data amanare',
+                                title: _selectedStatus == 'ClientStatusType.finalizat.name' ? 'Data intalnire' : 'Data amanare',
                                 inputText: _selectedDate != null 
                                   ? DateFormat('dd/MM/yy').format(_selectedDate!)
                                   : '',
@@ -649,9 +655,9 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
                             
                             const SizedBox(width: 8),
                             
-                            // Campul pentru ora - diferit pentru Acceptat vs Amanat
+                            // Campul pentru ora - diferit pentru ClientStatusType.finalizat.name vs ClientStatusType.amanat.name
                             Expanded(
-                              child: _selectedStatus == 'Amanat'
+                              child: _selectedStatus == 'ClientStatusType.amanat.name'
                                   ? InputField1(
                                       title: 'Ora amanare',
                                       controller: _timeController,

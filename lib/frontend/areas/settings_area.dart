@@ -525,12 +525,12 @@ class _SettingsAreaState extends State<SettingsArea> {
             itemBuilder: (context, index) {
               final colorIndex = index + 1;
               final isSelected = _selectedColorIndex == colorIndex;
-              final color = AppTheme.getConsultantColor(colorIndex);
-              final strokeColor = AppTheme.getConsultantStrokeColor(colorIndex);
+              final color = AppTheme.getPrimaryColor(colorIndex);
+              final strokeColor = AppTheme.getSecondaryColor(colorIndex);
               final takenBy = _colorAvailability[colorIndex];
               final isTaken = takenBy != null;
-              final colorName = AppTheme.getConsultantColorName(colorIndex);
-              final colorDescription = AppTheme.getConsultantColorDescription(colorIndex);
+              final colorName = AppTheme.getColorName(colorIndex);
+              final colorDescription = AppTheme.getColorDescription(colorIndex);
 
               return Container(
                 width: double.infinity,
@@ -657,7 +657,7 @@ class _SettingsAreaState extends State<SettingsArea> {
 
           // Lista trade requests
           ..._receivedTradeRequests.map((tradeRequest) {
-            final colorName = AppTheme.getConsultantColorName(tradeRequest.requestedColorIndex);
+            final colorName = AppTheme.getColorName(tradeRequest.requestedColorIndex);
 
             return Container(
               margin: const EdgeInsets.only(bottom: AppTheme.smallGap),
@@ -676,7 +676,7 @@ class _SettingsAreaState extends State<SettingsArea> {
                         width: 20,
                         height: 20,
                         decoration: BoxDecoration(
-                          color: AppTheme.getConsultantColor(tradeRequest.requestedColorIndex),
+                          color: AppTheme.getPrimaryColor(tradeRequest.requestedColorIndex),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

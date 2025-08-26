@@ -141,6 +141,12 @@ class AppTheme extends ChangeNotifier {
   static const Color elementColor2 = Color(0xFF7D7B78);
   static const Color elementColor3 = Color(0xFF666666);
 
+  // Culori pentru statusuri
+  static const Color statusFinalizat = Color(0xFFC9EFC7);
+  static const Color statusProgramat = Color(0xFFC7E9EF);
+  static const Color statusAmanat = Color(0xFFEFE5C7);
+  static const Color statusNuRaspunde = Color(0xFFEFCDC7);
+
   // ======== UMBRELE ========
   // Umbra standard pentru elemente interactive
   static const List<BoxShadow> standardShadow = [
@@ -269,13 +275,13 @@ class AppTheme extends ChangeNotifier {
   static const Color calendarReservedStrokeTop = Color(0xFFA1B7CE); // A1B7CE
   static const Color calendarReservedStrokeBottom = Color(0xFF93ADC8); // 93ADC8
 
-  // ======== CONSULTANT COLORS ========
-  // Consultant color palette - 10 colors with fill and stroke variants
-  static const Color consultantColor1 = Color(0xFFEFE5C7);
-  static const Color consultantStrokeColor1 = Color(0xFFE8DAB0);
+  // ======== PRIMARY AND SECONDARY COLORS ========
+  // Primary and secondary color palette - 10 colors with fill and stroke variants
+  static const Color primaryColor1 = Color(0xFFEFE5C7);
+  static const Color secondaryColor1 = Color(0xFFE8DAB0);
 
-  // Consultant color names and descriptions
-  static const Map<int, Map<String, String>> consultantColorInfo = {
+  // Color names and descriptions
+  static const Map<int, Map<String, String>> colorInfo = {
     1: {'name': 'Auriu', 'description': 'Lumina calda'},
     2: {'name': 'Lime', 'description': 'Prospetime naturala'},
     3: {'name': 'Verde', 'description': 'Padurea tropicala'},
@@ -288,93 +294,157 @@ class AppTheme extends ChangeNotifier {
     10: {'name': 'Coral', 'description': 'Zorile diminetii'},
   };
 
-  static const Color consultantColor2 = Color(0xFFE1EFC7);
-  static const Color consultantStrokeColor2 = Color(0xFFD5E9AF);
+  static const Color primaryColor2 = Color(0xFFE1EFC7);
+  static const Color secondaryColor2 = Color(0xFFD5E9AF);
 
-  static const Color consultantColor3 = Color(0xFFC9EFC7);
-  static const Color consultantStrokeColor3 = Color(0xFFB2E9AF);
+  static const Color primaryColor3 = Color(0xFFC9EFC7);
+  static const Color secondaryColor3 = Color(0xFFB2E9AF);
 
-  static const Color consultantColor4 = Color(0xFFC7EFDD);
-  static const Color consultantStrokeColor4 = Color(0xFFAFE9CF);
+  static const Color primaryColor4 = Color(0xFFC7EFDD);
+  static const Color secondaryColor4 = Color(0xFFAFE9CF);
 
-  static const Color consultantColor5 = Color(0xFFC7E9EF);
-  static const Color consultantStrokeColor5 = Color(0xFFAFE0E9);
+  static const Color primaryColor5 = Color(0xFFC7E9EF);
+  static const Color secondaryColor5 = Color(0xFFAFE0E9);
 
-  static const Color consultantColor6 = Color(0xFFC7D1EF);
-  static const Color consultantStrokeColor6 = Color(0xFFAFBDE9);
+  static const Color primaryColor6 = Color(0xFFC7D1EF);
+  static const Color secondaryColor6 = Color(0xFFAFBDE9);
 
-  static const Color consultantColor7 = Color(0xFFD5C7EF);
-  static const Color consultantStrokeColor7 = Color(0xFFC3AFE9);
+  static const Color primaryColor7 = Color(0xFFD5C7EF);
+  static const Color secondaryColor7 = Color(0xFFC3AFE9);
 
-  static const Color consultantColor8 = Color(0xFFEDC7EF);
-  static const Color consultantStrokeColor8 = Color(0xFFE6AFE9);
+  static const Color primaryColor8 = Color(0xFFEDC7EF);
+  static const Color secondaryColor8 = Color(0xFFE6AFE9);
 
-  static const Color consultantColor9 = Color(0xFFEFC7D9);
-  static const Color consultantStrokeColor9 = Color(0xFFE9AFC9);
+  static const Color primaryColor9 = Color(0xFFEFC7D9);
+  static const Color secondaryColor9 = Color(0xFFE9AFC9);
 
-  static const Color consultantColor10 = Color(0xFFEFCDC7);
-  static const Color consultantStrokeColor10 = Color(0xFFE9B8AF);
+  static const Color primaryColor10 = Color(0xFFEFCDC7);
+  static const Color secondaryColor10 = Color(0xFFE9B8AF);
 
-  // Helper method to get consultant color by index (1-10)
-  static Color getConsultantColor(int index) {
+  // Helper method to get primary color by index (1-10)
+  static Color getPrimaryColor(int index) {
     // Log pentru monitorizarea accesului la culori
     if (index < 1 || index > 10) {
-      return consultantColor1; // fallback
+      return primaryColor1; // fallback
     }
     
     switch (index) {
-      case 1: return consultantColor1;
-      case 2: return consultantColor2;
-      case 3: return consultantColor3;
-      case 4: return consultantColor4;
-      case 5: return consultantColor5;
-      case 6: return consultantColor6;
-      case 7: return consultantColor7;
-      case 8: return consultantColor8;
-      case 9: return consultantColor9;
-      case 10: return consultantColor10;
-      default: return consultantColor1; // fallback
+      case 1: return primaryColor1;
+      case 2: return primaryColor2;
+      case 3: return primaryColor3;
+      case 4: return primaryColor4;
+      case 5: return primaryColor5;
+      case 6: return primaryColor6;
+      case 7: return primaryColor7;
+      case 8: return primaryColor8;
+      case 9: return primaryColor9;
+      case 10: return primaryColor10;
+      default: return primaryColor1; // fallback
     }
   }
 
-  // Helper method to get consultant stroke color by index (1-10)
-  static Color getConsultantStrokeColor(int index) {
+  // Helper method to get secondary color by index (1-10)
+  static Color getSecondaryColor(int index) {
     // Log pentru monitorizarea accesului la culori
     if (index < 1 || index > 10) {
-      return consultantStrokeColor1; // fallback
+      return secondaryColor1; // fallback
     }
 
     switch (index) {
-      case 1: return consultantStrokeColor1;
-      case 2: return consultantStrokeColor2;
-      case 3: return consultantStrokeColor3;
-      case 4: return consultantStrokeColor4;
-      case 5: return consultantStrokeColor5;
-      case 6: return consultantStrokeColor6;
-      case 7: return consultantStrokeColor7;
-      case 8: return consultantStrokeColor8;
-      case 9: return consultantStrokeColor9;
-      case 10: return consultantStrokeColor10;
-      default: return consultantStrokeColor1; // fallback
+      case 1: return secondaryColor1;
+      case 2: return secondaryColor2;
+      case 3: return secondaryColor3;
+      case 4: return secondaryColor4;
+      case 5: return secondaryColor5;
+      case 6: return secondaryColor6;
+      case 7: return secondaryColor7;
+      case 8: return secondaryColor8;
+      case 9: return secondaryColor9;
+      case 10: return secondaryColor10;
+      default: return secondaryColor1; // fallback
     }
   }
 
-  // Helper method to get consultant color name by index (1-10)
-  static String getConsultantColorName(int index) {
+  // Helper method to get color name by index (1-10)
+  static String getColorName(int index) {
     if (index < 1 || index > 10) {
-      return consultantColorInfo[1]!['name']!;
+      return colorInfo[1]!['name']!;
     }
 
-    return consultantColorInfo[index]!['name']!;
+    return colorInfo[index]!['name']!;
   }
 
-  // Helper method to get consultant color description by index (1-10)
-  static String getConsultantColorDescription(int index) {
+  // Helper method to get color description by index (1-10)
+  static String getColorDescription(int index) {
     if (index < 1 || index > 10) {
-      return consultantColorInfo[1]!['description']!;
+      return colorInfo[1]!['description']!;
     }
 
-    return consultantColorInfo[index]!['description']!;
+    return colorInfo[index]!['description']!;
   }
+
+  // ======== CONSULTANT COLORS (DEPRECATED - USE PRIMARY/SECONDARY COLORS INSTEAD) ========
+  // These are kept for backward compatibility but should be replaced with primary/secondary colors
+  @Deprecated('Use primaryColor1 instead')
+  static const Color consultantColor1 = primaryColor1;
+  @Deprecated('Use secondaryColor1 instead')
+  static const Color consultantStrokeColor1 = secondaryColor1;
+
+  @Deprecated('Use primaryColor2 instead')
+  static const Color consultantColor2 = primaryColor2;
+  @Deprecated('Use secondaryColor2 instead')
+  static const Color consultantStrokeColor2 = secondaryColor2;
+
+  @Deprecated('Use primaryColor3 instead')
+  static const Color consultantColor3 = primaryColor3;
+  @Deprecated('Use secondaryColor3 instead')
+  static const Color consultantStrokeColor3 = secondaryColor3;
+
+  @Deprecated('Use primaryColor4 instead')
+  static const Color consultantColor4 = primaryColor4;
+  @Deprecated('Use secondaryColor4 instead')
+  static const Color consultantStrokeColor4 = secondaryColor4;
+
+  @Deprecated('Use primaryColor5 instead')
+  static const Color consultantColor5 = primaryColor5;
+  @Deprecated('Use secondaryColor5 instead')
+  static const Color consultantStrokeColor5 = secondaryColor5;
+
+  @Deprecated('Use primaryColor6 instead')
+  static const Color consultantColor6 = primaryColor6;
+  @Deprecated('Use secondaryColor6 instead')
+  static const Color consultantStrokeColor6 = secondaryColor6;
+
+  @Deprecated('Use primaryColor7 instead')
+  static const Color consultantColor7 = primaryColor7;
+  @Deprecated('Use secondaryColor7 instead')
+  static const Color consultantStrokeColor7 = secondaryColor7;
+
+  @Deprecated('Use primaryColor8 instead')
+  static const Color consultantColor8 = primaryColor8;
+  @Deprecated('Use secondaryColor8 instead')
+  static const Color consultantStrokeColor8 = secondaryColor8;
+
+  @Deprecated('Use primaryColor9 instead')
+  static const Color consultantColor9 = primaryColor9;
+  @Deprecated('Use secondaryColor9 instead')
+  static const Color consultantStrokeColor9 = secondaryColor9;
+
+  @Deprecated('Use primaryColor10 instead')
+  static const Color consultantColor10 = primaryColor10;
+  @Deprecated('Use secondaryColor10 instead')
+  static const Color consultantStrokeColor10 = secondaryColor10;
+
+  @Deprecated('Use getPrimaryColor instead')
+  static Color getConsultantColor(int index) => getPrimaryColor(index);
+
+  @Deprecated('Use getSecondaryColor instead')
+  static Color getConsultantStrokeColor(int index) => getSecondaryColor(index);
+
+  @Deprecated('Use getColorName instead')
+  static String getConsultantColorName(int index) => getColorName(index);
+
+  @Deprecated('Use getColorDescription instead')
+  static String getConsultantColorDescription(int index) => getColorDescription(index);
 } 
 

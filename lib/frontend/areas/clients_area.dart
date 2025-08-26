@@ -28,7 +28,7 @@ class Client {
   final String? ficoScore;
   final bool hasCoDebitor;
   final bool hasReferent;
-  final ClientStatus status;
+  final ClientStatusType? status;
 
   Client({
     required this.name,
@@ -39,7 +39,7 @@ class Client {
     this.ficoScore,
     this.hasCoDebitor = false,
     this.hasReferent = false,
-    required this.status,
+    this.status,
   });
 
   /// Pentru compatibilitate cu codul existent
@@ -71,7 +71,7 @@ class Client {
       ficoScore: model.getFormValue<String>('ficoScore'),
       hasCoDebitor: model.getFormValue<bool>('hasCoDebitor') ?? false,
       hasReferent: model.getFormValue<bool>('hasReferent') ?? false,
-      status: model.status,
+      status: model.discussionStatus,
     );
   }
 }
@@ -81,6 +81,91 @@ enum ClientsAreaMode {
   table,           // Tabel principal cu clienti
   form,            // Formular complet pentru clientul selectat
   editClient,      // Editare/creare client
+}
+
+/// Custom switch button widget that maintains the current design
+class SwitchButton extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String trueLabel;
+  final String falseLabel;
+
+  const SwitchButton({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.trueLabel = 'Da',
+    this.falseLabel = 'Nu',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 24,
+      decoration: ShapeDecoration(
+        color: AppTheme.backgroundColor3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // True option (Da)
+          Expanded(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => onChanged(true),
+                child: Container(
+                  height: 24,
+                  decoration: ShapeDecoration(
+                    color: value ? AppTheme.backgroundColor1 : Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      trueLabel,
+                      style: GoogleFonts.outfit(
+                        color: value ? AppTheme.elementColor3 : AppTheme.elementColor1,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // False option (Nu)
+          Expanded(
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => onChanged(false),
+                child: Container(
+                  height: 24,
+                  decoration: ShapeDecoration(
+                    color: !value ? AppTheme.backgroundColor1 : Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      falseLabel,
+                      style: GoogleFonts.outfit(
+                        color: !value ? AppTheme.elementColor3 : AppTheme.elementColor1,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Main clients area widget that combines pane, popup and form functionality
@@ -138,7 +223,7 @@ class _ClientsAreaState extends State<ClientsArea> {
 
   // Filtering and sorting
   String _searchQuery = '';
-  ClientStatus? _statusFilter;
+  ClientStatusType? _statusFilter;
   final TextEditingController _searchController = TextEditingController();
 
   // Performance optimization
@@ -321,7 +406,7 @@ class _ClientsAreaState extends State<ClientsArea> {
       ficoScore: _ficoScoreController.text.trim().isEmpty ? null : _ficoScoreController.text.trim(),
       hasCoDebitor: _hasCoDebitor,
       hasReferent: _hasReferent,
-      status: _editingClient?.status ?? ClientStatus.normal,
+      status: _editingClient?.status ?? ClientStatusType.neapelat,
     );
 
     try {
@@ -337,7 +422,7 @@ class _ClientsAreaState extends State<ClientsArea> {
           phoneNumber1: client.phoneNumber1,
           phoneNumber2: client.phoneNumber2,
           coDebitorName: client.coDebitorName,
-          status: client.status,
+          discussionStatus: client.status,
         );
 
         // Update form data for additional fields
@@ -361,9 +446,10 @@ class _ClientsAreaState extends State<ClientsArea> {
           phoneNumber1: client.phoneNumber1,
           phoneNumber2: client.phoneNumber2,
           coDebitorName: client.coDebitorName,
-          status: client.status,
+          status: ClientStatus.normal, // Keep original ClientStatus for focus state
           category: ClientCategory.apeluri,
           formData: formData,
+          discussionStatus: client.status,
         );
 
         await _clientService.addClient(newClientModel);
@@ -395,7 +481,282 @@ class _ClientsAreaState extends State<ClientsArea> {
     }
   }
 
+  /// Update client's co-debitor status
+  Future<void> _updateClientCoDebitor(Client client, bool hasCoDebitor) async {
+    try {
+      // Find the client model in the service
+      final clientModel = _clientService.clients.where(
+        (model) => model.phoneNumber1 == client.phoneNumber1,
+      ).firstOrNull;
 
+      if (clientModel != null) {
+        // Update the form data for co-debitor
+        clientModel.updateFormData('hasCoDebitor', hasCoDebitor);
+
+        // Update the client in the service
+        await _clientService.updateClient(clientModel);
+
+        // Update local state to reflect changes
+        setState(() {
+          // Force refresh of filtered clients
+          _filteredClients = _getFilteredClients();
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ CLIENTS_AREA: Error updating client co-debitor: $e');
+    }
+  }
+
+  /// Update client's referent status
+  Future<void> _updateClientReferent(Client client, bool hasReferent) async {
+    try {
+      // Find the client model in the service
+      final clientModel = _clientService.clients.where(
+        (model) => model.phoneNumber1 == client.phoneNumber1,
+      ).firstOrNull;
+
+      if (clientModel != null) {
+        // Update the form data for referent
+        clientModel.updateFormData('hasReferent', hasReferent);
+
+        // Update the client in the service
+        await _clientService.updateClient(clientModel);
+
+        // Update local state to reflect changes
+        setState(() {
+          // Force refresh of filtered clients
+          _filteredClients = _getFilteredClients();
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ CLIENTS_AREA: Error updating client referent: $e');
+    }
+  }
+
+  /// Show delete client selection popup
+  Future<void> _showDeleteClientSelection() async {
+    if (_filteredClients.isEmpty) {
+      return;
+    }
+
+    final selectedClient = await showDialog<Client>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(16),
+            decoration: ShapeDecoration(
+              color: AppTheme.backgroundColor1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Selecteaza clientul de sters',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.elementColor2,
+                    fontSize: AppTheme.fontSizeLarge,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 300,
+                  child: ListView.builder(
+                    itemCount: _filteredClients.length,
+                    itemBuilder: (context, index) {
+                      final client = _filteredClients[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: InkWell(
+                          onTap: () => Navigator.of(context).pop(client),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: ShapeDecoration(
+                              color: AppTheme.backgroundColor2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  client.name,
+                                  style: GoogleFonts.outfit(
+                                    color: AppTheme.elementColor3,
+                                    fontSize: AppTheme.fontSizeMedium,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Telefon: ${client.phoneNumber1}',
+                                  style: GoogleFonts.outfit(
+                                    color: AppTheme.elementColor1,
+                                    fontSize: AppTheme.fontSizeSmall,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        'Anuleaza',
+                        style: GoogleFonts.outfit(
+                          color: AppTheme.elementColor1,
+                          fontSize: AppTheme.fontSizeMedium,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedClient != null) {
+      await _deleteClient(selectedClient);
+    }
+  }
+
+  /// Show status selection popup
+  Future<void> _showStatusSelectionPopup(Client client) async {
+    // Filtreaza opțiunile pentru a exclude statusul curent
+    final allStatusOptions = [
+      ClientStatusType.finalizat,
+      ClientStatusType.programat,
+      ClientStatusType.amanat,
+      ClientStatusType.nuRaspunde,
+      ClientStatusType.neapelat,
+    ];
+    
+    // Exclude statusul curent din opțiuni
+    final statusOptions = allStatusOptions.where((status) => status != client.status).toList();
+
+    final selectedStatus = await showDialog<ClientStatusType>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 300,
+            padding: const EdgeInsets.all(16),
+            decoration: ShapeDecoration(
+              color: AppTheme.backgroundColor1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Selecteaza status',
+                  style: GoogleFonts.outfit(
+                    color: AppTheme.elementColor2,
+                    fontSize: AppTheme.fontSizeLarge,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...statusOptions.map((status) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(status),
+                      child: Container(
+                        width: double.infinity,
+                        height: 32,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        decoration: ShapeDecoration(
+                          color: _getStatusColor(status),
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(
+                              width: 4,
+                              color: _getStatusStrokeColor(status),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _getStatusDisplayName(status),
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.outfit(
+                              color: AppTheme.elementColor3,
+                              fontSize: AppTheme.fontSizeMedium,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedStatus != null) {
+      await _updateClientStatus(client, selectedStatus);
+    }
+  }
+
+  /// Update client's status
+  Future<void> _updateClientStatus(Client client, ClientStatusType newStatus) async {
+    try {
+      // Find the client model in the service
+      final clientModel = _clientService.clients.where(
+        (model) => model.phoneNumber1 == client.phoneNumber1,
+      ).firstOrNull;
+
+      if (clientModel != null) {
+        // Update the discussion status using copyWith
+        final updatedClientModel = clientModel.copyWith(
+          discussionStatus: newStatus,
+          updatedAt: DateTime.now(),
+        );
+
+        // Update the client in the service
+        await _clientService.updateClient(updatedClientModel);
+
+        // Update local state to reflect changes
+        setState(() {
+          // Force refresh of filtered clients
+          _filteredClients = _getFilteredClients();
+        });
+
+        debugPrint('✅ CLIENTS_AREA: Client status updated successfully: ${client.name} - ${newStatus.name}');
+      }
+    } catch (e) {
+      debugPrint('❌ CLIENTS_AREA: Error updating client status: $e');
+    }
+  }
 
   /// Build main widget based on current mode
   @override
@@ -448,180 +809,178 @@ class _ClientsAreaState extends State<ClientsArea> {
   Widget _buildClientsOverlay() {
     return SizedBox(
       width: 432,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        spacing: 8,
-        children: [
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.all(8),
+        decoration: ShapeDecoration(
+          color: const Color(0xFFEBEAE9) /* light-blue-background2 */,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            // Search field
             Expanded(
-                child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.all(8),
-                    decoration: ShapeDecoration(
-                        color: const Color(0xFFEBEAE9) /* light-blue-background2 */,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                        ),
-                    ),
-                    child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: 8,
-                        children: [
-                            Expanded(
-                                child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    decoration: ShapeDecoration(
-                                        color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        shadows: [
-                                            BoxShadow(
-                                                color: Color(0x0C503E29),
-                                                blurRadius: 8,
-                                                offset: Offset(0, 4),
-                                                spreadRadius: 0,
-                                            )
-                                        ],
-                                    ),
-                                    child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                            SizedBox(
-                                                width: 280,
-                                                height: 32,
-                                                child: TextField(
-                                                  controller: _searchController,
-                                                  textAlign: TextAlign.start,
-                                                  decoration: InputDecoration(
-                                                    hintText: 'Cauta...',
-                                                    hintStyle: GoogleFonts.outfit(
-                                                      color: const Color(0xFF938F8A),
-                                                      fontSize: 15,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                    border: InputBorder.none,
-                                                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                                                    isDense: true,
-                                                  ),
-                                                  style: GoogleFonts.outfit(
-                                                    color: const Color(0xFF938F8A),
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                            ),
-                                            Container(
-                                                width: 24,
-                                                height: 24,
-                                                clipBehavior: Clip.antiAlias,
-                                                decoration: BoxDecoration(),
-                                                child: Stack(),
-                                            ),
-                                        ],
-                                    ),
-                                ),
-                            ),
-                        ],
-                    ),
-                ),
-            ),
-            Container(
-                height: 48,
-                padding: const EdgeInsets.all(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: ShapeDecoration(
-                    color: const Color(0xFFEBEAE9) /* light-blue-background2 */,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                    ),
+                  color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shadows: [
+                    BoxShadow(
+                      color: Color(0x0C503E29),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                      spreadRadius: 0,
+                    )
+                  ],
                 ),
                 child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    spacing: 8,
-                    children: [
-                        // Add client button
-                        GestureDetector(
-                          onTap: () => _switchToEditMode(),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: ShapeDecoration(
-                              color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              shadows: [
-                                BoxShadow(
-                                  color: Color(0x14503E29),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 2),
-                                  spreadRadius: 0,
-                                )
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              spacing: 10,
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  clipBehavior: Clip.antiAlias,
-                                  decoration: BoxDecoration(),
-                                  child: SvgPicture.asset(
-                                    'assets/plus_outlined.svg',
-                                    color: const Color(0xFF938F8A),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Image button (no functionality)
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: ShapeDecoration(
-                            color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            shadows: [
-                              BoxShadow(
-                                color: Color(0x14503E29),
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
-                                spreadRadius: 0,
-                              )
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            spacing: 10,
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                clipBehavior: Clip.antiAlias,
-                                decoration: BoxDecoration(),
-                                child: SvgPicture.asset(
-                                  'assets/image_outlined.svg',
-                                  color: const Color(0xFF938F8A),
-                                ),
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 32,
+                        child: Center(
+                          child: TextField(
+                            controller: _searchController,
+                            textAlign: TextAlign.start,
+                            decoration: InputDecoration(
+                              hintText: 'Cauta...',
+                              hintStyle: GoogleFonts.outfit(
+                                color: AppTheme.elementColor1,
+                                fontSize: 15,
+                                fontWeight: AppTheme.fontWeightMedium,
                               ),
-                            ],
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                              isDense: true,
+                            ),
+                            style: GoogleFonts.outfit(
+                              color: AppTheme.elementColor3,
+                              fontSize: 15,
+                              fontWeight: AppTheme.fontWeightMedium,
+                            ),
                           ),
                         ),
-                    ],
+                      ),
+                    ),
+                    Container(
+                      width: 24,
+                      height: 24,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(),
+                      child: SvgPicture.asset(
+                        'assets/search_outlined.svg',
+                        colorFilter: ColorFilter.mode(
+                          const Color(0xFF938F8A),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
             ),
-        ],
+
+            // Add client button
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => _switchToEditMode(),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: ShapeDecoration(
+                    color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shadows: [
+                      BoxShadow(
+                        color: Color(0x14503E29),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                        spreadRadius: 0,
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(),
+                        child: SvgPicture.asset(
+                          'assets/plus_outlined.svg',
+                          colorFilter: ColorFilter.mode(
+                            const Color(0xFF938F8A),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Delete client button
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => _showDeleteClientSelection(),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: ShapeDecoration(
+                    color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shadows: [
+                      BoxShadow(
+                        color: Color(0x14503E29),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                        spreadRadius: 0,
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(),
+                        child: SvgPicture.asset(
+                          'assets/delete_outlined.svg',
+                          colorFilter: ColorFilter.mode(
+                            const Color(0xFF938F8A),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -631,12 +990,56 @@ class _ClientsAreaState extends State<ClientsArea> {
 
 
   /// Get display name for status
-  String _getStatusDisplayName(ClientStatus status) {
+  String _getStatusDisplayName(ClientStatusType? status) {
+    if (status == null) return 'Neapelat';
+
     switch (status) {
-      case ClientStatus.focused:
-        return 'Focusat';
-      case ClientStatus.normal:
-        return 'Normal';
+      case ClientStatusType.finalizat:
+        return 'Finalizat';
+      case ClientStatusType.programat:
+        return 'Programat';
+      case ClientStatusType.amanat:
+        return 'Amanat';
+      case ClientStatusType.nuRaspunde:
+        return 'Nu răspunde';
+      case ClientStatusType.neapelat:
+        return 'Neapelat';
+    }
+  }
+
+  /// Get status color
+  Color _getStatusColor(ClientStatusType? status) {
+    if (status == null) return AppTheme.backgroundColor1; // Default for null status
+
+    switch (status) {
+      case ClientStatusType.finalizat:
+        return AppTheme.primaryColor3;
+      case ClientStatusType.programat:
+        return AppTheme.primaryColor5;
+      case ClientStatusType.amanat:
+        return AppTheme.primaryColor1;
+      case ClientStatusType.nuRaspunde:
+        return AppTheme.primaryColor9;
+      case ClientStatusType.neapelat:
+        return AppTheme.primaryColor7;
+    }
+  }
+
+  /// Get status stroke color (secondary color)
+  Color _getStatusStrokeColor(ClientStatusType? status) {
+    if (status == null) return AppTheme.backgroundColor2; // Default for null status
+
+    switch (status) {
+      case ClientStatusType.finalizat:
+        return AppTheme.secondaryColor3;
+      case ClientStatusType.programat:
+        return AppTheme.secondaryColor5;
+      case ClientStatusType.amanat:
+        return AppTheme.secondaryColor1;
+      case ClientStatusType.nuRaspunde:
+        return AppTheme.secondaryColor9;
+      case ClientStatusType.neapelat:
+        return AppTheme.secondaryColor7;
     }
   }
 
@@ -704,8 +1107,8 @@ class _ClientsAreaState extends State<ClientsArea> {
   Widget _buildTableHeaderRow() {
     return Container(
       width: double.infinity,
-      height: 48,
-      padding: const EdgeInsets.all(8),
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -735,16 +1138,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                Container(
-                  width: 24,
-                  height: 24,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(),
-                  child: SvgPicture.asset(
-                    'assets/caret_outlined.svg',
-                    colorFilter: ColorFilter.mode(
-                      const Color(0xFF938F8A),
-                      BlendMode.srcIn,
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(),
+                    child: SvgPicture.asset(
+                      'assets/caret_outlined.svg',
+                      colorFilter: ColorFilter.mode(
+                        const Color(0xFF938F8A),
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
                 ),
@@ -770,16 +1176,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Container(
-                    width: 24,
-                    height: 24,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(),
-                    child: SvgPicture.asset(
-                      'assets/caret_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        const Color(0xFF938F8A),
-                        BlendMode.srcIn,
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(),
+                      child: SvgPicture.asset(
+                        'assets/caret_outlined.svg',
+                        colorFilter: ColorFilter.mode(
+                          const Color(0xFF938F8A),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ),
@@ -850,16 +1259,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Container(
-                    width: 24,
-                    height: 24,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(),
-                    child: SvgPicture.asset(
-                      'assets/caret_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        const Color(0xFF938F8A),
-                        BlendMode.srcIn,
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(),
+                      child: SvgPicture.asset(
+                        'assets/caret_outlined.svg',
+                        colorFilter: ColorFilter.mode(
+                          const Color(0xFF938F8A),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ),
@@ -886,16 +1298,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Container(
-                    width: 24,
-                    height: 24,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(),
-                    child: SvgPicture.asset(
-                      'assets/caret_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        const Color(0xFF938F8A),
-                        BlendMode.srcIn,
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(),
+                      child: SvgPicture.asset(
+                        'assets/caret_outlined.svg',
+                        colorFilter: ColorFilter.mode(
+                          const Color(0xFF938F8A),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ),
@@ -966,16 +1381,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Container(
-                    width: 24,
-                    height: 24,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(),
-                    child: SvgPicture.asset(
-                      'assets/caret_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        const Color(0xFF938F8A),
-                        BlendMode.srcIn,
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(),
+                      child: SvgPicture.asset(
+                        'assets/caret_outlined.svg',
+                        colorFilter: ColorFilter.mode(
+                          const Color(0xFF938F8A),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ),
@@ -1216,65 +1634,14 @@ class _ClientsAreaState extends State<ClientsArea> {
           Expanded(
             child: Container(
               height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.all(4),
               decoration: ShapeDecoration(
                 color: AppTheme.backgroundColor3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: ShapeDecoration(
-                        color: client.hasCoDebitor ? AppTheme.elementColor2 : AppTheme.backgroundColor2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Da',
-                            style: GoogleFonts.outfit(
-                              color: client.hasCoDebitor ? AppTheme.elementColor3 : AppTheme.elementColor1,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: ShapeDecoration(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Nu',
-                            style: GoogleFonts.outfit(
-                              color: !client.hasCoDebitor ? AppTheme.elementColor2 : AppTheme.elementColor1,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              child: SwitchButton(
+                value: client.hasCoDebitor,
+                onChanged: (value) => _updateClientCoDebitor(client, value),
               ),
             ),
           ),
@@ -1283,110 +1650,53 @@ class _ClientsAreaState extends State<ClientsArea> {
           Expanded(
             child: Container(
               height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.all(4),
               decoration: ShapeDecoration(
                 color: AppTheme.backgroundColor3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: ShapeDecoration(
-                        color: client.hasReferent ? AppTheme.elementColor2 : AppTheme.backgroundColor2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Da',
-                            style: GoogleFonts.outfit(
-                              color: client.hasReferent ? AppTheme.elementColor3 : AppTheme.elementColor1,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: ShapeDecoration(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Nu',
-                            style: GoogleFonts.outfit(
-                              color: !client.hasReferent ? AppTheme.elementColor2 : AppTheme.elementColor1,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              child: SwitchButton(
+                value: client.hasReferent,
+                onChanged: (value) => _updateClientReferent(client, value),
               ),
             ),
           ),
 
           // Status
-          Expanded(
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: ShapeDecoration(
-                color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                spacing: 4,
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: ShapeDecoration(
-                        color: _getStatusColor(client.status),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          GestureDetector(
+            onTap: () => _showStatusSelectionPopup(client),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 156, maxWidth: 200),
+                child: Container(
+                  height: 32,
+                  decoration: ShapeDecoration(
+                    color: _getStatusColor(client.status),
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        width: 4,
+                        color: _getStatusStrokeColor(client.status),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            _getStatusDisplayName(client.status),
-                            style: GoogleFonts.outfit(
-                              color: AppTheme.elementColor3,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        _getStatusDisplayName(client.status),
+                        style: GoogleFonts.outfit(
+                          color: AppTheme.elementColor3,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -1401,9 +1711,11 @@ class _ClientsAreaState extends State<ClientsArea> {
               spacing: 8,
               children: [
                 // Form button - deschide formularul complet
-                GestureDetector(
-                  onTap: () => _switchToFormMode(client),
-                  child: SizedBox(
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => _switchToFormMode(client),
+                    child: SizedBox(
                     width: 24,
                     height: 24,
                     child: SvgPicture.asset(
@@ -1414,10 +1726,13 @@ class _ClientsAreaState extends State<ClientsArea> {
                       ),
                     ),
                   ),
+                  ),
                 ),
 
                 // Edit button
-                GestureDetector(
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
                   onTap: () => _switchToEditMode(client),
                   child: SizedBox(
                     width: 24,
@@ -1430,10 +1745,13 @@ class _ClientsAreaState extends State<ClientsArea> {
                       ),
                     ),
                   ),
+                  ),
                 ),
 
                 // Delete button
-                GestureDetector(
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
                   onTap: () => _deleteClient(client),
                   child: SizedBox(
                     width: 24,
@@ -1446,6 +1764,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                       ),
                     ),
                   ),
+                  ),
                 ),
               ],
             ),
@@ -1455,15 +1774,7 @@ class _ClientsAreaState extends State<ClientsArea> {
     );
   }
 
-  /// Get status color
-  Color _getStatusColor(ClientStatus status) {
-    switch (status) {
-      case ClientStatus.focused:
-        return AppTheme.elementColor2; // Primary color for focused
-      case ClientStatus.normal:
-        return AppTheme.backgroundColor2; // Default gray
-    }
-  }
+
 
   /// Build edit mode
   Widget _buildEditMode() {
@@ -1748,7 +2059,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                   title: 'Credite',
                   altText: 'Vezi codebitor',
                   onAltTextTap: () {
-                    // TODO: Toggle between client and coborrower credits
+                    // Funcționalitate de toggle între client și codebitor - în dezvoltare
                   },
                 ),
                 const SizedBox(height: 8),
@@ -1784,7 +2095,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                   title: 'Venituri',
                   altText: 'Vezi codebitor',
                   onAltTextTap: () {
-                    // TODO: Toggle between client and coborrower income
+                    // Funcționalitate de toggle între client și codebitor - în dezvoltare
                   },
                 ),
                 const SizedBox(height: 8),
@@ -1802,7 +2113,6 @@ class _ClientsAreaState extends State<ClientsArea> {
 
   /// Build credits forms for form mode
   Widget _buildCreditsFormsForFormMode() {
-    // TODO: Implement complete credits forms similar to FormArea
     return Center(
       child: Text(
         'Formulare credite - în dezvoltare',
@@ -1816,7 +2126,6 @@ class _ClientsAreaState extends State<ClientsArea> {
 
   /// Build income forms for form mode
   Widget _buildIncomeFormsForFormMode() {
-    // TODO: Implement complete income forms similar to FormArea
     return Center(
       child: Text(
         'Formulare venituri - în dezvoltare',

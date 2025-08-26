@@ -20,7 +20,7 @@ class ClientModel {
   final ClientStatus status;
   final ClientCategory category;
   final Map<String, dynamic> formData;
-  final String? discussionStatus;
+  final ClientStatusType? discussionStatus;
   final DateTime? scheduledDateTime;
   final String? additionalInfo;
   final bool isCompleted;
@@ -57,7 +57,7 @@ class ClientModel {
     ClientStatus? status,
     ClientCategory? category,
     Map<String, dynamic>? formData,
-    String? discussionStatus,
+    ClientStatusType? discussionStatus,
     DateTime? scheduledDateTime,
     String? additionalInfo,
     bool? isCompleted,
@@ -104,7 +104,7 @@ class ClientModel {
       'category': category.index,
       // Faza 5: nu mai scriem formData in documentul clientului (pastram campul in model doar pentru UI cache)
       // 'formData': formData,
-      'discussionStatus': discussionStatus,
+      'discussionStatus': discussionStatus?.name,
       'scheduledDateTime': scheduledDateTime?.millisecondsSinceEpoch,
       'additionalInfo': additionalInfo,
       'isCompleted': isCompleted,
@@ -127,7 +127,12 @@ class ClientModel {
       category: ClientCategory.values[map['category'] is String ? _parseCategory(map['category']) : (map['category'] ?? 0)],
       // Faza 5: citirea formData din doc nu mai este sursa de adevar; pastram fallback gol
       formData: Map<String, dynamic>.from(map['formData'] ?? {}),
-      discussionStatus: map['discussionStatus'],
+      discussionStatus: map['discussionStatus'] != null
+          ? ClientStatusType.values.firstWhere(
+              (status) => status.name == map['discussionStatus'],
+              orElse: () => ClientStatusType.neapelat,
+            )
+          : null,
       scheduledDateTime: map['scheduledDateTime'] != null 
           ? DateTime.fromMillisecondsSinceEpoch(map['scheduledDateTime'])
           : null,
@@ -172,10 +177,22 @@ enum ClientStatus {
   focused,  // DarkItem7
 }
 
+/// Statusurile unui client pentru discutii si urmarire
+enum ClientStatusType {
+  finalizat,     // Client finalizat cu succes
+  programat,     // Client programat pentru o întâlnire
+  amanat,        // Client amânat pentru mai târziu
+  nuRaspunde,    // Client care nu răspunde la apeluri
+  neapelat,      // Client care nu a fost încă apelat
+}
+
 /// Categoria unui client (in ce sectiune se afla)
+/// DEPRECATED: This enum will be removed in future versions as ClientCategory
+/// was designed for clients_pane interface which has been changed.
+/// It is kept temporarily for compatibility.
 enum ClientCategory {
   apeluri,   // Sectiunea "Clienti"
-  reveniri,  // Sectiunea "Reveniri" 
+  reveniri,  // Sectiunea "Reveniri"
   recente,   // Sectiunea "Recente"
 }
 
@@ -270,7 +287,7 @@ class ClientsService {
     ClientStatus? status,
     ClientCategory? category,
     Map<String, dynamic>? formData,
-    String? discussionStatus,
+    ClientStatusType? discussionStatus,
     DateTime? scheduledDateTime,
     String? additionalInfo,
     bool? isCompleted,
@@ -284,7 +301,7 @@ class ClientsService {
       if (status != null) updates['status'] = _statusToString(status);
       if (category != null) updates['category'] = _categoryToString(category);
       // formData normalizat: nu mai scriem in doc-ul clientului
-      if (discussionStatus != null) updates['discussionStatus'] = discussionStatus;
+      if (discussionStatus != null) updates['discussionStatus'] = discussionStatus.name;
       if (scheduledDateTime != null) updates['scheduledDateTime'] = scheduledDateTime.millisecondsSinceEpoch;
       if (additionalInfo != null) updates['additionalInfo'] = additionalInfo;
       if (isCompleted != null) updates['isCompleted'] = isCompleted;
@@ -822,7 +839,7 @@ enum ClientActivityType {
 /// Status unificat client
 class UnifiedClientStatus {
   final UnifiedClientCategory category;
-  final ClientDiscussionStatus? discussionStatus;
+  final ClientStatusType? discussionStatus;
   final DateTime? scheduledDateTime;
   final String? additionalInfo;
   final bool isFocused;
@@ -854,8 +871,9 @@ class UnifiedClientStatus {
         orElse: () => UnifiedClientCategory.clienti,
       ),
       discussionStatus: map['discussionStatus'] != null
-          ? ClientDiscussionStatus.values.firstWhere(
+          ? ClientStatusType.values.firstWhere(
               (status) => status.name == map['discussionStatus'],
+              orElse: () => ClientStatusType.neapelat,
             )
           : null,
       scheduledDateTime: map['scheduledDateTime'] != null 
@@ -876,12 +894,7 @@ enum UnifiedClientCategory {
   recente,
 }
 
-/// Status discutie
-enum ClientDiscussionStatus {
-  acceptat,
-  amanat,
-  refuzat,
-}
+// ClientDiscussionStatus has been replaced by ClientStatusType - this enum has been completely removed
 
 /// Metadate client
 class ClientMetadata {
@@ -2154,7 +2167,7 @@ class ClientUIService extends ChangeNotifier {
       final updatedClient = client.copyWith(
         category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
-        discussionStatus: 'Acceptat',
+        discussionStatus: ClientStatusType.finalizat,
         scheduledDateTime: scheduledDateTime, // IMPORTANT: Salveaza data si ora intalnirii
         additionalInfo: additionalInfo,
         isCompleted: true, // Marcheaza ca si contorizat
@@ -2214,7 +2227,7 @@ class ClientUIService extends ChangeNotifier {
       final updatedClient = client.copyWith(
         category: ClientCategory.reveniri,
         status: ClientStatus.normal, // Nu mai este focusat
-        discussionStatus: 'Amanat',
+        discussionStatus: ClientStatusType.amanat,
         scheduledDateTime: scheduledDateTime,
         additionalInfo: additionalInfo,
         isCompleted: true, // Marcheaza ca si contorizat
@@ -2273,7 +2286,7 @@ class ClientUIService extends ChangeNotifier {
       final updatedClient = client.copyWith(
         category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
-        discussionStatus: 'Refuzat',
+        discussionStatus: ClientStatusType.nuRaspunde,
         additionalInfo: additionalInfo,
         isCompleted: true, // Marcheaza ca si contorizat
       );

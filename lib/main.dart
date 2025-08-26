@@ -663,12 +663,12 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
 
                         // Determina culoarea de fundal
                         final backgroundColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
-                            ? AppTheme.getConsultantColor(colorIndex)
+                            ? AppTheme.getPrimaryColor(colorIndex)
                             : AppTheme.backgroundColor2;
 
                         // Determina culoarea pentru border
                         final borderColor = colorIndex != null && colorIndex >= 1 && colorIndex <= 10
-                            ? AppTheme.getConsultantStrokeColor(colorIndex)
+                            ? AppTheme.getSecondaryColor(colorIndex)
                             : AppTheme.backgroundColor3;
 
                         return Container(

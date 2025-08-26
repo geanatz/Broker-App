@@ -131,6 +131,7 @@ flutter:
     - assets/settings_solid.svg
     - assets/checkbox_outlined.svg
     - assets/box_outlined.svg
+    - assets/search_outlined.svg
     - assets/trade_outlined.svg
 
 # Launcher icons configuration (do not run generation here; user executes the command)

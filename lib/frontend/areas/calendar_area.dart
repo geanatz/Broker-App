@@ -1279,8 +1279,8 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
         if (consultantColors.containsKey(consultantName)) {
           final colorIndex = consultantColors[consultantName];
           if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
-            preCalculatedColor = AppTheme.getConsultantColor(colorIndex);
-            preCalculatedStrokeColor = AppTheme.getConsultantStrokeColor(colorIndex);
+            preCalculatedColor = AppTheme.getPrimaryColor(colorIndex);
+            preCalculatedStrokeColor = AppTheme.getSecondaryColor(colorIndex);
           }
         } else {
           // Fallback: Verificăm în cache-ul global al consultantService
@@ -1288,8 +1288,8 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
           if (globalColors.containsKey(consultantName)) {
             final colorIndex = globalColors[consultantName];
             if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
-              preCalculatedColor = AppTheme.getConsultantColor(colorIndex);
-              preCalculatedStrokeColor = AppTheme.getConsultantStrokeColor(colorIndex);
+              preCalculatedColor = AppTheme.getPrimaryColor(colorIndex);
+              preCalculatedStrokeColor = AppTheme.getSecondaryColor(colorIndex);
             }
           }
         }
@@ -1766,7 +1766,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
 
     // Log pentru monitorizarea accesului la culori - REDUCED for performance
     if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
-      return AppTheme.getConsultantColor(colorIndex);
+      return AppTheme.getPrimaryColor(colorIndex);
     }
 
     // Fallback la culoarea implicita
@@ -1795,7 +1795,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
     final colorIndex = widget.consultantColors[consultantName];
 
     if (colorIndex != null && colorIndex >= 1 && colorIndex <= 10) {
-      return AppTheme.getConsultantStrokeColor(colorIndex);
+      return AppTheme.getSecondaryColor(colorIndex);
     }
 
     // Fallback la culoarea implicita

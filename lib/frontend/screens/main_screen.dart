@@ -846,7 +846,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Obtine culoarea pentru butonul consultantului
   Color _getConsultantButtonColor() {
     if (_consultantColorIndex != null && _consultantColorIndex! >= 1 && _consultantColorIndex! <= 10) {
-      return AppTheme.getConsultantColor(_consultantColorIndex!);
+      return AppTheme.getPrimaryColor(_consultantColorIndex!);
     }
     return AppTheme.backgroundColor2; // Fallback la culoarea implicita
   }
@@ -854,7 +854,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Obtine culoarea pentru border-ul butonului consultantului
   Color _getConsultantButtonBorderColor() {
     if (_consultantColorIndex != null && _consultantColorIndex! >= 1 && _consultantColorIndex! <= 10) {
-      return AppTheme.getConsultantStrokeColor(_consultantColorIndex!);
+      return AppTheme.getSecondaryColor(_consultantColorIndex!);
     }
     return AppTheme.backgroundColor3; // Fallback la culoarea implicita
   }
