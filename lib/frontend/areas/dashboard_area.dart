@@ -530,7 +530,7 @@ class _DashboardAreaState extends State<DashboardArea> {
     return Container(
       width: double.infinity, // Fill pe orizontala
       padding: const EdgeInsets.all(8),
-      decoration: AppTheme.widgetDecoration,
+      decoration: AppTheme.widgetDecorationWithoutShadow,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,

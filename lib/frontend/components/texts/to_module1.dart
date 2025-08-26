@@ -2,6 +2,7 @@
 // lib/components/rows/fixed_title_expanded_alt_text.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A row component displaying a fixed-width title on the left, a small space,
 /// and an alternative text on the right that expands to fill available space.
@@ -62,16 +63,16 @@ class FixedTitleExpandedAltText extends StatelessWidget {
     final double effectiveSpacing = spacing ?? 4.0; // AppTheme.tinyGap
 
     // Default styles based on snippet
-    final TextStyle defaultTitleStyle = TextStyle(
+    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
       fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
+
       fontWeight: FontWeight.w500, // AppTheme.fontWeightMedium
     );
-    final TextStyle defaultAltTextStyle = TextStyle(
+    final TextStyle defaultAltTextStyle = GoogleFonts.outfit(
       color: effectiveAltTextColor,
       fontSize: 17, // AppTheme.fontSizeMedium
-      fontFamily: 'Outfit', // AppTheme.fontFamilyPrimary
+
       fontWeight: FontWeight.w600, // AppTheme.fontWeightSemiBold
     );
 

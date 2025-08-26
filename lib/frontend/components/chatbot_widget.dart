@@ -331,10 +331,6 @@ class _ChatbotWidgetState extends State<ChatbotWidget> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: AppTheme.backgroundColor2,
-                        width: 2,
-                      ),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(4),
                         topRight: Radius.circular(16),

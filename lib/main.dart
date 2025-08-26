@@ -673,7 +673,7 @@ class _TitleBarDragRegionState extends State<_TitleBarDragRegion> {
 
                         return Container(
                           height: 24,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
                           decoration: BoxDecoration(
                             color: backgroundColor,
                             borderRadius: BorderRadius.circular(8),

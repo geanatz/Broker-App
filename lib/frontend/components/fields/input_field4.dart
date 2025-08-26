@@ -2,6 +2,7 @@
 // lib/components/fields/input_field4.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A display component for an input field with title, subtitle, text value,
 /// and an optional trailing icon.
@@ -97,17 +98,17 @@ class InputField4 extends StatelessWidget {
     final double effectiveIconSize = iconSize ?? 24.0; // AppTheme.iconSizeSmall
 
     // Text Styles
-    final TextStyle titleStyle = TextStyle(
+    final TextStyle titleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, fontWeight: FontWeight.w600, fontFamily: 'Outfit',
+      fontSize: 17, fontWeight: FontWeight.w600,
     );
-    final TextStyle subtitleStyle = TextStyle(
+    final TextStyle subtitleStyle = GoogleFonts.outfit(
       color: effectiveSubtitleColor,
-      fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'Outfit',
+      fontSize: 15, fontWeight: FontWeight.w500,
     );
-    final TextStyle inputTextStyle = TextStyle(
+    final TextStyle inputTextStyle = GoogleFonts.outfit(
       color: effectiveInputTextColor,
-      fontSize: 17, fontWeight: FontWeight.w500, fontFamily: 'Outfit',
+      fontSize: 17, fontWeight: FontWeight.w500,
     );
 
     // Paddings

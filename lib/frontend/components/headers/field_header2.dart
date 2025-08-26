@@ -2,6 +2,7 @@
 // lib/components/headers/field_header2.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A header component with a main title on the left and an alternative
 /// text (e.g., a hint or secondary label) on the right.
@@ -64,13 +65,13 @@ class FieldHeader2 extends StatelessWidget {
     final double effectiveHeight = height ?? 21.0; // AppTheme.fieldLabelHeight
     final double effectiveSpacing = spacing ?? 8.0; // AppTheme.smallGap
 
-    final TextStyle defaultTitleStyle = TextStyle(
+    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 17, fontWeight: FontWeight.w600, fontFamily: 'Outfit', // AppTheme.labelLargeStyle
+      fontSize: 17, fontWeight: FontWeight.w600, 
     );
-    final TextStyle defaultAltTextStyle = TextStyle(
+    final TextStyle defaultAltTextStyle = GoogleFonts.outfit(
       color: effectiveAltTextColor,
-      fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'Outfit', // AppTheme.labelSmallStyle
+      fontSize: 15, fontWeight: FontWeight.w500, // AppTheme.labelSmallStyle
     );
 
     final TextStyle finalTitleStyle = titleStyle ?? defaultTitleStyle;

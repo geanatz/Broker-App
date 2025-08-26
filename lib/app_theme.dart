@@ -52,8 +52,8 @@ class AppTheme extends ChangeNotifier {
   static const FontWeight fontWeightSemiBold = FontWeight.w600;
   static const FontWeight fontWeightBold = FontWeight.w700;
 
-  // Font family
-  static const String fontFamily = 'Outfit';
+  // Font family - folosim GoogleFonts.outfit() direct
+  // static const String fontFamily = 'Outfit';
 
   /// Safe wrapper pentru GoogleFonts.outfit cu fallback
   static TextStyle safeOutfit({
@@ -102,7 +102,7 @@ class AppTheme extends ChangeNotifier {
     } catch (e) {
       // Fallback to default TextStyle if GoogleFonts fails
       return TextStyle(
-        fontFamily: fontFamily,
+        fontFamily: 'Outfit', // Fallback font family
         color: color,
         backgroundColor: backgroundColor,
         fontSize: fontSize,
@@ -226,6 +226,12 @@ class AppTheme extends ChangeNotifier {
     boxShadow: standardShadow,
   );
 
+  // Decoratiune pentru widget-uri fara umbra
+  static BoxDecoration get widgetDecorationWithoutShadow => BoxDecoration(
+    color: backgroundColor1,
+    borderRadius: BorderRadius.circular(borderRadiusMedium),
+  );
+
   // Decoratiune pentru popup-uri
   static BoxDecoration get popupDecoration => BoxDecoration(
     color: backgroundColor1,
@@ -268,6 +274,20 @@ class AppTheme extends ChangeNotifier {
   static const Color consultantColor1 = Color(0xFFEFE5C7);
   static const Color consultantStrokeColor1 = Color(0xFFE8DAB0);
 
+  // Consultant color names and descriptions
+  static const Map<int, Map<String, String>> consultantColorInfo = {
+    1: {'name': 'Auriu', 'description': 'Lumina calda'},
+    2: {'name': 'Lime', 'description': 'Prospetime naturala'},
+    3: {'name': 'Verde', 'description': 'Padurea tropicala'},
+    4: {'name': 'Turcoaz', 'description': 'Ocean linistit'},
+    5: {'name': 'Albastru', 'description': 'Cer senin'},
+    6: {'name': 'Indigo', 'description': 'Noapte profunda'},
+    7: {'name': 'Violet', 'description': 'Lavanda de vara'},
+    8: {'name': 'Magenta', 'description': 'Floare exotica'},
+    9: {'name': 'Roz', 'description': 'Apus romantic'},
+    10: {'name': 'Coral', 'description': 'Zorile diminetii'},
+  };
+
   static const Color consultantColor2 = Color(0xFFE1EFC7);
   static const Color consultantStrokeColor2 = Color(0xFFD5E9AF);
 
@@ -299,11 +319,8 @@ class AppTheme extends ChangeNotifier {
   static Color getConsultantColor(int index) {
     // Log pentru monitorizarea accesului la culori
     if (index < 1 || index > 10) {
-      debugPrint('🎨 THEME_COLORS: getConsultantColor - invalid index: $index, using fallback color1');
       return consultantColor1; // fallback
     }
-    
-    debugPrint('🎨 THEME_COLORS: getConsultantColor - accessing color index: $index');
     
     switch (index) {
       case 1: return consultantColor1;
@@ -324,12 +341,9 @@ class AppTheme extends ChangeNotifier {
   static Color getConsultantStrokeColor(int index) {
     // Log pentru monitorizarea accesului la culori
     if (index < 1 || index > 10) {
-      debugPrint('🎨 THEME_COLORS: getConsultantStrokeColor - invalid index: $index, using fallback strokeColor1');
       return consultantStrokeColor1; // fallback
     }
-    
-    debugPrint('🎨 THEME_COLORS: getConsultantStrokeColor - accessing stroke color index: $index');
-    
+
     switch (index) {
       case 1: return consultantStrokeColor1;
       case 2: return consultantStrokeColor2;
@@ -343,6 +357,24 @@ class AppTheme extends ChangeNotifier {
       case 10: return consultantStrokeColor10;
       default: return consultantStrokeColor1; // fallback
     }
+  }
+
+  // Helper method to get consultant color name by index (1-10)
+  static String getConsultantColorName(int index) {
+    if (index < 1 || index > 10) {
+      return consultantColorInfo[1]!['name']!;
+    }
+
+    return consultantColorInfo[index]!['name']!;
+  }
+
+  // Helper method to get consultant color description by index (1-10)
+  static String getConsultantColorDescription(int index) {
+    if (index < 1 || index > 10) {
+      return consultantColorInfo[1]!['description']!;
+    }
+
+    return consultantColorInfo[index]!['description']!;
   }
 } 
 

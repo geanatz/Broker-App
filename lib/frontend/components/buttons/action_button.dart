@@ -1,5 +1,6 @@
 ﻿import 'package:mat_finance/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A button component for actions, supporting both text and icon buttons.
 ///
@@ -98,10 +99,9 @@ class ActionButton extends StatelessWidget {
           ? const EdgeInsets.symmetric(horizontal: AppTheme.mediumGap, vertical: 12) 
           : const EdgeInsets.all(12));
 
-    final TextStyle defaultTextStyle = TextStyle(
+    final TextStyle defaultTextStyle = GoogleFonts.outfit(
       color: effectiveTextColor,
       fontSize: AppTheme.fontSizeMedium,
-      fontFamily: AppTheme.fontFamily,
       fontWeight: FontWeight.w500,
     );
 

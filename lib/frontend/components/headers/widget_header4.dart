@@ -2,6 +2,7 @@
 // lib/components/headers/widget_header4.dart
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// A widget header displaying a title and a description stacked vertically.
 /// Both texts are individually centered within their rows, and the rows
@@ -62,13 +63,13 @@ class WidgetHeader4 extends StatelessWidget {
     final CrossAxisAlignment effectiveColumnAlignment = columnAlignment ?? CrossAxisAlignment.start;
 
 
-    final TextStyle defaultTitleStyle = TextStyle(
+    final TextStyle defaultTitleStyle = GoogleFonts.outfit(
       color: effectiveTitleColor,
-      fontSize: 19, fontWeight: FontWeight.w500, fontFamily: AppTheme.fontFamily,
+      fontSize: 19, fontWeight: FontWeight.w500,
     );
-    final TextStyle defaultDescriptionStyle = TextStyle(
+    final TextStyle defaultDescriptionStyle = GoogleFonts.outfit(
       color: effectiveDescriptionColor,
-      fontSize: 17, fontWeight: FontWeight.w500, fontFamily: AppTheme.fontFamily,
+      fontSize: 17, fontWeight: FontWeight.w500,
     );
 
     final TextStyle finalTitleStyle = titleStyle ?? defaultTitleStyle;

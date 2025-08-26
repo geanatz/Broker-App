@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 
 import 'package:mat_finance/frontend/popups/meeting_popup.dart';
@@ -214,7 +215,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     _isLoadingConsultantColors = true;
 
     final stopwatch = Stopwatch()..start();
-    debugPrint('🎨 CALENDAR_COLORS: _loadConsultantColors - LAZY loading consultant colors');
+    // Loading consultant colors
 
     try {
       final consultantColors = await _consultantService.getTeamConsultantColorsByName();
@@ -223,8 +224,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
         _consultantColorsCache = consultantColors;
 
         stopwatch.stop();
-        debugPrint('🎨 CALENDAR_COLORS: _loadConsultantColors - LAZY completed successfully, timeMs=${stopwatch.elapsedMilliseconds}, colorsLoaded=${consultantColors.length}, cacheSize=${_consultantColorsCache.length}');
-        debugPrint('🎨 CALENDAR_COLORS: _loadConsultantColors - LAZY cache content: $_consultantColorsCache');
+        // Consultant colors loaded successfully
 
         // Then trigger UI update with coalesced setState
         _coalescedSetState(() {
@@ -263,31 +263,31 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
       final colorsSw = Stopwatch()..start();
       await _loadConsultantColors();
       colorsSw.stop();
-      debugPrint('🎨 CALENDAR_OPTIMIZATION: Consultant colors loaded in ${colorsSw.elapsedMilliseconds}ms');
+      // Consultant colors loaded
 
       // Step 2: Load meetings data instantly from cache
       final meetingsSw = Stopwatch()..start();
       _loadFromCacheInstantly(); // Now synchronous - no await needed
       meetingsSw.stop();
-      debugPrint('📅 CALENDAR_INSTANT: Meetings data loaded in ${meetingsSw.elapsedMilliseconds}ms');
+      // Meetings data loaded
 
       // Step 3: Pre-cache ALL relevant weeks for instant navigation
       final cacheSw = Stopwatch()..start();
       _preCacheAllRelevantWeeks();
       cacheSw.stop();
-      debugPrint('💾 CALENDAR_INSTANT: All weeks pre-cached in ${cacheSw.elapsedMilliseconds}ms');
+      // All weeks pre-cached
 
       // Step 4: Ultra pre-cache for maximum instant access
       final ultraCacheSw = Stopwatch()..start();
       _ultraPreCache();
       ultraCacheSw.stop();
-      debugPrint('🔮 CALENDAR_INSTANT: Ultra pre-cache completed in ${ultraCacheSw.elapsedMilliseconds}ms');
+      // Ultra pre-cache completed
 
       // Step 5: Pre-build all week widgets for instant rendering
       final widgetSw = Stopwatch()..start();
       _preBuildAllWeekWidgets();
       widgetSw.stop();
-      debugPrint('🎯 CALENDAR_INSTANT: All widgets pre-built in ${widgetSw.elapsedMilliseconds}ms');
+      // All widgets pre-built
 
       // Step 6: Start cache monitoring for auto-recovery
       _startCacheMonitoring();
@@ -296,7 +296,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
       _checkAndFixDataBeforeBuild();
 
       totalSw.stop();
-      debugPrint('✅ CALENDAR_OPTIMIZATION: Pre-load completed in ${totalSw.elapsedMilliseconds}ms - Calendar ready for instant access!');
+      debugPrint('✅ CALENDAR_OPTIMIZATION: Pre-load completed - Calendar ready for instant access!');
 
     } catch (e) {
       totalSw.stop();
@@ -313,7 +313,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     if (_isMonitoringCache) return;
 
     _isMonitoringCache = true;
-    debugPrint('🔍 CALENDAR_MONITOR: Starting cache monitoring for auto-recovery');
+    // Starting cache monitoring
 
     // Monitor every 2 seconds
     _cacheMonitorTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
@@ -420,7 +420,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
   /// ULTRA AGGRESSIVE: Pre-cache ALL weeks for ZERO loading
   void _preCacheAllRelevantWeeks() {
     final weeks = [-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6]; // Maximum range
-    debugPrint('🚀 CALENDAR_INSTANT: Pre-caching ${weeks.length} weeks for instant access');
+    // Pre-caching weeks for instant access
 
     final originalOffset = _currentWeekOffset;
     final startTime = DateTime.now();
@@ -450,18 +450,18 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     }
 
     _currentWeekOffset = originalOffset;
-    debugPrint('🔮 CALENDAR_INSTANT: Future weeks pre-cached for maximum instant access');
+    // Future weeks pre-cached
   }
 
   /// Pre-build all week widgets for instant rendering
   void _preBuildAllWeekWidgets() {
     final weeks = [-2, -1, 0, 1, 2]; // Core weeks that user is likely to visit
-    debugPrint('🎯 CALENDAR_OPTIMIZATION: Pre-building widgets for ${weeks.length} weeks');
+    // Pre-building widgets for weeks
 
     for (final weekOffset in weeks) {
       if (!_weekWidgetCache.containsKey(weekOffset)) {
         _getCachedWeekWidget(weekOffset);
-        debugPrint('🎯 CALENDAR_OPTIMIZATION: Widget for week $weekOffset pre-built');
+        // Widget pre-built for week $weekOffset
       }
     }
   }
@@ -512,7 +512,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
       }
 
       totalSw.stop();
-      debugPrint('⚡ CALENDAR_METRICS: loadFromCacheInstantly INSTANT totalMs=${totalSw.elapsedMilliseconds} allMeetings=${cachedMeetings.length} weekMeetings=${_cachedMeetings.length}');
+      // Cache loaded successfully
 
       // BACKGROUND: Trigger refresh only if needed - fire and forget
       if (cachedMeetings.isEmpty) {
@@ -1100,102 +1100,113 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     return Container(
       width: double.infinity,
       height: double.infinity,
-      padding: const EdgeInsets.only(top: AppTheme.largeGap),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         gradient: AppTheme.areaColor,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Stack(
         children: [
-          // Header cu zilele saptamanii - se reconstruiește când se schimbă week offset-ul
-          ValueListenableBuilder<int>(
-            valueListenable: _currentWeekOffsetNotifier,
-            builder: (context, weekOffset, child) {
-              return _buildCalendarHeader();
-            },
-          ),
-          // Gap dintre header si sloturi
-          const SizedBox(height: 16),
-          // Calendar grid cu sloturile si tranzitii
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.largeGap),
-              decoration: ShapeDecoration(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                ),
+          // Content-ul principal (calendar)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Header cu zilele saptamanii - se reconstruiește când se schimbă week offset-ul
+              ValueListenableBuilder<int>(
+                valueListenable: _currentWeekOffsetNotifier,
+                builder: (context, weekOffset, child) {
+                  return _buildCalendarHeader();
+                },
               ),
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-                child: SingleChildScrollView(
-                      child: Container(
-                        width: double.infinity,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(),
-                  child: RepaintBoundary(
-                    child: ValueListenableBuilder<bool>(
-                      valueListenable: _showTransition,
-                      builder: (context, showTransition, child) {
-                        // Calculate required height for calendar
-                        final calendarHeight = CalendarService.workingHours.length * 80.0;
+              // Gap dintre header si sloturi
+              const SizedBox(height: 16),
+              // Calendar grid cu sloturile si tranzitii
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.largeGap),
+                  decoration: ShapeDecoration(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                    ),
+                  ),
+                  child: ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+                    child: SingleChildScrollView(
+                          child: Container(
+                            width: double.infinity,
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(),
+                            padding: const EdgeInsets.only(bottom: 64),
+                      child: RepaintBoundary(
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: _showTransition,
+                          builder: (context, showTransition, child) {
+                            // Calculate required height for calendar
+                            final calendarHeight = CalendarService.workingHours.length * 80.0;
 
-                        if (showTransition) {
-                          // During transition, show both old and new slots with proper sizing
-                          return RepaintBoundary(
-                            child: SizedBox(
-                              height: calendarHeight,
-                              child: Stack(
-                                children: [
-                                  // New slots coming in (bottom layer) - optimized with RepaintBoundary
-                                  RepaintBoundary(
-                                    child: SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: _currentAnimationDirection.value == AnimationDirection.previous
-                                            ? const Offset(-1.0, 0.0)  // Enter from left
-                                            : const Offset(1.0, 0.0),   // Enter from right
-                                        end: Offset.zero,
-                                      ).animate(CurvedAnimation(
-                                        parent: _slideAnimationController,
-                                        curve: Curves.fastOutSlowIn,
-                                      )),
-                                      child: _getCachedWeekWidget(_currentWeekOffset),
-                                    ),
+                            if (showTransition) {
+                              // During transition, show both old and new slots with proper sizing
+                              return RepaintBoundary(
+                                child: SizedBox(
+                                  height: calendarHeight,
+                                  child: Stack(
+                                    children: [
+                                      // New slots coming in (bottom layer) - optimized with RepaintBoundary
+                                      RepaintBoundary(
+                                        child: SlideTransition(
+                                          position: Tween<Offset>(
+                                            begin: _currentAnimationDirection.value == AnimationDirection.previous
+                                                ? const Offset(-1.0, 0.0)  // Enter from left
+                                                : const Offset(1.0, 0.0),   // Enter from right
+                                            end: Offset.zero,
+                                          ).animate(CurvedAnimation(
+                                            parent: _slideAnimationController,
+                                            curve: Curves.fastOutSlowIn,
+                                          )),
+                                          child: _getCachedWeekWidget(_currentWeekOffset),
+                                        ),
+                                      ),
+                                      // Old slots going out (top layer) - optimized with RepaintBoundary
+                                      RepaintBoundary(
+                                        child: SlideTransition(
+                                          position: _slideAnimation,
+                                          child: _getCachedWeekWidget(_previousWeekOffset),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  // Old slots going out (top layer) - optimized with RepaintBoundary
-                                  RepaintBoundary(
-                                    child: SlideTransition(
-                                      position: _slideAnimation,
-                                      child: _getCachedWeekWidget(_previousWeekOffset),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        } else {
-                          // Normal state - show only current week slots with caching
-                          return _getCachedWeekWidget(_currentWeekOffset);
-                        }
-                      },
+                                ),
+                              );
+                            } else {
+                              // Normal state - show only current week slots with caching
+                              return _getCachedWeekWidget(_currentWeekOffset);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
                     ),
                   ),
                 ),
-                ),
+              ),
+            ],
+          ),
+          // Calendar switch ca overlay
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: ValueListenableBuilder<int>(
+                valueListenable: _currentWeekOffsetNotifier,
+                builder: (context, weekOffset, child) {
+                  return _buildWeekSwitch();
+                },
               ),
             ),
-          ),
-          // Gap intre calendar si calendar switch
-          const SizedBox(height: AppTheme.mediumGap),
-          // Switch săptămâni pentru calendar - se reconstruiește când se schimbă week offset-ul
-          ValueListenableBuilder<int>(
-            valueListenable: _currentWeekOffsetNotifier,
-            builder: (context, weekOffset, child) {
-              return _buildWeekSwitch();
-            },
           ),
         ],
       ),
@@ -1356,26 +1367,15 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     final String weekRange = _calendarService.getDateInterval(_currentWeekOffset);
 
     return Container(
-      width: double.infinity,
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Container(
-            height: 40,
-            padding: const EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 0),
-            decoration: ShapeDecoration(
-              color: const Color(0xFFE6E5E4), /* light-blue-background1 */
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-            ),
+      width: 432,
+      height: 48,
+      padding: const EdgeInsets.all(8),
+      decoration: ShapeDecoration(
+        color: AppTheme.backgroundColor2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1390,7 +1390,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                       width: 128,
                       height: 32,
                       decoration: ShapeDecoration(
-                        color: const Color(0xFFF0EFEF), /* light-blue-background3 */
+                        color: AppTheme.backgroundColor3,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         shadows: [
                           BoxShadow(
@@ -1406,10 +1406,14 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.chevron_left,
-                            color: AppTheme.elementColor3,
-                            size: 24,
+                          SvgPicture.asset(
+                            'assets/left_outlined.svg',
+                            colorFilter: ColorFilter.mode(
+                              AppTheme.elementColor3,
+                              BlendMode.srcIn,
+                            ),
+                            width: 24,
+                            height: 24,
                           ),
                         ],
                       ),
@@ -1419,10 +1423,9 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                 const SizedBox(width: 8),
                 // Text cu intervalul săptămânii
                 Container(
-                  width: 152,
+                  width: 144,
                   height: 32,
                   alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     weekRange,
                     textAlign: TextAlign.center,
@@ -1443,7 +1446,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                       width: 128,
                       height: 32,
                       decoration: ShapeDecoration(
-                        color: const Color(0xFFF0EFEF), /* light-blue-background3 */
+                        color: AppTheme.backgroundColor3,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         shadows: [
                           BoxShadow(
@@ -1459,10 +1462,14 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.chevron_right,
-                            color: AppTheme.elementColor3,
-                            size: 24,
+                          SvgPicture.asset(
+                            'assets/right_outlined.svg',
+                            colorFilter: ColorFilter.mode(
+                              AppTheme.elementColor3,
+                              BlendMode.srcIn,
+                            ),
+                            width: 24,
+                            height: 24,
                           ),
                         ],
                       ),
@@ -1471,10 +1478,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          );
   }
 
 
@@ -1813,7 +1817,9 @@ class _HoverableSlotState extends State<_HoverableSlot> {
           height: 64,
           padding: widget.isMeeting ? const EdgeInsets.symmetric(horizontal: 24, vertical: 0) : null,
           decoration: ShapeDecoration(
-            color: widget.isMeeting ? _getConsultantColor() : const Color(0xFFE5E1DC),
+            color: widget.isMeeting
+                ? _getConsultantColor()
+                : (_isHovered ? AppTheme.backgroundColor1 : const Color(0xFFE5E1DC)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: widget.isMeeting ? BorderSide(

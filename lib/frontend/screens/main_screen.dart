@@ -9,9 +9,9 @@ import 'package:mat_finance/frontend/areas/form_area.dart';
 import 'package:mat_finance/frontend/areas/calendar_area.dart';
 import 'package:mat_finance/frontend/areas/settings_area.dart';
 import 'package:mat_finance/frontend/panes/calculator_pane.dart';
-import 'package:mat_finance/frontend/panes/clients_pane.dart';
+
 import 'package:mat_finance/frontend/panes/matcher_pane.dart';
-import 'package:mat_finance/frontend/popups/clients_popup.dart';
+import 'package:mat_finance/frontend/areas/clients_area.dart';
 import 'package:mat_finance/backend/services/clients_service.dart';
 import 'package:mat_finance/backend/services/splash_service.dart';
 import 'package:mat_finance/backend/services/update_service.dart';
@@ -19,7 +19,7 @@ import 'package:mat_finance/backend/services/app_logger.dart';
 import 'package:mat_finance/backend/services/consultant_service.dart';
 import 'package:mat_finance/frontend/components/update_notification.dart';
 import 'package:mat_finance/frontend/components/dialog_utils.dart';
-import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 // import removed
 import 'package:google_fonts/google_fonts.dart';
@@ -27,7 +27,6 @@ import 'package:mat_finance/frontend/screens/mobile_clients_screen.dart';
 import 'dart:io';
 import 'package:package_info_plus/package_info_plus.dart';
 // window_manager no longer used here; handlers moved to main.dart
-import 'dart:ui';
 // import 'package:flutter/scheduler.dart'; // Removed as no longer needed
 import 'dart:async';
 import 'package:mat_finance/main.dart';
@@ -92,10 +91,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
 
   
-  // State pentru popup-uri
-  List<Client> _popupClients = [];
-  Client? _selectedPopupClient;
-  bool _isShowingClientListPopup = false;
+  // State pentru popup-uri - removed, integrated into ClientsArea
   
   // Transition profiling state - removed as no longer needed
 
@@ -137,9 +133,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     
     // Restore navigation state from SharedPreferences
     _restoreNavigationState();
-    
-    // Sincronizeaza popup-ul cu datele din service
-    _syncPopupWithService();
     
     // Asculta schimbarile din ClientService
     _clientService.addListener(_onClientServiceChanged);
@@ -337,53 +330,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
-          _syncPopupWithService();
+          // ClientsArea handles its own state updates
         });
-        
-        // If popup is open, refresh it to show temporary client
-        if (_isShowingClientListPopup) {
-          _syncPopupWithService();
-        }
       }
     });
   }
   
-  /// Sincronizeaza datele popup-ului cu cele din ClientService
-  void _syncPopupWithService() {
-    // Include regular clients
-    _popupClients = _clientService.clients.map((clientModel) {
-      return Client(
-        name: clientModel.name,
-        phoneNumber1: clientModel.phoneNumber1,
-        phoneNumber2: clientModel.phoneNumber2,
-        coDebitorName: clientModel.coDebitorName,
-      );
-    }).toList();
-    
-    // Include temporary client if it exists
-    if (_clientService.temporaryClient != null) {
-      final tempClient = _clientService.temporaryClient!;
-      final tempClientForPopup = Client(
-        name: tempClient.name,
-        phoneNumber1: tempClient.phoneNumber1,
-        phoneNumber2: tempClient.phoneNumber2,
-        coDebitorName: tempClient.coDebitorName,
-      );
-      _popupClients.add(tempClientForPopup);
-      
-      // Focus the temporary client in the popup
-      _selectedPopupClient = tempClientForPopup;
-    } else {
-      // Pastreaza selectia curenta daca exista
-      if (_selectedPopupClient != null) {
-        _selectedPopupClient = _popupClients.firstWhere(
-          (client) => client.name == _selectedPopupClient!.name && 
-                     client.phoneNumber1 == _selectedPopupClient!.phoneNumber1,
-          orElse: () => _popupClients.isNotEmpty ? _popupClients.first : _selectedPopupClient!,
-        );
-      }
-    }
-  }
+
   
 
   
@@ -461,9 +414,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   };
   
   Map<PaneType, Widget> get _paneWidgets => {
-    PaneType.clients: ClientsPane(
-      onClientsPopupRequested: _handleClientsPopupRequested,
-      onSwitchToFormArea: _handleSwitchToFormArea,
+    PaneType.clients: ClientsArea(
+      onAddClient: _handleClientsPopupRequested,
+      onEditClient: _handleEditClient,
+      onSaveClient: _handleSaveClient,
+      onDeleteClient: _handleDeleteClient,
     ),
     PaneType.calculator: CalculatorPane(),
     PaneType.matches: MatcherPane(
@@ -525,8 +480,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         // Area (stanga) + Pane (dreapta) pentru dashboard, settings si calendar
                         if (_currentArea == AreaType.dashboard || _currentArea == AreaType.settings || _currentArea == AreaType.calendar)
                           Expanded(child: RepaintBoundary(child: _areaWidgets[_currentArea]!)),
-                        // Row pentru area + pane pentru celelalte tipuri
-                        if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar)
+                        // Special case: ClientsArea replaces FormArea completely when clients pane is selected
+                        if (_currentArea == AreaType.form && _currentPane == PaneType.clients)
+                          Expanded(child: RepaintBoundary(child: _paneWidgets[PaneType.clients]!)),
+                        // Row pentru area + pane pentru celelalte tipuri (except clients pane)
+                        if (_currentArea != AreaType.dashboard && _currentArea != AreaType.settings && _currentArea != AreaType.calendar && !(_currentArea == AreaType.form && _currentPane == PaneType.clients))
                           Expanded(
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -550,9 +508,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               ),
             ),
             
-            // Client Popups overlay
-            if (_isShowingClientListPopup)
-              _buildDualPopupOverlay(),
+            // Client Popups overlay - removed, integrated into ClientsArea
           ],
         ),
       ),
@@ -564,54 +520,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   
 
 
-  /// Builds dual popup overlay with both popups side by side
-  Widget _buildDualPopupOverlay() {
-    return GestureDetector(
-      onTap: _closeAllPopups, // Inchide popup-ul la click pe background
-      child: Stack(
-        children: [
-          // Blur + dim uniform sub popup (consistent cu showBlurredDialog)
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(color: Colors.black.withValues(alpha: 0.1)),
-            ),
-          ),
-          // Continutul popup-ului
-          Positioned.fill(
-            child: Center(
-              child: GestureDetector(
-                onTap: () {}, // Previne inchiderea cand se face click pe popup
-                behavior: HitTestBehavior.opaque,
-                child: Material(
-                  color: Colors.transparent,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Client List Popup (intotdeauna vizibil cand e deschis)
-                      if (_isShowingClientListPopup)
-                        ClientsPopup(
-                          clients: _popupClients,
-                          selectedClient: _selectedPopupClient,
-                          onClientSelected: _handleClientSelected,
-                          onEditClient: _handleEditClient,
-                          onSaveClient: _handleSaveClient,
-                          onDeleteClient: (client) => _handleDeleteClient(client),
-                          onDeleteOcrClients: _handleDeleteOcrClients,
-                        ),
-                      
-                      // Form-ul de editare e acum integrat in ClientsPopup
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
   
   void _handleAreaChanged(AreaType area) {
     // Area change
@@ -673,62 +582,26 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
   
-  /// Handles the clients popup request from sidebar
+  /// Handles the clients popup request from sidebar - now used for add client in ClientsArea
   void _handleClientsPopupRequested() {
-    setState(() {
-      _syncPopupWithService();
-      _isShowingClientListPopup = true;
-      // Nu selecta niciun client implicit la deschiderea popup-ului
-      _selectedPopupClient = null;
-    });
-    DialogOverlayController.instance.push();
+    // ClientsArea handles the add client functionality internally
+    // This callback is now used to trigger add client mode in ClientsArea
   }
 
-  /// Handles switching to form area when a client is selected
-  void _handleSwitchToFormArea() {
 
-    // Use the SidebarService to change area to keep states in sync
-    _sidebarService.changeArea(AreaType.form);
-  }
 
 
   
-  /// Closes all popups
-  void _closeAllPopups() {
-    setState(() {
-      _isShowingClientListPopup = false;
-    });
-    DialogOverlayController.instance.pop();
-  }
+
   
-  /// Handles client selection in the popup
-  void _handleClientSelected(Client client) {
-    setState(() {
-      _selectedPopupClient = client;
-    });
-    
-    // Nu mai focusam clientul in ClientService pentru a nu afecta clientsPane
-    // Focus-ul din clientsPane ramane independent de selectia din popup
-  }
-  
-  /// Handles edit client (double-tap on client) - now handled internally by ClientsPopup
+  /// Handles edit client - now handled internally by ClientsArea
   void _handleEditClient(Client client) {
-    // The new ClientsPopup handles this internally
-    // Just focus the selected client
-    setState(() {
-      _selectedPopupClient = client;
-    });
+    // ClientsArea handles this internally
   }
   
 
 
-  /// Handles delete OCR image completely (removes item from gallery)
-  void _handleDeleteOcrClients() {
-    // Aceasta metoda este apelata cand se sterge complet imaginea OCR selectata
-    // Logica efectiva de stergere se face in ClientsPopup prin _deleteOcrClientsFromSelectedImage()
-    // Aici putem adauga logging sau alte actiuni suplimentare daca e necesar
-    // OCR image completely removed from gallery
-  }
+
   
   /// Handles saving a client (create or edit)
   void _handleSaveClient(Client client) async {
@@ -739,9 +612,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       final success = await clientService.finalizeTemporaryClient();
       if (success) {
         // Don't close the popup - let user continue working
-        // _closeAllPopups(); // Removed automatic popup closing
-        
-        // silent
+        // ClientsArea handles popup closing internally
       }
       return;
     }
@@ -792,8 +663,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     if (clientService.temporaryClient != null) {
       // This is a temporary client being cancelled
       clientService.cancelTemporaryClient();
-      // Close the popup after cancellation
-      _closeAllPopups();
+      // Close the popup after cancellation - handled by ClientsArea
       return;
     }
     // Find the client in the list
@@ -802,12 +672,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
     // Delete the client using phoneNumber1 as ID
     await _clientService.removeClient(clientModel.phoneNumber1);
-    // Update selection after deletion
-    setState(() {
-      _selectedPopupClient = null;
-    });
-    // Popup-ul ramane deschis pentru a permite stergerea mai multor clienti
-    // _closeAllPopups(); // Removed automatic popup closing
+    // Update selection after deletion - handled by ClientsArea
+    // ClientsArea remains open for multiple deletions
   }
 
   // =================== SIDEBAR METHODS ===================
@@ -1013,12 +879,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               ),
             ),
             child: Center(
-              child: Text(
-                _getConsultantInitial(),
-                style: GoogleFonts.outfit(
-                  fontSize: 19.0, // 19px font size
-                  fontWeight: FontWeight.bold, // Bold weight
-                  color: AppTheme.elementColor1,
+              child: Transform.translate(
+                offset: const Offset(0, 1),
+                child: Text(
+                  _getConsultantInitial(),
+                  style: GoogleFonts.notoSansThai(
+                    fontSize: 19.0, // 19px font size
+                    fontWeight: FontWeight.bold, // Bold weight
+                    color: AppTheme.elementColor3,
+                  ),
                 ),
               ),
             ),

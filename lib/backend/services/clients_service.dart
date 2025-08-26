@@ -1345,7 +1345,7 @@ class ClientUIService extends ChangeNotifier {
         return;
       }
       
-      debugPrint('🎯 CLIENT_SERVICE: Client found at index: $clientIndex');
+              // Client found at index $clientIndex
       
       // FIX: Clear all existing focus states first
       _clearAllFocusStates();
@@ -1359,8 +1359,7 @@ class ClientUIService extends ChangeNotifier {
       _focusHistory[phoneNumber] = DateTime.now();
       _validFocusStates.add(phoneNumber);
       
-      debugPrint('✅ CLIENT_SERVICE: Client focused successfully: $phoneNumber');
-      debugPrint('✅ CLIENT_SERVICE: New focused client: ${_focusedClient?.name}');
+      debugPrint('✅ CLIENT_SERVICE: Client focused: ${_focusedClient?.name}');
       
       // FIX: Strategic background form data loading with error handling
       if (_focusedClient != null && !_focusedClient!.id.startsWith('temp_')) {
@@ -1387,14 +1386,13 @@ class ClientUIService extends ChangeNotifier {
       if (_clients[i].status == ClientStatus.focused) {
         _clients[i] = _clients[i].copyWith(status: ClientStatus.normal);
         _validFocusStates.remove(_clients[i].phoneNumber);
-        debugPrint('🎯 CLIENT_SERVICE: Cleared focus from: ${_clients[i].name}');
+        // Cleared focus from client
       }
     }
     _focusedClient = null;
     _currentlyFocusedClientId = null;
     
     // All focus states cleared
-    debugPrint('🎯 CLIENT_SERVICE: All focus states cleared');
   }
 
   /// FIX: Validate focus state consistency
@@ -1494,8 +1492,7 @@ class ClientUIService extends ChangeNotifier {
   
   /// Creeaza un client temporar pentru popup-ul de clienti
   void createTemporaryClient() {
-    debugPrint('🔵 TEMP_CLIENT: createTemporaryClient called');
-    debugPrint('🔵 TEMP_CLIENT: Current focused client before creation: ${_focusedClient?.name ?? "null"}');
+    debugPrint('🔵 TEMP_CLIENT: Creating temporary client');
     
     // Genereaza un ID temporar unic
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
@@ -1522,8 +1519,7 @@ class ClientUIService extends ChangeNotifier {
     // Focuseaza clientul temporar
     _focusedClient = tempClient;
     
-    debugPrint('🔵 TEMP_CLIENT: Temporary client focused and added to list');
-    debugPrint('🔵 TEMP_CLIENT: Total clients in list: ${_clients.length}');
+    debugPrint('🔵 TEMP_CLIENT: Temporary client created successfully');
     
     // Notifica listenerii
     notifyListeners();
@@ -1737,8 +1733,7 @@ class ClientUIService extends ChangeNotifier {
       debugPrint('🔵 TEMP_CLIENT: No temporary client found in list');
       return;
     }
-    debugPrint('🔵 TEMP_CLIENT: updateTemporaryClient called with: name="$name" phone1="$phoneNumber" phone2="$phoneNumber2" codebitor="$coDebitorName"');
-    debugPrint('🔵 TEMP_CLIENT: Before update: name="${_clients[tempIndex].name}" phone1="${_clients[tempIndex].phoneNumber1}" phone2="${_clients[tempIndex].phoneNumber2}" codebitor="${_clients[tempIndex].coDebitorName}"');
+    debugPrint('🔵 TEMP_CLIENT: Updating temporary client');
     // Only update name if user actually typed something (not empty)
     final newName = name?.trim();
     final shouldUpdateName = newName != null && newName.isNotEmpty;
@@ -1749,11 +1744,10 @@ class ClientUIService extends ChangeNotifier {
       phoneNumber2: phoneNumber2?.trim().isEmpty == true ? null : phoneNumber2?.trim(),
       coDebitorName: coDebitorName?.trim().isEmpty == true ? null : coDebitorName?.trim(),
     );
-    debugPrint('🔵 TEMP_CLIENT: After update: name="${_clients[tempIndex].name}" phone1="${_clients[tempIndex].phoneNumber1}" phone2="${_clients[tempIndex].phoneNumber2}" codebitor="${_clients[tempIndex].coDebitorName}"');
+    debugPrint('🔵 TEMP_CLIENT: Temporary client updated successfully');
     // Update focused client reference
     _focusedClient = _clients[tempIndex];
     notifyListeners();
-    debugPrint('🔵 TEMP_CLIENT: notifyListeners() called after updateTemporaryClient');
   }
   
   /// Finalizeaza clientul temporar si il salveaza in Firebase
@@ -2430,8 +2424,7 @@ class ClientUIService extends ChangeNotifier {
   @override
   void notifyListeners() {
     // Emitting listeners update
-    debugPrint('🎯 CLIENT_SERVICE: notifyListeners called');
-    debugPrint('🎯 CLIENT_SERVICE: Current focused client: ${_focusedClient?.name ?? "null"}');
+    // Client state updated
     super.notifyListeners();
   }
 
