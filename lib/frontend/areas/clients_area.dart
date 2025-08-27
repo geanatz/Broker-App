@@ -104,7 +104,7 @@ class SwitchButton extends StatelessWidget {
       height: 24,
       decoration: ShapeDecoration(
         color: AppTheme.backgroundColor3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -579,57 +579,9 @@ class _ClientsAreaState extends State<ClientsArea> {
     return _sortAscending ? AppTheme.elementColor2 : AppTheme.elementColor3;
   }
 
-  /// Update client's co-debitor status
-  Future<void> _updateClientCoDebitor(Client client, bool hasCoDebitor) async {
-    try {
-      // Find the client model in the service
-      final clientModel = _clientService.clients.where(
-        (model) => model.phoneNumber1 == client.phoneNumber1,
-      ).firstOrNull;
 
-      if (clientModel != null) {
-        // Update the form data for co-debitor
-        clientModel.updateFormData('hasCoDebitor', hasCoDebitor);
 
-        // Update the client in the service
-        await _clientService.updateClient(clientModel);
 
-        // Update local state to reflect changes
-        setState(() {
-          // Force refresh of filtered clients
-          _filteredClients = _getFilteredAndSortedClients();
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ CLIENTS_AREA: Error updating client co-debitor: $e');
-    }
-  }
-
-  /// Update client's referent status
-  Future<void> _updateClientReferent(Client client, bool hasReferent) async {
-    try {
-      // Find the client model in the service
-      final clientModel = _clientService.clients.where(
-        (model) => model.phoneNumber1 == client.phoneNumber1,
-      ).firstOrNull;
-
-      if (clientModel != null) {
-        // Update the form data for referent
-        clientModel.updateFormData('hasReferent', hasReferent);
-
-        // Update the client in the service
-        await _clientService.updateClient(clientModel);
-
-        // Update local state to reflect changes
-        setState(() {
-          // Force refresh of filtered clients
-          _filteredClients = _getFilteredAndSortedClients();
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ CLIENTS_AREA: Error updating client referent: $e');
-    }
-  }
 
   /// Show delete client selection popup
   Future<void> _showDeleteClientSelection() async {
@@ -679,7 +631,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                             decoration: ShapeDecoration(
                               color: AppTheme.backgroundColor2,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(20),
                               ),
                             ),
                             child: Column(
@@ -1185,12 +1137,12 @@ class _ClientsAreaState extends State<ClientsArea> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
-        spacing: 8,
+        spacing: 4,
         children: [
           // Nr.
           SizedBox(
             width: 56,
-            height: 32,
+            height: double.infinity,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1230,50 +1182,54 @@ class _ClientsAreaState extends State<ClientsArea> {
 
           // Nume
           Expanded(
-            child: SizedBox(
-              height: 32,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                spacing: 8,
-                children: [
-                  Text(
-                    'Nume',
-                    style: GoogleFonts.outfit(
-                      color: const Color(0xFF938F8A),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 184),
+              child: SizedBox(
+                height: double.infinity,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 8,
+                  children: [
+                    Text(
+                      'Nume',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFF938F8A),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => _sortClients('nume'),
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(),
-                        child: SvgPicture.asset(
-                          'assets/caret_outlined.svg',
-                          colorFilter: ColorFilter.mode(
-                            _getSortIndicatorColor('nume'),
-                            BlendMode.srcIn,
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => _sortClients('nume'),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(),
+                          child: SvgPicture.asset(
+                            'assets/caret_outlined.svg',
+                            colorFilter: ColorFilter.mode(
+                              _getSortIndicatorColor('nume'),
+                              BlendMode.srcIn,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
 
           // Numar telefon
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
             child: SizedBox(
-              height: 32,
+              height: double.infinity,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1293,9 +1249,10 @@ class _ClientsAreaState extends State<ClientsArea> {
           ),
 
           // Numar telefon 2
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
             child: SizedBox(
-              height: 32,
+              height: double.infinity,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1315,9 +1272,10 @@ class _ClientsAreaState extends State<ClientsArea> {
           ),
 
           // Varsta
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 104, maxWidth: 144),
             child: SizedBox(
-              height: 32,
+              height: double.infinity,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1356,52 +1314,13 @@ class _ClientsAreaState extends State<ClientsArea> {
             ),
           ),
 
-          // Scor FICO
-          Expanded(
-            child: SizedBox(
-              height: 32,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                spacing: 8,
-                children: [
-                  Text(
-                    'Scor FICO',
-                    style: GoogleFonts.outfit(
-                      color: const Color(0xFF938F8A),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => _sortClients('ficoScore'),
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(),
-                        child: SvgPicture.asset(
-                          'assets/caret_outlined.svg',
-                          colorFilter: ColorFilter.mode(
-                            _getSortIndicatorColor('ficoScore'),
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+
 
           // Codebitor
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
             child: SizedBox(
-              height: 32,
+              height: double.infinity,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1420,32 +1339,13 @@ class _ClientsAreaState extends State<ClientsArea> {
             ),
           ),
 
-          // Referent
-          Expanded(
-            child: SizedBox(
-              height: 32,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Referent',
-                    style: GoogleFonts.outfit(
-                      color: const Color(0xFF938F8A),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+
 
           // Status
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
             child: SizedBox(
-              height: 32,
+              height: double.infinity,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1485,10 +1385,10 @@ class _ClientsAreaState extends State<ClientsArea> {
           ),
 
           // Actiuni
-          ConstrainedBox(
-            constraints: BoxConstraints(minWidth: 88), // 72 (text) + 24 - 8 = 88
+          SizedBox(
+            width: 84,
             child: SizedBox(
-              height: 32,
+              height: double.infinity,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1531,11 +1431,11 @@ class _ClientsAreaState extends State<ClientsArea> {
     return Container(
       width: double.infinity,
       height: 48,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
-        color: isSelected ? const Color(0xFFEBEAE9) : AppTheme.backgroundColor1,
+        color: isSelected ? const Color(0xFFEBEAE9) : AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
         ),
         shadows: isSelected ? [
           BoxShadow(
@@ -1549,16 +1449,16 @@ class _ClientsAreaState extends State<ClientsArea> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        spacing: 8,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 4,
         children: [
           // Nr.
           Container(
             width: 56,
-            height: 32,
+            height: double.infinity,
             decoration: ShapeDecoration(
               color: AppTheme.backgroundColor3,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1578,21 +1478,22 @@ class _ClientsAreaState extends State<ClientsArea> {
           ),
 
           // Nume
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 184),
             child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              height: double.infinity,
               decoration: ShapeDecoration(
                 color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     client.name,
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       color: AppTheme.elementColor3,
                       fontSize: 15,
@@ -1605,21 +1506,22 @@ class _ClientsAreaState extends State<ClientsArea> {
           ),
 
           // Numar telefon
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
             child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              height: double.infinity,
               decoration: ShapeDecoration(
                 color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     client.phoneNumber1,
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       color: AppTheme.elementColor3,
                       fontSize: 15,
@@ -1632,21 +1534,22 @@ class _ClientsAreaState extends State<ClientsArea> {
           ),
 
           // Numar telefon 2
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
             child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              height: double.infinity,
               decoration: ShapeDecoration(
                 color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     client.phoneNumber2 ?? '',
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       color: AppTheme.elementColor3,
                       fontSize: 15,
@@ -1659,21 +1562,22 @@ class _ClientsAreaState extends State<ClientsArea> {
           ),
 
           // Varsta
-          Expanded(
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 104, maxWidth: 144),
             child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              height: double.infinity,
               decoration: ShapeDecoration(
                 color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     client.age ?? '',
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       color: AppTheme.elementColor3,
                       fontSize: 15,
@@ -1685,22 +1589,25 @@ class _ClientsAreaState extends State<ClientsArea> {
             ),
           ),
 
-          // Scor FICO
-          Expanded(
+
+
+          // Codebitor
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
             child: Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              height: double.infinity,
               decoration: ShapeDecoration(
                 color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    client.ficoScore ?? '',
+                    client.coDebitorName ?? '',
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(
                       color: AppTheme.elementColor3,
                       fontSize: 15,
@@ -1712,37 +1619,7 @@ class _ClientsAreaState extends State<ClientsArea> {
             ),
           ),
 
-          // Codebitor
-          Expanded(
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.all(4),
-              decoration: ShapeDecoration(
-                color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: SwitchButton(
-                value: client.hasCoDebitor,
-                onChanged: (value) => _updateClientCoDebitor(client, value),
-              ),
-            ),
-          ),
 
-          // Referent
-          Expanded(
-            child: Container(
-              height: 32,
-              padding: const EdgeInsets.all(4),
-              decoration: ShapeDecoration(
-                color: AppTheme.backgroundColor3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: SwitchButton(
-                value: client.hasReferent,
-                onChanged: (value) => _updateClientReferent(client, value),
-              ),
-            ),
-          ),
 
           // Status
           GestureDetector(
@@ -1750,9 +1627,9 @@ class _ClientsAreaState extends State<ClientsArea> {
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 156, maxWidth: 200),
+                constraints: const BoxConstraints(minWidth: 144, maxWidth: 184),
                 child: Container(
-                  height: 32,
+                  height: double.infinity,
                   decoration: ShapeDecoration(
                     color: _getStatusColor(client.status),
                     shape: RoundedRectangleBorder(
@@ -1760,7 +1637,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                         width: 4,
                         color: _getStatusStrokeColor(client.status),
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
                   child: Row(
@@ -1785,29 +1662,43 @@ class _ClientsAreaState extends State<ClientsArea> {
 
           // Actiuni
           SizedBox(
-            height: 32,
+            width: 84,
+            height: double.infinity,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: 8,
+              spacing: 4,
               children: [
                 // Form button - deschide formularul complet
                 MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
                     onTap: () => _switchToFormMode(client),
-                    child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: SvgPicture.asset(
-                      'assets/form_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        AppTheme.elementColor2,
-                        BlendMode.srcIn,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: ShapeDecoration(
+                        color: AppTheme.backgroundColor3,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/form_outlined.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              AppTheme.elementColor2,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
                   ),
                 ),
 
@@ -1816,15 +1707,28 @@ class _ClientsAreaState extends State<ClientsArea> {
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
                   onTap: () => _switchToEditMode(client),
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: SvgPicture.asset(
-                      'assets/edit_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        AppTheme.elementColor2,
-                        BlendMode.srcIn,
-                      ),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: ShapeDecoration(
+                      color: AppTheme.backgroundColor3,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          'assets/edit_outlined.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            AppTheme.elementColor2,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   ),
@@ -2023,7 +1927,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                 text: 'Inapoi la tabel',
                 onTap: _switchToTableMode,
                 borderRadius: AppTheme.borderRadiusSmall,
-                height: 32,
+                height: double.infinity,
                 textStyle: AppTheme.navigationButtonTextStyle.copyWith(fontSize: 14),
               ),
               const SizedBox(width: 16),
@@ -2107,7 +2011,7 @@ class _ClientsAreaState extends State<ClientsArea> {
         Expanded(
           flex: 10,
           child: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(4),
             decoration: ShapeDecoration(
               color: AppTheme.backgroundColor1,
               shape: RoundedRectangleBorder(
@@ -2143,7 +2047,7 @@ class _ClientsAreaState extends State<ClientsArea> {
         Expanded(
           flex: 7,
           child: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(4),
             decoration: ShapeDecoration(
               color: AppTheme.backgroundColor1,
               shape: RoundedRectangleBorder(

@@ -12582,3 +12582,260 @@ File: D:\Repositories\Broker-App/logs.txt
 [2025-08-27T22:58:47.036015] MAIN_SCREEN: build_called
 [2025-08-27T22:58:54.695755] MAIN_SCREEN: build_called
 [2025-08-27T22:59:12.565004] MAIN_SCREEN: build_called
+[2025-08-27T22:59:25.502725] CLIENTS_SERVICE: load_clients_ms | ms=72
+[2025-08-27T22:59:25.829503] FIREBASE_SERVICE: team_meetings_ms | ms=205, tokens=2
+[2025-08-27T22:59:25.830486] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=253
+[2025-08-27T22:59:59.103571] MAIN_SCREEN: build_called
+[2025-08-27T23:03:04.963242] MAIN_SCREEN: build_called
+[2025-08-27T23:03:08.768219] MAIN_SCREEN: build_called
+[2025-08-27T23:03:12.927033] MAIN_SCREEN: build_called
+[2025-08-27T23:03:17.055735] MAIN_SCREEN: build_called
+[2025-08-27T23:03:29.346664] MAIN_SCREEN: build_called
+[2025-08-27T23:03:42.745522] MAIN_SCREEN: build_called
+[2025-08-27T23:03:48.949224] MAIN_SCREEN: build_called
+[2025-08-27T23:03:58.099757] MAIN_SCREEN: build_called
+[2025-08-27T23:04:04.045182] MAIN_SCREEN: build_called
+[2025-08-27T23:04:17.663425] MAIN_SCREEN: build_called
+[2025-08-27T23:04:28.008403] MAIN_SCREEN: build_called
+[2025-08-27T23:06:34.038096] MAIN_SCREEN: build_called
+[2025-08-27T23:06:48.625900] MAIN_SCREEN: build_called
+[2025-08-27T23:06:54.107936] MAIN_SCREEN: build_called
+[2025-08-27T23:06:59.072366] MAIN_SCREEN: build_called
+[2025-08-27T23:07:04.490592] MAIN_SCREEN: build_called
+[2025-08-27T23:07:15.386836] MAIN_SCREEN: build_called
+[2025-08-27T23:07:21.200726] MAIN_SCREEN: build_called
+[2025-08-27T23:07:33.435785] MAIN_SCREEN: build_called
+[2025-08-27T23:08:09.349441] MAIN_SCREEN: build_called
+[2025-08-27T23:08:24.073972] MAIN_SCREEN: build_called
+[2025-08-27T23:08:35.490869] MAIN_SCREEN: build_called
+[2025-08-27T23:08:44.498515] MAIN_SCREEN: build_called
+[2025-08-27T23:08:52.429977] MAIN_SCREEN: build_called
+[2025-08-27T23:09:00.860490] MAIN_SCREEN: build_called
+[2025-08-27T23:09:16.712087] MAIN_SCREEN: build_called
+[2025-08-27T23:09:28.862588] MAIN_SCREEN: build_called
+[2025-08-27T23:10:15.734792] MAIN_SCREEN: build_called
+[2025-08-27T23:10:28.531257] MAIN_SCREEN: build_called
+[2025-08-27T23:10:40.869633] MAIN_SCREEN: build_called
+[2025-08-27T23:11:19.562324] MAIN_SCREEN: build_called
+[2025-08-27T23:12:21.069663] MAIN_SCREEN: build_called
+[2025-08-27T23:12:29.059946] MAIN_SCREEN: build_called
+
+================================
+[2025-08-27T23:12:38.179536] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-27T23:12:38.181537] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-27T23:12:38.182535] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-27T23:12:38.289666] CLIENTS_SERVICE: load_clients_ms | ms=42
+[2025-08-27T23:12:38.459817] CLIENTS_SERVICE: load_clients_ms | ms=89
+[2025-08-27T23:12:38.631295] FIREBASE_SERVICE: team_meetings_ms | ms=274, tokens=2
+[2025-08-27T23:12:38.632296] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=437
+[2025-08-27T23:12:38.761397] CLIENTS_SERVICE: load_clients_ms | ms=126
+[2025-08-27T23:12:41.111884] MAIN_SCREEN: init_state
+[2025-08-27T23:12:41.114884] MAIN_SCREEN: build_called
+[2025-08-27T23:12:41.203575] MAIN_SCREEN: post_frame_callback
+[2025-08-27T23:12:41.203575] MAIN_SCREEN: whats_new_check_start
+[2025-08-27T23:12:41.221608] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-27T23:12:41.221608] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-27T23:12:41.221608] MAIN_SCREEN: whats_new_missing
+[2025-08-27T23:13:06.486465] MAIN_SCREEN: build_called
+[2025-08-27T23:14:13.625752] MAIN_SCREEN: build_called
+[2025-08-27T23:16:29.680694] MAIN_SCREEN: build_called
+[2025-08-27T23:20:52.885004] MAIN_SCREEN: build_called
+[2025-08-27T23:20:53.386325] FIREBASE_SERVICE: team_meetings_ms | ms=213, tokens=2
+[2025-08-27T23:20:53.387325] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=373
+[2025-08-27T23:20:53.452997] CLIENTS_SERVICE: load_clients_ms | ms=53
+[2025-08-27T23:20:56.692325] MAIN_SCREEN: build_called
+[2025-08-27T23:20:59.734132] MAIN_SCREEN: build_called
+[2025-08-27T23:22:11.000628] MAIN_SCREEN: build_called
+[2025-08-27T23:24:01.015415] MAIN_SCREEN: build_called
+[2025-08-27T23:24:04.995202] MAIN_SCREEN: build_called
+[2025-08-27T23:26:12.648425] MAIN_SCREEN: build_called
+
+================================
+[2025-08-27T23:26:30.268304] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-27T23:26:30.269303] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-27T23:26:30.270352] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-27T23:26:30.391249] CLIENTS_SERVICE: load_clients_ms | ms=85
+[2025-08-27T23:26:30.570414] CLIENTS_SERVICE: load_clients_ms | ms=63
+[2025-08-27T23:26:31.686677] FIREBASE_SERVICE: team_meetings_ms | ms=1195, tokens=2
+[2025-08-27T23:26:31.687679] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=1389
+[2025-08-27T23:26:31.818122] CLIENTS_SERVICE: load_clients_ms | ms=126
+[2025-08-27T23:26:34.419349] MAIN_SCREEN: init_state
+[2025-08-27T23:26:34.422372] MAIN_SCREEN: build_called
+[2025-08-27T23:26:34.531482] MAIN_SCREEN: post_frame_callback
+[2025-08-27T23:26:34.531482] MAIN_SCREEN: whats_new_check_start
+[2025-08-27T23:26:34.618897] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-27T23:26:34.618897] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-27T23:26:34.618897] MAIN_SCREEN: whats_new_missing
+[2025-08-27T23:26:35.602025] FIREBASE_SERVICE: team_meetings_ms | ms=170, tokens=2
+[2025-08-27T23:26:35.603027] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=238
+[2025-08-27T23:26:35.641191] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-27T23:28:26.778181] MAIN_SCREEN: build_called
+[2025-08-27T23:28:30.089598] MAIN_SCREEN: build_called
+[2025-08-27T23:41:38.885665] MAIN_SCREEN: build_called
+[2025-08-27T23:46:11.366589] MAIN_SCREEN: build_called
+
+================================
+[2025-08-27T23:46:19.161520] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-27T23:46:19.165517] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-27T23:46:19.167023] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-27T23:46:19.278766] CLIENTS_SERVICE: load_clients_ms | ms=36
+[2025-08-27T23:46:19.410213] CLIENTS_SERVICE: load_clients_ms | ms=33
+[2025-08-27T23:46:19.612924] FIREBASE_SERVICE: team_meetings_ms | ms=243, tokens=2
+[2025-08-27T23:46:19.613924] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=417
+[2025-08-27T23:46:19.734740] CLIENTS_SERVICE: load_clients_ms | ms=108
+[2025-08-27T23:46:21.988628] MAIN_SCREEN: init_state
+[2025-08-27T23:46:21.990619] MAIN_SCREEN: build_called
+[2025-08-27T23:46:22.079522] MAIN_SCREEN: post_frame_callback
+[2025-08-27T23:46:22.079522] MAIN_SCREEN: whats_new_check_start
+[2025-08-27T23:46:22.095581] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-27T23:46:22.095581] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-27T23:46:22.095581] MAIN_SCREEN: whats_new_missing
+[2025-08-27T23:47:51.975857] MAIN_SCREEN: build_called
+[2025-08-27T23:48:08.321730] MAIN_SCREEN: build_called
+[2025-08-27T23:48:25.570454] MAIN_SCREEN: build_called
+[2025-08-27T23:48:37.702585] MAIN_SCREEN: build_called
+[2025-08-27T23:48:56.535689] MAIN_SCREEN: build_called
+[2025-08-27T23:49:14.644750] MAIN_SCREEN: build_called
+[2025-08-27T23:49:34.665528] MAIN_SCREEN: build_called
+[2025-08-27T23:49:48.082450] MAIN_SCREEN: build_called
+[2025-08-27T23:50:00.214493] MAIN_SCREEN: build_called
+[2025-08-27T23:50:13.028312] MAIN_SCREEN: build_called
+[2025-08-27T23:50:42.266051] MAIN_SCREEN: build_called
+
+================================
+[2025-08-27T23:50:51.282461] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-27T23:50:51.284983] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-27T23:50:51.285984] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-27T23:50:51.379507] CLIENTS_SERVICE: load_clients_ms | ms=47
+[2025-08-27T23:50:51.513007] CLIENTS_SERVICE: load_clients_ms | ms=39
+[2025-08-27T23:50:51.661274] FIREBASE_SERVICE: team_meetings_ms | ms=200, tokens=2
+[2025-08-27T23:50:51.661274] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=362
+[2025-08-27T23:50:51.750809] CLIENTS_SERVICE: load_clients_ms | ms=86
+[2025-08-27T23:50:54.062492] MAIN_SCREEN: init_state
+[2025-08-27T23:50:54.065004] MAIN_SCREEN: build_called
+[2025-08-27T23:50:54.155179] MAIN_SCREEN: post_frame_callback
+[2025-08-27T23:50:54.156179] MAIN_SCREEN: whats_new_check_start
+[2025-08-27T23:50:54.169690] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-27T23:50:54.169690] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-27T23:50:54.170690] MAIN_SCREEN: whats_new_missing
+[2025-08-27T23:53:33.792460] MAIN_SCREEN: build_called
+[2025-08-27T23:55:17.632996] MAIN_SCREEN: build_called
+[2025-08-27T23:55:27.137598] MAIN_SCREEN: build_called
+[2025-08-27T23:55:37.714] MAIN_SCREEN: build_called
+[2025-08-27T23:55:51.496641] MAIN_SCREEN: build_called
+[2025-08-27T23:56:01.275515] MAIN_SCREEN: build_called
+[2025-08-27T23:56:15.043086] MAIN_SCREEN: build_called
+[2025-08-27T23:56:28.194293] MAIN_SCREEN: build_called
+[2025-08-27T23:56:40.272590] MAIN_SCREEN: build_called
+[2025-08-27T23:56:56.009768] MAIN_SCREEN: build_called
+[2025-08-27T23:57:08.270642] MAIN_SCREEN: build_called
+[2025-08-27T23:57:20.509215] MAIN_SCREEN: build_called
+[2025-08-27T23:59:10.912607] MAIN_SCREEN: build_called
+
+================================
+[2025-08-28T00:05:09.739566] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-28T00:05:09.741578] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-28T00:05:09.742567] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-28T00:05:09.847310] CLIENTS_SERVICE: load_clients_ms | ms=85
+[2025-08-28T00:05:09.986087] CLIENTS_SERVICE: load_clients_ms | ms=43
+[2025-08-28T00:05:10.154786] FIREBASE_SERVICE: team_meetings_ms | ms=228, tokens=2
+[2025-08-28T00:05:10.155785] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=400
+[2025-08-28T00:05:10.307307] CLIENTS_SERVICE: load_clients_ms | ms=147
+[2025-08-28T00:05:12.606682] MAIN_SCREEN: init_state
+[2025-08-28T00:05:12.608682] MAIN_SCREEN: build_called
+[2025-08-28T00:05:12.705325] MAIN_SCREEN: post_frame_callback
+[2025-08-28T00:05:12.705325] MAIN_SCREEN: whats_new_check_start
+[2025-08-28T00:05:12.722325] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-28T00:05:12.722325] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-28T00:05:12.722325] MAIN_SCREEN: whats_new_missing
+[2025-08-28T00:05:14.069701] FIREBASE_SERVICE: team_meetings_ms | ms=132, tokens=2
+[2025-08-28T00:05:14.069701] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=189
+[2025-08-28T00:05:14.073696] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-28T00:05:27.116585] MAIN_SCREEN: build_called
+[2025-08-28T00:05:54.459694] MAIN_SCREEN: build_called
+[2025-08-28T00:09:33.812422] MAIN_SCREEN: build_called
+[2025-08-28T00:10:48.163563] MAIN_SCREEN: build_called
+[2025-08-28T00:11:02.731667] MAIN_SCREEN: build_called
+[2025-08-28T00:11:15.983299] MAIN_SCREEN: build_called
+[2025-08-28T00:11:22.491683] MAIN_SCREEN: build_called
+[2025-08-28T00:11:36.901498] MAIN_SCREEN: build_called
+[2025-08-28T00:11:49.976373] MAIN_SCREEN: build_called
+[2025-08-28T00:12:00.655697] MAIN_SCREEN: build_called
+[2025-08-28T00:12:18.176167] MAIN_SCREEN: build_called
+[2025-08-28T00:12:30.285096] MAIN_SCREEN: build_called
+[2025-08-28T00:12:42.390898] MAIN_SCREEN: build_called
+[2025-08-28T00:13:06.312072] MAIN_SCREEN: build_called
+
+================================
+[2025-08-28T00:28:52.952529] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-28T00:28:52.954530] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-28T00:28:52.954530] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-28T00:28:53.194733] CLIENTS_SERVICE: load_clients_ms | ms=190
+[2025-08-28T00:28:53.212306] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-28T00:28:53.333575] FIREBASE_SERVICE: team_meetings_ms | ms=139, tokens=2
+[2025-08-28T00:28:53.334577] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=365
+[2025-08-28T00:28:53.614664] CLIENTS_SERVICE: load_clients_ms | ms=346
+[2025-08-28T00:28:56.414607] MAIN_SCREEN: init_state
+[2025-08-28T00:28:56.418121] MAIN_SCREEN: build_called
+[2025-08-28T00:28:56.523020] MAIN_SCREEN: post_frame_callback
+[2025-08-28T00:28:56.524019] MAIN_SCREEN: whats_new_check_start
+[2025-08-28T00:28:56.536579] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-28T00:28:56.537585] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-28T00:28:56.537585] MAIN_SCREEN: whats_new_missing
+[2025-08-28T00:28:59.651782] MAIN_SCREEN: build_called
+[2025-08-28T00:28:59.974451] FIREBASE_SERVICE: team_meetings_ms | ms=150, tokens=2
+[2025-08-28T00:28:59.974451] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=228
+[2025-08-28T00:29:00.008541] CLIENTS_SERVICE: load_clients_ms | ms=0
+
+================================
+[2025-08-28T00:33:04.952342] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-28T00:33:04.954851] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-28T00:33:04.955862] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-28T00:33:05.211121] CLIENTS_SERVICE: load_clients_ms | ms=193
+[2025-08-28T00:33:05.222539] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-28T00:33:05.429794] FIREBASE_SERVICE: team_meetings_ms | ms=219, tokens=2
+[2025-08-28T00:33:05.429794] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=448
+[2025-08-28T00:33:05.609820] CLIENTS_SERVICE: load_clients_ms | ms=315
+[2025-08-28T00:33:08.141025] MAIN_SCREEN: init_state
+[2025-08-28T00:33:08.144529] MAIN_SCREEN: build_called
+[2025-08-28T00:33:08.285418] MAIN_SCREEN: post_frame_callback
+[2025-08-28T00:33:08.285418] MAIN_SCREEN: whats_new_check_start
+[2025-08-28T00:33:08.308464] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-28T00:33:08.308464] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-28T00:33:08.308464] MAIN_SCREEN: whats_new_missing
+[2025-08-28T00:38:24.282261] MAIN_SCREEN: build_called
+
+================================
+[2025-08-28T00:40:55.594633] LOG START
+File: D:\Repositories\Broker-App/logs.txt
+================================
+[2025-08-28T00:40:55.596704] UPDATE_SERVICE: initialized | version=0.1.9, dir=D:\Repositories\Broker-App
+[2025-08-28T00:40:55.597705] UPDATE_SERVICE: env_snapshot | cwd=D:\Repositories\Broker-App, exe=D:\Repositories\Broker-App\build\windows\x64\runner\Debug\mat_finance.exe, os="Windows 10 Pro" 10.0 (Build 26100), dart=3.8.1 (stable) (Wed May 28 00:47:25 2025 -0700) on "windows_x64"
+[2025-08-28T00:40:55.831796] CLIENTS_SERVICE: load_clients_ms | ms=204
+[2025-08-28T00:40:55.848837] CLIENTS_SERVICE: load_clients_ms | ms=0
+[2025-08-28T00:40:56.102651] CLIENTS_SERVICE: load_clients_ms | ms=159
+[2025-08-28T00:40:56.123681] FIREBASE_SERVICE: team_meetings_ms | ms=292, tokens=2
+[2025-08-28T00:40:56.123681] SPLASH_SERVICE: refresh_meetings_cache_ms | ms=503
+[2025-08-28T00:40:58.833599] MAIN_SCREEN: init_state
+[2025-08-28T00:40:58.835601] MAIN_SCREEN: build_called
+[2025-08-28T00:40:58.948486] MAIN_SCREEN: post_frame_callback
+[2025-08-28T00:40:58.948486] MAIN_SCREEN: whats_new_check_start
+[2025-08-28T00:40:58.964583] UPDATE_SERVICE: release_info_missing | path=C:\Users\Home\AppData\Roaming\com.example\MAT Finance/updates/last_release.json
+[2025-08-28T00:40:58.964583] MAIN_SCREEN: whats_new_info_result | is_null=true
+[2025-08-28T00:40:58.965582] MAIN_SCREEN: whats_new_missing
+[2025-08-28T00:42:32.141473] MAIN_SCREEN: build_called
+[2025-08-28T00:43:07.433400] MAIN_SCREEN: build_called

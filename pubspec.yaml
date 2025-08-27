@@ -133,6 +133,8 @@ flutter:
     - assets/box_outlined.svg
     - assets/search_outlined.svg
     - assets/trade_outlined.svg
+    - assets/share_outlined.svg
+    - assets/open_outlined.svg
 
 # Launcher icons configuration (do not run generation here; user executes the command)
 flutter_launcher_icons:
