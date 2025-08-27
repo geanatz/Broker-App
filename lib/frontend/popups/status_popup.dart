@@ -581,6 +581,7 @@ class _ClientSavePopupState extends State<ClientSavePopup> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
             ),
+            shadows: AppTheme.popupShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

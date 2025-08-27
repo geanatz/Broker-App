@@ -16,7 +16,7 @@ import '../../backend/services/form_service.dart';
 import '../components/headers/widget_header2.dart';
 import '../components/buttons/action_button.dart';
 import '../components/fields/input_field1.dart';
-
+import '../components/dialog_utils.dart';
 
 /// Client model to represent client data
 class Client {
@@ -209,8 +209,6 @@ class _ClientsAreaState extends State<ClientsArea> {
   final ScrollController _tableScrollController = ScrollController();
   bool _isLoading = false;
 
-
-
   // Edit form state
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController1 = TextEditingController();
@@ -220,6 +218,10 @@ class _ClientsAreaState extends State<ClientsArea> {
   final TextEditingController _ficoScoreController = TextEditingController();
   bool _hasCoDebitor = false;
   bool _hasReferent = false;
+
+  // Sorting state
+  String? _sortColumn;
+  bool _sortAscending = true;
 
   // Filtering and sorting
   String _searchQuery = '';
@@ -244,7 +246,7 @@ class _ClientsAreaState extends State<ClientsArea> {
     _formService.addListener(_onFormServiceChanged);
 
     // Initialize filtered clients
-    _filteredClients = _getFilteredClients();
+    _filteredClients = _getFilteredAndSortedClients();
 
     // Setup search controller
     _searchController.addListener(_onSearchChanged);
@@ -321,6 +323,15 @@ class _ClientsAreaState extends State<ClientsArea> {
     return clients;
   }
 
+  /// Get filtered and sorted clients
+  List<Client> _getFilteredAndSortedClients() {
+    final filtered = _getFilteredClients();
+    
+    if (_sortColumn == null) return filtered;
+    
+    return _getSortedClients();
+  }
+
   /// Handle search input changes with debouncing
   void _onSearchChanged() {
     _searchDebounceTimer?.cancel();
@@ -328,7 +339,7 @@ class _ClientsAreaState extends State<ClientsArea> {
       if (mounted) {
         setState(() {
           _searchQuery = _searchController.text;
-          _filteredClients = _getFilteredClients();
+          _filteredClients = _getFilteredAndSortedClients();
         });
       }
     });
@@ -338,7 +349,7 @@ class _ClientsAreaState extends State<ClientsArea> {
   void _onClientServiceChanged() {
     if (mounted) {
       setState(() {
-        _filteredClients = _getFilteredClients();
+        _filteredClients = _getFilteredAndSortedClients();
       });
     }
   }
@@ -447,7 +458,7 @@ class _ClientsAreaState extends State<ClientsArea> {
           phoneNumber2: client.phoneNumber2,
           coDebitorName: client.coDebitorName,
           status: ClientStatus.normal, // Keep original ClientStatus for focus state
-          category: ClientCategory.apeluri,
+  
           formData: formData,
           discussionStatus: client.status,
         );
@@ -481,6 +492,93 @@ class _ClientsAreaState extends State<ClientsArea> {
     }
   }
 
+  /// Sort clients by specified column
+  void _sortClients(String column) {
+    setState(() {
+      if (_sortColumn == column) {
+        // Toggle sort direction if same column
+        _sortAscending = !_sortAscending;
+      } else {
+        // New column, start with ascending
+        _sortColumn = column;
+        _sortAscending = true;
+      }
+      
+      // Apply sorting
+      _filteredClients = _getSortedClients();
+    });
+  }
+
+  /// Get sorted clients based on current sort column and direction
+  List<Client> _getSortedClients() {
+    final clients = _getFilteredClients();
+    
+    if (_sortColumn == null) return clients;
+
+    clients.sort((a, b) {
+      int comparison = 0;
+      
+      switch (_sortColumn) {
+        case 'nr':
+          // Nr. is just the row number, no actual sorting needed
+          return 0;
+          
+        case 'nume':
+          comparison = a.name.compareTo(b.name);
+          break;
+          
+        case 'varsta':
+          final ageA = int.tryParse(a.age ?? '0') ?? 0;
+          final ageB = int.tryParse(b.age ?? '0') ?? 0;
+          comparison = ageA.compareTo(ageB);
+          break;
+          
+        case 'ficoScore':
+          final scoreA = int.tryParse(a.ficoScore ?? '0') ?? 0;
+          final scoreB = int.tryParse(b.ficoScore ?? '0') ?? 0;
+          comparison = scoreA.compareTo(scoreB);
+          break;
+          
+        case 'status':
+          comparison = _compareStatus(a.status, b.status);
+          break;
+          
+        default:
+          return 0;
+      }
+      
+      return _sortAscending ? comparison : -comparison;
+    });
+    
+    return clients;
+  }
+
+  /// Compare status values according to specified order
+  int _compareStatus(ClientStatusType? statusA, ClientStatusType? statusB) {
+    // Order: Neapelat -> Nu răspunde -> Amanat -> Programat -> Finalizat
+    final statusOrder = {
+      ClientStatusType.neapelat: 1,
+      ClientStatusType.nuRaspunde: 2,
+      ClientStatusType.amanat: 3,
+      ClientStatusType.programat: 4,
+      ClientStatusType.finalizat: 5,
+    };
+    
+    final orderA = statusOrder[statusA] ?? 0;
+    final orderB = statusOrder[statusB] ?? 0;
+    
+    return orderA.compareTo(orderB);
+  }
+
+  /// Get sort indicator color for a column
+  Color _getSortIndicatorColor(String column) {
+    if (_sortColumn != column) {
+      return const Color(0xFF938F8A); // Default color
+    }
+    
+    return _sortAscending ? AppTheme.elementColor2 : AppTheme.elementColor3;
+  }
+
   /// Update client's co-debitor status
   Future<void> _updateClientCoDebitor(Client client, bool hasCoDebitor) async {
     try {
@@ -499,7 +597,7 @@ class _ClientsAreaState extends State<ClientsArea> {
         // Update local state to reflect changes
         setState(() {
           // Force refresh of filtered clients
-          _filteredClients = _getFilteredClients();
+          _filteredClients = _getFilteredAndSortedClients();
         });
       }
     } catch (e) {
@@ -525,7 +623,7 @@ class _ClientsAreaState extends State<ClientsArea> {
         // Update local state to reflect changes
         setState(() {
           // Force refresh of filtered clients
-          _filteredClients = _getFilteredClients();
+          _filteredClients = _getFilteredAndSortedClients();
         });
       }
     } catch (e) {
@@ -643,78 +741,83 @@ class _ClientsAreaState extends State<ClientsArea> {
 
   /// Show status selection popup
   Future<void> _showStatusSelectionPopup(Client client) async {
-    // Filtreaza opțiunile pentru a exclude statusul curent
-    final allStatusOptions = [
-      ClientStatusType.finalizat,
-      ClientStatusType.programat,
-      ClientStatusType.amanat,
-      ClientStatusType.nuRaspunde,
-      ClientStatusType.neapelat,
-    ];
-    
-    // Exclude statusul curent din opțiuni
-    final statusOptions = allStatusOptions.where((status) => status != client.status).toList();
+    // Get all available statuses
+    final allStatuses = ClientStatusType.values;
 
-    final selectedStatus = await showDialog<ClientStatusType>(
+    // Filter out the current status to show only the other 4 options
+    final availableStatuses = allStatuses.where((status) => status != client.status).toList();
+
+    final selectedStatus = await showBlurredDialog<ClientStatusType>(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
+        return Material(
+          color: Colors.transparent,
           child: Container(
-            width: 300,
             padding: const EdgeInsets.all(16),
-            decoration: ShapeDecoration(
-              color: AppTheme.backgroundColor1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEBEAE9), // light-blue-background2
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: AppTheme.popupShadow,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 8,
               children: [
                 Text(
-                  'Selecteaza status',
+                  'Selecteaza statusul',
                   style: GoogleFonts.outfit(
-                    color: AppTheme.elementColor2,
-                    fontSize: AppTheme.fontSizeLarge,
-                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF7C7A77), // light-blue-text-2
+                    fontSize: 19,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 16),
-                ...statusOptions.map((status) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: InkWell(
-                      onTap: () => Navigator.of(context).pop(status),
-                      child: Container(
-                        width: double.infinity,
-                        height: 32,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: ShapeDecoration(
-                          color: _getStatusColor(status),
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                              width: 4,
-                              color: _getStatusStrokeColor(status),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 8,
+                  children: availableStatuses.map((status) {
+                    return MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(status),
+                        child: Container(
+                          width: 240,
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: ShapeDecoration(
+                            color: _getStatusColor(status),
+                            shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                width: 4,
+                                color: _getStatusStrokeColor(status),
+                              ),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            _getStatusDisplayName(status),
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.outfit(
-                              color: AppTheme.elementColor3,
-                              fontSize: AppTheme.fontSizeMedium,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            spacing: 10,
+                            children: [
+                              Text(
+                                _getStatusDisplayName(status),
+                                style: GoogleFonts.outfit(
+                                  color: const Color(0xFF666666), // light-blue-text-3
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }).toList(),
+                ),
               ],
             ),
           ),
@@ -748,7 +851,7 @@ class _ClientsAreaState extends State<ClientsArea> {
         // Update local state to reflect changes
         setState(() {
           // Force refresh of filtered clients
-          _filteredClients = _getFilteredClients();
+          _filteredClients = _getFilteredAndSortedClients();
         });
 
         debugPrint('✅ CLIENTS_AREA: Client status updated successfully: ${client.name} - ${newStatus.name}');
@@ -776,7 +879,7 @@ class _ClientsAreaState extends State<ClientsArea> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: ShapeDecoration(
         color: const Color(0xFFE1DBD5),
         shape: RoundedRectangleBorder(
@@ -811,34 +914,27 @@ class _ClientsAreaState extends State<ClientsArea> {
       width: 432,
       child: Container(
         height: 48,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(4),
         decoration: ShapeDecoration(
           color: const Color(0xFFEBEAE9) /* light-blue-background2 */,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
           ),
+          shadows: AppTheme.standardShadow,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          spacing: 8,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 4,
           children: [
             // Search field
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: ShapeDecoration(
                   color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  shadows: [
-                    BoxShadow(
-                      color: Color(0x0C503E29),
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                      spreadRadius: 0,
-                    )
-                  ],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -847,7 +943,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 32,
+                        height: double.infinity,
                         child: Center(
                           child: TextField(
                             controller: _searchController,
@@ -872,19 +968,6 @@ class _ClientsAreaState extends State<ClientsArea> {
                         ),
                       ),
                     ),
-                    Container(
-                      width: 24,
-                      height: 24,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(),
-                      child: SvgPicture.asset(
-                        'assets/search_outlined.svg',
-                        colorFilter: ColorFilter.mode(
-                          const Color(0xFF938F8A),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -896,19 +979,11 @@ class _ClientsAreaState extends State<ClientsArea> {
               child: GestureDetector(
                 onTap: () => _switchToEditMode(),
                 child: Container(
-                  width: 32,
-                  height: 32,
+                  width: 40,
+                  height: double.infinity,
                   decoration: ShapeDecoration(
                     color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    shadows: [
-                      BoxShadow(
-                        color: Color(0x14503E29),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                        spreadRadius: 0,
-                      )
-                    ],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -924,7 +999,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                         child: SvgPicture.asset(
                           'assets/plus_outlined.svg',
                           colorFilter: ColorFilter.mode(
-                            const Color(0xFF938F8A),
+                            AppTheme.elementColor3,
                             BlendMode.srcIn,
                           ),
                         ),
@@ -941,19 +1016,11 @@ class _ClientsAreaState extends State<ClientsArea> {
               child: GestureDetector(
                 onTap: () => _showDeleteClientSelection(),
                 child: Container(
-                  width: 32,
-                  height: 32,
+                  width: 40,
+                  height: double.infinity,
                   decoration: ShapeDecoration(
                     color: const Color(0xFFF0EFEF) /* light-blue-background3 */,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    shadows: [
-                      BoxShadow(
-                        color: Color(0x14503E29),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                        spreadRadius: 0,
-                      )
-                    ],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -969,7 +1036,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                         child: SvgPicture.asset(
                           'assets/delete_outlined.svg',
                           colorFilter: ColorFilter.mode(
-                            const Color(0xFF938F8A),
+                            AppTheme.elementColor3,
                             BlendMode.srcIn,
                           ),
                         ),
@@ -1140,16 +1207,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                 ),
                 MouseRegion(
                   cursor: SystemMouseCursors.click,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(),
-                    child: SvgPicture.asset(
-                      'assets/caret_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        const Color(0xFF938F8A),
-                        BlendMode.srcIn,
+                  child: GestureDetector(
+                    onTap: () => _sortClients('nr'),
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(),
+                      child: SvgPicture.asset(
+                        'assets/caret_outlined.svg',
+                        colorFilter: ColorFilter.mode(
+                          _getSortIndicatorColor('nr'),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
                   ),
@@ -1178,16 +1248,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                   ),
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(),
-                      child: SvgPicture.asset(
-                        'assets/caret_outlined.svg',
-                        colorFilter: ColorFilter.mode(
-                          const Color(0xFF938F8A),
-                          BlendMode.srcIn,
+                    child: GestureDetector(
+                      onTap: () => _sortClients('nume'),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(),
+                        child: SvgPicture.asset(
+                          'assets/caret_outlined.svg',
+                          colorFilter: ColorFilter.mode(
+                            _getSortIndicatorColor('nume'),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),
@@ -1261,16 +1334,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                   ),
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(),
-                      child: SvgPicture.asset(
-                        'assets/caret_outlined.svg',
-                        colorFilter: ColorFilter.mode(
-                          const Color(0xFF938F8A),
-                          BlendMode.srcIn,
+                    child: GestureDetector(
+                      onTap: () => _sortClients('varsta'),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(),
+                        child: SvgPicture.asset(
+                          'assets/caret_outlined.svg',
+                          colorFilter: ColorFilter.mode(
+                            _getSortIndicatorColor('varsta'),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),
@@ -1300,16 +1376,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                   ),
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(),
-                      child: SvgPicture.asset(
-                        'assets/caret_outlined.svg',
-                        colorFilter: ColorFilter.mode(
-                          const Color(0xFF938F8A),
-                          BlendMode.srcIn,
+                    child: GestureDetector(
+                      onTap: () => _sortClients('ficoScore'),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(),
+                        child: SvgPicture.asset(
+                          'assets/caret_outlined.svg',
+                          colorFilter: ColorFilter.mode(
+                            _getSortIndicatorColor('ficoScore'),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),
@@ -1383,16 +1462,19 @@ class _ClientsAreaState extends State<ClientsArea> {
                   ),
                   MouseRegion(
                     cursor: SystemMouseCursors.click,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(),
-                      child: SvgPicture.asset(
-                        'assets/caret_outlined.svg',
-                        colorFilter: ColorFilter.mode(
-                          const Color(0xFF938F8A),
-                          BlendMode.srcIn,
+                    child: GestureDetector(
+                      onTap: () => _sortClients('status'),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(),
+                        child: SvgPicture.asset(
+                          'assets/caret_outlined.svg',
+                          colorFilter: ColorFilter.mode(
+                            _getSortIndicatorColor('status'),
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),
@@ -1740,7 +1822,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                     child: SvgPicture.asset(
                       'assets/edit_outlined.svg',
                       colorFilter: ColorFilter.mode(
-                        AppTheme.elementColor1,
+                        AppTheme.elementColor2,
                         BlendMode.srcIn,
                       ),
                     ),
@@ -1748,24 +1830,7 @@ class _ClientsAreaState extends State<ClientsArea> {
                   ),
                 ),
 
-                // Delete button
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                  onTap: () => _deleteClient(client),
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: SvgPicture.asset(
-                      'assets/delete_outlined.svg',
-                      colorFilter: ColorFilter.mode(
-                        AppTheme.elementColor1,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                  ),
-                ),
+
               ],
             ),
           ),
@@ -2139,3 +2204,4 @@ class _ClientsAreaState extends State<ClientsArea> {
 
 
 }
+

@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
 
-/// Shows a dialog with a blurred background that fades in/out in sync with the dialog.
+/// Shows a dialog with a blur effect that fades in/out in sync with the dialog.
 Future<T?> showBlurredDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -10,7 +10,7 @@ Future<T?> showBlurredDialog<T>({
   Duration duration = const Duration(milliseconds: 200),
   double maxSigma = 10,
 }) {
-  // Mark overlay shown for full-app cover (titlebar included)
+  // Mark overlay shown for main screen content (excluding titlebar)
   DialogOverlayController.instance.push();
   final future = showGeneralDialog<T>(
     context: context,
@@ -24,13 +24,13 @@ Future<T?> showBlurredDialog<T>({
       final double sigma = maxSigma * t;
       return Stack(
         children: [
-          // Animated blur + fade synced with dialog animation
+          // Animated blur effect synced with dialog animation
           Positioned.fill(
             child: Opacity(
               opacity: t,
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-                child: Container(color: Colors.black.withValues(alpha: 0.1)),
+                child: const SizedBox.shrink(),
               ),
             ),
           ),

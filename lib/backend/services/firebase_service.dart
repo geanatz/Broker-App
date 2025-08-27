@@ -854,6 +854,7 @@ class NewFirebaseService {
     String? coDebitorName,
     String? status,
     String? category,
+    String? discussionStatus, // Add discussionStatus parameter
     Map<String, dynamic>? additionalData,
   }) async {
     final consultantToken = await getCurrentConsultantToken();
@@ -868,6 +869,7 @@ class NewFirebaseService {
         'coDebitorName': coDebitorName,
         'status': status ?? 'normal',
         'category': category ?? 'clienti',
+        'discussionStatus': discussionStatus, // Save discussionStatus to Firebase
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         ...?additionalData,

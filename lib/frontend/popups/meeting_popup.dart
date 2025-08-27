@@ -312,7 +312,7 @@ class _MeetingPopupState extends State<MeetingPopup> {
           name: '',
           phoneNumber1: _selectedClientPhone!,
           status: ClientStatus.normal,
-          category: ClientCategory.apeluri,
+  
           formData: const {},
         ),
       );

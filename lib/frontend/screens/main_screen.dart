@@ -641,7 +641,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         phoneNumber2: client.phoneNumber2,
         coDebitorName: client.coDebitorName,
         status: ClientStatus.normal,
-        category: ClientCategory.apeluri, // New clients go to "Clienti"
+
         formData: {}, // <-- required argument
       );
       

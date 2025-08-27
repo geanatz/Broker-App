@@ -19,7 +19,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:mat_finance/utils/smooth_scroll_behavior.dart';
 import 'package:mat_finance/backend/services/update_config.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mat_finance/frontend/components/dialog_overlay_controller.dart';
+
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mat_finance/backend/services/sidebar_service.dart';
 
@@ -398,27 +398,7 @@ class _MyAppState extends State<MyApp> {
                     Expanded(child: child ?? const SizedBox.shrink()),
                   ],
                 ),
-                // Titlebar-only dimmer when any dialog/popup is shown
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: 40,
-                  child: IgnorePointer(
-                    ignoring: true,
-                    child: ValueListenableBuilder<bool>(
-                      valueListenable: DialogOverlayController.instance.isShown,
-                      builder: (context, isShown, _) {
-                        return AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutCubic,
-                          opacity: isShown ? 1.0 : 0.0,
-                          child: Container(color: Colors.black.withValues(alpha: 0.1)),
-                        );
-                      },
-                    ),
-                  ),
-                ),
+
               ],
             );
           }

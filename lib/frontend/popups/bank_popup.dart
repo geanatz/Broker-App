@@ -137,7 +137,7 @@ class _BankPopupState extends State<BankPopup> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
           ),
-          // Removed shadow as requested
+          shadows: AppTheme.popupShadow,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

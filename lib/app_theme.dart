@@ -157,6 +157,16 @@ class AppTheme extends ChangeNotifier {
       spreadRadius: 0,
     ),
   ];
+
+  // Umbra speciala pentru popup-uri
+  static const List<BoxShadow> popupShadow = [
+    BoxShadow(
+      color: Color(0x28513F2A), // 16% opacity pentru 513F2A
+      offset: Offset(0, 2), // Y = 2
+      blurRadius: 8, // Blur = 8
+      spreadRadius: 0,
+    ),
+  ];
   
   // ======== STILURI TEXT ========
   static TextStyle get headerTitleStyle => GoogleFonts.outfit(
@@ -242,7 +252,7 @@ class AppTheme extends ChangeNotifier {
   static BoxDecoration get popupDecoration => BoxDecoration(
     color: backgroundColor1,
     borderRadius: BorderRadius.circular(borderRadiusMedium),
-    boxShadow: standardShadow,
+    boxShadow: popupShadow,
   );
 
   // Decoratiune pentru container-ul principal (de nivel 1)
@@ -280,18 +290,18 @@ class AppTheme extends ChangeNotifier {
   static const Color primaryColor1 = Color(0xFFEFE5C7);
   static const Color secondaryColor1 = Color(0xFFE8DAB0);
 
-  // Color names and descriptions
-  static const Map<int, Map<String, String>> colorInfo = {
-    1: {'name': 'Auriu', 'description': 'Lumina calda'},
-    2: {'name': 'Lime', 'description': 'Prospetime naturala'},
-    3: {'name': 'Verde', 'description': 'Padurea tropicala'},
-    4: {'name': 'Turcoaz', 'description': 'Ocean linistit'},
-    5: {'name': 'Albastru', 'description': 'Cer senin'},
-    6: {'name': 'Indigo', 'description': 'Noapte profunda'},
-    7: {'name': 'Violet', 'description': 'Lavanda de vara'},
-    8: {'name': 'Magenta', 'description': 'Floare exotica'},
-    9: {'name': 'Roz', 'description': 'Apus romantic'},
-    10: {'name': 'Coral', 'description': 'Zorile diminetii'},
+  // Color names
+  static const Map<int, String> colorNames = {
+    1: 'Auriu',
+    2: 'Lime',
+    3: 'Verde',
+    4: 'Turcoaz',
+    5: 'Albastru',
+    6: 'Indigo',
+    7: 'Violet',
+    8: 'Magenta',
+    9: 'Roz',
+    10: 'Coral',
   };
 
   static const Color primaryColor2 = Color(0xFFE1EFC7);
@@ -368,20 +378,13 @@ class AppTheme extends ChangeNotifier {
   // Helper method to get color name by index (1-10)
   static String getColorName(int index) {
     if (index < 1 || index > 10) {
-      return colorInfo[1]!['name']!;
+      return colorNames[1]!;
     }
 
-    return colorInfo[index]!['name']!;
+    return colorNames[index]!;
   }
 
-  // Helper method to get color description by index (1-10)
-  static String getColorDescription(int index) {
-    if (index < 1 || index > 10) {
-      return colorInfo[1]!['description']!;
-    }
 
-    return colorInfo[index]!['description']!;
-  }
 
   // ======== CONSULTANT COLORS (DEPRECATED - USE PRIMARY/SECONDARY COLORS INSTEAD) ========
   // These are kept for backward compatibility but should be replaced with primary/secondary colors
@@ -443,8 +446,5 @@ class AppTheme extends ChangeNotifier {
 
   @Deprecated('Use getColorName instead')
   static String getConsultantColorName(int index) => getColorName(index);
-
-  @Deprecated('Use getColorDescription instead')
-  static String getConsultantColorDescription(int index) => getColorDescription(index);
 } 
 

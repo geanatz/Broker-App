@@ -18,7 +18,7 @@ class ClientModel {
   final String? phoneNumber2;
   final String? coDebitorName;
   final ClientStatus status;
-  final ClientCategory category;
+
   final Map<String, dynamic> formData;
   final ClientStatusType? discussionStatus;
   final DateTime? scheduledDateTime;
@@ -34,7 +34,6 @@ class ClientModel {
     this.phoneNumber2,
     this.coDebitorName,
     required this.status,
-    required this.category,
     required this.formData,
     this.discussionStatus,
     this.scheduledDateTime,
@@ -55,7 +54,6 @@ class ClientModel {
     String? phoneNumber2,
     String? coDebitorName,
     ClientStatus? status,
-    ClientCategory? category,
     Map<String, dynamic>? formData,
     ClientStatusType? discussionStatus,
     DateTime? scheduledDateTime,
@@ -71,7 +69,6 @@ class ClientModel {
       phoneNumber2: phoneNumber2 ?? this.phoneNumber2,
       coDebitorName: coDebitorName ?? this.coDebitorName,
       status: status ?? this.status,
-      category: category ?? this.category,
       formData: formData ?? Map<String, dynamic>.from(this.formData),
       discussionStatus: discussionStatus ?? this.discussionStatus,
       scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
@@ -101,7 +98,6 @@ class ClientModel {
       'phoneNumber2': phoneNumber2,
       'coDebitorName': coDebitorName,
       'status': status.index,
-      'category': category.index,
       // Faza 5: nu mai scriem formData in documentul clientului (pastram campul in model doar pentru UI cache)
       // 'formData': formData,
       'discussionStatus': discussionStatus?.name,
@@ -124,7 +120,6 @@ class ClientModel {
       phoneNumber2: map['phoneNumber2'],
       coDebitorName: map['coDebitorName'],
       status: ClientStatus.values[map['status'] is String ? _parseStatus(map['status']) : (map['status'] ?? 0)],
-      category: ClientCategory.values[map['category'] is String ? _parseCategory(map['category']) : (map['category'] ?? 0)],
       // Faza 5: citirea formData din doc nu mai este sursa de adevar; pastram fallback gol
       formData: Map<String, dynamic>.from(map['formData'] ?? {}),
       discussionStatus: map['discussionStatus'] != null
@@ -160,15 +155,7 @@ class ClientModel {
     }
   }
 
-  /// Helper pentru parsarea categoriei din string
-  static int _parseCategory(String category) {
-    switch (category.toLowerCase()) {
-      case 'reveniri': return 1;
-      case 'recente': return 2;
-      case 'clienti':
-      default: return 0;
-    }
-  }
+
 }
 
 /// Statusul unui client (focusat sau normal)
@@ -186,15 +173,7 @@ enum ClientStatusType {
   neapelat,      // Client care nu a fost încă apelat
 }
 
-/// Categoria unui client (in ce sectiune se afla)
-/// DEPRECATED: This enum will be removed in future versions as ClientCategory
-/// was designed for clients_pane interface which has been changed.
-/// It is kept temporarily for compatibility.
-enum ClientCategory {
-  apeluri,   // Sectiunea "Clienti"
-  reveniri,  // Sectiunea "Reveniri"
-  recente,   // Sectiunea "Recente"
-}
+
 
 // =================== SERVICE CLASS REFACTORIZAT ===================
 
@@ -216,7 +195,7 @@ class ClientsService {
     String? coDebitorName,
     String? phoneNumber2,
     ClientStatus? status,
-    ClientCategory? category,
+    ClientStatusType? discussionStatus, // Add discussionStatus parameter
     Map<String, dynamic>? formData,
   }) async {
     try {
@@ -224,8 +203,9 @@ class ClientsService {
         phoneNumber: phoneNumber,
         name: name,
         coDebitorName: coDebitorName,
-        status: _statusToString(status ?? ClientStatus.normal),
-        category: _categoryToString(category ?? ClientCategory.apeluri),
+        status: (status ?? ClientStatus.normal) == ClientStatus.focused ? 'focused' : 'normal',
+        category: 'clienti', // Default category for all clients
+        discussionStatus: discussionStatus?.name, // Pass discussionStatus to Firebase
         additionalData: {
           'phoneNumber2': phoneNumber2,
           // formData normalizat: nu mai scriem in doc-ul clientului
@@ -269,15 +249,7 @@ class ClientsService {
     }
   }
 
-  /// Obtine clientii filtrati dupa categorie
-  Future<List<ClientModel>> getClientsByCategory(ClientCategory category) async {
-    try {
-      final allClients = await getAllClients();
-      return allClients.where((client) => client.category == category).toList();
-    } catch (e) {
-      return [];
-    }
-  }
+
 
   /// Actualizeaza un client
   Future<bool> updateClient(String phoneNumber, {
@@ -285,7 +257,6 @@ class ClientsService {
     String? phoneNumber2,
     String? coDebitorName,
     ClientStatus? status,
-    ClientCategory? category,
     Map<String, dynamic>? formData,
     ClientStatusType? discussionStatus,
     DateTime? scheduledDateTime,
@@ -298,8 +269,7 @@ class ClientsService {
       if (name != null) updates['name'] = name;
       if (phoneNumber2 != null) updates['phoneNumber2'] = phoneNumber2;
       if (coDebitorName != null) updates['coDebitorName'] = coDebitorName;
-      if (status != null) updates['status'] = _statusToString(status);
-      if (category != null) updates['category'] = _categoryToString(category);
+      if (status != null) updates['status'] = status == ClientStatus.focused ? 'focused' : 'normal';
       // formData normalizat: nu mai scriem in doc-ul clientului
       if (discussionStatus != null) updates['discussionStatus'] = discussionStatus.name;
       if (scheduledDateTime != null) updates['scheduledDateTime'] = scheduledDateTime.millisecondsSinceEpoch;
@@ -410,30 +380,6 @@ class ClientsService {
     }
   }
 
-  // =================== HELPER METHODS ===================
-
-  /// Converteste ClientStatus in string pentru Firebase
-  String _statusToString(ClientStatus status) {
-    switch (status) {
-      case ClientStatus.focused:
-        return 'focused';
-      case ClientStatus.normal:
-        return 'normal';
-    }
-  }
-
-  /// Converteste ClientCategory in string pentru Firebase
-  String _categoryToString(ClientCategory category) {
-    switch (category) {
-      case ClientCategory.reveniri:
-        return 'reveniri';
-      case ClientCategory.recente:
-        return 'recente';
-      case ClientCategory.apeluri:
-        return 'clienti';
-    }
-  }
-
   // =================== COMPATIBILITY METHODS ===================
 
   /// Pentru compatibilitate cu codul existent - creeaza un client simple
@@ -444,7 +390,6 @@ class ClientsService {
       coDebitorName: client.coDebitorName,
       phoneNumber2: client.phoneNumber2,
       status: client.status,
-      category: client.category,
       formData: client.formData,
     );
   }
@@ -495,76 +440,7 @@ class ClientsService {
 /// Pentru compatibilitate cu codul existent - aliasuri
 typedef ClientsFirebaseService = ClientsService;
 
-// =================== UNIFIED CLIENT MODELS ===================
 
-/// Model unificat pentru toate datele unui client
-class UnifiedClientModel {
-  final String id;
-  final String consultantId;
-  final ClientBasicInfo basicInfo;
-  final ClientFormData formData;
-  final List<ClientActivity> activities;
-  final UnifiedClientStatus currentStatus;
-  final ClientMetadata metadata;
-
-  const UnifiedClientModel({
-    required this.id,
-    required this.consultantId,
-    required this.basicInfo,
-    required this.formData,
-    required this.activities,
-    required this.currentStatus,
-    required this.metadata,
-  });
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'id': id,
-      'consultantId': consultantId,
-      'basicInfo': basicInfo.toMap(),
-      'formData': formData.toMap(),
-      'activities': activities.map((activity) => activity.toMap()).toList(),
-      'currentStatus': currentStatus.toMap(),
-      'metadata': metadata.toMap(),
-    };
-  }
-
-  factory UnifiedClientModel.fromFirestore(Map<String, dynamic> data) {
-    return UnifiedClientModel(
-      id: data['id'] ?? '',
-      consultantId: data['consultantId'] ?? '',
-      basicInfo: ClientBasicInfo.fromMap(data['basicInfo'] ?? {}),
-      formData: ClientFormData.fromMap(data['formData'] ?? {}),
-      activities: (data['activities'] as List<dynamic>? ?? [])
-          .map((activity) => ClientActivity.fromMap(activity))
-          .toList(),
-      currentStatus: UnifiedClientStatus.fromMap(data['currentStatus'] ?? {}),
-      metadata: ClientMetadata.fromMap(data['metadata'] ?? {}),
-    );
-  }
-
-  UnifiedClientModel copyWith({
-    String? id,
-    String? consultantId,
-    ClientBasicInfo? basicInfo,
-    ClientFormData? formData,
-    List<ClientActivity>? activities,
-    UnifiedClientStatus? currentStatus,
-    ClientMetadata? metadata,
-  }) {
-    return UnifiedClientModel(
-      id: id ?? this.id,
-      consultantId: consultantId ?? this.consultantId,
-      basicInfo: basicInfo ?? this.basicInfo,
-      formData: formData ?? this.formData,
-      activities: activities ?? this.activities,
-      currentStatus: currentStatus ?? this.currentStatus,
-      metadata: metadata ?? this.metadata,
-    );
-  }
-
-  Map<String, dynamic> toJson() => toFirestore();
-}
 
 /// Informatii de baza despre client
 class ClientBasicInfo {
@@ -836,63 +712,9 @@ enum ClientActivityType {
   other,
 }
 
-/// Status unificat client
-class UnifiedClientStatus {
-  final UnifiedClientCategory category;
-  final ClientStatusType? discussionStatus;
-  final DateTime? scheduledDateTime;
-  final String? additionalInfo;
-  final bool isFocused;
 
-  const UnifiedClientStatus({
-    required this.category,
-    this.discussionStatus,
-    this.scheduledDateTime,
-    this.additionalInfo,
-    required this.isFocused,
-  });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'category': category.name,
-      'discussionStatus': discussionStatus?.name,
-      'scheduledDateTime': scheduledDateTime != null 
-          ? Timestamp.fromDate(scheduledDateTime!)
-          : null,
-      'additionalInfo': additionalInfo,
-      'isFocused': isFocused,
-    };
-  }
 
-  factory UnifiedClientStatus.fromMap(Map<String, dynamic> map) {
-    return UnifiedClientStatus(
-      category: UnifiedClientCategory.values.firstWhere(
-        (cat) => cat.name == map['category'],
-        orElse: () => UnifiedClientCategory.clienti,
-      ),
-      discussionStatus: map['discussionStatus'] != null
-          ? ClientStatusType.values.firstWhere(
-              (status) => status.name == map['discussionStatus'],
-              orElse: () => ClientStatusType.neapelat,
-            )
-          : null,
-      scheduledDateTime: map['scheduledDateTime'] != null 
-          ? (map['scheduledDateTime'] as Timestamp).toDate()
-          : null,
-      additionalInfo: map['additionalInfo'],
-      isFocused: map['isFocused'] ?? false,
-    );
-  }
-
-  Map<String, dynamic> toJson() => toMap();
-}
-
-/// Categorii client unificate
-enum UnifiedClientCategory {
-  clienti,
-  reveniri,
-  recente,
-}
 
 // ClientDiscussionStatus has been replaced by ClientStatusType - this enum has been completely removed
 
@@ -978,19 +800,8 @@ class ClientUIService extends ChangeNotifier {
   /// Expune ClientsService pentru componente care au nevoie de el direct
   ClientsService get firebaseService => _firebaseService;
   
-  /// Obtine clientii dintr-o anumita categorie
-  List<ClientModel> getClientsByCategory(ClientCategory category) {
-    return _clients.where((client) => client.category == category).toList();
-  }
-  
-  /// Obtine clientii din categoria "Clienti"
-  List<ClientModel> get clienti => getClientsByCategory(ClientCategory.apeluri);
-  
-  /// Obtine clientii din categoria "Reveniri"
-  List<ClientModel> get reveniri => getClientsByCategory(ClientCategory.reveniri);
-  
-  /// Obtine clientii din categoria "Recente"
-  List<ClientModel> get recente => getClientsByCategory(ClientCategory.recente);
+  /// Obtine toti clientii (fara categorii)
+  List<ClientModel> get allClients => _clients;
   
   /// Obtine clientii inclusiv cel temporar pentru afisare
   List<ClientModel> get clientsWithTemporary {
@@ -1030,46 +841,12 @@ class ClientUIService extends ChangeNotifier {
     }
     return unique.values.toList();
   }
+
+
+
+
   
-  /// Obtine clientii dintr-o anumita categorie inclusiv cel temporar
-  /// FIX: Sorteaza clientii dupa ultima modificare pentru a preveni shuffling-ul in UI
-  List<ClientModel> getClientsByCategoryWithTemporary(ClientCategory category) {
-    final categoryClients = _clients.where((client) => client.category == category).toList();
-    // FIX: Sorteaza dupa ultima modificare pentru ordine consistenta
-    categoryClients.sort((a, b) {
-      final aTime = a.updatedAt;
-      final bTime = b.updatedAt;
-      
-      if (aTime == null && bTime == null) return 0;
-      if (aTime == null) return 1;
-      if (bTime == null) return -1;
-      
-      return bTime.compareTo(aTime); // descending
-    });
-    return categoryClients;
-  }
-  
-  /// Obtine clientii dintr-o anumita categorie fara cel temporar (pentru clients-pane)
-  /// FIX: Sorteaza clientii dupa ultima modificare pentru a preveni shuffling-ul in UI
-  List<ClientModel> getClientsByCategoryWithoutTemporary(ClientCategory category) {
-    // Exclude clientii temporari (cu ID care incepe cu 'temp_')
-    final categoryClients = _clients.where((client) => 
-        client.category == category && !client.id.startsWith('temp_')).toList();
-    
-    // FIX: Sorteaza dupa ultima modificare pentru ordine consistenta
-    categoryClients.sort((a, b) {
-      final aTime = a.updatedAt;
-      final bTime = b.updatedAt;
-      
-      if (aTime == null && bTime == null) return 0;
-      if (aTime == null) return 1;
-      if (bTime == null) return -1;
-      
-      return bTime.compareTo(aTime); // descending
-    });
-    
-    return categoryClients;
-  }
+
   
   /// Initializeaza serviciul si incarca clientii din Firebase pentru consultantul curent
   Future<void> initializeDemoData() async {
@@ -1266,7 +1043,6 @@ class ClientUIService extends ChangeNotifier {
       final hasChanged = _clients.length != newClients.length ||
           !_clients.every((client) => newClients.any((newClient) => 
               newClient.phoneNumber == client.phoneNumber &&
-              newClient.category == client.category &&
               newClient.status == client.status &&
               newClient.name == client.name));
 
@@ -1518,7 +1294,6 @@ class ClientUIService extends ChangeNotifier {
       phoneNumber2: null,
       coDebitorName: null,
       status: ClientStatus.focused,
-      category: ClientCategory.apeluri,
       formData: {},
       updatedAt: DateTime.now(),
       createdAt: DateTime.now(),
@@ -1634,10 +1409,9 @@ class ClientUIService extends ChangeNotifier {
       final dedupedUpdated = uniqueByPhone.values.toList();
       
       // FIX: Check if data actually changed before updating
-      final hasChanged = _clients.length != dedupedUpdated.length ||
+              final hasChanged = _clients.length != dedupedUpdated.length ||
           !_clients.every((client) => dedupedUpdated.any((newClient) => 
               newClient.phoneNumber == client.phoneNumber &&
-              newClient.category == client.category &&
               newClient.status == client.status &&
               newClient.name == client.name));
 
@@ -1699,8 +1473,7 @@ class ClientUIService extends ChangeNotifier {
                 break;
               case 'removed':
                 break;
-              case 'category_change':
-                break;
+
             }
           }
         } catch (e) {
@@ -1790,7 +1563,7 @@ class ClientUIService extends ChangeNotifier {
         coDebitorName: tempClient.coDebitorName,
         phoneNumber2: tempClient.phoneNumber2,
         status: tempClient.status,
-        category: tempClient.category,
+
         // formData normalizat: nu mai scriem in doc-ul clientului
       );
       
@@ -1936,7 +1709,7 @@ class ClientUIService extends ChangeNotifier {
         name: clientWithPhoneId.name,
         coDebitorName: clientWithPhoneId.coDebitorName,
         status: clientWithPhoneId.status,
-        category: clientWithPhoneId.category,
+        discussionStatus: clientWithPhoneId.discussionStatus,
         // formData normalizat: nu mai scriem in doc-ul clientului
       );
       
@@ -2112,7 +1885,6 @@ class ClientUIService extends ChangeNotifier {
         name: clientWithPhoneId.name,
         coDebitorName: clientWithPhoneId.coDebitorName,
         status: clientWithPhoneId.status,
-        category: clientWithPhoneId.category,
         formData: clientWithPhoneId.formData,
         discussionStatus: clientWithPhoneId.discussionStatus,
         scheduledDateTime: clientWithPhoneId.scheduledDateTime,
@@ -2165,7 +1937,6 @@ class ClientUIService extends ChangeNotifier {
       }
 
       final updatedClient = client.copyWith(
-        category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: ClientStatusType.finalizat,
         scheduledDateTime: scheduledDateTime, // IMPORTANT: Salveaza data si ora intalnirii
@@ -2175,9 +1946,9 @@ class ClientUIService extends ChangeNotifier {
       
       await updateClient(updatedClient);
       
-      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Clienti"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-        final clienti = getClientsByCategory(ClientCategory.apeluri);
+        final clienti = _clients.where((client) => !client.id.startsWith('temp_')).toList();
         if (clienti.isNotEmpty) {
           focusClient(clienti.first.phoneNumber);
         } else {
@@ -2225,7 +1996,6 @@ class ClientUIService extends ChangeNotifier {
       }
 
       final updatedClient = client.copyWith(
-        category: ClientCategory.reveniri,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: ClientStatusType.amanat,
         scheduledDateTime: scheduledDateTime,
@@ -2235,9 +2005,9 @@ class ClientUIService extends ChangeNotifier {
       
       await updateClient(updatedClient);
       
-      // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Clienti"
+      // Daca clientul mutat era focusat, focuseaza primul client disponibil
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-        final clienti = getClientsByCategory(ClientCategory.apeluri);
+        final clienti = _clients.where((client) => !client.id.startsWith('temp_')).toList();
         if (clienti.isNotEmpty) {
           focusClient(clienti.first.phoneNumber);
         } else {
@@ -2284,7 +2054,6 @@ class ClientUIService extends ChangeNotifier {
       }
 
       final updatedClient = client.copyWith(
-        category: ClientCategory.recente,
         status: ClientStatus.normal, // Nu mai este focusat
         discussionStatus: ClientStatusType.nuRaspunde,
         additionalInfo: additionalInfo,
@@ -2295,7 +2064,7 @@ class ClientUIService extends ChangeNotifier {
       
       // Daca clientul mutat era focusat, focuseaza primul client disponibil din "Clienti"
       if (_focusedClient?.phoneNumber == clientPhoneNumber) {
-        final clienti = getClientsByCategory(ClientCategory.apeluri);
+        final clienti = _clients.where((client) => !client.id.startsWith('temp_')).toList();
         if (clienti.isNotEmpty) {
           focusClient(clienti.first.phoneNumber);
         } else {

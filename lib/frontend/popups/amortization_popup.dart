@@ -2,8 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../backend/services/calculator_service.dart';
-// Import components
-import '../components/headers/widget_header1.dart';
 
 /// Widget pentru afisarea graficului de amortizare a unui credit
 /// 
@@ -40,250 +38,220 @@ class AmortizationPopup extends StatelessWidget {
             child: Container(
               width: 520,
               height: maxHeight,
-          padding: const EdgeInsets.all(8),
-          decoration: ShapeDecoration(
-            color: AppTheme.backgroundColor1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Container(
-                width: double.infinity,
-                height: 24,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: WidgetHeader1(
-                  title: 'Amortizare',
-                  titleColor: AppTheme.elementColor1,
-                  padding: EdgeInsets.zero,
+              padding: const EdgeInsets.all(8),
+              decoration: ShapeDecoration(
+                color: AppTheme.backgroundColor1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
                 ),
+                shadows: AppTheme.popupShadow,
               ),
-              
-              const SizedBox(height: 8),
-              
-              // Main content
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  decoration: ShapeDecoration(
-                    color: AppTheme.backgroundColor2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header section - table column headers
+                  Container(
+                    width: double.infinity,
+                    height: 21,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 21,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Luna',
+                              style: AppTheme.safeOutfit(
+                                color: AppTheme.elementColor2,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 21,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Rata',
+                              style: AppTheme.safeOutfit(
+                                color: AppTheme.elementColor2,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 21,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Dobanda',
+                              style: AppTheme.safeOutfit(
+                                color: AppTheme.elementColor2,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 21,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Principal',
+                              style: AppTheme.safeOutfit(
+                                color: AppTheme.elementColor2,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 21,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Sold',
+                              style: AppTheme.safeOutfit(
+                                color: AppTheme.elementColor2,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header row - fara container colorat conform designului
-                      Container(
-                        width: double.infinity,
-                        height: 21,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 21,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Luna',
-                                  style: AppTheme.safeOutfit(
-                                    color: AppTheme.elementColor2,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+
+                  const SizedBox(height: 8),
+
+                  // Table section
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: ListView.separated(
+                        padding: EdgeInsets.zero,
+                        itemCount: schedule.length,
+                        separatorBuilder: (context, index) =>
+                          const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final entry = schedule[index];
+                          return Container(
+                            width: double.infinity,
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: ShapeDecoration(
+                              color: AppTheme.backgroundColor3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            Expanded(
-                              child: Container(
-                                height: 21,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Rata',
-                                  style: AppTheme.safeOutfit(
-                                    color: AppTheme.elementColor2,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    height: 21,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '${entry.paymentNumber}',
+                                      style: AppTheme.safeOutfit(
+                                        color: AppTheme.elementColor3,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                height: 21,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Dobanda',
-                                  style: AppTheme.safeOutfit(
-                                    color: AppTheme.elementColor2,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Container(
+                                    height: 21,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _formatNumber(entry.payment),
+                                      style: AppTheme.safeOutfit(
+                                        color: AppTheme.elementColor3,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                height: 21,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Principal',
-                                  style: AppTheme.safeOutfit(
-                                    color: AppTheme.elementColor2,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Container(
+                                    height: 21,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _formatNumber(entry.interestPayment),
+                                      style: AppTheme.safeOutfit(
+                                        color: AppTheme.elementColor3,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                height: 21,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Sold',
-                                  style: AppTheme.safeOutfit(
-                                    color: AppTheme.elementColor2,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Container(
+                                    height: 21,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _formatNumber(entry.principalPayment),
+                                      style: AppTheme.safeOutfit(
+                                        color: AppTheme.elementColor3,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                Expanded(
+                                  child: Container(
+                                    height: 21,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _formatNumber(entry.remainingBalance),
+                                      style: AppTheme.safeOutfit(
+                                        color: AppTheme.elementColor3,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Table content
-                      Expanded(
-                        child: ListView.separated(
-                          padding: EdgeInsets.zero,
-                          itemCount: schedule.length,
-                          separatorBuilder: (context, index) => 
-                            const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final entry = schedule[index];
-                            return Container(
-                              width: double.infinity,
-                              height: 40,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: ShapeDecoration(
-                                color: AppTheme.backgroundColor3,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusTiny),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      height: 21,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        '${entry.paymentNumber}',
-                                        style: AppTheme.safeOutfit(
-                                          color: AppTheme.elementColor3,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 21,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        _formatNumber(entry.payment),
-                                        style: AppTheme.safeOutfit(
-                                          color: AppTheme.elementColor3,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 21,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        _formatNumber(entry.interestPayment),
-                                        style: AppTheme.safeOutfit(
-                                          color: AppTheme.elementColor3,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 21,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        _formatNumber(entry.principalPayment),
-                                        style: AppTheme.safeOutfit(
-                                          color: AppTheme.elementColor3,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 21,
-                                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        _formatNumber(entry.remainingBalance),
-                                        style: AppTheme.safeOutfit(
-                                          color: AppTheme.elementColor3,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
             ),
           );
         },

@@ -144,15 +144,13 @@ class _ClientsPaneState extends State<ClientsPane> {
   /// OPTIMIZATION: Ultra-fast preloading for most likely clients
   Future<void> _preloadFormDataForVisibleClients() async {
     try {
-      // OPTIMIZATION: Only preload for the most likely client (first from each category)
+      // OPTIMIZATION: Preload for first few clients (categories no longer used)
       final clientsToPreload = <String>[];
       
-      // Add first client from each category only
-      for (final category in ClientCategory.values) {
-        final categoryClients = _clientService.clientsWithTemporary.where((c) => c.category == category && !c.id.startsWith('temp_')).toList();
-        if (categoryClients.isNotEmpty) {
-          clientsToPreload.add(categoryClients.first.phoneNumber);
-        }
+      // Add first few clients
+      final availableClients = _clientService.clientsWithTemporary.where((c) => !c.id.startsWith('temp_')).toList();
+      if (availableClients.isNotEmpty) {
+        clientsToPreload.add(availableClients.first.phoneNumber);
       }
       
       // Limit to first 3 clients total for ultra-fast preloading
@@ -170,16 +168,16 @@ class _ClientsPaneState extends State<ClientsPane> {
   }
 
   void _loadMoreApeluriIfNeeded() {
-    final totalApeluri = _clientService.clientsWithTemporary
-        .where((c) => c.category == ClientCategory.apeluri && !c.id.startsWith('temp_'))
+    final totalClients = _clientService.clientsWithTemporary
+        .where((c) => !c.id.startsWith('temp_'))
         .length;
-    if (_visibleApeluriCount >= totalApeluri) return;
+    if (_visibleApeluriCount >= totalClients) return;
     _isLoadingMoreApeluri = true;
     // small micro-delay to coalesce bursts
     Future.microtask(() {
       final newCount = _visibleApeluriCount + _pageSizeApeluri;
       setState(() {
-        _visibleApeluriCount = newCount > totalApeluri ? totalApeluri : newCount;
+        _visibleApeluriCount = newCount > totalClients ? totalClients : newCount;
       });
       _isLoadingMoreApeluri = false;
     });
@@ -210,7 +208,6 @@ class _ClientsPaneState extends State<ClientsPane> {
         final hasChanged = _cachedClients.length != newClients.length ||
             !_cachedClients.every((client) => newClients.any((newClient) => 
                 newClient.phoneNumber == client.phoneNumber &&
-                newClient.category == client.category &&
                 newClient.status == client.status &&
                 newClient.name == client.name));
  
@@ -235,7 +232,6 @@ class _ClientsPaneState extends State<ClientsPane> {
         final hasChanged = _cachedClients.length != newClients.length ||
             !_cachedClients.every((client) => newClients.any((newClient) => 
                 newClient.phoneNumber == client.phoneNumber &&
-                newClient.category == client.category &&
                 newClient.status == client.status &&
                 newClient.name == client.name));
  
@@ -249,11 +245,11 @@ class _ClientsPaneState extends State<ClientsPane> {
   }
 
 
-  /// OPTIMIZAT: Construieste lista de clienti pentru o anumita categorie cu cache
-  Widget _buildClientsList(ClientCategory category) {
+  /// OPTIMIZAT: Construieste lista de clienti cu cache (categories no longer used)
+  Widget _buildClientsList() {
     // Foloseste intotdeauna lista live din service pentru a reflecta focusul corect
     // FARA clientul temporar pentru clients-pane (temporarul apare doar in popup)
-    List<ClientModel> clients = _clientService.clientsWithTemporary.where((c) => c.category == category && !c.id.startsWith('temp_')).toList();
+    List<ClientModel> clients = _clientService.clientsWithTemporary.where((c) => !c.id.startsWith('temp_')).toList();
     
     if (clients.isEmpty) {
       return SizedBox(
@@ -270,72 +266,39 @@ class _ClientsPaneState extends State<ClientsPane> {
       );
     }
 
-    final bool isApeluri = category == ClientCategory.apeluri;
-    
-    if (isApeluri) {
-      final int itemCount = clients.length < _visibleApeluriCount
-          ? clients.length
-          : _visibleApeluriCount;
-      return SmoothScrollWrapper(
+    // Show all clients in a single list since categories are no longer used
+    final int itemCount = clients.length < _visibleApeluriCount
+        ? clients.length
+        : _visibleApeluriCount;
+    return SmoothScrollWrapper(
+      controller: _apelurieScrollController,
+      scrollSpeed: 80.0,
+      animationDuration: const Duration(milliseconds: 250),
+      child: ListView.separated(
         controller: _apelurieScrollController,
-        scrollSpeed: 80.0,
-        animationDuration: const Duration(milliseconds: 250),
-        child: ListView.separated(
-          controller: _apelurieScrollController,
-          physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
-          itemCount: itemCount + (itemCount < clients.length ? 1 : 0),
-          separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
-          itemBuilder: (context, index) {
-            if (index < itemCount) {
-              return _buildClientItem(clients[index]);
-            }
-            // Loader row to hint there are more items (appears as last separator item)
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Center(
-                child: Text(
-                  'Se incarca mai multi clienti...',
-                  style: TextStyle(
-                    color: AppTheme.elementColor1,
-                    fontSize: AppTheme.fontSizeTiny,
-                  ),
+        physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
+        itemCount: itemCount + (itemCount < clients.length ? 1 : 0),
+        separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
+        itemBuilder: (context, index) {
+          if (index < itemCount) {
+            return _buildClientItem(clients[index]);
+          }
+          // Loader row to hint there are more items (appears as last separator item)
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Center(
+              child: Text(
+                'Se incarca mai multi clienti...',
+                style: TextStyle(
+                  color: AppTheme.elementColor1,
+                  fontSize: AppTheme.fontSizeTiny,
                 ),
               ),
-            );
-          },
-        ),
-      );
-    } else {
-      const int maxVisibleClients = 3;
-      const double itemHeight = 64.0; // Inaltime ajustata pentru LightItem7/DarkItem7 (56px + padding)
-      final double gapHeight = AppTheme.smallGap; // Folosesc valoarea exacta din tema
-      
-      // Calculez inaltimea necesara pentru maximum 3 clienti
-      final int itemsToShow = clients.length > maxVisibleClients ? maxVisibleClients : clients.length;
-      final double totalHeight = itemsToShow > 0 
-          ? (itemHeight * itemsToShow) + (gapHeight * (itemsToShow - 1))
-          : 60.0; // Fallback pentru empty state
-      
-      final scrollController = category == ClientCategory.reveniri 
-          ? _reveniriScrollController 
-          : _recenteScrollController;
-      
-      return SizedBox(
-        height: totalHeight,
-        child: SmoothScrollWrapper(
-          controller: scrollController,
-          scrollSpeed: 60.0,
-          animationDuration: const Duration(milliseconds: 200),
-          child: ListView.separated(
-            controller: scrollController,
-            physics: const NeverScrollableScrollPhysics(), // Dezactivez scroll-ul normal
-            itemCount: clients.length,
-            separatorBuilder: (context, index) => SizedBox(height: AppTheme.smallGap),
-            itemBuilder: (context, index) => _buildClientItem(clients[index]),
-          ),
-        ),
-      );
-    }
+            ),
+          );
+        },
+      ),
+    );
   }
 
   /// Construieste un item de client cu focus management
@@ -358,7 +321,7 @@ class _ClientsPaneState extends State<ClientsPane> {
     }
     
     // FIX: Verifica daca clientul are status de discutie salvat (din camp dedicat, nu din formData)
-    debugPrint('GD_VERIFY: UI item for ${client.phoneNumber} | focused=$isFocused | category=${client.category} | status=${client.discussionStatus ?? 'null'}');
+    debugPrint('GD_VERIFY: UI item for ${client.phoneNumber} | focused=$isFocused | status=${client.discussionStatus ?? 'null'}');
     
     // debugPrint('🎯 CLIENTS_PANE: Building client item: ${client.name}, focused: $isFocused, temporary: $isTemporary');
     
@@ -430,16 +393,16 @@ class _ClientsPaneState extends State<ClientsPane> {
 
 
   /// Construieste o sectiune (Clienti, Reveniri, Recente)
-  Widget _buildSection(String title, ClientCategory category, {bool canCollapse = true}) {
+  Widget _buildSection(String title, {bool canCollapse = true}) {
     // Determina starea de collapse pentru aceasta sectiune
     bool isCollapsed = false;
     VoidCallback? toggleCallback;
-    // Verifica daca categoria are clienti
-    List<ClientModel> categoryClients = _clientService.clientsWithTemporary.where((c) => c.category == category && !c.id.startsWith('temp_')).toList();
-    bool hasClients = categoryClients.isNotEmpty;
+    // Verifica daca sectiunea are clienti
+    List<ClientModel> sectionClients = _clientService.clientsWithTemporary.where((c) => !c.id.startsWith('temp_')).toList();
+    bool hasClients = sectionClients.isNotEmpty;
     if (canCollapse) {
-      switch (category) {
-        case ClientCategory.reveniri:
+      switch (title) {
+        case 'Reveniri':
           if (!_reveniriCollapseInitialized) {
             if (!hasClients) _isReveniriCollapsed = true;
             _reveniriCollapseInitialized = true;
@@ -447,7 +410,7 @@ class _ClientsPaneState extends State<ClientsPane> {
           isCollapsed = _isReveniriCollapsed;
           toggleCallback = () => setState(() => _isReveniriCollapsed = !_isReveniriCollapsed);
           break;
-        case ClientCategory.recente:
+        case 'Recente':
           if (!_recenteCollapseInitialized) {
             if (!hasClients) _isRecenteCollapsed = true;
             _recenteCollapseInitialized = true;
@@ -455,12 +418,12 @@ class _ClientsPaneState extends State<ClientsPane> {
           isCollapsed = _isRecenteCollapsed;
           toggleCallback = () => setState(() => _isRecenteCollapsed = !_isRecenteCollapsed);
           break;
-        case ClientCategory.apeluri:
+        case 'Clienti':
           // Clienti nu se poate collapse
           break;
       }
     }
-    final bool isApeluri = category == ClientCategory.apeluri;
+    final bool isApeluri = title == 'Clienti';
     // Padding logic: collapsed = 8 vertical/horizontal, expanded = all 8
     final EdgeInsets sectionPadding = isCollapsed && !isApeluri
         ? const EdgeInsets.symmetric(vertical: 5, horizontal: 8)
@@ -494,7 +457,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                   ),
                   SizedBox(height: AppTheme.smallGap),
                   // Lista de clienti expandabila pentru Clienti
-                  Expanded(child: _buildClientsList(category)),
+                  Expanded(child: _buildClientsList()),
                 ],
               )
           : Column(
@@ -518,7 +481,7 @@ class _ClientsPaneState extends State<ClientsPane> {
                       : Column(
                           children: [
                             SizedBox(height: AppTheme.smallGap),
-                            _buildClientsList(category),
+                            _buildClientsList(),
                           ],
                         ),
                 ),
@@ -543,18 +506,18 @@ class _ClientsPaneState extends State<ClientsPane> {
         children: [
           // Sectiunea Clienti - FILL (expandeaza sa ocupe tot spatiul disponibil)
           Expanded(
-            child: _buildSection('Clienti', ClientCategory.apeluri, canCollapse: false),
+            child: _buildSection('Clienti', canCollapse: false),
           ),
           
           SizedBox(height: AppTheme.smallGap),
           
           // Sectiunea Reveniri - HUG (doar cat ii trebuie)
-          _buildSection('Reveniri', ClientCategory.reveniri),
+          _buildSection('Reveniri'),
           
           SizedBox(height: AppTheme.smallGap),
           
           // Sectiunea Recente - HUG (doar cat ii trebuie)
-          _buildSection('Recente', ClientCategory.recente),
+          _buildSection('Recente'),
         ],
       ),
     );

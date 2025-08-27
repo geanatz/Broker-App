@@ -415,7 +415,7 @@ class _SettingsAreaState extends State<SettingsArea> {
     );
   }
 
-  /// Construieste butonul multifunctional pentru actiuni cu culori
+  /// Construieste butonul multifunctional pentru actiuni cu culori (fara overlay hover, dar cu cursor click)
   Widget _buildColorActionButton(int colorIndex, bool isSelected, bool isTaken, String? takenBy) {
     // Verifica daca exista o cerere de trade pending pentru aceasta culoare
     final hasPendingTrade = _pendingTradeRequests[colorIndex] == true;
@@ -435,22 +435,25 @@ class _SettingsAreaState extends State<SettingsArea> {
         padding: EdgeInsets.zero,
         constraints: BoxConstraints(),
         tooltip: hasPendingTrade ? 'Anuleaza cerere' : 'Cerere de schimb',
+        // Eliminam efectele vizuale de hover dar pastram schimbarea cursorului
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        enableFeedback: false,
       );
     }
 
-    // Culoarea este selectata - afisam iconita de selectat
+    // Culoarea este selectata - afisam iconita de selectat (fara actiune)
     if (isSelected) {
-      return IconButton(
-        icon: SvgPicture.asset(
+      return SizedBox(
+        width: 20,
+        height: 20,
+        child: SvgPicture.asset(
           'assets/checkbox_outlined.svg',
           width: 20,
           height: 20,
           colorFilter: ColorFilter.mode(AppTheme.elementColor3, BlendMode.srcIn),
         ),
-        onPressed: null, // Nu permitem deselectare
-        padding: EdgeInsets.zero,
-        constraints: BoxConstraints(),
-        tooltip: 'Culoare selectata',
       );
     }
 
@@ -466,6 +469,11 @@ class _SettingsAreaState extends State<SettingsArea> {
       padding: EdgeInsets.zero,
       constraints: BoxConstraints(),
       tooltip: 'Selecteaza',
+      // Eliminam efectele vizuale de hover dar pastram schimbarea cursorului
+      hoverColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      splashColor: Colors.transparent,
+      enableFeedback: false,
     );
   }
 
@@ -530,12 +538,11 @@ class _SettingsAreaState extends State<SettingsArea> {
               final takenBy = _colorAvailability[colorIndex];
               final isTaken = takenBy != null;
               final colorName = AppTheme.getColorName(colorIndex);
-              final colorDescription = AppTheme.getColorDescription(colorIndex);
 
               return Container(
                 width: double.infinity,
                 height: 144,
-                padding: const EdgeInsets.only(top: 4, left: 4, right: 4, bottom: 12),
+                padding: const EdgeInsets.only(top: 4, left: 4, right: 4, bottom: 24), 
                 decoration: ShapeDecoration(
                   color: color,
                   shape: RoundedRectangleBorder(
@@ -607,15 +614,6 @@ class _SettingsAreaState extends State<SettingsArea> {
                                 color: AppTheme.elementColor3,
                                 fontSize: 19,
                                 fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              colorDescription,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.outfit(
-                                color: AppTheme.elementColor2,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],

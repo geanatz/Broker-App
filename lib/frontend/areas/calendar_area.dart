@@ -1100,7 +1100,7 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     return Container(
       width: double.infinity,
       height: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
         gradient: AppTheme.areaColor,
         borderRadius: BorderRadius.circular(16),
@@ -1369,62 +1369,56 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
     return Container(
       width: 432,
       height: 48,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
       decoration: ShapeDecoration(
         color: AppTheme.backgroundColor2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
         ),
+        shadows: AppTheme.standardShadow,
       ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Buton pentru săptămâna anterioară
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: _navigateToPreviousWeek,
-                    child: Container(
-                      width: 128,
-                      height: 32,
-                      decoration: ShapeDecoration(
-                        color: AppTheme.backgroundColor3,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        shadows: [
-                          BoxShadow(
-                            color: Color(0x14503E29),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                            spreadRadius: 0,
-                          )
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/left_outlined.svg',
-                            colorFilter: ColorFilter.mode(
-                              AppTheme.elementColor3,
-                              BlendMode.srcIn,
+                Expanded(
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: _navigateToPreviousWeek,
+                      child: Container(
+                        height: double.infinity,
+                        decoration: ShapeDecoration(
+                          color: AppTheme.backgroundColor3,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/left_outlined.svg',
+                              colorFilter: ColorFilter.mode(
+                                AppTheme.elementColor3,
+                                BlendMode.srcIn,
+                              ),
+                              width: 24,
+                              height: 24,
                             ),
-                            width: 24,
-                            height: 24,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 // Text cu intervalul săptămânii
                 Container(
                   width: 144,
-                  height: 32,
+                  height: double.infinity,
                   alignment: Alignment.center,
                   child: Text(
                     weekRange,
@@ -1436,42 +1430,35 @@ class CalendarAreaState extends State<CalendarArea> with SingleTickerProviderSta
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 // Buton pentru săptămâna următoare
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: _navigateToNextWeek,
-                    child: Container(
-                      width: 128,
-                      height: 32,
-                      decoration: ShapeDecoration(
-                        color: AppTheme.backgroundColor3,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        shadows: [
-                          BoxShadow(
-                            color: Color(0x14503E29),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                            spreadRadius: 0,
-                          )
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/right_outlined.svg',
-                            colorFilter: ColorFilter.mode(
-                              AppTheme.elementColor3,
-                              BlendMode.srcIn,
+                Expanded(
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: _navigateToNextWeek,
+                      child: Container(
+                        height: double.infinity,
+                        decoration: ShapeDecoration(
+                          color: AppTheme.backgroundColor3,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/right_outlined.svg',
+                              colorFilter: ColorFilter.mode(
+                                AppTheme.elementColor3,
+                                BlendMode.srcIn,
+                              ),
+                              width: 24,
+                              height: 24,
                             ),
-                            width: 24,
-                            height: 24,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1881,7 +1868,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
           child: Text(
             consultantName,
             style: GoogleFonts.outfit(
-              color: AppTheme.elementColor2,
+              color: AppTheme.elementColor3,
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
@@ -1895,7 +1882,7 @@ class _HoverableSlotState extends State<_HoverableSlot> {
             timeText,
             textAlign: TextAlign.right,
             style: GoogleFonts.outfit(
-              color: AppTheme.elementColor1,
+              color: AppTheme.elementColor2,
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),

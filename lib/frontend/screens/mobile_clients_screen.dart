@@ -9,11 +9,7 @@ import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum MobileClientCategory {
-  clienti,
-  reveniri,
-  recente,
-}
+
 
 class MobileClientsScreen extends StatefulWidget {
   const MobileClientsScreen({super.key});
@@ -27,7 +23,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
   late final SplashService _splashService;
   late final NewFirebaseService _firebaseService;
   List<ClientModel> _clients = [];
-  MobileClientCategory _currentCategory = MobileClientCategory.clienti;
+  // Categories are no longer used
   
   // FIX: Simplified sync system - only one source of truth
   StreamSubscription<List<Map<String, dynamic>>>? _firebaseSubscription;
@@ -136,7 +132,6 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
       final hasChanged = _clients.length != newClients.length ||
           !_clients.every((client) => newClients.any((newClient) => 
               newClient.phoneNumber == client.phoneNumber &&
-              newClient.category == client.category &&
               newClient.status == client.status &&
               newClient.name == client.name));
 
@@ -214,21 +209,19 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
       } else {
         // Check for individual client changes
         for (final newClient in newClients) {
-          final existingClient = _clients.firstWhere(
-            (client) => client.phoneNumber == newClient.phoneNumber,
-            orElse: () => ClientModel(
-              id: '',
-              name: '',
-              phoneNumber1: '',
-              category: ClientCategory.apeluri,
-              status: ClientStatus.normal,
-              formData: {}, // <-- required argument
-            ),
-          );
+                      final existingClient = _clients.firstWhere(
+              (client) => client.phoneNumber == newClient.phoneNumber,
+              orElse: () => ClientModel(
+                id: '',
+                name: '',
+                phoneNumber1: '',
+                status: ClientStatus.normal,
+                formData: {}, // <-- required argument
+              ),
+            );
           
           if (existingClient.phoneNumber.isNotEmpty) {
-            if (existingClient.category != newClient.category ||
-                existingClient.status != newClient.status ||
+            if (existingClient.status != newClient.status ||
                 existingClient.name != newClient.name) {
               hasSignificantChanges = true;
             }
@@ -311,28 +304,12 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
     return initials;
   }
 
-  // Helper to get clients by category
-  List<ClientModel> _getClientsByCategory(MobileClientCategory category) {
-    switch (category) {
-      case MobileClientCategory.clienti:
-        return _clients.where((client) => client.category == ClientCategory.apeluri).toList();
-      case MobileClientCategory.reveniri:
-        return _clients.where((client) => client.category == ClientCategory.reveniri).toList();
-      case MobileClientCategory.recente:
-        return _clients.where((client) => client.category == ClientCategory.recente).toList();
-    }
+  // Helper to get all clients (categories no longer used)
+  List<ClientModel> _getAllClients() {
+    return _clients;
   }
 
-  String _getCategoryTitle() {
-    switch (_currentCategory) {
-      case MobileClientCategory.clienti:
-        return 'Clienti';
-      case MobileClientCategory.reveniri:
-        return 'Reveniri';
-      case MobileClientCategory.recente:
-        return 'Recente';
-    }
-  }
+
 
   // Helper to trigger a phone call
   Future<void> _callClient(String phoneNumber) async {
@@ -356,7 +333,6 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
           name: 'Client',
           phoneNumber1: phoneNumber,
           status: ClientStatus.normal,
-          category: ClientCategory.apeluri,
           formData: {},
         ),
       );
@@ -536,32 +512,27 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
   }
 
   Widget _buildNavBar(BuildContext context) {
+    // Categories are no longer used, show all clients
     final navItems = [
       {
         'icon': 'assets/undo_outlined.svg',
-        'active': _currentCategory == MobileClientCategory.reveniri,
+        'active': false,
         'onTap': () {
-          setState(() {
-            _currentCategory = MobileClientCategory.reveniri;
-          });
+          // Categories no longer used
         },
       },
       {
         'icon': 'assets/phone_outlined.svg',
-        'active': _currentCategory == MobileClientCategory.clienti,
+        'active': true,
         'onTap': () {
-          setState(() {
-            _currentCategory = MobileClientCategory.clienti;
-          });
+          // Categories no longer used
         },
       },
       {
         'icon': 'assets/history_outlined.svg',
-        'active': _currentCategory == MobileClientCategory.recente,
+        'active': false,
         'onTap': () {
-          setState(() {
-            _currentCategory = MobileClientCategory.recente;
-          });
+          // Categories no longer used
         },
       },
     ];
@@ -620,7 +591,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final clients = _getClientsByCategory(_currentCategory);
+    final clients = _getAllClients();
     
     return Scaffold(
       backgroundColor: Color(0xFFE8E3E6),
@@ -642,7 +613,7 @@ class _MobileClientsScreenState extends State<MobileClientsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            _getCategoryTitle(),
+                            'Clienti',
                             style: GoogleFonts.urbanist(
                               color: Color(0xFFC17099),
                               fontSize: 24,
